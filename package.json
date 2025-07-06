@@ -1,0 +1,13 @@
+{
+  "name": "kindred-paths",
+  "version": "1.0.0",
+  "author": "Simon Karman",
+  "description": "A tool for managing the cards in Kindred Paths, the custom Magic the Gathering set by Simon Karman",
+  "private": true,
+  "scripts": {
+    "start": "ts-node src/index.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2"
+  }
+}
