@@ -55,7 +55,7 @@ app.post('/cards/render', async (req, res) => {
 });
 
 cardConjurer.start().then(() => {
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 4243;
   app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
   });
