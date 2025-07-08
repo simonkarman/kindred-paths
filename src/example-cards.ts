@@ -1,6 +1,9 @@
 import { Card } from './card';
 
+const unknownSet = { symbol: 'M15', shortName: 'UNK' };
+
 export const emry = new Card({
+  set: unknownSet,
   id: 43,
   name: 'Emry, Lurker of the Loch',
   manaCost: { colorless: 2, blue: 1 },
@@ -10,7 +13,7 @@ export const emry = new Card({
   subtypes: ['merfolk', 'wizard'],
   rules: [
     { variant: 'ability', content: 'This spell costs {1} less to cast for each artifact you control.' },
-    { variant: 'ability', content: 'When {~} enters the battlefield, put the top four cards of your library into your graveyard.' },
+    { variant: 'ability', content: 'When ~ enters the battlefield, put the top four cards of your library into your graveyard.' },
     { variant: 'ability', content: '{t}: Choose target artifact card in your graveyard. You may cast that card this turn.' },
     { variant: 'inline-reminder', content: 'You still pay its costs. Timing rules still apply.' },
   ],
@@ -18,6 +21,7 @@ export const emry = new Card({
 });
 
 export const abzanDevotee = new Card({
+  set: unknownSet,
   id: 68,
   name: 'Abzan Devotee',
   manaCost: { colorless: 1, black: 1 },
@@ -33,6 +37,7 @@ export const abzanDevotee = new Card({
 });
 
 export const herdHeirloom = new Card({
+  set: unknownSet,
   id: 144,
   name: 'Herd Heirloom',
   manaCost: { colorless: 1, green: 1 },
@@ -45,6 +50,7 @@ export const herdHeirloom = new Card({
 });
 
 export const craterhoofBehemoth = new Card({
+  set: unknownSet,
   id: 138,
   name: 'Craterhoof Behemoth',
   manaCost: { colorless: 5, green: 3 },
@@ -60,6 +66,7 @@ export const craterhoofBehemoth = new Card({
 });
 
 export const tundra = new Card({
+  set: unknownSet,
   id: 322,
   name: 'Tundra',
   manaCost: {},
@@ -72,6 +79,7 @@ export const tundra = new Card({
 });
 
 export const blindObedience = new Card({
+  set: unknownSet,
   id: 9,
   name: 'Blind Obedience',
   manaCost: { colorless: 1, white: 1 },

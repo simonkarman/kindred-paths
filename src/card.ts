@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 type Rarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 type SuperType = undefined | 'basic' | 'legendary';
 type Type = 'creature' | 'enchantment' | 'artifact' | 'instant' | 'sorcery' | 'land';
@@ -12,7 +14,8 @@ type Rule = { variant: TextVariant, content: string };
 
 const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
-type CardProps = {
+type CreateCardProps = {
+  set: { symbol: string, shortName: string },
   id: number,
   name: string,
   rarity: Rarity,
@@ -22,9 +25,11 @@ type CardProps = {
   manaCost: { [type in Mana]?: number },
   rules?: Rule[],
   pt?: { power: number, toughness: number },
+  art?: { image: string, author: string },
 };
 
 export class Card {
+  public readonly set: { symbol: string, shortName: string };
   public readonly id: number;
   public readonly name: string;
   public readonly rarity: Rarity;
@@ -34,6 +39,74 @@ export class Card {
   public readonly manaCost: { [type in Mana]?: number };
   public readonly rules: Rule[];
   public readonly pt?: { power: number, toughness: number };
+  public readonly art?: { image: string, author: string };
+
+  constructor(props: CreateCardProps) {
+    this.set = props.set;
+    this.id = props.id;
+    this.name = props.name;
+    this.rarity = props.rarity;
+    this.supertype = props.supertype;
+    this.types = props.types;
+    this.subtypes = props.subtypes ?? [];
+    this.manaCost = props.manaCost;
+    this.rules = props.rules ?? [];
+    this.pt = props.pt;
+    this.art = props.art;
+
+    // Check basic superType consistency
+    if (this.supertype === 'basic' && !this.types.includes('land')) {
+      throw new Error('super type basic must be associated with lands');
+    }
+
+    // Check that card has at least one type
+    if (this.types.length === 0) {
+      throw new Error('card must have at least one type');
+    }
+
+    // Validate rules
+    // if there is reminder text, it must always be first
+    if (this.rules.some((rule, index) => index !== 0 && rule.variant === 'reminder')) {
+      throw new Error('if there is reminder text, it must always be first in the rules');
+    }
+    // if there is inline-reminder text, it must always be after an ability or keyword
+    if (this.rules.some((rule, index) => rule.variant === 'inline-reminder' && (index === 0 || !['ability', 'keyword'].includes(this.rules[index - 1].variant)))) {
+      throw new Error('if there is inline-reminder text, it must always be after an ability or keyword in the rules');
+    }
+    // if there is flavor text, it must always be at the end
+    if (this.rules.some((rule, index) => rule.variant === 'flavor' && index !== this.rules.length - 1)) {
+      throw new Error('if there is flavor text, it must always be at the end of the rules');
+    }
+    // the card name should not be in the rules (use ~ as a placeholder for the card name)
+    if (this.rules.some(rule => rule.content.toLowerCase().includes(this.name.toLowerCase()))) {
+      throw new Error('the card name should not be in the rules (use ~ as a placeholder for the card name)');
+    }
+    // all indices of the keywords should be successive
+    const keywordIndices = this.rules
+      .map((rule, index) => rule.variant === 'keyword' ? index : -1)
+      .filter(index => index !== -1);
+    for (let i = 1; i < keywordIndices.length; i++) {
+      if (keywordIndices[i] !== keywordIndices[i - 1] + 1) {
+        throw new Error('all keywords should be together in the rules');
+      }
+    }
+    // if there are multiple keywords, don't allow an inline-reminder after the last keyword
+    if (keywordIndices.length > 1 && this.rules[keywordIndices[keywordIndices.length - 1] + 1]?.variant === 'inline-reminder') {
+      throw new Error('if there are multiple keywords, do not allow an inline-reminder after the last keyword in the rules');
+    }
+
+    // Check toughness and power consistency
+    if (this.pt) {
+      // Check for integer values
+      if (!Number.isInteger(this.pt.power) || !Number.isInteger(this.pt.toughness)) {
+        throw new Error('power and toughness must be integers');
+      }
+      // Check for negative values
+      if (this.pt.power < 0 || this.pt.toughness < 0) {
+        throw new Error('power and toughness must be non-negative');
+      }
+    }
+  }
 
   public manaValue(): number {
     return Object
@@ -166,70 +239,5 @@ export class Card {
       readable += '.';
     }
     return readable;
-  }
-
-  constructor(props: CardProps) {
-    this.id = props.id;
-    this.name = props.name;
-    this.rarity = props.rarity;
-    this.supertype = props.supertype;
-    this.types = props.types;
-    this.subtypes = props.subtypes ?? [];
-    this.manaCost = props.manaCost;
-    this.rules = props.rules ?? [];
-    this.pt = props.pt;
-
-    // Check basic superType consistency
-    if (this.supertype === 'basic' && !this.types.includes('land')) {
-      throw new Error('super type basic must be associated with lands');
-    }
-
-    // Check that card has at least one type
-    if (this.types.length === 0) {
-      throw new Error('card must have at least one type');
-    }
-
-    // Validate rules
-    // if there is reminder text, it must always be first
-    if (this.rules.some((rule, index) => index !== 0 && rule.variant === 'reminder')) {
-      throw new Error('if there is reminder text, it must always be first in the rules');
-    }
-    // if there is inline-reminder text, it must always be after an ability or keyword
-    if (this.rules.some((rule, index) => rule.variant === 'inline-reminder' && (index === 0 || !['ability', 'keyword'].includes(this.rules[index - 1].variant)))) {
-      throw new Error('if there is inline-reminder text, it must always be after an ability or keyword in the rules');
-    }
-    // if there is flavor text, it must always be at the end
-    if (this.rules.some((rule, index) => rule.variant === 'flavor' && index !== this.rules.length - 1)) {
-      throw new Error('if there is flavor text, it must always be at the end of the rules');
-    }
-    // the card name should not be in the rules (use {~} as a placeholder for the card name)
-    if (this.rules.some(rule => rule.content.toLowerCase().includes(this.name.toLowerCase()))) {
-      throw new Error('the card name should not be in the rules (use {~} as a placeholder for the card name)');
-    }
-    // all indices of the keywords should be successive
-    const keywordIndices = this.rules
-      .map((rule, index) => rule.variant === 'keyword' ? index : -1)
-      .filter(index => index !== -1);
-    for (let i = 1; i < keywordIndices.length; i++) {
-      if (keywordIndices[i] !== keywordIndices[i - 1] + 1) {
-        throw new Error('all keywords should be together in the rules');
-      }
-    }
-    // if there are multiple keywords, don't allow an inline-reminder after the last keyword
-    if (keywordIndices.length > 1 && this.rules[keywordIndices[keywordIndices.length - 1] + 1]?.variant === 'inline-reminder') {
-      throw new Error('if there are multiple keywords, do not allow an inline-reminder after the last keyword in the rules');
-    }
-
-    // Check toughness and power consistency
-    if (this.pt) {
-      // Check for integer values
-      if (!Number.isInteger(this.pt.power) || !Number.isInteger(this.pt.toughness)) {
-        throw new Error('power and toughness must be integers');
-      }
-      // Check for negative values
-      if (this.pt.power < 0 || this.pt.toughness < 0) {
-        throw new Error('power and toughness must be non-negative');
-      }
-    }
   }
 }

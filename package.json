@@ -5,9 +5,17 @@
   "description": "A tool for managing the cards in Kindred Paths, the custom Magic the Gathering set by Simon Karman",
   "private": true,
   "scripts": {
-    "start": "ts-node src/index.ts"
+    "start": "ts-node src/index.ts",
+    "dev": "nodemon --exec ts-node src/index.ts --watch src --watch package.json"
   },
   "devDependencies": {
+    "@types/express": "^5.0.3",
+    "nodemon": "^3.1.10",
     "ts-node": "^10.9.2"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "playwright": "^1.53.2",
+    "zod": "^3.25.76"
   }
 }
