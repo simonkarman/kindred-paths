@@ -62,6 +62,11 @@ export class CardConjurer {
       // Set the type line
       await page.click('#text-options h4:has-text("Type")');
       await page.fill('#text-editor', card.renderTypeLine());
+      await page.click('#creator-menu-text button:has-text("Edit Bounds")');
+      await sleep(20);
+      await page.fill('#textbox-editor-width', '1400');
+      await sleep(20);
+      await page.click('#textbox-editor h2.textbox-editor-close');
       await page.waitForLoadState('networkidle');
 
       // Set the rules text
@@ -70,7 +75,7 @@ export class CardConjurer {
       if (rules_text.length > 0) {
         await page.click('#text-options h4:has-text("Rules Text")');
         await text_editor.fill(rules_text.slice(0, -1));
-        await sleep(150);
+        await sleep(1000);
         await text_editor.focus();
         await text_editor.pressSequentially(rules_text.slice(-1));
         await page.waitForLoadState('networkidle');
@@ -123,7 +128,7 @@ export class CardConjurer {
       await page.waitForLoadState('networkidle');
 
       // Download the card
-      await sleep(100); // Wait a bit for the image to load
+      await sleep(300); // Wait a bit for the image to load
       const [imgPage] = await Promise.all([
         context.waitForEvent('page'),
         page.click('#downloadAlt'),

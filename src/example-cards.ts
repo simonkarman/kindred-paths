@@ -1,6 +1,6 @@
 import { Card } from './card';
 
-const unknownSet = { symbol: 'M15', shortName: 'UNK' };
+const unknownSet = { symbol: 'pmei', shortName: 'KPA' };
 
 export const emry = new Card({
   set: unknownSet,

@@ -34,15 +34,24 @@ app.get('/cards/examples', (_, res) => {
   res.send(cards.map(card => card.toReadableString()).join('\n\n'));
 });
 
+const images: {[data: string]: Buffer } = {};
 app.post('/cards/render', async (req, res) => {
   const body = CardSchema.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
     return;
   }
+  const key = JSON.stringify(body.data);
+  if (images[key]) {
+    res.setHeader('Content-Type', 'image/png');
+    res.send(images[key]);
+    return;
+  }
   const card = new Card(body.data);
   res.setHeader('Content-Type', 'image/png');
-  res.send(await cardConjurer.renderCard(card));
+  const image = await cardConjurer.renderCard(card);
+  images[key] = image;
+  res.send(image);
 });
 
 cardConjurer.start().then(() => {
