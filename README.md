@@ -11,7 +11,7 @@ docker run -dit -v "$(pwd)/local_art:/usr/share/nginx/html/local_art" -h 127.0.0
 
 Card Conjurer will now be available on `http://localhost:4242`.
 
-Then, you can start the server.
+Then, you can start the server and client in development mode.
 
 ```bash
 cd server
@@ -19,16 +19,6 @@ npm install
 npm run dev
 ```
 
-Now, the server should be available on `http://localhost:4243`.
-
-And you can start the client.
-
-```bash
-cd client
-npm install
-npm run dev
-```
-
-Now, the client should be available on `http://localhost:3000`.
+Now, the server should be available on `http://localhost:4243` and the client should be available on `http://localhost:3000`.
 
 Happy coding!
