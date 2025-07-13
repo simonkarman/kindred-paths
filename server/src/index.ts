@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import express from 'express';
+import cors from 'cors';
 import { z } from 'zod';
 import { Card } from './card';
 import { abzanDevotee, blindObedience, craterhoofBehemoth, emry, herdHeirloom, tundra } from './example-cards';
@@ -30,6 +31,7 @@ let cardConjurerUrl = process.env.CARD_CONJURER_URL || "http://localhost:4102";
 const cardConjurer = new CardConjurer(cardConjurerUrl);
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 app.get('/card/examples', (_, res) => {
   const cards = [emry, abzanDevotee, herdHeirloom, craterhoofBehemoth, tundra, blindObedience];
@@ -116,6 +118,9 @@ app.get("/card/:id/render", async (req, res) => {
     return;
   }
   res.setHeader('Content-Type', 'image/png');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.send(await getRender(card));
 });
 
