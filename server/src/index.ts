@@ -31,12 +31,39 @@ const cardConjurer = new CardConjurer(cardConjurerUrl);
 const app = express();
 app.use(express.json());
 
-app.get('/cards/examples', (_, res) => {
+app.get('/card/examples', (_, res) => {
   const cards = [emry, abzanDevotee, herdHeirloom, craterhoofBehemoth, tundra, blindObedience];
   res.send(cards.map(card => card.toReadableString()).join('\n\n'));
 });
 
-async function getImageAt(key: string): Promise<Buffer | undefined> {
+async function getCards(): Promise<string[]> {
+  try {
+    const files = await fs.readdir('./set');
+    return files.filter(file => file.endsWith('.json')).map(file => file.replace('.json', ''));
+  } catch (error) {
+    console.error('Error reading set directory:', error);
+    return [];
+  }
+}
+
+async function getCardById(id: string): Promise<Card | undefined> {
+  try {
+    const data = await fs.readFile(`./set/${id}.json`, 'utf-8');
+    const parsed = JSON.parse(data);
+    const result = CardSchema.safeParse(parsed);
+    if (result.success) {
+      return new Card(result.data);
+    } else {
+      console.error('Invalid card data:', result.error);
+      return undefined;
+    }
+  } catch (error) {
+    console.error(`Error reading card ${id}:`, error);
+    return undefined;
+  }
+}
+
+async function getExistingRender(key: string): Promise<Buffer | undefined> {
   try {
     const path = `./renders/${key}.png`;
     return await fs.readFile(path);
@@ -46,30 +73,61 @@ async function getImageAt(key: string): Promise<Buffer | undefined> {
   }
 }
 
-async function saveImageAt(key: string, image: Buffer): Promise<void> {
+async function saveRender(key: string, image: Buffer): Promise<void> {
   const path = `./renders/${key}.png`;
   await fs.mkdir('./renders', { recursive: true });
   await fs.writeFile(path, image);
 }
 
-app.post('/cards/render', async (req, res) => {
+async function getRender(card: Card): Promise<Buffer> {
+  const key = hash(JSON.stringify(card.toJson()));
+  const existingRender = await getExistingRender(key);
+  if (existingRender) {
+    return existingRender;
+  }
+  const render = await cardConjurer.renderCard(card);
+  await saveRender(key, render);
+  return render;
+}
+
+app.get('/card', async (req, res) => {
+  const cards = await getCards();
+  if (cards.length === 0) {
+    res.status(404).json({ error: 'No cards found' });
+  } else {
+    res.json(cards);
+  }
+});
+
+app.get('/card/:id', async (req, res) => {
+  const cardId = req.params.id;
+  const card = await getCardById(cardId);
+  if (!card) {
+    res.status(404).json({ error: `Card with ID ${req.params.id} not found` });
+    return;
+  }
+  res.send(card.toJson());
+});
+
+app.get("/card/:id/render", async (req, res) => {
+  const card = await getCardById(req.params.id);
+  if (!card) {
+    res.status(404).json({ error: `Card with ID ${req.params.id} not found` });
+    return;
+  }
+  res.setHeader('Content-Type', 'image/png');
+  res.send(await getRender(card));
+});
+
+app.post('/card-render', async (req, res) => {
   const body = CardSchema.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
     return;
   }
-  const key = hash(JSON.stringify(body.data));
-  const existingImage = await getImageAt(key);
-  if (existingImage) {
-    res.setHeader('Content-Type', 'image/png');
-    res.send(existingImage);
-    return;
-  }
   const card = new Card(body.data);
   res.setHeader('Content-Type', 'image/png');
-  const image = await cardConjurer.renderCard(card);
-  await saveImageAt(key, image);
-  res.send(image);
+  res.send(await getRender(card));
 });
 
 cardConjurer.start().then(() => {

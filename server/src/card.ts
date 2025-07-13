@@ -214,6 +214,22 @@ export class Card {
     return [...result];
   }
 
+  public toJson(): CreateCardProps {
+    return structuredClone({
+      set: this.set,
+      id: this.id,
+      name: this.name,
+      rarity: this.rarity,
+      supertype: this.supertype,
+      types: this.types,
+      subtypes: this.subtypes,
+      manaCost: this.manaCost,
+      rules: this.rules,
+      pt: this.pt,
+      art: this.art
+    });
+  }
+
   public toReadableString(): string {
     let readable = `"${this.name}" (${this.rarity.charAt(0).toUpperCase()} ${this.id}) is a `;
     if (this.supertype) {

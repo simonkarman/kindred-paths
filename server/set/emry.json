@@ -1,0 +1,47 @@
+{
+  "set": {
+    "symbol": "pmei",
+    "shortName": "KPA"
+  },
+  "id": 43,
+  "name": "Emry, Lurker of the Loch",
+  "manaCost": {
+    "colorless": 2,
+    "blue": 1
+  },
+  "rarity": "rare",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "merfolk",
+    "wizard"
+  ],
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "This spell costs {1} less to cast for each artifact you control."
+    },
+    {
+      "variant": "ability",
+      "content": "When ~ enters the battlefield, put the top four cards of your library into your graveyard."
+    },
+    {
+      "variant": "ability",
+      "content": "{t}: Choose target artifact card in your graveyard. You may cast that card this turn."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "You still pay its costs. Timing rules still apply."
+    }
+  ],
+  "pt": {
+    "power": 1,
+    "toughness": 2
+  },
+  "art": {
+    "image": "example.jpg",
+    "author": "Simon karman"
+  }
+}
