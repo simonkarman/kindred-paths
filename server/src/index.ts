@@ -1,8 +1,10 @@
+import fs from 'fs/promises';
 import express from 'express';
 import { z } from 'zod';
 import { Card } from './card';
 import { abzanDevotee, blindObedience, craterhoofBehemoth, emry, herdHeirloom, tundra } from './example-cards';
 import { CardConjurer } from './card-conjurer';
+import { hash } from './hash';
 
 const CardSchema = z.object({
   set: z.object({ symbol: z.string().min(1), shortName: z.string().min(1) }),
@@ -24,7 +26,7 @@ const CardSchema = z.object({
   art: z.object({ image: z.string().min(1), author: z.string().min(1) }).optional(),
 });
 
-let cardConjurerUrl = process.env.CARD_CONJURER_URL || "http://localhost:4242";
+let cardConjurerUrl = process.env.CARD_CONJURER_URL || "http://localhost:4102";
 const cardConjurer = new CardConjurer(cardConjurerUrl);
 const app = express();
 app.use(express.json());
@@ -34,28 +36,44 @@ app.get('/cards/examples', (_, res) => {
   res.send(cards.map(card => card.toReadableString()).join('\n\n'));
 });
 
-const images: {[data: string]: Buffer } = {};
+async function getImageAt(key: string): Promise<Buffer | undefined> {
+  try {
+    const path = `./renders/${key}.png`;
+    return await fs.readFile(path);
+  }
+  catch {
+    return undefined;
+  }
+}
+
+async function saveImageAt(key: string, image: Buffer): Promise<void> {
+  const path = `./renders/${key}.png`;
+  await fs.mkdir('./renders', { recursive: true });
+  await fs.writeFile(path, image);
+}
+
 app.post('/cards/render', async (req, res) => {
   const body = CardSchema.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
     return;
   }
-  const key = JSON.stringify(body.data);
-  if (images[key]) {
+  const key = hash(JSON.stringify(body.data));
+  const existingImage = await getImageAt(key);
+  if (existingImage) {
     res.setHeader('Content-Type', 'image/png');
-    res.send(images[key]);
+    res.send(existingImage);
     return;
   }
   const card = new Card(body.data);
   res.setHeader('Content-Type', 'image/png');
   const image = await cardConjurer.renderCard(card);
-  images[key] = image;
+  await saveImageAt(key, image);
   res.send(image);
 });
 
 cardConjurer.start().then(() => {
-  const port = process.env.PORT || 4243;
+  const port = process.env.PORT || 4101;
   app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
   });

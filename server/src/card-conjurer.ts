@@ -39,7 +39,7 @@ export class CardConjurer {
       });
       // Load the page
       const page = await context.newPage();
-      await page.goto('http://localhost:4242');
+      await page.goto(this.url);
       await page.waitForLoadState('networkidle');
       await page.reload({ waitUntil: 'networkidle' });
 

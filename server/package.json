@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "start": "ts-node src/index.ts",
-    "dev": "nodemon --exec ts-node src/index.ts --watch src --watch package.json"
+    "dev": "./card-conjurer.sh && nodemon --exec ts-node src/index.ts --watch src --watch package.json"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
