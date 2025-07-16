@@ -8,7 +8,6 @@ import { CardConjurer } from './card-conjurer';
 import { hash } from './hash';
 
 const CardSchema = z.object({
-  set: z.object({ symbol: z.string().min(1), shortName: z.string().min(1) }),
   id: z.number().int().min(1),
   name: z.string().min(1),
   rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']),
@@ -24,7 +23,7 @@ const CardSchema = z.object({
     power: z.number().int().nonnegative(),
     toughness: z.number().int().nonnegative(),
   }).optional(),
-  art: z.object({ image: z.string().min(1), author: z.string().min(1) }).optional(),
+  art: z.string().min(1).optional(),
 });
 
 let cardConjurerUrl = process.env.CARD_CONJURER_URL || "http://localhost:4102";
@@ -87,7 +86,11 @@ async function getRender(card: Card): Promise<Buffer> {
   if (existingRender) {
     return existingRender;
   }
-  const render = await cardConjurer.renderCard(card);
+  const render = await cardConjurer.renderCard(card, {
+    author: 'Simon Karman',
+    shortName: 'KPA',
+    symbol: 'pmei',
+  });
   await saveRender(key, render);
   return render;
 }

@@ -1,9 +1,6 @@
 import { Card } from './card';
 
-const unknownSet = { symbol: 'pmei', shortName: 'KPA' };
-
 export const emry = new Card({
-  set: unknownSet,
   id: 43,
   name: 'Emry, Lurker of the Loch',
   manaCost: { colorless: 2, blue: 1 },
@@ -21,7 +18,6 @@ export const emry = new Card({
 });
 
 export const abzanDevotee = new Card({
-  set: unknownSet,
   id: 68,
   name: 'Abzan Devotee',
   manaCost: { colorless: 1, black: 1 },
@@ -37,7 +33,6 @@ export const abzanDevotee = new Card({
 });
 
 export const herdHeirloom = new Card({
-  set: unknownSet,
   id: 144,
   name: 'Herd Heirloom',
   manaCost: { colorless: 1, green: 1 },
@@ -50,7 +45,6 @@ export const herdHeirloom = new Card({
 });
 
 export const craterhoofBehemoth = new Card({
-  set: unknownSet,
   id: 138,
   name: 'Craterhoof Behemoth',
   manaCost: { colorless: 5, green: 3 },
@@ -66,7 +60,6 @@ export const craterhoofBehemoth = new Card({
 });
 
 export const tundra = new Card({
-  set: unknownSet,
   id: 322,
   name: 'Tundra',
   manaCost: {},
@@ -79,7 +72,6 @@ export const tundra = new Card({
 });
 
 export const blindObedience = new Card({
-  set: unknownSet,
   id: 9,
   name: 'Blind Obedience',
   manaCost: { colorless: 1, white: 1 },

@@ -1,8 +1,4 @@
 {
-  "set": {
-    "symbol": "pmei",
-    "shortName": "KPA"
-  },
   "id": 43,
   "name": "Emry, Lurker of the Loch",
   "manaCost": {
@@ -40,8 +36,5 @@
     "power": 1,
     "toughness": 2
   },
-  "art": {
-    "image": "example.jpg",
-    "author": "Simon karman"
-  }
+  "art": "example.jpg"
 }

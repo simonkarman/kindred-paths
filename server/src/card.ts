@@ -15,7 +15,6 @@ type Rule = { variant: TextVariant, content: string };
 const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
 type CreateCardProps = {
-  set: { symbol: string, shortName: string },
   id: number,
   name: string,
   rarity: Rarity,
@@ -25,11 +24,10 @@ type CreateCardProps = {
   manaCost: { [type in Mana]?: number },
   rules?: Rule[],
   pt?: { power: number, toughness: number },
-  art?: { image: string, author: string },
+  art?: string,
 };
 
 export class Card {
-  public readonly set: { symbol: string, shortName: string };
   public readonly id: number;
   public readonly name: string;
   public readonly rarity: Rarity;
@@ -39,10 +37,9 @@ export class Card {
   public readonly manaCost: { [type in Mana]?: number };
   public readonly rules: Rule[];
   public readonly pt?: { power: number, toughness: number };
-  public readonly art?: { image: string, author: string };
+  public readonly art?: string;
 
   constructor(props: CreateCardProps) {
-    this.set = props.set;
     this.id = props.id;
     this.name = props.name;
     this.rarity = props.rarity;
@@ -216,7 +213,6 @@ export class Card {
 
   public toJson(): CreateCardProps {
     return structuredClone({
-      set: this.set,
       id: this.id,
       name: this.name,
       rarity: this.rarity,

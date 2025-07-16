@@ -28,7 +28,7 @@ export class CardConjurer {
     });
   }
 
-  async renderCard(card: Card): Promise<Buffer> {
+  async renderCard(card: Card, set: { shortName: string, symbol: string, author: string }): Promise<Buffer> {
     if (!this.browser) {
       throw new Error('Browser is not started. Call start() first.');
     }
@@ -104,15 +104,15 @@ export class CardConjurer {
       if (card.art !== undefined) {
         await page.click('#creator-menu-tabs h3:has-text("Art")');
         await page.waitForLoadState('networkidle');
-        await page.fill('#creator-menu-art input[placeholder="Via URL"]', `local_art/${card.art.image}`);
-        await page.fill('#creator-menu-art #art-artist', card.art.author);
+        await page.fill('#creator-menu-art input[placeholder="Via URL"]', `local_art/${card.art}`);
+        await page.fill('#creator-menu-art #art-artist', set.author);
         await page.waitForLoadState('networkidle');
       }
 
       // Handle symbol section
       await page.click('#creator-menu-tabs h3:has-text("Set Symbol")');
       await page.waitForLoadState('networkidle');
-      await page.fill('#creator-menu-setSymbol #set-symbol-code', card.set.symbol);
+      await page.fill('#creator-menu-setSymbol #set-symbol-code', set.symbol);
       await page.fill('#creator-menu-setSymbol #set-symbol-rarity', card.rarity);
       await page.waitForLoadState('networkidle');
 
@@ -121,9 +121,9 @@ export class CardConjurer {
       await page.waitForLoadState('networkidle');
       await page.fill('#creator-menu-bottomInfo #info-number', ("0000" + card.id.toString()).slice(-4));
       await page.fill('#creator-menu-bottomInfo #info-rarity', card.rarity[0].toUpperCase());
-      await page.fill('#creator-menu-bottomInfo #info-set', card.set.shortName);
+      await page.fill('#creator-menu-bottomInfo #info-set', set.shortName);
       await page.fill('#creator-menu-bottomInfo #info-language', 'EN');
-      await page.fill('#creator-menu-bottomInfo #info-artist', card.art ? card.art.author : '');
+      await page.fill('#creator-menu-bottomInfo #info-artist', set.author);
       await page.fill('#creator-menu-bottomInfo #info-year', new Date().getFullYear().toString());
       await page.waitForLoadState('networkidle');
 
