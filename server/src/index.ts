@@ -89,7 +89,7 @@ async function getRender(card: Card): Promise<Buffer> {
   const render = await cardConjurer.renderCard(card, {
     author: 'Simon Karman',
     shortName: 'KPA',
-    symbol: 'pmei',
+    symbol: 'ELD',
   });
   await saveRender(key, render);
   return render;
@@ -127,7 +127,17 @@ app.get("/card/:id/render", async (req, res) => {
   res.send(await getRender(card));
 });
 
-app.post('/card-render', async (req, res) => {
+app.get("/card/:id/explain", async (req, res) => {
+  const card = await getCardById(req.params.id);
+  if (!card) {
+    res.status(404).json({ error: `Card with ID ${req.params.id} not found` });
+    return;
+  }
+  res.setHeader('Content-Type', 'text/plain');
+  res.send(card.toReadableString());
+});
+
+app.post('/preview', async (req, res) => {
   const body = CardSchema.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid card data', details: body.error });

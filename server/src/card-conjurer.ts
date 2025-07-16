@@ -62,12 +62,14 @@ export class CardConjurer {
       // Set the type line
       await page.click('#text-options h4:has-text("Type")');
       await page.fill('#text-editor', card.renderTypeLine());
-      await page.click('#creator-menu-text button:has-text("Edit Bounds")');
-      await sleep(20);
-      await page.fill('#textbox-editor-width', '1400');
-      await sleep(20);
-      await page.click('#textbox-editor h2.textbox-editor-close');
-      await page.waitForLoadState('networkidle');
+
+      // Adjust type line width (if needed for a wide set symbol)
+      // await page.click('#creator-menu-text button:has-text("Edit Bounds")');
+      // await sleep(20);
+      // await page.fill('#textbox-editor-width', '1400');
+      // await sleep(20);
+      // await page.click('#textbox-editor h2.textbox-editor-close');
+      // await page.waitForLoadState('networkidle');
 
       // Set the rules text
       const rules_text = card.renderRules();
@@ -79,6 +81,16 @@ export class CardConjurer {
         await text_editor.focus();
         await text_editor.pressSequentially(rules_text.slice(-1));
         await page.waitForLoadState('networkidle');
+
+        // Adjust the rules text box size
+        await page.click('#text-options h4:has-text("Rules Text")');
+        await page.click('#creator-menu-text button:has-text("Edit Bounds")');
+        await sleep(20);
+        await page.fill('#textbox-editor-y', '1782');
+        await page.fill('#textbox-editor-height', '798');
+        await sleep(20);
+        await page.click('#textbox-editor h2.textbox-editor-close');
+        await page.waitForLoadState('networkidle');
       }
 
       // Set the power and toughness text
@@ -86,18 +98,6 @@ export class CardConjurer {
         await page.click('#text-options h4:has-text("Power/Toughness")');
         await page.fill('#text-editor', card.pt.power + '/' + card.pt.toughness);
         await page.waitForLoadState('networkidle');
-
-        // Adjust the rules text box size based on the power and toughness box
-        if (rules_text.length > 200) {
-          await page.click('#text-options h4:has-text("Rules Text")');
-          await page.click('#creator-menu-text button:has-text("Edit Bounds")');
-          await sleep(20);
-          await page.fill('#textbox-editor-y', '1790');
-          await page.fill('#textbox-editor-height', '710');
-          await sleep(20);
-          await page.click('#textbox-editor h2.textbox-editor-close');
-          await page.waitForLoadState('networkidle');
-        }
       }
 
       // Handle art section

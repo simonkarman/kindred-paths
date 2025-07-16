@@ -29,7 +29,7 @@
     },
     {
       "variant": "inline-reminder",
-      "content": "You still pay its costs. Timing rules still apply."
+      "content": "You still pay its costs. Timing rules still{lns}apply."
     }
   ],
   "pt": {
