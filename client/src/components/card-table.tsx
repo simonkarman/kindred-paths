@@ -18,7 +18,7 @@ const filterCategories: { category: string, filters: Filter[] }[] = [
   {
     category: 'Type',
     filters: cardTypes.map(cardType => ({
-      name: `${cardType}s`,
+      name: cardType.endsWith('y') ? `${cardType.slice(0, -1)}ies` : `${cardType}s`,
       predicate: (cardSummary: SerializedCardSummary) => cardSummary.card.types.includes(cardType),
     }))
   },
@@ -142,7 +142,11 @@ export const CardTable = (props: { cardSummaries: SerializedCardSummary[] }) => 
       </li>
       {cardSummaries.map((summary) => {
         const card = new Card({ ...summary.card, rules: [] });
-        return <li key={summary.id} className="flex items-center px-2 rounded-lg hover:bg-zinc-300 bg-zinc-100 transition-colors">
+        return <li
+          key={summary.id}
+          className="flex items-center px-2 rounded-lg border border-gray-500 hover:border-black transition-colors"
+          style={{ backgroundColor: typographyColors.get(colorToTypographyColor(card.color()))?.main }}
+        >
           <span className="inline-block w-8 text-sm text-gray-800">{card.collectorNumber}</span>
           <span className="inline-block w-20 pr-2 text-xs text-right text-gray-800">{card.renderManaCost()}</span>
           <button
