@@ -1,0 +1,31 @@
+{
+  "name": "Blind Obedience",
+  "rarity": "rare",
+  "types": [
+    "enchantment"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 1,
+    "white": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Extort"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Whenever you cast a spell, you may pay {wb}. If you do, each opponent loses 1 life and you gain that much life."
+    },
+    {
+      "variant": "ability",
+      "content": "Artifacts and creatures your opponents control enter tapped."
+    },
+    {
+      "variant": "flavor",
+      "content": "“By the time your knees have worn through your robe, you may have begun to learn your place.”"
+    }
+  ],
+  "collectorNumber": 9
+}

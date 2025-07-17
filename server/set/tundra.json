@@ -1,0 +1,19 @@
+{
+  "name": "Tundra",
+  "rarity": "rare",
+  "types": [
+    "land"
+  ],
+  "subtypes": [
+    "plains",
+    "island"
+  ],
+  "manaCost": {},
+  "rules": [
+    {
+      "variant": "reminder",
+      "content": "{t}: Add {w} or {u}."
+    }
+  ],
+  "collectorNumber": 322
+}

@@ -1,30 +1,14 @@
 import fs from 'fs/promises';
 import express from 'express';
 import cors from 'cors';
-import { z } from 'zod';
-import { Card } from './card';
-import { abzanDevotee, blindObedience, craterhoofBehemoth, emry, herdHeirloom, tundra } from './example-cards';
+import { Card, SerializedCardSchema, hash, SerializedCardSummary } from 'kindred-paths';
 import { CardConjurer } from './card-conjurer';
-import { hash } from './hash';
 
-const CardSchema = z.object({
-  id: z.number().int().min(1),
-  name: z.string().min(1),
-  rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']),
-  supertype: z.enum(['basic', 'legendary']).optional(),
-  types: z.array(z.enum(['creature', 'enchantment', 'artifact', 'instant', 'sorcery', 'land'])).nonempty(),
-  subtypes: z.array(z.string().min(1)).optional(),
-  manaCost: z.record(z.enum(['white', 'blue', 'black', 'red', 'green', 'colorless']), z.number().int().nonnegative()).default({}),
-  rules: z.array(z.object({
-    variant: z.enum(['reminder', 'keyword', 'ability', 'inline-reminder', 'flavor']),
-    content: z.string().min(1),
-  })).optional(),
-  pt: z.object({
-    power: z.number().int().nonnegative(),
-    toughness: z.number().int().nonnegative(),
-  }).optional(),
-  art: z.string().min(1).optional(),
-});
+const set = {
+  author: 'Simon Karman',
+  shortName: 'KPA',
+  symbol: 'ELD',
+};
 
 let cardConjurerUrl = process.env.CARD_CONJURER_URL || "http://localhost:4102";
 const cardConjurer = new CardConjurer(cardConjurerUrl);
@@ -32,15 +16,17 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-app.get('/card/examples', (_, res) => {
-  const cards = [emry, abzanDevotee, herdHeirloom, craterhoofBehemoth, tundra, blindObedience];
-  res.send(cards.map(card => card.toReadableString()).join('\n\n'));
-});
-
-async function getCards(): Promise<string[]> {
+async function getCardSummaries(): Promise<SerializedCardSummary[]> {
   try {
     const files = await fs.readdir('./set');
-    return files.filter(file => file.endsWith('.json')).map(file => file.replace('.json', ''));
+    return await Promise.all(files
+      .filter(file => file.endsWith('.json'))
+      .map(file => file.replace('.json', ''))
+      .map(async (id) => {
+        const card = await getCardById(id);
+        return card!.toSummary(id);
+      })
+    );
   } catch (error) {
     console.error('Error reading set directory:', error);
     return [];
@@ -51,7 +37,7 @@ async function getCardById(id: string): Promise<Card | undefined> {
   try {
     const data = await fs.readFile(`./set/${id}.json`, 'utf-8');
     const parsed = JSON.parse(data);
-    const result = CardSchema.safeParse(parsed);
+    const result = SerializedCardSchema.safeParse(parsed);
     if (result.success) {
       return new Card(result.data);
     } else {
@@ -86,17 +72,13 @@ async function getRender(card: Card): Promise<Buffer> {
   if (existingRender) {
     return existingRender;
   }
-  const render = await cardConjurer.renderCard(card, {
-    author: 'Simon Karman',
-    shortName: 'KPA',
-    symbol: 'ELD',
-  });
+  const render = await cardConjurer.renderCard(card, set);
   await saveRender(key, render);
   return render;
 }
 
 app.get('/card', async (req, res) => {
-  const cards = await getCards();
+  const cards = await getCardSummaries();
   if (cards.length === 0) {
     res.status(404).json({ error: 'No cards found' });
   } else {
@@ -134,11 +116,11 @@ app.get("/card/:id/explain", async (req, res) => {
     return;
   }
   res.setHeader('Content-Type', 'text/plain');
-  res.send(card.toReadableString());
+  res.send(card.explain());
 });
 
 app.post('/preview', async (req, res) => {
-  const body = CardSchema.safeParse(req.body);
+  const body = SerializedCardSchema.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
     return;

@@ -4,8 +4,9 @@
   "description": "A tool for managing the cards in Kindred Paths, the custom Magic the Gathering set by Simon Karman.",
   "main": "index.js",
   "scripts": {
-    "postinstall": "npm --prefix client install && npm --prefix server install",
+    "postinstall": "npm --prefix shared install && npm --prefix client install && npm --prefix server install",
     "dev": "npm-run-all --parallel dev:*",
+    "dev:shared": "npm run --prefix shared dev",
     "dev:server": "npm run --prefix server dev",
     "dev:client": "npm run --prefix client dev"
   },

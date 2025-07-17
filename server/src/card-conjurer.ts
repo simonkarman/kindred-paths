@@ -1,6 +1,6 @@
 import { chromium, Browser, Page } from 'playwright';
 import { setTimeout as sleep } from 'timers/promises';
-import { Card } from './card';
+import { Card } from 'kindred-paths';
 
 export class CardConjurer {
   private browser: Browser | null;
@@ -119,7 +119,7 @@ export class CardConjurer {
       // Handle collector section
       await page.click('#creator-menu-tabs h3:has-text("Collector")');
       await page.waitForLoadState('networkidle');
-      await page.fill('#creator-menu-bottomInfo #info-number', ("0000" + card.id.toString()).slice(-4));
+      await page.fill('#creator-menu-bottomInfo #info-number', ("0000" + card.collectorNumber.toString()).slice(-4));
       await page.fill('#creator-menu-bottomInfo #info-rarity', card.rarity[0].toUpperCase());
       await page.fill('#creator-menu-bottomInfo #info-set', set.shortName);
       await page.fill('#creator-menu-bottomInfo #info-language', 'EN');

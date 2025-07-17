@@ -1,10 +1,11 @@
-import { z } from 'zod';
+import { SerializedCard } from './serialized-card';
+import { SerializedCardSummary } from './serialized-card-summary';
 
 type Rarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 type SuperType = undefined | 'basic' | 'legendary';
 type Type = 'creature' | 'enchantment' | 'artifact' | 'instant' | 'sorcery' | 'land';
 
-type Color = 'white' | 'blue' | 'black' | 'red' | 'green';
+export type Color = 'white' | 'blue' | 'black' | 'red' | 'green';
 type Mana = Color | 'colorless';
 const colors = ['white', 'blue', 'black', 'red', 'green'] as const;
 const wubrg = ['w', 'u', 'b', 'r', 'g'] as const;
@@ -14,33 +15,19 @@ type Rule = { variant: TextVariant, content: string };
 
 const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
-type CreateCardProps = {
-  id: number,
-  name: string,
-  rarity: Rarity,
-  supertype?: SuperType,
-  types: Type[],
-  subtypes?: string[],
-  manaCost: { [type in Mana]?: number },
-  rules?: Rule[],
-  pt?: { power: number, toughness: number },
-  art?: string,
-};
-
 export class Card {
-  public readonly id: number;
   public readonly name: string;
   public readonly rarity: Rarity;
   public readonly supertype: SuperType;
-  public readonly types: Type[];
+  public readonly types: [Type, ...Type[]];
   public readonly subtypes: string[];
   public readonly manaCost: { [type in Mana]?: number };
   public readonly rules: Rule[];
   public readonly pt?: { power: number, toughness: number };
+  public readonly collectorNumber: number;
   public readonly art?: string;
 
-  constructor(props: CreateCardProps) {
-    this.id = props.id;
+  constructor(props: SerializedCard) {
     this.name = props.name;
     this.rarity = props.rarity;
     this.supertype = props.supertype;
@@ -49,6 +36,7 @@ export class Card {
     this.manaCost = props.manaCost;
     this.rules = props.rules ?? [];
     this.pt = props.pt;
+    this.collectorNumber = props.collectorNumber;
     this.art = props.art;
 
     // Check basic superType consistency
@@ -211,9 +199,8 @@ export class Card {
     return [...result];
   }
 
-  public toJson(): CreateCardProps {
+  public toJson(): SerializedCard {
     return structuredClone({
-      id: this.id,
       name: this.name,
       rarity: this.rarity,
       supertype: this.supertype,
@@ -222,12 +209,32 @@ export class Card {
       manaCost: this.manaCost,
       rules: this.rules,
       pt: this.pt,
+      collectorNumber: this.collectorNumber,
       art: this.art
     });
   }
 
-  public toReadableString(): string {
-    let readable = `"${this.name}" (${this.rarity.charAt(0).toUpperCase()} ${this.id}) is a `;
+  public toSummary(id: string): SerializedCardSummary {
+    return structuredClone({
+      id,
+      card: {
+        name: this.name,
+        rarity: this.rarity,
+        supertype: this.supertype,
+        types: this.types,
+        subtypes: this.subtypes,
+        manaCost: this.manaCost,
+        collectorNumber: this.collectorNumber,
+        pt: this.pt,
+      },
+      color: this.color(),
+      colorIdentity: this.colorIdentity(),
+      manaValue: this.manaValue(),
+    });
+  }
+
+  public explain(): string {
+    let readable = `"${this.name}" (${this.rarity.charAt(0).toUpperCase()} ${this.collectorNumber}) is a `;
     if (this.supertype) {
       readable += `${this.supertype} `;
     }

@@ -27,7 +27,22 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <header className="p-2">
+          <h1 className="font-bold text-lg">Kindred Paths</h1>
+          <p className="text-gray-800 text-sm italic">
+            A tool for managing the cards in Kindred Paths, the custom Magic the Gathering set
+            by <a
+              className="text-blue-800 underline"
+              href="https://simonkarman.nl"
+              target="_blank"
+            >
+              Simon Karman
+            </a>.
+          </p>
+        </header>
+        <main className="p-2">
+          {children}
+        </main>
       </body>
     </html>
   );

@@ -1,5 +1,4 @@
 {
-  "id": 43,
   "name": "Emry, Lurker of the Loch",
   "manaCost": {
     "colorless": 2,
@@ -36,5 +35,6 @@
     "power": 1,
     "toughness": 2
   },
+  "collectorNumber": 43,
   "art": "example.jpg"
 }
