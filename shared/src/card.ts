@@ -1,13 +1,18 @@
 import { SerializedCard } from './serialized-card';
 import { SerializedCardSummary } from './serialized-card-summary';
 
-type Rarity = 'common' | 'uncommon' | 'rare' | 'mythic';
-type SuperType = undefined | 'basic' | 'legendary';
-type Type = 'creature' | 'enchantment' | 'artifact' | 'instant' | 'sorcery' | 'land';
+export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
+export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
 
-export type Color = 'white' | 'blue' | 'black' | 'red' | 'green';
-type Mana = Color | 'colorless';
-const colors = ['white', 'blue', 'black', 'red', 'green'] as const;
+export type CardSuperType = undefined | 'basic' | 'legendary';
+export const cardSuperTypes = [undefined, 'basic', 'legendary'] as const;
+
+export type CardType = 'creature' | 'enchantment' | 'artifact' | 'instant' | 'sorcery' | 'land';
+export const cardTypes = ['creature', 'enchantment', 'artifact', 'instant', 'sorcery', 'land'] as const;
+
+export type CardColor = 'white' | 'blue' | 'black' | 'red' | 'green';
+export type Mana = CardColor | 'colorless';
+export const cardColors = ['white', 'blue', 'black', 'red', 'green'] as const;
 const wubrg = ['w', 'u', 'b', 'r', 'g'] as const;
 
 type TextVariant = 'reminder' | 'keyword' | 'ability' | 'inline-reminder' | 'flavor';
@@ -17,9 +22,9 @@ const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
 export class Card {
   public readonly name: string;
-  public readonly rarity: Rarity;
-  public readonly supertype: SuperType;
-  public readonly types: [Type, ...Type[]];
+  public readonly rarity: CardRarity;
+  public readonly supertype: CardSuperType;
+  public readonly types: [CardType, ...CardType[]];
   public readonly subtypes: string[];
   public readonly manaCost: { [type in Mana]?: number };
   public readonly rules: Rule[];
@@ -104,10 +109,10 @@ export class Card {
     if (this.manaCost['colorless'] !== undefined && this.manaCost['colorless'] > 0) {
       result += '{' + this.manaCost['colorless'] + '}';
     }
-    for (const color of colors) {
+    for (const color of cardColors) {
       const amount = this.manaCost[color];
       if (amount !== undefined && amount > 0) {
-        result += `{${wubrg[colors.indexOf(color)]}}`.repeat(amount);
+        result += `{${wubrg[cardColors.indexOf(color)]}}`.repeat(amount);
       }
     }
     return result;
@@ -171,11 +176,11 @@ export class Card {
     return text;
   }
 
-  public color(): Color[] {
+  public color(): CardColor[] {
     return this.colorOf(this.renderManaCost());
   }
 
-  public colorIdentity(): Color[] {
+  public colorIdentity(): CardColor[] {
     const context = this.renderManaCost() + ' ' + this.rules
       .filter(v => ['keyword', 'ability'].includes(v.variant))
       .map(rule => rule.content)
@@ -187,12 +192,12 @@ export class Card {
   private colorOf = (context: string) => {
     const colorRegex = /{(\w+)}/g;
     const matches = context.matchAll(colorRegex);
-    const result = new Set<Color>();
+    const result = new Set<CardColor>();
     for (const match of matches) {
       const inner = match[1];
       for (let i = 0; i < wubrg.length; i++) {
         if (inner.includes(wubrg[i])) {
-          result.add(colors[i]);
+          result.add(cardColors[i]);
         }
       }
     }
