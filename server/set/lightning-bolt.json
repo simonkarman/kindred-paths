@@ -1,0 +1,17 @@
+{
+  "name": "Lightning Bolt",
+  "manaCost": {
+    "red": 1
+  },
+  "rarity": "rare",
+  "types": [
+    "instant"
+  ],
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "~ deals 3 damage to any target."
+    }
+  ],
+  "collectorNumber": 141
+}

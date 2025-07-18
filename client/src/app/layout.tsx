@@ -40,7 +40,7 @@ export default function RootLayout({
             </a>.
           </p>
         </header>
-        <main className="p-2">
+        <main className="p-2 space-y-2">
           {children}
         </main>
       </body>

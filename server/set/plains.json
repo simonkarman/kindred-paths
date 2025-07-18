@@ -1,0 +1,19 @@
+{
+  "name": "Plains",
+  "rarity": "common",
+  "supertype": "basic",
+  "types": [
+    "land"
+  ],
+  "subtypes": [
+    "plains"
+  ],
+  "manaCost": {},
+  "rules": [
+    {
+      "variant": "reminder",
+      "content": "{t}: Add {w}."
+    }
+  ],
+  "collectorNumber": 1
+}

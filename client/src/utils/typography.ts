@@ -1,7 +1,24 @@
-import { CardColor, cardColors } from 'kindred-paths';
+import { CardColor, CardRarity } from 'kindred-paths';
 
 type Prefix<K> = K extends string ? `mono ${K}` : K;
 type TypographyColor = 'colorless' | Prefix<CardColor> | 'multicolor';
+
+export const singleCharacterToTypographyColor = (char: string) => {
+  switch (char.toLowerCase()) {
+    case 'w':
+      return 'mono white';
+    case 'u':
+      return 'mono blue';
+    case 'b':
+      return 'mono black';
+    case 'r':
+      return 'mono red';
+    case 'g':
+      return 'mono green';
+    default:
+      return 'colorless';
+  }
+}
 
 export const typographyColors: Map<TypographyColor, { main: string }> = new Map([
   ['colorless', {
@@ -36,3 +53,10 @@ export const colorToTypographyColor = (colors: CardColor[]): TypographyColor => 
     return 'multicolor';
   }
 }
+
+export const typographyRarityColors: Map<CardRarity, string[]> = new Map([
+  ['common', ['#000000', '#4f4f4f', '#000000']],
+  ['uncommon', ['#4b6c79', '#bae2ef', '#4b6c79']],
+  ['rare', ['#887441', '#e9d292', '#887441']],
+  ['mythic', ['#b43326', '#f59326', '#b43326']],
+]);

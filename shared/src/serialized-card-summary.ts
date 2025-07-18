@@ -7,6 +7,7 @@ export const SerializedCardSummarySchema = z.object({
   color: z.array(z.enum(['white', 'blue', 'black', 'red', 'green'])),
   colorIdentity: z.array(z.enum(['white', 'blue', 'black', 'red', 'green'])),
   manaValue: z.number().int().nonnegative(),
+  hasArt: z.boolean(),
 });
 
 export type SerializedCardSummary = z.infer<typeof SerializedCardSummarySchema>;

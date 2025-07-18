@@ -1,0 +1,17 @@
+{
+  "name": "Arcane Signet",
+  "rarity": "common",
+  "types": [
+    "artifact"
+  ],
+  "manaCost": {
+    "colorless": 2
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "{t}: Add one many of any color in your commander's color identity."
+    }
+  ],
+  "collectorNumber": 299
+}

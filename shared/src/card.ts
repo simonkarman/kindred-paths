@@ -235,6 +235,7 @@ export class Card {
       color: this.color(),
       colorIdentity: this.colorIdentity(),
       manaValue: this.manaValue(),
+      hasArt: this.art !== undefined,
     });
   }
 
