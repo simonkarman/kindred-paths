@@ -50,7 +50,7 @@ export const families: () => ReadonlyArray<Family> = () => [
     name: 'Orzim',
     color: { primary: 'black', secondary: 'white' },
     focus: 'legacy',
-    race: { primary: 'worm', secondary: 'demon' },
+    race: { primary: 'bat', secondary: 'demon' },
     class: { primary: 'knight', secondary: 'warlock' },
   },
   {
@@ -90,12 +90,13 @@ export const families: () => ReadonlyArray<Family> = () => [
   },
 ];
 
-export const primaryRacesPerColor = families().reduce((acc, family) => {
+export const primaryRacesPerPrimaryColor = families().reduce((acc, family) => {
   acc[family.color.primary] = (acc[family.color.primary] || []).concat(family.race.primary);
   return acc;
 }, {} as Record<CardColor, string[]>);
 
-export const allRacesPerColor = families().reduce((acc, family) => {
-  acc[family.color.primary] = Array.from(new Set((acc[family.color.primary] || []).concat([family.race.primary, family.race.secondary])));
+export const primaryRacesPerAllColors = families().reduce((acc, family) => {
+  acc[family.color.primary] = Array.from(new Set((acc[family.color.primary] || []).concat(family.race.primary)));
+  acc[family.color.secondary] = Array.from(new Set((acc[family.color.secondary] || []).concat(family.race.primary)));
   return acc;
 }, {} as Record<CardColor, string[]>);

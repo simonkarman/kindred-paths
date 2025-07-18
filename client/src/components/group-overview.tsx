@@ -1,15 +1,12 @@
 "use client";
 
-import { Card, cardRarities, cardSuperTypes, cardTypes, SerializedCardSummary, kindredPathsGroups } from 'kindred-paths';
-import { colorToTypographyColor, typographyColors } from '@/utils/typography';
+import { Card, kindredPathsGroups, SerializedCard } from 'kindred-paths';
 import { useState } from 'react';
-import { RarityText } from '@/components/rarity-text';
-import { ManaCost } from '@/components/mana-cost';
 
-export const GroupOverview = (props: { cardSummaries: SerializedCardSummary[] }) => {
+export const GroupOverview = (props: { cards: SerializedCard[] }) => {
   const [activeGroup, setActiveGroup] = useState<string | undefined>(undefined);
   const groupMatches = kindredPathsGroups.map(group => {
-    return { group, matches: group.matchTo(props.cardSummaries) };
+    return { group, matches: group.matchTo(props.cards.map(serializedCard => new Card(serializedCard))) };
   });
 
   return <>

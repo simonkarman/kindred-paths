@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const SerializedCardSchema = z.object({
+  id: z.string().min(1),
   name: z.string().min(1),
   rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']),
   supertype: z.enum(['basic', 'legendary']).optional(),

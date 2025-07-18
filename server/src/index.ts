@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import express from 'express';
 import cors from 'cors';
-import { Card, SerializedCardSchema, hash, SerializedCardSummary } from 'kindred-paths';
+import { Card, SerializedCardSchema, hash, SerializedCard } from 'kindred-paths';
 import { CardConjurer } from './card-conjurer';
 
 const set = {
@@ -16,7 +16,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-async function getCardSummaries(): Promise<SerializedCardSummary[]> {
+async function getAllCards(): Promise<SerializedCard[]> {
   try {
     const files = await fs.readdir('./set');
     return await Promise.all(files
@@ -24,7 +24,7 @@ async function getCardSummaries(): Promise<SerializedCardSummary[]> {
       .map(file => file.replace('.json', ''))
       .map(async (id) => {
         const card = await getCardById(id);
-        return card!.toSummary(id);
+        return card!.toJson();
       })
     );
   } catch (error) {
@@ -37,6 +37,7 @@ async function getCardById(id: string): Promise<Card | undefined> {
   try {
     const data = await fs.readFile(`./set/${id}.json`, 'utf-8');
     const parsed = JSON.parse(data);
+    parsed.id = id;
     const result = SerializedCardSchema.safeParse(parsed);
     if (result.success) {
       return new Card(result.data);
@@ -78,7 +79,7 @@ async function getRender(card: Card): Promise<Buffer> {
 }
 
 app.get('/card', async (req, res) => {
-  const cards = await getCardSummaries();
+  const cards = await getAllCards();
   if (cards.length === 0) {
     res.status(404).json({ error: 'No cards found' });
   } else {

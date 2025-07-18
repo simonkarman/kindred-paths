@@ -1,5 +1,4 @@
 import { SerializedCard } from './serialized-card';
-import { SerializedCardSummary } from './serialized-card-summary';
 
 export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
@@ -13,7 +12,7 @@ export const cardTypes = ['creature', 'enchantment', 'artifact', 'instant', 'sor
 export type CardColor = 'white' | 'blue' | 'black' | 'red' | 'green';
 export type Mana = CardColor | 'colorless';
 export const cardColors = ['white', 'blue', 'black', 'red', 'green'] as const;
-const wubrg = ['w', 'u', 'b', 'r', 'g'] as const;
+export const wubrg = ['w', 'u', 'b', 'r', 'g'] as const;
 
 type TextVariant = 'reminder' | 'keyword' | 'ability' | 'inline-reminder' | 'flavor';
 type Rule = { variant: TextVariant, content: string };
@@ -21,6 +20,7 @@ type Rule = { variant: TextVariant, content: string };
 const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
 export class Card {
+  public readonly id: string;
   public readonly name: string;
   public readonly rarity: CardRarity;
   public readonly supertype: CardSuperType;
@@ -33,6 +33,7 @@ export class Card {
   public readonly art?: string;
 
   constructor(props: SerializedCard) {
+    this.id = props.id;
     this.name = props.name;
     this.rarity = props.rarity;
     this.supertype = props.supertype;
@@ -206,6 +207,7 @@ export class Card {
 
   public toJson(): SerializedCard {
     return structuredClone({
+      id: this.id,
       name: this.name,
       rarity: this.rarity,
       supertype: this.supertype,
@@ -216,26 +218,6 @@ export class Card {
       pt: this.pt,
       collectorNumber: this.collectorNumber,
       art: this.art
-    });
-  }
-
-  public toSummary(id: string): SerializedCardSummary {
-    return structuredClone({
-      id,
-      card: {
-        name: this.name,
-        rarity: this.rarity,
-        supertype: this.supertype,
-        types: this.types,
-        subtypes: this.subtypes,
-        manaCost: this.manaCost,
-        collectorNumber: this.collectorNumber,
-        pt: this.pt,
-      },
-      color: this.color(),
-      colorIdentity: this.colorIdentity(),
-      manaValue: this.manaValue(),
-      hasArt: this.art !== undefined,
     });
   }
 
