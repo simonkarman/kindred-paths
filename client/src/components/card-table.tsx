@@ -102,55 +102,6 @@ export const CardTable = (props: { cardSummaries: SerializedCardSummary[] }) => 
     });
 
   return <>
-    <div className="flex gap-2 items-center justify-end w-234 text-sm mb-2">
-      {filters.map(filter => {
-        return <button
-          key={filter.name}
-          className="flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-50 border-gray-300 border text-sm"
-        >
-          <input type="checkbox" checked onChange={() => setFilters(filters.filter(f => f !== filter))} />
-          {filter.name}
-        </button>;
-      })}
-      <button
-        className="bg-zinc-50 rounded border px-2 py-0.5 hover:bg-green-100 border-gray-300 font-bold"
-        onClick={() => setShowPossibleFilters(!showPossibleFilters)}
-      >
-        Filters
-      </button>
-    </div>
-    {showPossibleFilters && <div className="bg-zinc-50 p-2 rounded border border-zinc-300 mb-2 w-234">
-      <h3 className="font-bold text-sm mb-1">Filters</h3>
-      <div className="flex flex-wrap justify-start gap-2">
-        {filterCategories.map(category => (<ul
-            key={category.category}
-            className="flex flex-col gap-1 border rounded border-gray-200 bg-zinc-100 py-1 px-3"
-          >
-            <li className="font-bold text-sm underline">{category.category}</li>
-            {category.filters.map(filter => (
-            <li key={filter.name} className="flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={filters.includes(filter)}
-                onChange={() => {
-                  if (filters.includes(filter)) {
-                    setFilters(filters.filter(f => f !== filter));
-                  } else {
-                    setFilters([...filters, filter]);
-                  }
-                }}
-              />
-              {filter.name}
-            </li>))}
-          </ul>))}
-      </div>
-      <button
-        className="mt-2 bg-red-100 hover:bg-red-200 px-2 py-1 rounded text-sm font-bold"
-        onClick={() => setShowPossibleFilters(false)}
-      >
-        Close
-      </button>
-    </div>}
     <ul className='flex flex-col items-start'>
       <li className="flex items-center px-2 border-b border-gray-300 text-xs text-gray-600">
         <span onClick={() => sortOn('collector-number')} data-is-active={sortKey.k === "collector-number"} className="data-[is-active=true]:font-bold inline-block w-8">#</span>
@@ -183,5 +134,54 @@ export const CardTable = (props: { cardSummaries: SerializedCardSummary[] }) => 
         </li>
       })}
     </ul>
+    <div className="flex gap-2 items-center justify-end w-234 text-sm mb-2">
+      {filters.map(filter => {
+        return <button
+          key={filter.name}
+          className="flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-50 border-gray-300 border text-sm"
+        >
+          <input type="checkbox" checked onChange={() => setFilters(filters.filter(f => f !== filter))} />
+          {filter.name}
+        </button>;
+      })}
+      <button
+        className="bg-zinc-50 rounded border px-2 py-0.5 hover:bg-green-100 border-gray-300 font-bold"
+        onClick={() => setShowPossibleFilters(!showPossibleFilters)}
+      >
+        Filters
+      </button>
+    </div>
+    {showPossibleFilters && <div className="bg-zinc-50 p-2 rounded border border-zinc-300 mb-2 w-234">
+      <h3 className="font-bold text-sm mb-1">Filters</h3>
+      <div className="flex flex-wrap justify-start gap-2">
+        {filterCategories.map(category => (<ul
+          key={category.category}
+          className="flex flex-col gap-1 border rounded border-gray-200 bg-zinc-100 py-1 px-3"
+        >
+          <li className="font-bold text-sm underline">{category.category}</li>
+          {category.filters.map(filter => (
+            <li key={filter.name} className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                checked={filters.includes(filter)}
+                onChange={() => {
+                  if (filters.includes(filter)) {
+                    setFilters(filters.filter(f => f !== filter));
+                  } else {
+                    setFilters([...filters, filter]);
+                  }
+                }}
+              />
+              {filter.name}
+            </li>))}
+        </ul>))}
+      </div>
+      <button
+        className="mt-2 bg-red-100 hover:bg-red-200 px-2 py-1 rounded text-sm font-bold"
+        onClick={() => setShowPossibleFilters(false)}
+      >
+        Close
+      </button>
+    </div>}
   </>;
 }
