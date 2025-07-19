@@ -21,6 +21,6 @@
       "content": "{1}{w}, {t}, Sacrifice ~: Look at the top six cards of your library. You may reveal a Fox, Cat, Bat, or Goat card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
     }
   ],
-  "collectorNumber": 1,
+  "collectorNumber": 6,
   "tags": { "status": "sketch" }
 }

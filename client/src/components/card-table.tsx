@@ -11,6 +11,13 @@ type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' |
 
 const filterCategories: { category: string, filters: Filter[] }[] = [
   {
+    category: 'Rarity',
+    filters: cardRarities.map(cardRarity => ({
+      name: `${cardRarity}s`,
+      predicate: (card: Card) => card.rarity === cardRarity,
+    })),
+  },
+  {
     category: 'Color',
     filters: Array.from(typographyColors.entries()).map(([tc]) => ({
       name: `${tc} cards`,
@@ -18,22 +25,38 @@ const filterCategories: { category: string, filters: Filter[] }[] = [
     })),
   },
   {
-    category: 'Type',
-    filters: cardTypes.map(cardType => ({
-      name: cardType.endsWith('y') ? `${cardType.slice(0, -1)}ies` : `${cardType}s`,
-      predicate: (card: Card) => card.types.includes(cardType),
-    }))
-  },
-  {category: 'Rarity', filters: cardRarities.map(cardRarity => ({
-      name: `${cardRarity}s`,
-      predicate: (card: Card) => card.rarity === cardRarity,
-    }))},
-  {
     category: 'Super Type',
     filters: cardSuperTypes.filter(s => s !== undefined).map(cardSuperType => ({
       name: cardSuperType,
       predicate: (card: Card) => card.supertype === cardSuperType,
-    }))
+    })),
+  },
+  {
+    category: 'Type',
+    filters: cardTypes.map(cardType => ({
+      name: cardType.endsWith('y') ? `${cardType.slice(0, -1)}ies` : `${cardType}s`,
+      predicate: (card: Card) => card.types.includes(cardType),
+    })),
+  },
+  {
+    category: 'Art',
+    filters: [false, true].map(hasArt => ({
+      name: hasArt ? 'Has Art' : 'No Art',
+      predicate: (card: Card) => (card.art === undefined) === !hasArt,
+    })),
+  },
+  {
+    category: 'Tags',
+    filters: ['status=sketch', 'status=done', 'status'].map(tag => ({
+      name: tag.includes('=') ? `${tag}` : `has ${tag} tag`,
+      predicate: (card: Card) => {
+        const [tagName, tagValue] = tag.split('=');
+        if (tagValue === undefined) {
+          return card.tags?.[tagName] !== undefined;
+        }
+        return card.tags?.[tagName] === tagValue || (tagValue === 'true' && card.tags?.[tagName] === true);
+      },
+    })),
   },
 ];
 
