@@ -14,5 +14,6 @@
       "content": "Search your library for a card, put that card into your hand, then shuffle your library."
     }
   ],
-  "collectorNumber": 93
+  "collectorNumber": 93,
+  "tags": { "reference": true }
 }

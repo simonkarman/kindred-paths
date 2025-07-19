@@ -52,9 +52,9 @@ export const kindredPathsGroups = [
   new Group<Card>('Lands', [
     ...requirementCreator({ count: 5, rarity: 'common', types: ['land'], distributedSubtypes: ['plains', 'island', 'swamp', 'mountain', 'forest'] }),
     ...cardColors.flatMap(color => [
-      ...requirementCreator({ rarity: 'common', types: ['land'], abilities: primaryRacesPerAllColors[color] }),
-      ...requirementCreator({ rarity: 'uncommon', types: ['land'], abilities: primaryRacesPerAllColors[color] }),
-      ...requirementCreator({ rarity: 'rare', types: ['land'], abilities: primaryRacesPerPrimaryColor[color] }),
+      ...requirementCreator({ rarity: 'common', types: ['land'], abilities: primaryRacesPerAllColors[color].concat(`{${color[0]}}`) }),
+      ...requirementCreator({ rarity: 'uncommon', types: ['land'], abilities: primaryRacesPerAllColors[color].concat(`{${color[0]}}`) }),
+      ...requirementCreator({ rarity: 'rare', types: ['land'], abilities: primaryRacesPerPrimaryColor[color].concat(`{${color[0]}}`) }),
     ]),
     // TODO ...wubrg.flatMap((color, index) => []),
   ]),

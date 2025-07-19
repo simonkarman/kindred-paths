@@ -29,5 +29,6 @@
     "power": 5,
     "toughness": 5
   },
-  "collectorNumber": 138
+  "collectorNumber": 138,
+  "tags": { "reference": true }
 }

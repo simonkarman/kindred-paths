@@ -19,5 +19,6 @@
       "content": "{t}: Until end of turn, target creature you control with power 4 or greater gains trample and \"Whenever this creature deals combat damage to a player, draw a card.\""
     }
   ],
-  "collectorNumber": 144
+  "collectorNumber": 144,
+  "tags": { "reference": true }
 }

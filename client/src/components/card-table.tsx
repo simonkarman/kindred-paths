@@ -7,7 +7,7 @@ import { RarityText } from '@/components/rarity-text';
 import { ManaCost } from '@/components/mana-cost';
 
 type Filter = { name: string, predicate: (card: Card) => boolean };
-type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' | 'power' | 'toughness' | 'art';
+type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' | 'power' | 'toughness' | 'art' | 'tags';
 
 const filterCategories: { category: string, filters: Filter[] }[] = [
   {
@@ -36,6 +36,15 @@ const filterCategories: { category: string, filters: Filter[] }[] = [
     }))
   },
 ];
+
+const tagsAsString = (tags: Card["tags"]) => {
+  return tags
+    ? Object.entries(tags)
+      .toSorted(([a], [b]) => a.localeCompare(b))
+      .map(([tagName, tagValue]) => tagValue === true ? tagName : `${tagName}=${tagValue}`)
+      .join(', ')
+    : '';
+}
 
 export const CardTable = (props: { cards: SerializedCard[] }) => {
   const [filters, setFilters] = useState<Filter[]>([]);
@@ -98,12 +107,16 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
           return 1; // b has art, a does not
         }
         return 0; // both have or both do not have art
+      } else if (sortKey.k === 'tags') {
+        const tagsA = tagsAsString(a.tags);
+        const tagsB = tagsAsString(b.tags);
+        return tagsA.localeCompare(tagsB)
       }
       return 0;
     });
 
   return <>
-    <div className="absolute -mt-9 flex gap-2 items-center justify-end w-234 text-sm mb-2">
+    <div className="absolute -mt-9 flex gap-2 items-center justify-end w-274 text-sm mb-2">
       {filters.map(filter => {
         return <button
           key={filter.name}
@@ -120,7 +133,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
         Filters
       </button>
     </div>
-    {showPossibleFilters && <div className="bg-zinc-50 p-2 rounded border border-zinc-300 mb-2 w-234">
+    {showPossibleFilters && <div className="bg-zinc-50 p-2 rounded border border-zinc-300 mb-2 w-274">
       <h3 className="font-bold text-sm mb-1">Filters</h3>
       <div className="flex flex-wrap justify-start gap-2">
         {filterCategories.map(category => (<ul
@@ -165,6 +178,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
           <span onClick={() => sortOn('toughness')} data-is-active={sortKey.k === "toughness"} className="data-[is-active=true]:font-bold">T</span>
         </span>
         <span onClick={() => sortOn('art')} data-is-active={sortKey.k === "art"} className="data-[is-active=true]:font-bold inline-block w-12 text-center">Art</span>
+        <span onClick={() => sortOn('tags')} data-is-active={sortKey.k === "tags"} className="data-[is-active=true]:font-bold inline-block w-40 pl-2">Tags</span>
       </li>
       {cards.map((card) => {
         return <li
@@ -180,6 +194,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
           <span className="inline-block w-80">{card.renderTypeLine()}</span>
           <span className="inline-block w-8 text-center">{card.pt ? `${card.pt.power}/${card.pt.toughness}` : ''}</span>
           <span className="inline-block w-12 text-center">{card.art ? 'yes' : 'no'}</span>
+          <span className="inline-block w-40 pl-2 text-sm text-gray-600 overflow-hidden">{tagsAsString(card.tags)}</span>
         </li>
       })}
     </ul>

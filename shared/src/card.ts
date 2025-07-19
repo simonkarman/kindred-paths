@@ -31,6 +31,7 @@ export class Card {
   public readonly pt?: { power: number, toughness: number };
   public readonly collectorNumber: number;
   public readonly art?: string;
+  public readonly tags?: { [key: string]: string | number | boolean | undefined };
 
   constructor(props: SerializedCard) {
     this.id = props.id;
@@ -44,6 +45,7 @@ export class Card {
     this.pt = props.pt;
     this.collectorNumber = props.collectorNumber;
     this.art = props.art;
+    this.tags = props.tags;
 
     // Check basic superType consistency
     if (this.supertype === 'basic' && !this.types.includes('land')) {
@@ -217,7 +219,8 @@ export class Card {
       rules: this.rules,
       pt: this.pt,
       collectorNumber: this.collectorNumber,
-      art: this.art
+      art: this.art,
+      tags: this.tags,
     });
   }
 

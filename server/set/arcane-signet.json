@@ -13,5 +13,6 @@
       "content": "{t}: Add one many of any color in your commander's color identity."
     }
   ],
-  "collectorNumber": 299
+  "collectorNumber": 299,
+  "tags": { "reference": true }
 }

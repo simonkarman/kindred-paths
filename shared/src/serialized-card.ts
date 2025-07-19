@@ -18,6 +18,7 @@ export const SerializedCardSchema = z.object({
   }).optional(),
   collectorNumber: z.number().int().min(1),
   art: z.string().min(1).optional(),
+  tags: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.undefined()])).optional(),
 });
 
 export type SerializedCard = z.infer<typeof SerializedCardSchema>;

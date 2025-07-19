@@ -15,5 +15,6 @@
       "content": "{t}: Add {w} or {u}."
     }
   ],
-  "collectorNumber": 322
+  "collectorNumber": 322,
+  "tags": { "reference": true }
 }

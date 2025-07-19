@@ -15,5 +15,6 @@
       "content": "{t}: Add {w}."
     }
   ],
-  "collectorNumber": 1
+  "collectorNumber": 1,
+  "tags": { "status": "done" }
 }
