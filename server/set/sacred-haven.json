@@ -22,5 +22,7 @@
     }
   ],
   "collectorNumber": 6,
-  "tags": { "status": "sketch" }
+  "tags": {
+    "status": "concept"
+  }
 }

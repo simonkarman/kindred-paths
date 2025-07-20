@@ -5,6 +5,9 @@ import { colorToTypographyColor, typographyColors } from '@/utils/typography';
 import { useState } from 'react';
 import { RarityText } from '@/components/rarity-text';
 import { ManaCost } from '@/components/mana-cost';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faImage, faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import Link from 'next/link';
 
 type Filter = { name: string, predicate: (card: Card) => boolean };
 type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' | 'power' | 'toughness' | 'art' | 'tags';
@@ -47,16 +50,30 @@ const filterCategories: { category: string, filters: Filter[] }[] = [
   },
   {
     category: 'Tags',
-    filters: ['status=sketch', 'status=done', 'status'].map(tag => ({
-      name: tag.includes('=') ? `${tag}` : `has ${tag} tag`,
-      predicate: (card: Card) => {
-        const [tagName, tagValue] = tag.split('=');
-        if (tagValue === undefined) {
-          return card.tags?.[tagName] !== undefined;
-        }
-        return card.tags?.[tagName] === tagValue || (tagValue === 'true' && card.tags?.[tagName] === true);
-      },
-    })),
+    filters: ['status=concept', 'status=playable', '!status', 'status'].map(_tag => {
+      const isNegation = _tag.startsWith('!');
+      const tag = isNegation ? _tag.slice(1) : _tag;
+      const [tagName, expectedTagValue] = tag.split('=');
+      const isEquation = expectedTagValue !== undefined;
+
+      const name = isEquation
+       ? (isNegation ? `not ${tagName}=${expectedTagValue}` : `${tagName}=${expectedTagValue}`)
+       : (isNegation ? `no ${tagName}` : `has ${tagName}`);
+
+      return {
+        name,
+        predicate: (card: Card) => {
+          const cardTagValue = card.tags?.[tagName];
+          let result;
+          if (isEquation) {
+            result = cardTagValue?.toString() === expectedTagValue;
+          } else {
+            result = cardTagValue !== undefined && cardTagValue !== false && cardTagValue !== '' && cardTagValue !== 0;
+          }
+          return isNegation ? !result : result;
+        },
+      };
+    }),
   },
 ];
 
@@ -81,7 +98,13 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
     }
   };
 
+  const [deletedCardIds, setDeletedCardIds] = useState<string[]>([]);
+  const del = (id: string) => {
+    setDeletedCardIds(p => Array.from(new Set([...p, id])));
+  };
+
   const cards = props.cards
+    .filter(c => !deletedCardIds.includes(c.id))
     .map(serializedCard => new Card(serializedCard))
     .filter(c => !filters.some(filter => !filter.predicate(c)))
     .sort((a, b) => {
@@ -139,7 +162,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
     });
 
   return <>
-    <div className="absolute -mt-9 flex gap-2 items-center justify-end w-274 text-sm mb-2">
+    <div className="absolute -mt-9 flex gap-2 items-center justify-end w-288 text-sm mb-2">
       {filters.map(filter => {
         return <button
           key={filter.name}
@@ -156,7 +179,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
         Filters
       </button>
     </div>
-    {showPossibleFilters && <div className="bg-zinc-50 p-2 rounded border border-zinc-300 mb-2 w-274">
+    {showPossibleFilters && <div className="bg-zinc-50 p-2 rounded border border-zinc-300 mb-2 w-288">
       <h3 className="font-bold text-sm mb-1">Filters</h3>
       <div className="flex flex-wrap justify-start gap-2">
         {filterCategories.map(category => (<ul
@@ -190,6 +213,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
     </div>}
     <ul className='flex flex-col items-start'>
       <li className="flex items-center px-2 border-b border-gray-300 text-xs text-gray-600">
+        <span className="inline-block w-14" />
         <span onClick={() => sortOn('collector-number')} data-is-active={sortKey.k === "collector-number"} className="data-[is-active=true]:font-bold inline-block w-8">#</span>
         <span onClick={() => sortOn('rarity')} data-is-active={sortKey.k === "rarity"} className="data-[is-active=true]:font-bold inline-block w-24 border-r border-transparent">Rarity</span>
         <span onClick={() => sortOn('mana-value')} data-is-active={sortKey.k === "mana-value"} className="data-[is-active=true]:font-bold inline-block text-right pr-2 w-30">Cost</span>
@@ -208,6 +232,16 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
           key={card.id}
           className="flex items-center px-2 py-0.5 border-t border-zinc-200 hover:bg-zinc-100"
         >
+          <span className="inline-block w-14 space-x-2">
+            <Link
+              className="text-gray-700 hover:text-orange-700 active:text-orange-500"
+              href={`/card/${card.id}`}
+            ><FontAwesomeIcon icon={faPenToSquare} /></Link>
+            <button
+              className="text-gray-700 hover:text-red-700 active:text-red-500"
+              onClick={() => del(card.id)}
+            ><FontAwesomeIcon icon={faTrashCan} /></button>
+          </span>
           <span className="inline-block w-8 text-sm text-gray-800">{card.collectorNumber}</span>
           <span className="w-24 border-r border-zinc-200"><RarityText rarity={card.rarity} /></span>
           <span className="inline-block w-30 pr-2 text-right"><ManaCost cost={card.renderManaCost()} /></span>
@@ -216,7 +250,10 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
           </span>
           <span className="inline-block w-80">{card.renderTypeLine()}</span>
           <span className="inline-block w-8 text-center">{card.pt ? `${card.pt.power}/${card.pt.toughness}` : ''}</span>
-          <span className="inline-block w-12 text-center">{card.art ? 'yes' : 'no'}</span>
+          <span className="inline-block w-12 text-center">{card.art
+            ? <FontAwesomeIcon className="ml-2 text-gray-400" icon={faImage} />
+            : '-'
+          }</span>
           <span className="inline-block w-40 pl-2 text-sm text-gray-600 overflow-hidden">{tagsAsString(card.tags)}</span>
         </li>
       })}

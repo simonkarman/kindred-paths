@@ -1,0 +1,33 @@
+{
+  "name": "Pregnant Fox",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "fox",
+    "cleric"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "white": 1
+  },
+  "pt": {
+    "power": 1,
+    "toughness": 2
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "Lifelink"
+    },
+    {
+      "variant": "ability",
+      "content": "When ~ enters the battlefield, create a 1/1 white Fox creature token with Lifelink."
+    }
+  ],
+  "collectorNumber": 11,
+  "tags": {
+    "status": "concept"
+  }
+}

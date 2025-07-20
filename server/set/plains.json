@@ -16,5 +16,7 @@
     }
   ],
   "collectorNumber": 1,
-  "tags": { "status": "done" }
+  "tags": {
+    "status": "playable"
+  }
 }

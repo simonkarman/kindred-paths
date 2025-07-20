@@ -243,8 +243,9 @@ export class Card {
     if (this.manaValue() > 0) {
       readable += ` for ${this.renderManaCost()} mana`;
     }
-    if (this.rules.length > 0) {
-      readable += `, with:\n${this.renderRules()}`;
+    const keywordsAndAbilities = this.rules.filter(r => r.variant === 'ability' || r.variant === 'keyword');
+    if (keywordsAndAbilities.length > 0) {
+      readable += `, with: ${keywordsAndAbilities.map(r => `"${r.content}"`).join(' and ')}`;
     } else {
       readable += '.';
     }

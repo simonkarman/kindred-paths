@@ -2,12 +2,11 @@
 A tool for managing the cards in Kindred Paths, the custom Magic the Gathering set by [Simon Karman](https://simonkarman.nl).
 
 ## Installation
-Make sure you have the [Card Conjurer](https://github.com/Investigamer/cardconjurer/) Docker image installed and running. You can do this by running, cloning that repository and running the following commands:
-
-```bash
-```
-
-
+Make sure you have the following tools installed on your system:
+- Git
+- Node.js (v18 or higher)
+- npm (v8 or higher)
+- Docker
 
 You can start the server and client in development mode.
 
