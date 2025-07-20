@@ -26,7 +26,7 @@ const requirementCreator = (expected: {
         if (expected.rarity && card.rarity !== expected.rarity) {
           return false;
         }
-        if (expected.colors && (card.color.length !== expected.colors.length || !expected.colors.every(ec => card.color().includes(ec)))) {
+        if (expected.colors && (card.color().length !== expected.colors.length || !expected.colors.every(ec => card.color().includes(ec)))) {
           return false;
         }
         if (expected.supertype && card.supertype !== expected.supertype) {
@@ -58,7 +58,7 @@ export const kindredPathsGroups = [
     ]),
     // TODO ...wubrg.flatMap((color, index) => []),
   ]),
-  new Group<Card>('Collector Numbers', n(255).map(i => ({
+  new Group<Card>('Collector Numbers', n(250).map(i => ({
     name: `collector number ${i}`,
     predicate: (c: Card) => c.collectorNumber === i,
   }))),

@@ -1,7 +1,10 @@
 {
   "name": "Sacred Haven",
   "rarity": "common",
-  "types": ["land"],
+  "types": [
+    "land"
+  ],
+  "subtypes": [],
   "manaCost": {},
   "rules": [
     {

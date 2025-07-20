@@ -6,16 +6,16 @@ export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
 export type CardSuperType = undefined | 'basic' | 'legendary';
 export const cardSuperTypes = [undefined, 'basic', 'legendary'] as const;
 
-export type CardType = 'creature' | 'enchantment' | 'artifact' | 'instant' | 'sorcery' | 'land';
-export const cardTypes = ['creature', 'enchantment', 'artifact', 'instant', 'sorcery', 'land'] as const;
+export type CardType = 'enchantment' | 'artifact' | 'instant' | 'sorcery' | 'creature' | 'land';
+export const cardTypes = ['enchantment', 'artifact', 'instant', 'sorcery', 'creature', 'land'] as const;
 
 export type CardColor = 'white' | 'blue' | 'black' | 'red' | 'green';
 export type Mana = CardColor | 'colorless';
 export const cardColors = ['white', 'blue', 'black', 'red', 'green'] as const;
 export const wubrg = ['w', 'u', 'b', 'r', 'g'] as const;
 
-type TextVariant = 'reminder' | 'keyword' | 'ability' | 'inline-reminder' | 'flavor';
-type Rule = { variant: TextVariant, content: string };
+export type RuleVariant = 'reminder' | 'keyword' | 'ability' | 'inline-reminder' | 'flavor';
+export type Rule = { variant: RuleVariant, content: string };
 
 const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -31,7 +31,7 @@ export class Card {
   public readonly pt?: { power: number, toughness: number };
   public readonly collectorNumber: number;
   public readonly art?: string;
-  public readonly tags?: { [key: string]: string | number | boolean | undefined };
+  public readonly tags: { [key: string]: string | number | boolean | undefined };
 
   constructor(props: SerializedCard) {
     this.id = props.id;
@@ -45,16 +45,37 @@ export class Card {
     this.pt = props.pt;
     this.collectorNumber = props.collectorNumber;
     this.art = props.art;
-    this.tags = props.tags;
+    this.tags = props.tags ?? {};
 
     // Check basic superType consistency
     if (this.supertype === 'basic' && !this.types.includes('land')) {
       throw new Error('super type basic must be associated with lands');
     }
+    if (this.supertype === 'basic' && this.rarity !== 'common') {
+      throw new Error('super type basic must have common rarity');
+    }
 
     // Check that card has at least one type
     if (this.types.length === 0) {
       throw new Error('card must have at least one type');
+    }
+    if (this.types.length > 1) {
+      // If there are multiple types, make sure that land always comes last
+      if (this.types.includes('land') && this.types[this.types.length - 1] !== 'land') {
+        throw new Error('if there are multiple types, land must always come last');
+      }
+
+      // If there is a creature type, it must be last, unless land is last, then it must be second to last
+      if (this.types.includes('creature')) {
+        if (this.types[this.types.length - 1] !== 'creature' && (this.types[this.types.length - 1] !== 'land' || this.types[this.types.length - 2] !== 'creature')) {
+          throw new Error('if there is a creature type, it must be last, unless land is last, then it must be second to last');
+        }
+      }
+
+      // instance and sorcery cannot be combined with other types
+      if (this.types.includes('instant') || this.types.includes('sorcery')) {
+          throw new Error('instant and sorcery cannot be combined with other types');
+      }
     }
 
     // Validate rules
@@ -98,6 +119,11 @@ export class Card {
       if (this.pt.power < 0 || this.pt.toughness < 0) {
         throw new Error('power and toughness must be non-negative');
       }
+    }
+
+    // Check that if a card is a creature, it has power and toughness
+    if (this.types.includes('creature') && !this.pt) {
+      throw new Error('creature cards must have power and toughness');
     }
   }
 
@@ -225,7 +251,7 @@ export class Card {
   }
 
   public explain(): string {
-    let readable = `"${this.name}" (${this.rarity.charAt(0).toUpperCase()} ${this.collectorNumber}) is a `;
+    let readable = `"${this.name}" (#${this.collectorNumber}) is a ${this.rarity} `;
     if (this.supertype) {
       readable += `${this.supertype} `;
     }

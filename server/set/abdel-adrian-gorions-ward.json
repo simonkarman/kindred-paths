@@ -1,9 +1,5 @@
 {
   "name": "Abdel Adrian, Gorion's Ward",
-  "manaCost": {
-    "colorless": 4,
-    "white": 1
-  },
   "rarity": "uncommon",
   "supertype": "legendary",
   "types": [
@@ -13,6 +9,10 @@
     "human",
     "warrior"
   ],
+  "manaCost": {
+    "colorless": 4,
+    "white": 1
+  },
   "rules": [
     {
       "variant": "ability",
@@ -32,5 +32,7 @@
     "toughness": 4
   },
   "collectorNumber": 322,
-  "tags": { "reference": true }
+  "tags": {
+    "reference": true
+  }
 }

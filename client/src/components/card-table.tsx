@@ -8,6 +8,7 @@ import { ManaCost } from '@/components/mana-cost';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
+import { deleteCard } from '@/utils/server';
 
 type Filter = { name: string, predicate: (card: Card) => boolean };
 type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' | 'power' | 'toughness' | 'art' | 'tags';
@@ -50,7 +51,7 @@ const filterCategories: { category: string, filters: Filter[] }[] = [
   },
   {
     category: 'Tags',
-    filters: ['status=concept', 'status=playable', '!status', 'status'].map(_tag => {
+    filters: ['status=concept', 'status=playable', '!status=playable', '!status', 'status'].map(_tag => {
       const isNegation = _tag.startsWith('!');
       const tag = isNegation ? _tag.slice(1) : _tag;
       const [tagName, expectedTagValue] = tag.split('=');
@@ -89,7 +90,7 @@ const tagsAsString = (tags: Card["tags"]) => {
 export const CardTable = (props: { cards: SerializedCard[] }) => {
   const [filters, setFilters] = useState<Filter[]>([]);
   const [showPossibleFilters, setShowPossibleFilters] = useState(false);
-  const [sortKey, setSortKey] = useState<{ k: SortKey, d: 'asc' | 'desc' }>({ k: 'name', d: 'asc' });
+  const [sortKey, setSortKey] = useState<{ k: SortKey, d: 'asc' | 'desc' }>({ k: 'collector-number', d: 'asc' });
   const sortOn = (key: SortKey) => {
     if (sortKey.k === key) {
       setSortKey({ k: key, d: sortKey.d === 'asc' ? 'desc' : 'asc' });
@@ -101,6 +102,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
   const [deletedCardIds, setDeletedCardIds] = useState<string[]>([]);
   const del = (id: string) => {
     setDeletedCardIds(p => Array.from(new Set([...p, id])));
+    deleteCard(id).catch(() => setDeletedCardIds(p => p.filter(cardId => cardId !== id)));
   };
 
   const cards = props.cards
@@ -254,9 +256,15 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
             ? <FontAwesomeIcon className="ml-2 text-gray-400" icon={faImage} />
             : '-'
           }</span>
-          <span className="inline-block w-40 pl-2 text-sm text-gray-600 overflow-hidden">{tagsAsString(card.tags)}</span>
+          <span className="inline-block w-40 pl-2 text-gray-500 text-xs tracking-wide overflow-hidden">{tagsAsString(card.tags)}</span>
         </li>
       })}
     </ul>
+    <Link
+      className="mt-4 inline-block bg-blue-600 text-white font-bold px-4 py-2 rounded hover:bg-blue-800 active:bg-blue-900"
+      href="/card/create"
+    >
+      Create Card
+    </Link>
   </>;
 }

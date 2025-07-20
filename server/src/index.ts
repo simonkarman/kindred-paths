@@ -51,6 +51,13 @@ async function getCardById(id: string): Promise<Card | undefined> {
   }
 }
 
+async function saveCard(card: Card): Promise<void> {
+  const serializedCard = card.toJson();
+  const path = `./set/${card.id}.json`;
+  await fs.mkdir('./set', { recursive: true });
+  await fs.writeFile(path, JSON.stringify({ ...serializedCard, id: undefined }, null, 2), 'utf-8');
+}
+
 async function getExistingRender(key: string): Promise<Buffer | undefined> {
   try {
     const path = `./renders/${key}.png`;
@@ -68,7 +75,7 @@ async function saveRender(key: string, image: Buffer): Promise<void> {
 }
 
 async function getRender(card: Card): Promise<Buffer> {
-  const key = hash(JSON.stringify(card.toJson()));
+  const key = hash(JSON.stringify({ ...card.toJson(), id: undefined, tags: undefined }));
   const existingRender = await getExistingRender(key);
   if (existingRender) {
     return existingRender;
@@ -95,6 +102,23 @@ app.get('/card/:id', async (req, res) => {
     return;
   }
   res.send(card.toJson());
+});
+
+app.delete('/card/:id', async (req, res) => {
+  const cardId = req.params.id;
+  try {
+    const card = await getCardById(cardId);
+    if (!card) {
+      res.status(404).json({ error: `Card with ID ${cardId} not found` });
+      return;
+    }
+    card.tags['deleted'] = true;
+    await saveCard(card);
+    res.status(204).send();
+  } catch (error) {
+    console.error(`Error deleting card ${cardId}:`, error);
+    res.status(500).json({ error: `Failed to delete card with ID ${cardId}` });
+  }
 });
 
 app.get("/card/:id/render", async (req, res) => {

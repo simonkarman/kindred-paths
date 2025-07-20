@@ -6,15 +6,11 @@
   ],
   "subtypes": [
     "fox",
-    "cleric"
+    "advisor"
   ],
   "manaCost": {
     "colorless": 1,
     "white": 1
-  },
-  "pt": {
-    "power": 1,
-    "toughness": 2
   },
   "rules": [
     {
@@ -26,6 +22,10 @@
       "content": "When ~ enters the battlefield, create a 1/1 white Fox creature token with Lifelink."
     }
   ],
+  "pt": {
+    "power": 1,
+    "toughness": 2
+  },
   "collectorNumber": 11,
   "tags": {
     "status": "concept"
