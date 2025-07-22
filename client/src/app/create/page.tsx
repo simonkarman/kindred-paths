@@ -435,20 +435,21 @@ const CardPTInput = (props: {
 
 function CardPreview({ card }: { card: Card }) {
   const [imageUrl, setImageUrl] = useState<string>();
-  const [isWaiting, setIsWaiting] = useState(true);
+  const [cardJson, setCardJson] = useState<string>();
+  const [outdated, setOutdated] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
 
   useEffect(() => {
-    setIsWaiting(true);
     const fetchImage = async () => {
       setIsRendering(true);
+      setOutdated(false);
       try {
         const response = await fetch(`${serverUrl}/preview`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(card.toJson()),
+          body: cardJson,
         });
 
         if (response.ok) {
@@ -459,41 +460,49 @@ function CardPreview({ card }: { card: Card }) {
       } catch (error) {
         console.error('Failed to fetch image:', error);
       } finally {
-        setIsWaiting(false);
         setIsRendering(false);
       }
     };
 
-    const timeout = setTimeout(() => {
+    if (cardJson) {
       fetchImage();
-    }, 3000);
+    }
 
     // Cleanup function to revoke the object URL
     return () => {
-      clearTimeout(timeout);
       if (imageUrl) {
         URL.revokeObjectURL(imageUrl);
       }
     };
-  }, [card]); // Re-fetch when card changes
+  }, [cardJson]); // Re-fetch when card changes
 
-  if (isRendering) {
-    return <div className="block aspect-[63/88] w-100 bg-purple-50 rounded-3xl border text-center align-middle">Rendering...</div>;
-  }
+  const currentCardJson = () => {
+    return JSON.stringify({ ...card.toJson(), tags: {} });
+  };
 
-  if (isWaiting) {
-    return <div className="block aspect-[63/88] w-100 bg-gray-100 rounded-3xl border text-center align-middle">Waiting for changes...</div>;
-  }
+  useEffect(() => {
+    if (!cardJson || currentCardJson() !== cardJson) {
+      setOutdated(true);
+    }
+  }, [card]);
 
-  if (!imageUrl) {
-    return <div className="block aspect-[63/88] w-100 bg-gray-100 rounded-3xl border text-center align-middle">No image available</div>;
-  }
-
-  return <img
-    alt={`${card.name} image`}
-    className="block aspect-[63/88] w-100 bg-gray-50 rounded-3xl border"
-    src={imageUrl}
-  />;
+  return <div>
+    <button
+      disabled={isRendering}
+      onClick={() => setCardJson(currentCardJson())}
+      className="block w-full px-3 py-2 mb-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      Preview
+    </button>
+    {isRendering && <div className="block aspect-[63/88] w-100 bg-purple-50 rounded-3xl border text-center align-middle">Rendering...</div>}
+    {imageUrl && !isRendering &&
+    <img
+      alt={`${card.name} image`}
+      className={`block aspect-[63/88] w-100 bg-gray-50 rounded-3xl border ${outdated ? 'opacity-40' : ''}`}
+      src={imageUrl}
+    />}
+    {imageUrl && outdated && <p className="py-2 text-xl text-center text-red-700 font-bold">Outdated!</p>}
+  </div>;
 }
 
 const CardTagsInput = (props: {
@@ -705,7 +714,7 @@ export default function CardCreate() {
   const [pt, setPt] = useState<{ power: number, toughness: number } | undefined>(undefined);
   const [collectorNumber, setCollectorNumber] = useState(1);
   const [art, setArt] = useState<string | undefined>(undefined); // TODO!
-  const [tags, setTags] = useState<{ [key: string]: string | number | boolean | undefined }>();
+  const [tags, setTags] = useState<{ [key: string]: string | number | boolean }>();
 
   // If types changes
   useEffect(() => {
@@ -825,18 +834,10 @@ export default function CardCreate() {
             </ul>
           </div>
         )}
-
-        {/* Show Raw Card Data */}
-        <div className="text-gray-600 text-xs">
-          <h3 className="font-bold">Raw Card Data:</h3>
-          <pre className="bg-gray-100 p-2 rounded-md overflow-x-scroll border border-gray-200">
-            {JSON.stringify(serializedCard, null, 2)}
-          </pre>
+        <hr />
+        <div className="flex w-full items-center justify-center">
+          {card !== undefined && errors.length === 0 && <CardPreview card={card} />}
         </div>
-      </div>
-      <div className="space-y-6 w-md pt-4">
-        {/* Show Card Render */}
-        {card !== undefined && errors.length === 0 && <CardPreview card={card} />}
       </div>
     </div>
   </>);
