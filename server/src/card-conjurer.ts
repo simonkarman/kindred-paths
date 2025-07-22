@@ -56,7 +56,11 @@ export class CardConjurer {
 
       // Set the name
       await page.click('#text-options h4:has-text("Title")', { force: true });
-      await page.fill('#text-editor', card.name);
+      const text_editor_name = page.locator('#text-editor');
+      await text_editor_name.fill(card.name.slice(0, -1));
+      await sleep(500);
+      await text_editor_name.focus();
+      await text_editor_name.pressSequentially(card.name.slice(-1));
       await page.waitForLoadState('networkidle');
 
       // Set the type line
@@ -128,7 +132,7 @@ export class CardConjurer {
       await page.waitForLoadState('networkidle');
 
       // Download the card
-      await sleep(300); // Wait a bit for the image to load
+      await sleep(500); // Wait a bit for the image to load
       const [imgPage] = await Promise.all([
         context.waitForEvent('page'),
         page.click('#downloadAlt'),

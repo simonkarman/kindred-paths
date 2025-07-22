@@ -14,10 +14,11 @@ export type Mana = CardColor | 'colorless';
 export const cardColors = ['white', 'blue', 'black', 'red', 'green'] as const;
 export const wubrg = ['w', 'u', 'b', 'r', 'g'] as const;
 
+export const ruleVariants = ['reminder', 'keyword', 'ability', 'inline-reminder', 'flavor'] as const;
 export type RuleVariant = 'reminder' | 'keyword' | 'ability' | 'inline-reminder' | 'flavor';
 export type Rule = { variant: RuleVariant, content: string };
 
-const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+const capitalize = (str: string) => str.length === 0 ? '' : str.charAt(0).toUpperCase() + str.slice(1);
 
 export class Card {
   public readonly id: string;
@@ -94,19 +95,6 @@ export class Card {
     // the card name should not be in the rules (use ~ as a placeholder for the card name)
     if (this.rules.some(rule => rule.content.toLowerCase().includes(this.name.toLowerCase()))) {
       throw new Error('the card name should not be in the rules (use ~ as a placeholder for the card name)');
-    }
-    // all indices of the keywords should be successive
-    const keywordIndices = this.rules
-      .map((rule, index) => rule.variant === 'keyword' ? index : -1)
-      .filter(index => index !== -1);
-    for (let i = 1; i < keywordIndices.length; i++) {
-      if (keywordIndices[i] !== keywordIndices[i - 1] + 1) {
-        throw new Error('all keywords should be together in the rules');
-      }
-    }
-    // if there are multiple keywords, don't allow an inline-reminder after the last keyword
-    if (keywordIndices.length > 1 && this.rules[keywordIndices[keywordIndices.length - 1] + 1]?.variant === 'inline-reminder') {
-      throw new Error('if there are multiple keywords, do not allow an inline-reminder after the last keyword in the rules');
     }
 
     // Check toughness and power consistency

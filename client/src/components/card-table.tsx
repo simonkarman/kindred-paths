@@ -262,7 +262,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
     </ul>
     <Link
       className="mt-4 inline-block bg-blue-600 text-white font-bold px-4 py-2 rounded hover:bg-blue-800 active:bg-blue-900"
-      href="/card/create"
+      href="/create"
     >
       Create Card
     </Link>

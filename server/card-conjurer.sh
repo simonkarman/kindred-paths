@@ -29,7 +29,7 @@ fi
 )
 
 # Check if the container is already running
-if [ "$(docker ps -q -f name=kindred-paths-cardconjurer)" ]; then
+if [ "$(docker ps -q -a -f name=kindred-paths-cardconjurer)" ]; then
   echo "Card Conjurer is already running, stopping it first"
   docker stop kindred-paths-cardconjurer
   docker rm kindred-paths-cardconjurer
