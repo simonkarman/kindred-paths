@@ -1,0 +1,32 @@
+{
+  "name": "Enticing Cave",
+  "rarity": "common",
+  "types": [
+    "land"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 0
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "~ enters tapped."
+    },
+    {
+      "variant": "ability",
+      "content": "{t}: Add {r}."
+    },
+    {
+      "variant": "ability",
+      "content": "{2}{r}, {t}, Sacrifice ~: Target creature you control deals X damage to each opponent, where X is the number of creature cards enticed to it."
+    }
+  ],
+  "collectorNumber": 13,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deck": "entice",
+    "count": 3
+  }
+}

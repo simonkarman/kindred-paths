@@ -1,0 +1,25 @@
+{
+  "name": "Re-entice",
+  "rarity": "common",
+  "types": [
+    "enchantment"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 0,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "You may entice creature cards from your graveyard instead of your hand when activating an entice ability."
+    }
+  ],
+  "collectorNumber": 6,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deck": "entice",
+    "count": 1
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "Amulet of Enticement",
+  "rarity": "common",
+  "types": [
+    "artifact"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 3
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "{t}: Add {1}."
+    },
+    {
+      "variant": "ability",
+      "content": "{t}: Add {r}. Use this mana only to cast creature cards you own in exile enticed to a creature you control. When that creature enters the battlefield, it gains haste until end of turn."
+    }
+  ],
+  "collectorNumber": 8,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deck": "entice",
+    "count": 1
+  }
+}

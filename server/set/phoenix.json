@@ -1,35 +1,31 @@
 {
-  "name": "Rah from the Desert",
+  "name": "Phoenix",
   "rarity": "common",
   "types": [
     "creature"
   ],
   "subtypes": [
-    "scorpion",
-    "warlock"
+    "phoenix"
   ],
   "manaCost": {
     "colorless": 0,
-    "black": 1
+    "red": 1
   },
   "rules": [
     {
       "variant": "keyword",
-      "content": "Deathtouch"
-    },
-    {
-      "variant": "ability",
-      "content": "You may cast ~ from your graveyard if you control no creatures."
+      "content": "Flying"
     }
   ],
   "pt": {
     "power": 1,
     "toughness": 1
   },
-  "collectorNumber": 1,
+  "collectorNumber": 16,
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deleted": true
+    "deck": "entice",
+    "count": 1
   }
 }

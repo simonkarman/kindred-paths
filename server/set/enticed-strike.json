@@ -1,0 +1,25 @@
+{
+  "name": "Enticed Blow",
+  "rarity": "common",
+  "types": [
+    "sorcery"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 2,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Deal X damage to each creature that is not enticed, where X is the number of creature cards you own in exile enticed to a creature you control."
+    }
+  ],
+  "collectorNumber": 9,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deck": "entice",
+    "count": 1
+  }
+}

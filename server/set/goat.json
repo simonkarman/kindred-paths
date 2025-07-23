@@ -1,0 +1,36 @@
+{
+  "name": "Goat",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "goat",
+    "beserker"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "haste"
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever a creature enters under you control, if it was not cast from you hand, deal 1 damage to target creature an opponent controls."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 1
+  },
+  "collectorNumber": 15,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deck": "entice",
+    "count": 1
+  }
+}

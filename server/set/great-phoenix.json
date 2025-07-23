@@ -1,0 +1,47 @@
+{
+  "name": "Great Phoenix",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "phoenix"
+  ],
+  "manaCost": {
+    "colorless": 4,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "haste"
+    },
+    {
+      "variant": "keyword",
+      "content": "flying"
+    },
+    {
+      "variant": "keyword",
+      "content": "menace"
+    },
+    {
+      "variant": "keyword",
+      "content": "first strike"
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever this creature deals combat to a player, sacrifice it."
+    }
+  ],
+  "pt": {
+    "power": 5,
+    "toughness": 5
+  },
+  "collectorNumber": 11,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deck": "entice",
+    "count": 1
+  }
+}

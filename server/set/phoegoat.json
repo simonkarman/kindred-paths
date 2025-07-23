@@ -1,0 +1,40 @@
+{
+  "name": "Phoegoat",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "goat",
+    "phoenix"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "red": 2
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "entice {r}{r}"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "When this creature enters or attacks, you may pay {r}{r} to exile another creature card from your hand. You may cast those cards for as long as they remain exiled, and they costs {r}{r} (or {1}{r}, or {2}) less to cast. When this creature leaves the battlefield, put the exiled cards into their owner's hands."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever ~ entices a card, deal 3 damage to target creature an opponent controls."
+    }
+  ],
+  "pt": {
+    "power": 1,
+    "toughness": 1
+  },
+  "collectorNumber": 3,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deck": "entice",
+    "count": 2
+  }
+}

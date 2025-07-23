@@ -1,0 +1,44 @@
+{
+  "name": "Dragoat",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "goat",
+    "dragon"
+  ],
+  "manaCost": {
+    "colorless": 4,
+    "red": 2
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "haste"
+    },
+    {
+      "variant": "keyword",
+      "content": "flying"
+    },
+    {
+      "variant": "keyword",
+      "content": "entice {r}"
+    },
+    {
+      "variant": "ability",
+      "content": "As long as ~ is enticed, it gets +1/+1."
+    }
+  ],
+  "pt": {
+    "power": 4,
+    "toughness": 4
+  },
+  "collectorNumber": 12,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deck": "entice",
+    "count": 1
+  }
+}

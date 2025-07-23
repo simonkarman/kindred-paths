@@ -265,4 +265,8 @@ export class Card {
     }
     return readable;
   }
+
+  hasToken() {
+    return this.rules.some(r => r.variant === 'ability' && r.content.toLowerCase().includes('create'));
+  }
 }

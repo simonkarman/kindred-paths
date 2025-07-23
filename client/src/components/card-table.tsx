@@ -6,9 +6,11 @@ import { useState } from 'react';
 import { RarityText } from '@/components/rarity-text';
 import { ManaCost } from '@/components/mana-cost';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faImage, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faHippo, faImage, faShieldCat, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import { deleteCard } from '@/utils/server';
+import { useLocalStorageState } from '@/utils/use-local-storage-state';
+import { useDeckName } from '@/components/deck-name-setter';
 
 type Filter = { name: string, predicate: (card: Card) => boolean };
 type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' | 'power' | 'toughness' | 'art' | 'tags';
@@ -89,6 +91,9 @@ const tagsAsString = (tags: Card["tags"]) => {
 }
 
 export const CardTable = (props: { cards: SerializedCard[] }) => {
+  const deckName = useDeckName();
+  const hasDeckName = deckName.length !== 0 && deckName !== '*';
+
   const [filters, setFilters] = useState<Filter[]>([]);
   const [showPossibleFilters, setShowPossibleFilters] = useState(false);
   const [sortKey, setSortKey] = useState<{ k: SortKey, d: 'asc' | 'desc' }>({ k: 'collector-number', d: 'asc' });
@@ -108,6 +113,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
 
   const cards = props.cards
     .filter(c => !deletedCardIds.includes(c.id))
+    .filter(c => !hasDeckName || c.tags?.['deck'] === deckName)
     .map(serializedCard => new Card(serializedCard))
     .filter(c => !filters.some(filter => !filter.predicate(c)))
     .sort((a, b) => {
@@ -164,8 +170,12 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
       return 0;
     });
 
+  const totalCount = cards.map(c => {
+    return typeof c.tags?.['count'] === 'number' ? c.tags['count'] : 0;
+  }).reduce((a, b) => a + b, 0);
+
   return <>
-    <div className="absolute -mt-9 flex gap-2 items-center justify-end w-288 text-sm mb-2">
+    <div className="absolute -mt-9 flex gap-2 items-center justify-end w-296 text-sm mb-2">
       {filters.map(filter => {
         return <button
           key={filter.name}
@@ -182,7 +192,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
         Filters
       </button>
     </div>
-    {showPossibleFilters && <div className="bg-zinc-50 p-2 rounded border border-zinc-300 mb-2 w-288">
+    {showPossibleFilters && <div className="bg-zinc-50 p-2 rounded border border-zinc-300 mb-2 w-296">
       <h3 className="font-bold text-sm mb-1">Filters</h3>
       <div className="flex flex-wrap justify-start gap-2">
         {filterCategories.map(category => (<ul
@@ -214,7 +224,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
         Close
       </button>
     </div>}
-    <ul className='flex flex-col items-start'>
+    <ul className='flex flex-col items-start mb-5'>
       <li className="flex items-center px-2 border-b border-gray-300 text-xs text-gray-600">
         <span className="inline-block w-14" />
         <span onClick={() => sortOn('collector-number')} data-is-active={sortKey.k === "collector-number"} className="data-[is-active=true]:font-bold inline-block w-8">#</span>
@@ -228,6 +238,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
           <span onClick={() => sortOn('toughness')} data-is-active={sortKey.k === "toughness"} className="data-[is-active=true]:font-bold">T</span>
         </span>
         <span onClick={() => sortOn('art')} data-is-active={sortKey.k === "art"} className="data-[is-active=true]:font-bold inline-block w-12 text-center">Art</span>
+        <span className="inline-block w-8 text-center">Token</span>
         <span onClick={() => sortOn('tags')} data-is-active={sortKey.k === "tags"} className="data-[is-active=true]:font-bold inline-block w-40 pl-2">Tags</span>
       </li>
       {cards.map((card) => {
@@ -257,10 +268,12 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
             ? <FontAwesomeIcon className="ml-2 text-gray-400" icon={faImage} />
             : '-'
           }</span>
+          <span className="inline-block w-8 text-center">{card.hasToken() ? <FontAwesomeIcon className="ml-2 text-gray-400" icon={faShieldCat} /> : ''}</span>
           <span className="inline-block w-40 pl-2 text-gray-500 text-xs tracking-wide overflow-hidden">{tagsAsString(card.tags)}</span>
         </li>
       })}
     </ul>
+    {hasDeckName && <p>Deck {deckName} has a {totalCount} cards.</p>}
     <Link
       className="mt-4 inline-block bg-blue-600 text-white font-bold px-4 py-2 rounded hover:bg-blue-800 active:bg-blue-900"
       href="/create"

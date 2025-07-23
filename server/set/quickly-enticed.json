@@ -1,0 +1,33 @@
+{
+  "name": "Quickly Enticed",
+  "rarity": "common",
+  "types": [
+    "instant"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 1,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Target creature you control gets +1/+0 and flying until end of turn if it is enticed to a creature card that has flying. The same is true for menace, haste, and first strike."
+    },
+    {
+      "variant": "ability",
+      "content": "Flashback {5}{r}"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "You may cast this card from your graveyard for its flashback cost. Then exile it."
+    }
+  ],
+  "collectorNumber": 10,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deck": "entice",
+    "count": 2
+  }
+}

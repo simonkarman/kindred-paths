@@ -1,0 +1,29 @@
+{
+  "name": "Enticing Arena",
+  "rarity": "common",
+  "types": [
+    "enchantment"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 2,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Enticed creatures you control have haste."
+    },
+    {
+      "variant": "ability",
+      "content": "Enticed attacking creatures you control get +1/+0."
+    }
+  ],
+  "collectorNumber": 5,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deck": "entice",
+    "count": 1
+  }
+}

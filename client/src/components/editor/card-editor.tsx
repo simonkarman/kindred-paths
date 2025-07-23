@@ -3,7 +3,6 @@
 import { Card, CardColor, CardRarity, CardSuperType, CardType, Mana, RuleVariant, SerializedCard, SerializedCardSchema } from 'kindred-paths';
 import { useEffect, useState } from 'react';
 import { createCard, updateCard } from '@/utils/server';
-import Link from 'next/link';
 import { capitalize } from '@/utils/typography';
 import { CardExplanation } from '@/components/card-explanation';
 import { CardNameInput } from '@/components/editor/card-name-input';
@@ -17,8 +16,12 @@ import { CardRarityInput } from '@/components/editor/card-rarity-input';
 import { CardCollectorNumberInput } from '@/components/editor/card-collector-number-input';
 import { CardTagsInput } from '@/components/editor/card-tags-input';
 import { CardPreview } from '@/components/editor/card-preview';
+import { useDeckName } from '@/components/deck-name-setter';
 
 export function CardEditor({ start }: { start: SerializedCard }) {
+  const deckName = useDeckName();
+  const hasActiveDeck = start.id === "<new>" && deckName.length > 0 && deckName !== "*";
+
   // Properties State
   const [name, setName] = useState(start.name);
   const [rarity, setRarity] = useState<CardRarity>(start.rarity);
@@ -30,7 +33,13 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   const [pt, setPt] = useState<{ power: number, toughness: number } | undefined>(start.pt);
   const [collectorNumber, setCollectorNumber] = useState(start.collectorNumber);
   const [art, setArt] = useState<string | undefined>(start.art); // TODO!
-  const [tags, setTags] = useState<{ [key: string]: string | number | boolean } | undefined>(start.tags as {
+  const [tags, setTags] = useState<{ [key: string]: string | number | boolean } | undefined>({
+    ...start.tags,
+    ...(hasActiveDeck ? {
+      deck: deckName,
+      count: 2,
+    } : {})
+  } as {
     [key: string]: string | number | boolean
   } | undefined);
 

@@ -17,6 +17,7 @@
   ],
   "collectorNumber": 1,
   "tags": {
-    "status": "playable"
+    "status": "playable",
+    "deleted": true
   }
 }

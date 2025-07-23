@@ -1,0 +1,40 @@
+{
+  "name": "Olaf, Friend of Goats",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "goat",
+    "beserker"
+  ],
+  "manaCost": {
+    "colorless": 2,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "menace"
+    },
+    {
+      "variant": "keyword",
+      "content": "entice {r}"
+    },
+    {
+      "variant": "ability",
+      "content": "When this creature attacks, for each different power among creature cards enticed to it, create a 1/1 red Goat creature token that's tapped and attacking."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 3
+  },
+  "collectorNumber": 7,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deck": "entice",
+    "count": 2
+  }
+}

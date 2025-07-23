@@ -1,0 +1,27 @@
+{
+  "name": "Mountain",
+  "rarity": "common",
+  "supertype": "basic",
+  "types": [
+    "land"
+  ],
+  "subtypes": [
+    "mountain"
+  ],
+  "manaCost": {
+    "colorless": 0
+  },
+  "rules": [
+    {
+      "variant": "reminder",
+      "content": "{t}: Add {r}."
+    }
+  ],
+  "collectorNumber": 14,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deck": "entice",
+    "count": 17
+  }
+}

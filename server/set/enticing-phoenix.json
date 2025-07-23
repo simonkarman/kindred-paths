@@ -1,0 +1,44 @@
+{
+  "name": "Enticing Phoenix",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "phoenix",
+    "shaman"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "entice {r}"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "When this creature enters or attacks, you may pay {r} to exile another creature card from your hand. You may cast those cards for as long as they remain exiled, and they costs {r} (or {1}) less to cast. When this creature leaves the battlefield, put the exiled cards into their owner's hands."
+    },
+    {
+      "variant": "ability",
+      "content": "As long as ~ is enticed, it has flying."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever you cast a card from exile, this creature gets +3/+0 until end of turn."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 1
+  },
+  "collectorNumber": 2,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deck": "entice",
+    "count": 2
+  }
+}

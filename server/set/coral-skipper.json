@@ -25,6 +25,7 @@
   },
   "collectorNumber": 47,
   "tags": {
-    "status": "concept"
+    "status": "concept",
+    "deleted": true
   }
 }
