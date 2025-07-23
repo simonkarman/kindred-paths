@@ -1,0 +1,30 @@
+{
+  "name": "Coral Skipper",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "fox",
+    "whale"
+  ],
+  "manaCost": {
+    "colorless": 0,
+    "white": 1,
+    "blue": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ attacks, it gets +3/+3 until end of turn and defending player creates a 1/1 blue Fish creature token."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 47,
+  "tags": {
+    "status": "concept"
+  }
+}

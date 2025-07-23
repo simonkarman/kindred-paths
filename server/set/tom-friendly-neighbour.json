@@ -1,0 +1,29 @@
+{
+  "name": "Tom, Friendly Neighbour",
+  "rarity": "uncommon",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "human",
+    "artificer"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "white": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ enters, create a House artifact token with \"{1}, Pay 1 life: Creatures you control get +1/+1 until end of turn. Activate this ability only once each turn.\""
+    }
+  ],
+  "pt": {
+    "power": 1,
+    "toughness": 1
+  },
+  "collectorNumber": 33,
+  "tags": {
+    "status": "concept"
+  }
+}

@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { RarityText } from '@/components/rarity-text';
 import { ManaCost } from '@/components/mana-cost';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImage, faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faImage, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import { deleteCard } from '@/utils/server';
 
@@ -81,6 +81,7 @@ const filterCategories: { category: string, filters: Filter[] }[] = [
 const tagsAsString = (tags: Card["tags"]) => {
   return tags
     ? Object.entries(tags)
+      .filter(([tagName, tagValue]) => tagName !== "createdAt")
       .toSorted(([a], [b]) => a.localeCompare(b))
       .map(([tagName, tagValue]) => tagValue === true ? tagName : `${tagName}=${tagValue}`)
       .join(', ')
@@ -238,7 +239,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
             <Link
               className="text-gray-700 hover:text-orange-700 active:text-orange-500"
               href={`/card/${card.id}`}
-            ><FontAwesomeIcon icon={faPenToSquare} /></Link>
+            ><FontAwesomeIcon icon={faEye} /></Link>
             <button
               className="text-gray-700 hover:text-red-700 active:text-red-500"
               onClick={() => del(card.id)}

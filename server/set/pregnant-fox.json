@@ -1,5 +1,5 @@
 {
-  "name": "Pregnant Fox",
+  "name": "Mother of Foxes",
   "rarity": "common",
   "types": [
     "creature"
@@ -19,7 +19,11 @@
     },
     {
       "variant": "ability",
-      "content": "When ~ enters the battlefield, create a 1/1 white Fox creature token with Lifelink."
+      "content": "When ~ enters the battlefield, create a 0/1 white Fox creature token with Lifelink."
+    },
+    {
+      "variant": "ability",
+      "content": "Other Foxes your control get +1/+0."
     }
   ],
   "pt": {

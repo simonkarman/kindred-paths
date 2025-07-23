@@ -1,0 +1,25 @@
+{
+  "name": "Lisa",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "angel"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "white": 1
+  },
+  "rules": [],
+  "pt": {
+    "power": 3,
+    "toughness": 2
+  },
+  "collectorNumber": 1,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "deleted": true
+  }
+}

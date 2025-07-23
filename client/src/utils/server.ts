@@ -61,8 +61,25 @@ export async function createCard(serializedCard: SerializedCard): Promise<Serial
     body: JSON.stringify(serializedCard),
   });
 
+  const responseJson = await response.json();
   if (!response.ok) {
-    return null;
+    throw new Error(JSON.stringify(responseJson, undefined, 2));
   }
-  return await response.json();
+  return responseJson;
+}
+
+export async function updateCard(serializedCard: SerializedCard): Promise<SerializedCard | null> {
+  const response = await fetch(`${serverUrl}/card/${serializedCard.id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(serializedCard),
+  });
+
+  const responseJson = await response.json();
+  if (!response.ok) {
+    throw new Error(JSON.stringify(responseJson, undefined, 2));
+  }
+  return responseJson;
 }

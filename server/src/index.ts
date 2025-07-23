@@ -144,6 +144,79 @@ app.get("/card/:id/explain", async (req, res) => {
   res.send(card.explain());
 });
 
+app.post('/card', async (req, res) => {
+  // Validate the request body against the SerializedCardSchema
+  const body = SerializedCardSchema.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: 'Invalid card data', details: body.error });
+    return;
+  }
+
+  // Set the ID based on the card name
+  const id = body.data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-');
+
+  // Check if card with this ID already exists
+  const existingCard = await getCardById(id);
+  if (existingCard) {
+    res.status(409).json({ error: `Card with ID ${id} already exists` });
+    return;
+  }
+
+  // Try to create a new Card instance
+  let card;
+  try {
+    card = new Card({ ...body.data, id });
+  } catch (error) {
+    console.error('Error creating card:', error);
+    res.status(400).json({ error: 'Invalid card data', details: error });
+    return;
+  }
+
+  // Save the card and return the response
+  try {
+    await saveCard(card);
+    res.status(201).json(card.toJson());
+  } catch (error) {
+    console.error('Error saving card:', error);
+    res.status(500).json({ error: 'Failed to save card' });
+  }
+});
+
+app.put('/card/:id', async (req, res) => {
+  const cardId = req.params.id;
+  const body = SerializedCardSchema.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: 'Invalid card data', details: body.error });
+    return;
+  }
+
+  // Check if the card exists
+  const existingCard = await getCardById(cardId);
+  if (!existingCard) {
+    res.status(404).json({ error: `Card with ID ${cardId} not found` });
+    return;
+  }
+
+  // Update the card with new data
+  let card;
+  try {
+    card = new Card({ ...body.data, id: cardId });
+  } catch (error) {
+    console.error('Error updating card:', error);
+    res.status(400).json({ error: 'Invalid card data', details: error });
+    return;
+  }
+
+  // Save the updated card
+  try {
+    await saveCard(card);
+    res.status(200).json(card.toJson());
+  } catch (error) {
+    console.error('Error saving updated card:', error);
+    res.status(500).json({ error: 'Failed to update card' });
+  }
+});
+
 app.post('/preview', async (req, res) => {
   const body = SerializedCardSchema.safeParse(req.body);
   if (!body.success) {

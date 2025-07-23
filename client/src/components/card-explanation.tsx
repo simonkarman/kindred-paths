@@ -1,7 +1,7 @@
 import { capitalize } from '@/utils/typography';
 import { SerializedCard, Card as _Card } from 'kindred-paths';
 
-export default function CardExplanation({ serializedCard }: { serializedCard: SerializedCard }) {
+export function CardExplanation({ serializedCard }: { serializedCard: SerializedCard }) {
   const card = new _Card(serializedCard);
   return <div className="max-w-160 space-y-6">
     <h1 className="font-bold text-xl mb-0">{card.name}</h1>

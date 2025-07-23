@@ -1,0 +1,34 @@
+{
+  "name": "Rah from the Desert",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "scorpion",
+    "warlock"
+  ],
+  "manaCost": {
+    "colorless": 0,
+    "black": 1
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "Deathtouch"
+    },
+    {
+      "variant": "ability",
+      "content": "You may cast ~ from your graveyard if you control no creatures."
+    }
+  ],
+  "pt": {
+    "power": 1,
+    "toughness": 1
+  },
+  "collectorNumber": 1,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23"
+  }
+}

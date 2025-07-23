@@ -1,7 +1,7 @@
 import { serverUrl } from '@/utils/server';
 import { SerializedCard, Card as _Card } from 'kindred-paths';
 
-export default function CardRender({ serializedCard }: { serializedCard: SerializedCard }) {
+export function CardRender({ serializedCard }: { serializedCard: SerializedCard }) {
   const card = new _Card(serializedCard);
   return <>
       <img
