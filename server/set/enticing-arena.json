@@ -6,7 +6,7 @@
   ],
   "subtypes": [],
   "manaCost": {
-    "colorless": 2,
+    "colorless": 1,
     "red": 1
   },
   "rules": [
@@ -16,7 +16,7 @@
     },
     {
       "variant": "ability",
-      "content": "Enticed attacking creatures you control get +1/+0."
+      "content": "Enticed attacking creatures you control get +1/+0 for each creature card enticed to them."
     }
   ],
   "collectorNumber": 5,
@@ -24,6 +24,6 @@
     "status": "concept",
     "createdAt": "2025-07-23",
     "deck": "entice",
-    "count": 1
+    "count": 2
   }
 }
