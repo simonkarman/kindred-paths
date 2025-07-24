@@ -1,0 +1,27 @@
+{
+  "name": "Swamp",
+  "rarity": "common",
+  "supertype": "basic",
+  "types": [
+    "land"
+  ],
+  "subtypes": [
+    "swamp"
+  ],
+  "manaCost": {
+    "colorless": 0
+  },
+  "rules": [
+    {
+      "variant": "reminder",
+      "content": "{t}: Add {b}."
+    }
+  ],
+  "collectorNumber": 1,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "deck": "diversity",
+    "count": 7
+  }
+}

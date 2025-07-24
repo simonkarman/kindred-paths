@@ -1,0 +1,27 @@
+{
+  "name": "Island",
+  "rarity": "common",
+  "supertype": "basic",
+  "types": [
+    "land"
+  ],
+  "subtypes": [
+    "island"
+  ],
+  "manaCost": {
+    "colorless": 0
+  },
+  "rules": [
+    {
+      "variant": "reminder",
+      "content": "{t}: Add {u}."
+    }
+  ],
+  "collectorNumber": 2,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "deck": "diversity",
+    "count": 7
+  }
+}

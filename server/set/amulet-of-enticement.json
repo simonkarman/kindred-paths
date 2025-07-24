@@ -11,7 +11,7 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "{t}: Add {1}."
+      "content": "{t}: Add {c}."
     },
     {
       "variant": "ability",

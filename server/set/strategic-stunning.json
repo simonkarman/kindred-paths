@@ -1,0 +1,25 @@
+{
+  "name": "Strategic Stunning",
+  "rarity": "common",
+  "types": [
+    "instant"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 3,
+    "blue": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Tap up to four target creatures that don't share a creature type. Then, put a stun counter on one of those creatures."
+    }
+  ],
+  "collectorNumber": 16,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "deck": "diversity",
+    "count": 1
+  }
+}

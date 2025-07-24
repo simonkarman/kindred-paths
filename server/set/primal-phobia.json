@@ -1,0 +1,35 @@
+{
+  "name": "Primal Phobia",
+  "rarity": "common",
+  "types": [
+    "enchantment"
+  ],
+  "subtypes": [
+    "aura"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "black": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "As ~ enters the battlefield, choose a creature type."
+    },
+    {
+      "variant": "ability",
+      "content": "Enchant creature"
+    },
+    {
+      "variant": "ability",
+      "content": "Enchanted creatures gets -2/-2 and can't block creatures of the chosen type."
+    }
+  ],
+  "collectorNumber": 18,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "deck": "diversity",
+    "count": 1
+  }
+}

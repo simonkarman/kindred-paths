@@ -1,0 +1,28 @@
+{
+  "name": "Cursed Knowledge Codex",
+  "rarity": "common",
+  "types": [
+    "artifact"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 2
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "{t}: Add {c}."
+    },
+    {
+      "variant": "ability",
+      "content": "{t}: Add {u} or {b}. Activate only if you control a Demon or a Sphinx or if a creature card in your graveyard is a Demon or a Sphinx."
+    }
+  ],
+  "collectorNumber": 20,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "deck": "diversity",
+    "count": 1
+  }
+}

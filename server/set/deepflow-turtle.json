@@ -1,0 +1,39 @@
+{
+  "name": "Deepflow Turtle",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "turtle"
+  ],
+  "manaCost": {
+    "colorless": 2,
+    "blue": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ enters, mill three cards."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "To mill three cards, put the top three cards of your library into your graveyard."
+    },
+    {
+      "variant": "ability",
+      "content": "{i}Threshold{/i} {-} ~ can't be blocked as long as seven or more cards are in your graveyard."
+    }
+  ],
+  "pt": {
+    "power": 1,
+    "toughness": 4
+  },
+  "collectorNumber": 8,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "deck": "diversity",
+    "count": 2
+  }
+}

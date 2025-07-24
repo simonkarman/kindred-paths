@@ -1,0 +1,32 @@
+{
+  "name": "Dry Burrow",
+  "rarity": "common",
+  "types": [
+    "land"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 0
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "{t}: Add {c}."
+    },
+    {
+      "variant": "ability",
+      "content": "{t}, Exile a nonland card from your graveyard: Choose a color of the exiled card. Add one mana of that color to you mana pool."
+    },
+    {
+      "variant": "ability",
+      "content": "{4}, {t}, Sacrifice ~: Until end of turn you may cast one of the cards exiled with ~. Activate only as a sorcery."
+    }
+  ],
+  "collectorNumber": 3,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "deck": "diversity",
+    "count": 1
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "Shell-Form Adaptation",
+  "rarity": "common",
+  "types": [
+    "enchantment"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 2,
+    "blue": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Creatures you control are Turtles in addition to their other types. The same is true for creature spells you control and creature cards you own that aren’t on the battlefield."
+    },
+    {
+      "variant": "ability",
+      "content": "Creatures you control get +0/+2."
+    }
+  ],
+  "collectorNumber": 17,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "deck": "diversity",
+    "count": 1
+  }
+}

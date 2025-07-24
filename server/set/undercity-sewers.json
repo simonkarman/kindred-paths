@@ -1,0 +1,35 @@
+{
+  "name": "Dark Holm",
+  "rarity": "common",
+  "types": [
+    "land"
+  ],
+  "subtypes": [
+    "island",
+    "swamp"
+  ],
+  "manaCost": {
+    "colorless": 0
+  },
+  "rules": [
+    {
+      "variant": "reminder",
+      "content": "{t}: Add {u} or {b}."
+    },
+    {
+      "variant": "ability",
+      "content": "~ enters tapped."
+    },
+    {
+      "variant": "ability",
+      "content": "When ~ enters, you may discard a creature card. If you do, exile a creature card from your graveyard and create a 1/1 Turtle Scorpion creature token."
+    }
+  ],
+  "collectorNumber": 4,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "deck": "diversity",
+    "count": 2
+  }
+}
