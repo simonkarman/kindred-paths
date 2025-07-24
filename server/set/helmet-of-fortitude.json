@@ -1,0 +1,39 @@
+{
+  "name": "Helmet of Fortitude",
+  "rarity": "common",
+  "types": [
+    "artifact"
+  ],
+  "subtypes": [
+    "equipment"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "white": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ enters, create a 1/1 white Fox creature token, then attach ~ to it."
+    },
+    {
+      "variant": "ability",
+      "content": "Equipped creature gets +1/+1 and is courageous."
+    },
+    {
+      "variant": "keyword",
+      "content": "equip {2}"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "{2}: Attach to target creature you control. Equip only as a sorcery."
+    }
+  ],
+  "collectorNumber": 12,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "deck": "courage",
+    "count": 1
+  }
+}

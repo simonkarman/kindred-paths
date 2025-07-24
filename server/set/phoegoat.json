@@ -23,7 +23,7 @@
     },
     {
       "variant": "ability",
-      "content": "Whenever ~ entices a card, deal 3 damage to target creature an opponent controls."
+      "content": "Whenever ~ entices a card, deal 3 damage to target creature an opponent{lns}controls."
     }
   ],
   "pt": {

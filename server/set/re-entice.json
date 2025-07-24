@@ -1,5 +1,5 @@
 {
-  "name": "Re-entice",
+  "name": "History Attracts",
   "rarity": "common",
   "types": [
     "enchantment"
@@ -12,7 +12,11 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "You may entice creature cards from your graveyard instead of your hand when activating an entice ability."
+      "content": "You may entice creature cards from your graveyard when resolving an entice ability."
+    },
+    {
+      "variant": "flavor",
+      "content": "All that we previously faced can be drawn from."
     }
   ],
   "collectorNumber": 6,

@@ -7,8 +7,8 @@ import { CardRender } from '@/components/card-render';
 const n = (count: number) => Array.from({ length: count }, (_, i) => i + 1);
 const getCount = (card: Card) => typeof card.tags?.['count'] === 'number' ? card.tags['count'] : 0;
 
-export default async function DeckOverview() {
-  const deckName = "entice";
+export default async function DeckOverview({ params: _params }: Readonly<{ params: Promise<{ deckName: string }> }>) {
+  const { deckName } = await _params;
   const _cards = await getCards();
 
   const cards = _cards
@@ -54,11 +54,12 @@ export default async function DeckOverview() {
     </ul>
     <p>
       <strong>Total cards:</strong> {totalCount}<br/>
-      <strong>Mana Value Distribution</strong>
-      <pre>{JSON.stringify(manaValueDistribution, undefined, 2)}</pre>
     </p>
-    <div className="grid grid-cols-3">
-      {cards.map(card => n(getCount(card)).map(i => <CardRender key={card.id + i} serializedCard={card.toJson()} />))}
+    <h2 className="pt-4 font-bold">Mana Value Distribution</h2>
+    <pre className="p-1 bg-gray-50 border border-gray-200">{JSON.stringify(manaValueDistribution, undefined, 2)}</pre>
+    <hr className="mb-10 border-gray-200 break-after-page" />
+    <div className="grid grid-cols-3 px-5">
+      {cards.filter(c => c.supertype !== "basic").map(card => n(getCount(card)).map(i => <CardRender key={card.id + i} serializedCard={card.toJson()} />))}
     </div>
   </>;
 };

@@ -1,0 +1,36 @@
+{
+  "name": "Winter Hunter",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "cat",
+    "fox"
+  ],
+  "manaCost": {
+    "colorless": 2,
+    "white": 1
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "lifelink"
+    },
+    {
+      "variant": "ability",
+      "content": "When ~ enters, put your choice of a courage or +1/+1 counter on up to one target creature you control."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 4,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "deck": "courage",
+    "count": 3
+  }
+}

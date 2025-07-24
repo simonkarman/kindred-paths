@@ -15,9 +15,9 @@
       "content": "{t}: Add {w}."
     }
   ],
-  "collectorNumber": 1,
+  "collectorNumber": 15,
   "tags": {
-    "status": "playable",
-    "deleted": true
+    "deck": "courage",
+    "count": 14
   }
 }

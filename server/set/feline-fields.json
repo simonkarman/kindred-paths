@@ -1,0 +1,32 @@
+{
+  "name": "Feline Fields",
+  "rarity": "common",
+  "types": [
+    "land"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 0
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "~ enters tapped."
+    },
+    {
+      "variant": "ability",
+      "content": "{t}: Add {w}."
+    },
+    {
+      "variant": "ability",
+      "content": "{1}{w}, {t}, Sacrifice ~: Look at the top four cards of your library. You may reveal a Fox or Cat card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+    }
+  ],
+  "collectorNumber": 14,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "deck": "courage",
+    "count": 3
+  }
+}

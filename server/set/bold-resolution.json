@@ -1,0 +1,25 @@
+{
+  "name": "Bold Resolution",
+  "rarity": "common",
+  "types": [
+    "instant"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 0,
+    "white": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Untap target creature you control. It gets +1/+1 and gains first strike until end of turn."
+    }
+  ],
+  "collectorNumber": 8,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "deck": "courage",
+    "count": 2
+  }
+}
