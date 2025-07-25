@@ -73,21 +73,21 @@ async function getExistingRender(key: string): Promise<Buffer | undefined> {
   }
 }
 
-async function saveRender(key: string, image: Buffer): Promise<void> {
+async function saveRender(key: string, render: Buffer): Promise<void> {
   const path = `./renders/${key}.png`;
   await fs.mkdir('./renders', { recursive: true });
-  await fs.writeFile(path, image);
+  await fs.writeFile(path, render);
 }
 
-async function getRender(card: Card): Promise<Buffer> {
+async function getRender(card: Card): Promise<{ fromCache: boolean, render: Buffer }> {
   const key = hash(JSON.stringify({ ...card.toJson(), id: undefined, tags: undefined }));
   const existingRender = await getExistingRender(key);
   if (existingRender) {
-    return existingRender;
+    return { fromCache: true, render: existingRender };
   }
   const render = await cardConjurer.renderCard(card, set);
   await saveRender(key, render);
-  return render;
+  return { fromCache: false, render };
 }
 
 app.get('/card', async (req, res) => {
@@ -132,25 +132,35 @@ app.get("/render/:id", async (req, res) => {
     res.status(404).json({ error: `Card with ID ${req.params.id} not found` });
     return;
   }
-  res.setHeader('Content-Type', 'image/png');
+
+  res.setHeader('Content-Type', 'render/png');
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
   res.setHeader('Content-Disposition', `inline; filename="${card.collectorNumber}-${card.id}.png"`);
 
-  const image = await getRender(card);
+  let { render } = await getRender(card);
   const quality = req.query.quality ? parseInt(req.query.quality as string) : 100;
+  const scale = req.query.scale ? parseFloat(req.query.scale as string) : 1;
   if (quality < 0 || quality > 100) {
     res.status(400).json({ error: 'Quality must be between 0 and 100' });
     return;
   }
-  if (quality === 100) {
-    res.send(image);
+  if (scale <= 0 || scale > 1) {
+    res.status(400).json({ error: 'Scale must be between 0 and 1' });
     return;
   }
-  // Compress the image if quality is less than 100
-  const compressedImage = await sharp(image).png({ quality }).toBuffer();
-  res.send(compressedImage);
+
+  // Scale the render if scale is not 1
+  if (scale !== 1) {
+    render = await sharp(render).resize({ width: Math.round(2010 * scale), height: Math.round(2814 * scale) }).toBuffer();
+  }
+
+  // Compress the render if quality is less than 100
+  if (quality !== 100) {
+    render = await sharp(render).png({ quality }).toBuffer();
+  }
+  res.send(render);
 });
 
 app.get("/card/:id/explain", async (req, res) => {
@@ -244,13 +254,15 @@ app.post('/preview', async (req, res) => {
   }
   const card = new Card(body.data);
   res.setHeader('Content-Type', 'image/png');
-  res.send(await getRender(card));
+  const { render } = await getRender(card);
+  res.send(render);
 });
 
 app.post('/cleanup', async (req, res) => {
-  const cards = await getAllCards();
   const messages: string[] = [];
-  for (const card of cards) {
+
+  // Rename cards that have an ID different from the computed ID based on their name
+  for (const card of await getAllCards()) {
     const cardId = computeCardIdFromName(card.name);
     if (card.id !== cardId) {
       const message = `renamed card ${card.id} to ${cardId}`;
@@ -259,6 +271,46 @@ app.post('/cleanup', async (req, res) => {
       console.log(message);
     }
   }
+
+  // Ensure all keywords are lowercase
+  for (const card of await getAllCards()) {
+    if (!card.rules) continue;
+
+    let hasChanged = false;
+    card.rules = card.rules.map(rule => {
+      if (rule.variant === 'keyword') {
+        const content = rule.content.toLowerCase();
+        if (rule.content !== content) {
+          hasChanged = true;
+        }
+        return { ...rule, content, };
+      }
+      return rule;
+    });
+    if (hasChanged) {
+      const message = `updated keywords to lowercase for card ${card.id}`;
+      messages.push(message);
+      await saveCard(new Card(card));
+      console.log(message);
+    }
+  }
+
+  // Render all cards
+  for (const card of await getAllCards()) {
+    try {
+      const { fromCache } = await getRender(new Card(card));
+      if (!fromCache) {
+        const message = `rendered card ${card.id}`;
+        messages.push(message);
+        console.log(message);
+      }
+    } catch (error) {
+      const message = `failed to render card ${card.id}: ${(error as Error).message}`;
+      messages.push(message);
+      console.error(message);
+    }
+  }
+
   res.json({ message: 'Cleanup completed', details: messages });
 });
 

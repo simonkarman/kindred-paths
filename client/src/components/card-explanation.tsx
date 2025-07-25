@@ -25,8 +25,8 @@ export function CardExplanation({ serializedCard }: { serializedCard: Serialized
         key={index}
         className={["keyword", "ability"].includes(rule.variant) ? '' : 'text-gray-500 italic'}
       >
-          {rule.content}<br/>
-        </span>)}
+        {rule.variant === "keyword" ? capitalize(rule.content) : rule.content}<br/>
+      </span>)}
     </p>
     {card.art && (
       <p>

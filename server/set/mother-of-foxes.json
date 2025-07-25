@@ -15,7 +15,7 @@
   "rules": [
     {
       "variant": "keyword",
-      "content": "Lifelink"
+      "content": "lifelink"
     },
     {
       "variant": "ability",

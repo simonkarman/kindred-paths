@@ -14,7 +14,7 @@
   "rules": [
     {
       "variant": "keyword",
-      "content": "Haste"
+      "content": "haste"
     },
     {
       "variant": "ability",
@@ -30,5 +30,7 @@
     "toughness": 5
   },
   "collectorNumber": 138,
-  "tags": { "reference": true }
+  "tags": {
+    "reference": true
+  }
 }

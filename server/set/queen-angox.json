@@ -16,7 +16,7 @@
   "rules": [
     {
       "variant": "keyword",
-      "content": "Flying"
+      "content": "flying"
     },
     {
       "variant": "ability",

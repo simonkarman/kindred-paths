@@ -15,7 +15,7 @@
   "rules": [
     {
       "variant": "keyword",
-      "content": "Deathtouch"
+      "content": "deathtouch"
     },
     {
       "variant": "ability",

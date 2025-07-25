@@ -11,7 +11,7 @@ Make sure you have the following tools installed on your system:
 You can start the server and client in development mode.
 
 ```bash
-cd server
+# Make sure you have Docker running...
 npm install
 npm run dev
 ```

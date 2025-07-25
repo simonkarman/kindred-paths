@@ -11,6 +11,9 @@ export const CardRulesInput = (props: {
   const updateRule = (index: number, field: 'variant' | 'content', value: string | RuleVariant) => {
     const newRules = [...rules];
     newRules[index] = { ...newRules[index], [field]: value };
+    if (newRules[index].variant === 'keyword') {
+      newRules[index].content = newRules[index].content.toLowerCase();
+    }
     props.setRules(newRules);
   };
 
@@ -63,7 +66,7 @@ export const CardRulesInput = (props: {
             {/* Rule Content Input */}
             <input
               type="text"
-              value={rule.content}
+              value={rule.variant === "keyword" ? capitalize(rule.content) : rule.content}
               onChange={(e) => updateRule(index, 'content', e.target.value)}
               placeholder="Enter rule content..."
               className="flex-1 px-2 py-1 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"

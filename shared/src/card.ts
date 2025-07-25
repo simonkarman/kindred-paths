@@ -96,6 +96,10 @@ export class Card {
     if (this.rules.some(rule => rule.content.toLowerCase().includes(this.name.toLowerCase()))) {
       throw new Error('the card name should not be in the rules (use ~ as a placeholder for the card name)');
     }
+    // ensure all keywords are lowercase
+    if (this.rules.some(rule => rule.variant === 'keyword' && rule.content !== rule.content.toLowerCase())) {
+      throw new Error('all keywords must be lowercase');
+    }
 
     // Check toughness and power consistency
     if (this.pt) {
@@ -151,9 +155,9 @@ export class Card {
     let text = "";
     for (let index = 0; index < this.rules.length; index++) {
       let rule: Rule = this.rules[index];
-      const peekNext = () => {
-        if (index + 1 < this.rules.length) {
-          return this.rules[index + 1];
+      const peekNext = (n = 1) => {
+        if (index + n < this.rules.length) {
+          return this.rules[index + n];
         } else {
           return undefined;
         }
@@ -175,10 +179,12 @@ export class Card {
         case 'keyword':
           text += capitalize(rule.content);
           let nextRule = peekNext();
-          while (nextRule && nextRule.variant === 'keyword') {
+          let nextRule2 = peekNext(2);
+          while (nextRule && nextRule.variant === 'keyword' && (nextRule2 === undefined || nextRule2.variant !== 'inline-reminder')) {
             text += `, ${nextRule.content}`;
             index++;
             nextRule = peekNext();
+            nextRule2 = peekNext(2);
           }
           checkLineEnding();
           break;
@@ -259,7 +265,12 @@ export class Card {
     }
     const keywordsAndAbilities = this.rules.filter(r => r.variant === 'ability' || r.variant === 'keyword');
     if (keywordsAndAbilities.length > 0) {
-      readable += `, with: ${keywordsAndAbilities.map(r => `"${r.content}"`).join(' and ')}`;
+      readable += `, with: ${keywordsAndAbilities.map((r, i) => {
+        const isKeyword = r.variant === 'keyword';
+        const startingQuote = !isKeyword || keywordsAndAbilities[i - 1]?.variant !== 'keyword';
+        const hasAnd = (i > 0 && startingQuote) || (keywordsAndAbilities[i + 1]?.variant !== 'keyword');
+        return `${hasAnd ? " and " : ""}${(startingQuote || hasAnd) ? "" : ", "}"${r.content}"`;
+      }).join('')}`;
     } else {
       readable += '.';
     }
