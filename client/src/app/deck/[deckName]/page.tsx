@@ -105,7 +105,7 @@ export default async function DeckOverview({ params: _params }: Readonly<{ param
       </div>
     </div>
     <hr className="mb-10 border-gray-200 break-after-page" />
-    <div className="grid grid-cols-3 px-4">
+    <div className="grid grid-cols-3 px-2">
       {cards.filter(c => c.supertype !== "basic").map(card => n(getCount(card)).map(i => <Link key={card.id + i} href={`/edit/${card.id}?t=/deck/${deckName}`}>
         <CardRender serializedCard={card.toJson()} scale={0.6} quality={80} />
       </Link>))}
