@@ -13,7 +13,7 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "Equipped creature gets +1/+1 and has \"When this creature attacks or blocks, you may choose another attacking or blocking creature you control that shares a creature type with it, if you do, this creature has indestructible until end of turn.\""
+      "content": "Equipped creature gets +1/+1 and has \"When this creature attacks or blocks, you may choose another attacking or blocking creature you control that shares a creature type with it, if you do, this creature gains indestructible until end of turn.\""
     },
     {
       "variant": "ability",
@@ -24,7 +24,7 @@
       "content": "{1}: Attach to target creature you control. Equip only as a sorcery."
     }
   ],
-  "collectorNumber": 19,
+  "collectorNumber": 319,
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-24",

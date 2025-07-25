@@ -15,8 +15,9 @@
   },
   "dependencies": {
     "express": "^5.1.0",
+    "kindred-paths": "file:../shared",
     "playwright": "^1.53.2",
-    "zod": "^3.25.76",
-    "kindred-paths": "file:../shared"
+    "sharp": "^0.34.3",
+    "zod": "^3.25.76"
   }
 }

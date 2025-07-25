@@ -33,6 +33,40 @@ export default async function DeckOverview({ params: _params }: Readonly<{ param
     return acc;
   }, {} as { [manaValue: number]: number });
 
+  const cardTypeDistribution = cards.reduce((acc, card) => {
+    const types = card.types;
+    const count = getCount(card);
+    if (types.length === 0) {
+      return acc;
+    }
+
+    types.forEach(type => {
+      if (type in acc) {
+        acc[type] += count;
+      } else {
+        acc[type] = count;
+      }
+    });
+    return acc;
+  }, {} as { [type: string]: number });
+
+  const subtypeDistribution = cards.reduce((acc, card) => {
+    const subtypes = card.subtypes || [];
+    const count = getCount(card);
+    if (subtypes.length === 0) {
+      return acc;
+    }
+
+    subtypes.forEach(subtype => {
+      if (subtype in acc) {
+        acc[subtype] += count;
+      } else {
+        acc[subtype] = count;
+      }
+    });
+    return acc;
+  }, {} as { [subtype: string]: number });
+
   return <>
     <p className="px-2">
       <Link href={'/'} className="underline text-blue-600">Go back</Link>
@@ -44,8 +78,9 @@ export default async function DeckOverview({ params: _params }: Readonly<{ param
         <li key={card.id} className="border-b border-gray-200 py-2">
           {getCount(card)}x{' '}
           <Link href={`/card/${card.id}`} className="text-blue-600 hover:underline">
-            #{card.collectorNumber} {card.name}: {card.renderTypeLine()}
+            #{card.collectorNumber} {card.name}
           </Link>
+          {' '}{card.explain()}
         </li>
       ))}
       {cards.length === 0 && (
@@ -55,11 +90,25 @@ export default async function DeckOverview({ params: _params }: Readonly<{ param
     <p>
       <strong>Total cards:</strong> {totalCount}<br/>
     </p>
-    <h2 className="pt-4 font-bold">Mana Value Distribution</h2>
-    <pre className="p-1 bg-gray-50 border border-gray-200">{JSON.stringify(manaValueDistribution, undefined, 2)}</pre>
+    <div className="flex gap-2">
+      <div>
+        <h2 className="pt-4 font-bold">Mana Value Distribution</h2>
+        <pre className="p-1 bg-gray-50 border border-gray-200">{JSON.stringify(manaValueDistribution, undefined, 2)}</pre>
+      </div>
+      <div>
+        <h2 className="pt-4 font-bold">Card Type Distribution</h2>
+        <pre className="p-1 bg-gray-50 border border-gray-200">{JSON.stringify(cardTypeDistribution, undefined, 2)}</pre>
+      </div>
+      <div>
+        <h2 className="pt-4 font-bold">Subtype Distribution</h2>
+        <pre className="p-1 bg-gray-50 border border-gray-200">{JSON.stringify(subtypeDistribution, undefined, 2)}</pre>
+      </div>
+    </div>
     <hr className="mb-10 border-gray-200 break-after-page" />
     <div className="grid grid-cols-3 px-5">
-      {cards.filter(c => c.supertype !== "basic").map(card => n(getCount(card)).map(i => <CardRender key={card.id + i} serializedCard={card.toJson()} />))}
+      {cards.filter(c => c.supertype !== "basic").map(card => n(getCount(card)).map(i => <Link key={card.id + i} href={`/edit/${card.id}?t=/deck/${deckName}`}>
+        <CardRender serializedCard={card.toJson()} quality={10} />
+      </Link>))}
     </div>
   </>;
 };

@@ -102,8 +102,15 @@ export function CardEditor({ start }: { start: SerializedCard }) {
         ? await createCard(data)
         : await updateCard(data);
       if (result) {
-        // Navigate to the new card's page
-        window.location.href = `/card/${result.id}`;
+
+        // if /edit/<id>?t=/a/location is used, we want to get the t from the URL, and navigate to that page
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('t')) {
+          window.location.href = urlParams.get('t')!;
+        } else {
+          // Navigate to the new card's page
+          window.location.href = `/card/${result.id}`;
+        }
       }
     } catch (error) {
       const message = 'Error creating/updating card: ' + ((error instanceof Error) ? error.message : 'Unknown error');

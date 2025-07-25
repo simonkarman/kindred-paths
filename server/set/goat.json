@@ -1,5 +1,5 @@
 {
-  "name": "Terry",
+  "name": "Terry the Beserker",
   "rarity": "common",
   "types": [
     "creature"
@@ -19,14 +19,14 @@
     },
     {
       "variant": "ability",
-      "content": "Whenever a creature enters under you control, if it was not cast from you hand, deal 1 damage to target creature an opponent controls."
+      "content": "Whenever a creature enters under your control, if it was not cast from your hand, deal 1 damage to target creature an opponent controls."
     }
   ],
   "pt": {
     "power": 2,
     "toughness": 1
   },
-  "collectorNumber": 15,
+  "collectorNumber": 115,
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",

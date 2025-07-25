@@ -3,12 +3,17 @@ import express from 'express';
 import cors from 'cors';
 import { Card, SerializedCardSchema, hash, SerializedCard } from 'kindred-paths';
 import { CardConjurer } from './card-conjurer';
+import sharp from 'sharp';
 
 const set = {
   author: 'Simon Karman',
   shortName: 'KPA',
   symbol: 'ELD',
 };
+
+const computeCardIdFromName = (name: string) => {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-');
+}
 
 let cardConjurerUrl = process.env.CARD_CONJURER_URL || "http://localhost:4102";
 const cardConjurer = new CardConjurer(cardConjurerUrl);
@@ -121,7 +126,7 @@ app.delete('/card/:id', async (req, res) => {
   }
 });
 
-app.get("/card/:id/render", async (req, res) => {
+app.get("/render/:id", async (req, res) => {
   const card = await getCardById(req.params.id);
   if (!card) {
     res.status(404).json({ error: `Card with ID ${req.params.id} not found` });
@@ -131,7 +136,21 @@ app.get("/card/:id/render", async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
-  res.send(await getRender(card));
+  res.setHeader('Content-Disposition', `inline; filename="${card.collectorNumber}-${card.id}.png"`);
+
+  const image = await getRender(card);
+  const quality = req.query.quality ? parseInt(req.query.quality as string) : 100;
+  if (quality < 0 || quality > 100) {
+    res.status(400).json({ error: 'Quality must be between 0 and 100' });
+    return;
+  }
+  if (quality === 100) {
+    res.send(image);
+    return;
+  }
+  // Compress the image if quality is less than 100
+  const compressedImage = await sharp(image).png({ quality }).toBuffer();
+  res.send(compressedImage);
 });
 
 app.get("/card/:id/explain", async (req, res) => {
@@ -153,7 +172,7 @@ app.post('/card', async (req, res) => {
   }
 
   // Set the ID based on the card name
-  const id = body.data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-');
+  const id = computeCardIdFromName(body.data.name);
 
   // Check if card with this ID already exists
   const existingCard = await getCardById(id);
@@ -226,6 +245,21 @@ app.post('/preview', async (req, res) => {
   const card = new Card(body.data);
   res.setHeader('Content-Type', 'image/png');
   res.send(await getRender(card));
+});
+
+app.post('/cleanup', async (req, res) => {
+  const cards = await getAllCards();
+  const messages: string[] = [];
+  for (const card of cards) {
+    const cardId = computeCardIdFromName(card.name);
+    if (card.id !== cardId) {
+      const message = `renamed card ${card.id} to ${cardId}`;
+      messages.push(message);
+      await fs.rename(`./set/${card.id}.json`, `./set/${cardId}.json`);
+      console.log(message);
+    }
+  }
+  res.json({ message: 'Cleanup completed', details: messages });
 });
 
 cardConjurer.start().then(() => {

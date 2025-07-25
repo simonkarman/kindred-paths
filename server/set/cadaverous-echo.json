@@ -19,7 +19,7 @@
       "content": "Choose target creature card from a graveyard. Target player sacrifices X creatures, where X is the number of creature types of the chosen creature card. X can't be greater than 3."
     }
   ],
-  "collectorNumber": 14,
+  "collectorNumber": 314,
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-24",

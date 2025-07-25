@@ -19,7 +19,7 @@
     },
     {
       "variant": "inline-reminder",
-      "content": "When this creature enters or attacks, you may pay {r} to exile another creature card from your hand. You may cast those cards for as long as they remain exiled, and they costs {r} (or {1}) less to cast. When this creature leaves the battlefield, put the exiled cards into their owner's hands."
+      "content": "When this creature enters or attacks, you may pay {r} to exile another creature card from your hand. You may cast those cards for as long as they remain exiled, and they costs {r} (or{lns}{1}) less to cast. When this creature leaves the battlefield, put the exiled cards into their owner's hands."
     },
     {
       "variant": "ability",
@@ -30,7 +30,7 @@
     "power": 1,
     "toughness": 1
   },
-  "collectorNumber": 1,
+  "collectorNumber": 101,
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",

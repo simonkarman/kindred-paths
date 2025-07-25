@@ -15,10 +15,14 @@
     },
     {
       "variant": "ability",
-      "content": "{t}: Add {u} or {b}. Activate only if you control a Demon or a Sphinx or if a creature card in your graveyard is a Demon or a Sphinx."
+      "content": "{t}: Add {u}. Activate only if you control a Sphinx or if you have a Sphinx card in your graveyard."
+    },
+    {
+      "variant": "ability",
+      "content": "{t}: Add {b}. Activate only if you control a Demon or if you have a Demon card in your graveyard."
     }
   ],
-  "collectorNumber": 20,
+  "collectorNumber": 320,
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-24",
