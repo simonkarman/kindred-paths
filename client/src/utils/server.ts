@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SerializedCard, SerializedCardSchema } from 'kindred-paths';
+import { Card, SerializedCard, SerializedCardSchema } from 'kindred-paths';
 
 export const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:4101';
 
@@ -82,4 +82,26 @@ export async function updateCard(serializedCard: SerializedCard): Promise<Serial
     throw new Error(JSON.stringify(responseJson, undefined, 2));
   }
   return responseJson;
+}
+
+
+export interface NameSuggestion {
+  name: string;
+  reason: string;
+}
+
+export async function getNameSuggestions(card: Card): Promise<NameSuggestion[]> {
+  const cardJson = card.toJson();
+  const response = await fetch(`${serverUrl}/suggest/name`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(cardJson),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch name suggestions');
+  }
+  return await response.json();
 }

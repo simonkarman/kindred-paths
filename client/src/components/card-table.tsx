@@ -6,10 +6,9 @@ import { useState } from 'react';
 import { RarityText } from '@/components/rarity-text';
 import { ManaCost } from '@/components/mana-cost';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faHippo, faImage, faPenToSquare, faShieldCat, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faImage, faPenToSquare, faShieldCat, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import { deleteCard } from '@/utils/server';
-import { useLocalStorageState } from '@/utils/use-local-storage-state';
 import { useDeckName } from '@/components/deck-name-setter';
 
 type Filter = { name: string, predicate: (card: Card) => boolean };

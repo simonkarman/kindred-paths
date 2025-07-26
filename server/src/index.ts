@@ -4,6 +4,8 @@ import cors from 'cors';
 import { Card, SerializedCardSchema, hash, SerializedCard } from 'kindred-paths';
 import { CardConjurer } from './card-conjurer';
 import sharp from 'sharp';
+import { Anthropic } from '@anthropic-ai/sdk';
+import { z } from 'zod';
 
 const set = {
   author: 'Simon Karman',
@@ -320,6 +322,62 @@ app.post('/cleanup', async (req, res) => {
   }
 
   res.json({ message: 'Cleanup completed', details: messages });
+});
+
+const aiCardNameSuggestions = async (card: Card) => {
+  const anthropic = new Anthropic();
+  const msg = await anthropic.messages.create({
+    model: "claude-opus-4-20250514",
+    max_tokens: 1000,
+    temperature: 1,
+    system: "You're an expert in coming up with creative names for custom Magic the Gathering cards. " +
+      "Always respond with a JSON array where each entry is a suggestion. " +
+      "Generate name suggestions and return ONLY valid JSON without any markdown formatting or code blocks. " +
+      "Return as an array of objects with \"name\" and \"reason\" properties. " +
+      "Each suggestion is an object with two properties. " +
+      "'name' - which is the the name you suggest for the card. " +
+      "'reason' - which is a short explanation of why you chose this name. " +
+      "Please add 5-10 suggestions. Avoid using the same name twice. " +
+      "Use different styles of names, it is okay if the users doesn't use one of the provided suggestion directly but picks from multiple suggestions. " +
+      "For sorceries and instants try to use the name either as something that happened or describes what happens when the spell resolves." +
+      "For creatures use names like 'Arabho, The Great', that have a given name and a title. " +
+      "For noncreature permanents use names of places, objects, or concepts. That describe the context within what happens on the card could happen. " +
+      "In general, use different styles and approaches to naming the cards.",
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `Could you suggest some card names for ${card.explain({ withoutName: true})}`
+          }
+        ]
+      }
+    ]
+  });
+
+  const respondError = (reason: string) => [{ name: "No suggestions available", reason }];
+
+  const message = msg.content.find(content => content.type === 'text')?.text;
+  if (!message) {
+    return respondError("No text was outputted by the AI model.");
+  }
+
+  try {
+    return z.array(z.object({ name: z.string().min(1), reason: z.string().min(1) })).parse(JSON.parse(message));
+  } catch (e) {
+    return respondError("The response from the AI model was not valid JSON.");
+  }
+}
+
+app.post('/suggest/name', async (req, res) => {
+  const body = SerializedCardSchema.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: 'Invalid card data', details: body.error });
+    return;
+  }
+  const card = new Card(body.data);
+  res.json(await aiCardNameSuggestions(card));
 });
 
 cardConjurer.start().then(() => {

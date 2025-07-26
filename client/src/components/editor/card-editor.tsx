@@ -126,8 +126,6 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     <div className="flex gap-8">
       <div className="space-y-6 w-2xl border border-zinc-200 bg-zinc-50 rounded-lg p-2 shadow">
         <h2 className="text-lg font-bold my-2 text-center">Create Card</h2>
-
-        {<CardNameInput name={name} setName={setName} getErrorMessage={() => getErrorMessage('name')}/>}
         {<CardTypesInput types={types} setTypes={setTypes} getErrorMessage={() => getErrorMessage('types')}/>}
         {pt
           && <CardPTInput pt={pt} setPt={setPt} getErrorMessage={() => getErrorMessage('pt')}/>}
@@ -138,6 +136,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
         {<CardRulesInput rules={rules} setRules={setRules} getErrorMessage={() => getErrorMessage('rules')}/>}
         {<CardSupertypeInput supertype={supertype} setSupertype={setSupertype} types={types} getErrorMessage={() => getErrorMessage('supertype')}/>}
         {<CardRarityInput rarity={rarity} setRarity={setRarity} getErrorMessage={() => getErrorMessage('rarity')}/>}
+        {<CardNameInput name={name} setName={setName} getErrorMessage={() => getErrorMessage('name')} card={card} />}
         {<CardCollectorNumberInput collectorNumber={collectorNumber} setCollectorNumber={setCollectorNumber}
                                    getErrorMessage={() => getErrorMessage('collectorNumber')}/>}
         <CardTagsInput tags={tags} setTags={setTags} getErrorMessage={() => getErrorMessage('tags')}/>

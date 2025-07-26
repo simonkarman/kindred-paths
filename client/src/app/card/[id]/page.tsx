@@ -7,7 +7,8 @@ import { CardExplanation } from '@/components/card-explanation';
 import { getCard } from '@/utils/server';
 import { PageProps } from '@/utils/page-props';
 
-export async function generateMetadata({ params }: PageProps<{ id: string }>): Promise<Metadata> {
+export async function generateMetadata({ params: _params }: PageProps<{ id: string }>): Promise<Metadata> {
+  const params = await _params;
   const card = await getCard(params.id);
   return {
     title: `KPA: #${card?.collectorNumber} - ${card?.name ?? params.id}`,

@@ -9,7 +9,8 @@ import { PageProps } from '@/utils/page-props';
 const n = (count: number) => Array.from({ length: count }, (_, i) => i + 1);
 const getCount = (card: Card) => typeof card.tags?.['count'] === 'number' ? card.tags['count'] : 0;
 
-export async function generateMetadata({ params }: PageProps<{ deckName: string }>): Promise<Metadata> {
+export async function generateMetadata({ params: _params }: PageProps<{ deckName: string }>): Promise<Metadata> {
+  const params = await _params;
   return {
     title: `KPA: ${capitalize(params.deckName)} Deck`,
   }

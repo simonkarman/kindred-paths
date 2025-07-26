@@ -244,8 +244,9 @@ export class Card {
     });
   }
 
-  public explain(): string {
-    let readable = `"${this.name}" (#${this.collectorNumber}) is a ${this.rarity} `;
+  public explain(props?: { withoutName?: boolean }): string {
+    let readable = props?.withoutName ? '' : `"${this.name}" (#${this.collectorNumber}) is `;
+    readable += `a ${this.rarity} `
     if (this.supertype) {
       readable += `${this.supertype} `;
     }
