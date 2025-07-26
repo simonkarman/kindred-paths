@@ -22,15 +22,15 @@
     },
     {
       "variant": "ability",
-      "content": "{t}: Gain 1 life."
+      "content": "{t}: Create a 1/1 white Cat creature token."
     },
     {
       "variant": "ability",
-      "content": "As long as ~ is courageous, it has \"Whenever ~ attacks create a 1/1 Cat creature token with lifelink that's tapped and attacking.\""
+      "content": "As long as ~ is courageous, other Cats you control have lifelink."
     }
   ],
   "pt": {
-    "power": 3,
+    "power": 2,
     "toughness": 3
   },
   "collectorNumber": 210,

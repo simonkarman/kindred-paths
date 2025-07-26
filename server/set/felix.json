@@ -14,11 +14,11 @@
   "rules": [
     {
       "variant": "keyword",
-      "content": "courage 2"
+      "content": "courage 1"
     },
     {
       "variant": "inline-reminder",
-      "content": "Whenever this creature becomes tapped and it isn't attacking or blocking, put a courage counter on it. As long as this creature has 2 or more courage counters on it, it is courageous."
+      "content": "Whenever this creature becomes tapped and it isn't attacking or blocking, put a courage counter on it. As long as this creature has 1 or more courage counters on it, it is courageous."
     },
     {
       "variant": "ability",

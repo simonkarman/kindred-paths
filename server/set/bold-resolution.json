@@ -12,7 +12,7 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "Untap target creature you control. It gets +1/+1 and gains first strike until end of turn."
+      "content": "Target creature you control gets +1/+1 until end of turn. Untap it."
     }
   ],
   "collectorNumber": 208,
@@ -20,6 +20,6 @@
     "status": "concept",
     "createdAt": "2025-07-24",
     "deck": "courage",
-    "count": 2
+    "count": 1
   }
 }

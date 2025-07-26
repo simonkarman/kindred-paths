@@ -19,7 +19,7 @@
     },
     {
       "variant": "ability",
-      "content": "{2}{r}, {t}: Target accompanied creature you control deals 1 damage to each opponent."
+      "content": "{1}{r}{r}, {t}: Target accompanied creature you control deals 2 damage to each opponent."
     },
     {
       "variant": "flavor",

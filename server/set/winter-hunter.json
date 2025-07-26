@@ -19,7 +19,19 @@
     },
     {
       "variant": "ability",
-      "content": "When ~ enters, put your choice of a courage or +1/+1 counter on up to one target creature you control."
+      "content": "When ~ enters, choose one {-}"
+    },
+    {
+      "variant": "ability",
+      "content": "• Put two courage counters on another target creature you control."
+    },
+    {
+      "variant": "ability",
+      "content": "• Put a +1/+1 counter on target creature you control."
+    },
+    {
+      "variant": "ability",
+      "content": "• Gain 3 life."
     }
   ],
   "pt": {
@@ -31,6 +43,6 @@
     "status": "concept",
     "createdAt": "2025-07-24",
     "deck": "courage",
-    "count": 3
+    "count": 2
   }
 }

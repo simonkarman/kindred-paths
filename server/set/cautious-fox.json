@@ -1,0 +1,39 @@
+{
+  "name": "Cautious Fox",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "fox"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "white": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Courage 3"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Whenever this creature becomes tapped and it isn't attacking or blocking, put a courage counter on it. As long as this creature has 3 or more courage counters on it, it is courageous."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever a creature enters the battlefield under an opponents control, if ~ isn't courageous, tap it and you gain{lns}1 life."
+    }
+  ],
+  "pt": {
+    "power": 3,
+    "toughness": 3
+  },
+  "collectorNumber": 216,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-26",
+    "deck": "courage",
+    "count": 2
+  }
+}

@@ -277,7 +277,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
         </li>
       })}
     </ul>
-    {hasDeckName && <p>Deck {deckName} has a {totalCount} cards.</p>}
+    {hasDeckName && <p>Deck {deckName} has {totalCount} cards.</p>}
     <Link
       className="mt-4 inline-block bg-blue-600 text-white font-bold px-4 py-2 rounded hover:bg-blue-800 active:bg-blue-900"
       href="/create"
