@@ -254,8 +254,16 @@ app.post('/preview', async (req, res) => {
   }
   const card = new Card(body.data);
   res.setHeader('Content-Type', 'image/png');
-  const { render } = await getRender(card);
+  const { render, fromCache } = await getRender(card);
   res.send(render);
+
+  // Save the card json to the previews directory
+  if (!fromCache) {
+    const previewId = `${new Date().toISOString()}-${computeCardIdFromName(card.name)}`;
+    const previewPath = `./previews/${previewId}.json`;
+    await fs.mkdir('./previews', { recursive: true });
+    await fs.writeFile(previewPath, JSON.stringify(card.toJson(), null, 2), 'utf-8');
+  }
 });
 
 app.post('/cleanup', async (req, res) => {

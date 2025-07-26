@@ -12,15 +12,19 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "Target creature you control gains flying and gets +1/+0 until end of turn if it is enticed to a creature card that has flying. The same is true for menace, haste, and first strike."
+      "content": "Choose one {-}"
     },
     {
-      "variant": "inline-reminder",
-      "content": "For example, if the creature is enticed to a creature with flying and first strike, it gains flying and first strike and gets +2/+0 until end of turn"
+      "variant": "ability",
+      "content": "• Deals X damage to up to X targets, where X is the number of accompanied creatures you control."
+    },
+    {
+      "variant": "ability",
+      "content": "• Deal 1 damage to any target."
     },
     {
       "variant": "keyword",
-      "content": "flashback {5}{r}"
+      "content": "flashback {3}{r}"
     },
     {
       "variant": "inline-reminder",
@@ -31,7 +35,7 @@
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 2
   }
 }

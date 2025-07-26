@@ -1,5 +1,5 @@
 {
-  "name": "Groah, Tempter",
+  "name": "Rona, Grounded Skyreacher",
   "rarity": "common",
   "types": [
     "creature"
@@ -15,19 +15,15 @@
   "rules": [
     {
       "variant": "keyword",
-      "content": "haste"
+      "content": "accompany {r}"
     },
     {
-      "variant": "keyword",
-      "content": "flying"
-    },
-    {
-      "variant": "keyword",
-      "content": "entice {r}"
+      "variant": "inline-reminder",
+      "content": "Whenever this creature enters or attacks, you may pay {r} to exile a red nonland card from your hand. You may cast those cards for as long as they remain exiled, and they cost {r} (or {1}) less to cast."
     },
     {
       "variant": "ability",
-      "content": "As long as ~ is enticed, it gets +1/+1."
+      "content": "As long as ~ is accompanied by a creature card with flying, it gets +1/+1 and has flying. The same is true for haste, menace, and first strike.{lns}"
     }
   ],
   "pt": {
@@ -38,7 +34,7 @@
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 1
   }
 }

@@ -12,14 +12,14 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "Deal X damage to each creature that is not enticed, where X is the number of creature cards you own in exile enticed to a creature you control."
+      "content": "Deal X damage to target creature an opponent controls, where X is the number of red cards you own in exile."
     }
   ],
   "collectorNumber": 111,
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 1
   }
 }

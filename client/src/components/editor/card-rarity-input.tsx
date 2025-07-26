@@ -7,7 +7,7 @@ export const CardRarityInput = (props: {
   getErrorMessage: () => string | undefined,
 }) => {
   return <div className="space-y-1">
-    <label htmlFor="cardRarity" className="block font-medium text-gray-800">
+    <label htmlFor="cardRarity" className="block font-medium text-zinc-800">
       Card Rarity
     </label>
     <div className="px-1 flex gap-4 w-full justify-between">
@@ -20,7 +20,7 @@ export const CardRarityInput = (props: {
             value={rarityOption}
             checked={props.rarity === rarityOption}
             onChange={(e) => props.setRarity(e.target.value as CardRarity)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-zinc-300"
             style={{
               accentColor: typographyRarityColors.get(rarityOption)?.[0],
             }}

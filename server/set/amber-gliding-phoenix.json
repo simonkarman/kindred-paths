@@ -13,8 +13,8 @@
   },
   "rules": [
     {
-      "variant": "keyword",
-      "content": "flying"
+      "variant": "ability",
+      "content": "~ has flying as long as it is your turn."
     }
   ],
   "pt": {
@@ -25,7 +25,7 @@
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 2
   }
 }

@@ -12,7 +12,7 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "You may entice creature cards from your graveyard when resolving an entice ability."
+      "content": "You may pay an additional {2} when paying for an accompany ability. If you do, accompany a nonland card from your graveyard instead of your hand."
     },
     {
       "variant": "flavor",
@@ -23,7 +23,7 @@
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 1
   }
 }

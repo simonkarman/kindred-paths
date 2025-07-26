@@ -12,18 +12,22 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "Enticed creatures you control have haste."
+      "content": "Whenever you attack, choose one {-}"
     },
     {
       "variant": "ability",
-      "content": "Enticed attacking creatures you control get +1/+0 for each creature card enticed to them."
+      "content": "• Attacking creatures you control get +1/+0."
+    },
+    {
+      "variant": "ability",
+      "content": "• Attacking creatures you control get +2/+0 for each card type among cards accompanied to them."
     }
   ],
   "collectorNumber": 105,
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 2
   }
 }

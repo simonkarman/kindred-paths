@@ -5,7 +5,7 @@ export function CardExplanation({ serializedCard }: { serializedCard: Serialized
   const card = new _Card(serializedCard);
   return <div className="max-w-160 space-y-6">
     <h1 className="font-bold text-xl mb-0">{card.name}</h1>
-    <p className="text-gray-600 italic">
+    <p className="text-zinc-600 italic">
       {card.explain()}
     </p>
     <p>
@@ -23,7 +23,7 @@ export function CardExplanation({ serializedCard }: { serializedCard: Serialized
       <span className="font-bold">Rules:</span><br />
       {card.rules.map((rule, index) => <span
         key={index}
-        className={["keyword", "ability"].includes(rule.variant) ? '' : 'text-gray-500 italic'}
+        className={["keyword", "ability"].includes(rule.variant) ? '' : 'text-zinc-500 italic'}
       >
         {rule.variant === "keyword" ? capitalize(rule.content) : rule.content}<br/>
       </span>)}

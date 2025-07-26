@@ -1,5 +1,5 @@
 {
-  "name": "Enticing Cave",
+  "name": "Partnership Peak",
   "rarity": "common",
   "types": [
     "land"
@@ -19,14 +19,18 @@
     },
     {
       "variant": "ability",
-      "content": "{2}{r}, {t}, Sacrifice ~: Target creature you control deals X damage to each opponent, where X is the number of creature cards enticed to it."
+      "content": "{2}{r}, {t}: Target accompanied creature you control deals 1 damage to each opponent."
+    },
+    {
+      "variant": "flavor",
+      "content": "\"Take the high ground and rain down fury. I'll keep them focused on me.\" - Commander Thrace"
     }
   ],
   "collectorNumber": 113,
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 3
   }
 }

@@ -10,7 +10,7 @@ export function CardRender({ serializedCard, quality, scale }: {
   return <>
       <img
         alt={card.name + " image"}
-        className="aspect-[63/88] w-100 bg-gray-50 rounded-3xl border"
+        className="aspect-[63/88] w-100 bg-zinc-50 rounded-3xl border"
         src={`${serverUrl}/render/${card.id}?scale=${scale || 1}&quality=${quality || 100}`}
       />
   </>;

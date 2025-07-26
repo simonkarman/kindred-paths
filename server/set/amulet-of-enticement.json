@@ -1,5 +1,5 @@
 {
-  "name": "Amulet of Enticement",
+  "name": "Amulet of Company",
   "rarity": "common",
   "types": [
     "artifact"
@@ -11,18 +11,18 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "{t}: Add {c}."
+      "content": "{t}: Add {r}. Use this mana only to cast cards you own in exile."
     },
     {
       "variant": "ability",
-      "content": "{t}: Add {r}. Use this mana only to cast creature cards you own in exile enticed to a creature you control. When that creature enters the battlefield, it gains haste until end of turn."
+      "content": "{t}: Until end of turn, whenever a creature you control enters, if it was cast from anywhere other than your hand, it gains haste until end of turn."
     }
   ],
   "collectorNumber": 108,
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 1
   }
 }

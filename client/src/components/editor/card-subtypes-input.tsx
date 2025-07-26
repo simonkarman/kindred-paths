@@ -40,14 +40,14 @@ export const CardSubtypesInput = (props: {
 
   return (
     <div className="space-y-1">
-      <label htmlFor="cardSubtypes" className="block font-medium text-gray-800">
+      <label htmlFor="cardSubtypes" className="block font-medium text-zinc-800">
         Card Subtypes
       </label>
 
       {/* Display current subtypes */}
-      <div className="min-h-[2.5rem] p-2 border border-gray-300 rounded-md bg-gray-50">
+      <div className="min-h-[2.5rem] p-2 border border-zinc-300 rounded-md bg-zinc-50">
         {subtypes.length === 0 ? (
-          <span className="text-gray-500 italic">-</span>
+          <span className="text-zinc-500 italic">-</span>
         ) : (
           <div className="flex flex-wrap gap-2">
             {subtypes.map((subtype, index) => (
@@ -59,7 +59,7 @@ export const CardSubtypesInput = (props: {
                     type="button"
                     onClick={() => moveSubtype(index, 'up')}
                     disabled={index === 0}
-                    className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    className="text-blue-600 hover:text-blue-800 disabled:text-zinc-400 disabled:cursor-not-allowed"
                     title="Move up"
                   >
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -73,7 +73,7 @@ export const CardSubtypesInput = (props: {
                     type="button"
                     onClick={() => moveSubtype(index, 'down')}
                     disabled={index === subtypes.length - 1}
-                    className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    className="text-blue-600 hover:text-blue-800 disabled:text-zinc-400 disabled:cursor-not-allowed"
                     title="Move down"
                   >
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -111,13 +111,13 @@ export const CardSubtypesInput = (props: {
           onChange={(e) => setNewSubtype(e.target.value.toLowerCase())}
           onKeyPress={handleKeyPress}
           placeholder="Add a new subtype..."
-          className="flex-1 bg-white px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 bg-white px-2 py-1 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
           type="button"
           onClick={addSubtype}
           disabled={!newSubtype.trim() || subtypes.includes(newSubtype.trim())}
-          className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-zinc-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           Add
         </button>

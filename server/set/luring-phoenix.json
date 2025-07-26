@@ -15,19 +15,19 @@
   "rules": [
     {
       "variant": "keyword",
-      "content": "entice {r}"
+      "content": "accompany {r}"
     },
     {
       "variant": "inline-reminder",
-      "content": "When this creature enters or attacks, you may pay {r} to exile another creature card from your hand. You may cast those cards for as long as they remain exiled, and they costs {r} (or {1}) less to cast. When this creature leaves the battlefield, put the exiled cards into their owner's hands."
+      "content": "Whenever this creature enters or attacks, you may pay {r} to exile a red nonland card from your hand. You may cast those cards for as long as they remain exiled, and they cost {r} (or {1}) less to cast."
     },
     {
       "variant": "ability",
-      "content": "As long as ~ is enticed, it has flying."
+      "content": "As long as ~ is accompanied by an instant or sorcery card, it has haste and flying."
     },
     {
       "variant": "ability",
-      "content": "Whenever you cast a card from exile, this creature gets +3/+0 until end of turn."
+      "content": "Whenever you cast an instant or sorcery card from exile, this creature gets +2/+0 until end{lns}of turn."
     }
   ],
   "pt": {
@@ -38,7 +38,7 @@
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 2
   }
 }

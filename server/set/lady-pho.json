@@ -1,5 +1,5 @@
 {
-  "name": "Lady Pho",
+  "name": "Burnout Flamebird",
   "rarity": "common",
   "types": [
     "creature"
@@ -21,27 +21,19 @@
       "content": "flying"
     },
     {
-      "variant": "keyword",
-      "content": "menace"
-    },
-    {
-      "variant": "keyword",
-      "content": "first strike"
-    },
-    {
       "variant": "ability",
-      "content": "Whenever this creature deals combat to a player, sacrifice it."
+      "content": "Whenever ~ deals combat to a player, it deals that much damage to target creature an opponent controls. Then, sacrifice ~."
     }
   ],
   "pt": {
-    "power": 5,
-    "toughness": 5
+    "power": 3,
+    "toughness": 2
   },
   "collectorNumber": 109,
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 1
   }
 }

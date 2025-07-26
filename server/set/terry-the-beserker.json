@@ -19,7 +19,7 @@
     },
     {
       "variant": "ability",
-      "content": "Whenever a creature enters under your control, if it was not cast from your hand, deal 1 damage to target creature an opponent controls."
+      "content": "Whenever a creature enters under your control, if it was cast from anywhere other than your hand, ~ deals 1 damage to target creature an opponent controls."
     }
   ],
   "pt": {
@@ -30,7 +30,7 @@
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 1
   }
 }

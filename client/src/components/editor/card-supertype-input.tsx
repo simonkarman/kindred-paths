@@ -7,7 +7,7 @@ export const CardSupertypeInput = (props: {
   getErrorMessage: () => string | undefined,
 }) => {
   return <div className="space-y-1">
-    <label className="block font-medium text-gray-800">
+    <label className="block font-medium text-zinc-800">
       Card Super Type
     </label>
     <div className="space-y-2 flex items-baseline gap-4">

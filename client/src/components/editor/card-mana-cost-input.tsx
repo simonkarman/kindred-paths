@@ -6,7 +6,7 @@ export const CardManaCostInput = (props: {
   getErrorMessage: (color: CardColor | 'colorless') => string | undefined
 }) => {
   return <div className="space-y-1">
-    <label htmlFor="cardManaCost" className="block font-medium text-gray-800">
+    <label htmlFor="cardManaCost" className="block font-medium text-zinc-800">
       Card Mana Cost
     </label>
     <div className="grid grid-cols-3 gap-2">
@@ -27,7 +27,7 @@ export const CardManaCostInput = (props: {
                 [manaType]: isNaN(value) ? undefined : value,
               });
             }}
-            className="w-full bg-white px-1 py-0.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-white px-1 py-0.5 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         {props.getErrorMessage(manaType) && (

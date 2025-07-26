@@ -1,6 +1,15 @@
 import { getCard } from '@/utils/server';
 import Link from 'next/link';
 import { CardEditor } from '@/components/editor/card-editor';
+import { PageProps } from '@/utils/page-props';
+import type { Metadata } from 'next';
+
+export async function generateMetadata({ params }: PageProps<{ id: string }>): Promise<Metadata> {
+  const card = await getCard(params.id);
+  return {
+    title: `KPA: Edit ${card?.name ?? params.id}`,
+  }
+}
 
 export default async function CardEdit({ params: _params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const params = await _params;

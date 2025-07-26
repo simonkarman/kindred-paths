@@ -124,7 +124,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   ;
   return (<>
     <div className="flex gap-8">
-      <div className="space-y-6 w-2xl border border-gray-200 bg-gray-50 rounded-lg p-2 shadow">
+      <div className="space-y-6 w-2xl border border-zinc-200 bg-zinc-50 rounded-lg p-2 shadow">
         <h2 className="text-lg font-bold my-2 text-center">Create Card</h2>
 
         {<CardNameInput name={name} setName={setName} getErrorMessage={() => getErrorMessage('name')}/>}

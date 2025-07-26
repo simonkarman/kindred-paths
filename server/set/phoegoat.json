@@ -1,5 +1,5 @@
 {
-  "name": "Phoegoat",
+  "name": "Thrace, Tactical Commander",
   "rarity": "common",
   "types": [
     "creature"
@@ -15,15 +15,15 @@
   "rules": [
     {
       "variant": "keyword",
-      "content": "entice {r}{r}"
+      "content": "accompany {r}{r}"
     },
     {
       "variant": "inline-reminder",
-      "content": "When this creature enters or attacks, you may pay {r}{r} to exile another creature card from your hand. You may cast those cards for as long as they remain exiled, and they costs {r}{r} (or {1}{r}, or {2}) less to cast. When this creature leaves the battlefield, put the exiled cards into their owner's hands."
+      "content": "Whenever this creature enters or attacks, you may pay {r}{r} to exile a red nonland card from your hand. You may cast those cards for as long as they remain exiled, and they cost {r}{r} (or {1}{r}, or {2}) less to cast."
     },
     {
       "variant": "ability",
-      "content": "Whenever ~ entices a card, deal 3 damage to target creature an opponent{lns}controls."
+      "content": "Whenever ~ accompanies a card, it deal 2 damage to target creature an opponent controls."
     }
   ],
   "pt": {
@@ -34,7 +34,7 @@
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 2
   }
 }

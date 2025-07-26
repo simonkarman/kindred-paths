@@ -43,18 +43,18 @@ export const CardRulesInput = (props: {
 
   return (
     <div className="space-y-1">
-      <label className="block font-medium text-gray-800">
+      <label className="block font-medium text-zinc-800">
         Card Rules
       </label>
 
       <div className="space-y-2">
         {rules.map((rule, index) => (
-          <div key={index} className="flex items-center gap-2 p-2 border border-gray-200 rounded-md bg-gray-50">
+          <div key={index} className="flex items-center gap-2 p-2 border border-zinc-200 rounded-md bg-zinc-50">
             {/* Variant Selector */}
             <select
               value={rule.variant}
               onChange={(e) => updateRule(index, 'variant', e.target.value as RuleVariant)}
-              className="px-2 py-1 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-2 py-1 border border-zinc-300 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {ruleVariants.map(variant => (
                 <option key={variant} value={variant}>
@@ -69,14 +69,14 @@ export const CardRulesInput = (props: {
               value={rule.variant === "keyword" ? capitalize(rule.content) : rule.content}
               onChange={(e) => updateRule(index, 'content', e.target.value)}
               placeholder="Enter rule content..."
-              className="flex-1 px-2 py-1 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             {/* Move Up Button */}
             <button
               onClick={() => moveRule(index, 'up')}
               disabled={index === 0}
-              className="px-2 py-1 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-2 py-1 text-xs font-medium text-zinc-600 bg-white border border-zinc-300 rounded hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
               title="Move up"
             >
               ↑
@@ -86,7 +86,7 @@ export const CardRulesInput = (props: {
             <button
               onClick={() => moveRule(index, 'down')}
               disabled={index === rules.length - 1}
-              className="px-2 py-1 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-2 py-1 text-xs font-medium text-zinc-600 bg-white border border-zinc-300 rounded hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
               title="Move down"
             >
               ↓

@@ -83,7 +83,7 @@ export const CardTagsInput = (props: {
           <select
             value={tag.value ? 'true' : 'false'}
             onChange={(e) => updateTag(index, 'value', e.target.value === 'true')}
-            className="px-2 py-1 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="true">true</option>
             <option value="false">false</option>
@@ -95,7 +95,7 @@ export const CardTagsInput = (props: {
             type="number"
             value={tag.value as number}
             onChange={(e) => updateTag(index, 'value', parseFloat(e.target.value) || 0)}
-            className="px-2 py-1 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         );
       default: // string
@@ -105,7 +105,7 @@ export const CardTagsInput = (props: {
             value={tag.value as string}
             onChange={(e) => updateTag(index, 'value', e.target.value)}
             placeholder="Enter value..."
-            className="px-2 py-1 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         );
     }
@@ -113,27 +113,27 @@ export const CardTagsInput = (props: {
 
   return (
     <div className="space-y-1">
-      <label className="block font-medium text-gray-800">
+      <label className="block font-medium text-zinc-800">
         Card Tags
       </label>
 
       <div className="space-y-2">
         {tagsArray.map((tag, index) => (
-          <div key={index} className="flex items-center gap-2 p-2 border border-gray-200 rounded-md bg-gray-50">
+          <div key={index} className="flex items-center gap-2 p-2 border border-zinc-200 rounded-md bg-zinc-50">
             {/* Key Input */}
             <input
               type="text"
               value={tag.key}
               onChange={(e) => updateTag(index, 'key', e.target.value)}
               placeholder="Key..."
-              className="w-32 px-2 py-1 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-32 px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             {/* Type Selector */}
             <select
               value={getValueType(tag.value)}
               onChange={(e) => updateValueType(index, e.target.value as 'string' | 'number' | 'boolean')}
-              className="px-2 py-1 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-2 py-1 border border-zinc-300 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="string">String</option>
               <option value="number">Number</option>
@@ -149,7 +149,7 @@ export const CardTagsInput = (props: {
             <button
               onClick={() => moveTag(index, 'up')}
               disabled={index === 0}
-              className="px-2 py-1 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-2 py-1 text-xs font-medium text-zinc-600 bg-white border border-zinc-300 rounded hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
               title="Move up"
             >
               ↑
@@ -159,7 +159,7 @@ export const CardTagsInput = (props: {
             <button
               onClick={() => moveTag(index, 'down')}
               disabled={index === tagsArray.length - 1}
-              className="px-2 py-1 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-2 py-1 text-xs font-medium text-zinc-600 bg-white border border-zinc-300 rounded hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
               title="Move down"
             >
               ↓

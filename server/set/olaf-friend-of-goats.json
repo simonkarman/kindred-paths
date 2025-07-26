@@ -1,5 +1,5 @@
 {
-  "name": "Olaf, Friend of Goats",
+  "name": "Olaf, Most Friendly",
   "rarity": "common",
   "types": [
     "creature"
@@ -15,15 +15,15 @@
   "rules": [
     {
       "variant": "keyword",
-      "content": "menace"
+      "content": "accompany {r}"
     },
     {
       "variant": "keyword",
-      "content": "entice {r}"
+      "content": "menace"
     },
     {
       "variant": "ability",
-      "content": "When this creature attacks, for each different power among creature cards enticed to it, create a 1/1 red Goat creature token that's tapped and attacking."
+      "content": "When this creature attacks, for each different mana value among cards accompanied to it, create a 1/1 red Goat creature token that's tapped and attacking."
     }
   ],
   "pt": {
@@ -34,7 +34,7 @@
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 3
   }
 }

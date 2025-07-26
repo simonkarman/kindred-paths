@@ -14,16 +14,16 @@
   },
   "rules": [
     {
+      "variant": "ability",
+      "content": "When ~ enters, if it was cast from exile, create a Treasure token."
+    },
+    {
       "variant": "keyword",
       "content": "flying"
     },
     {
-      "variant": "ability",
-      "content": "Whenever you cast a card from exile, create a Treasure token."
-    },
-    {
       "variant": "flavor",
-      "content": "\"No dragon could entice ~ as much as treasure can.\" - Karl, Curious Observer"
+      "content": "\"~ prefers treasure over company.\" - Karl, Curious{lns}Observer"
     }
   ],
   "pt": {
@@ -34,7 +34,7 @@
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
-    "deck": "entice",
+    "deck": "company",
     "count": 2
   }
 }

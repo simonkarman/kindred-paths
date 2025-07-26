@@ -4,7 +4,7 @@ export const CardPTInput = (props: {
   getErrorMessage: () => string | undefined,
 }) => {
   return <div className="space-y-1">
-    <label className="block font-medium text-gray-800">
+    <label className="block font-medium text-zinc-800">
       Power/Toughness
     </label>
     <div className="flex gap-2">
@@ -20,7 +20,7 @@ export const CardPTInput = (props: {
             power: isNaN(power) ? 0 : power,
           });
         }}
-        className="w-full bg-white px-1 py-0.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-white px-1 py-0.5 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       <input
         type="number"
@@ -34,7 +34,7 @@ export const CardPTInput = (props: {
             toughness: isNaN(toughness) ? 0 : toughness,
           });
         }}
-        className="w-full bg-white px-1 py-0.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-white px-1 py-0.5 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </div>
     {props.getErrorMessage() && (

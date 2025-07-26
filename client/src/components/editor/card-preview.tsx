@@ -67,7 +67,7 @@ export function CardPreview({ card }: { card: Card }) {
     {imageUrl && !isRendering &&
       <img
         alt={`${card.name} image`}
-        className={`block aspect-[63/88] w-100 bg-gray-50 rounded-3xl border ${outdated ? 'opacity-40' : ''}`}
+        className={`block aspect-[63/88] w-100 bg-zinc-50 rounded-3xl border ${outdated ? 'opacity-40' : ''}`}
         src={imageUrl}
       />}
     {imageUrl && outdated && <p className="py-2 text-xl text-center text-red-700 font-bold">Outdated!</p>}
