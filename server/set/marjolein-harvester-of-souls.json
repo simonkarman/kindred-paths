@@ -1,0 +1,40 @@
+{
+  "name": "Marjolein, Harvester of Souls",
+  "rarity": "mythic",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "elk",
+    "god"
+  ],
+  "manaCost": {
+    "colorless": 2,
+    "green": 1,
+    "black": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ enter, create two 1/1 black Cat creature tokens with deathtouch."
+    },
+    {
+      "variant": "ability",
+      "content": "As long as you control five or more creatures, ~ is indestructible."
+    }
+  ],
+  "pt": {
+    "power": 5,
+    "toughness": 3
+  },
+  "collectorNumber": 1,
+  "art": "suggestions/<new>-be8980c1-59a2-48a1-8e9c-b38ddf7f87be.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-27",
+    "deck": "courage",
+    "count": 2,
+    "deleted": true
+  }
+}
