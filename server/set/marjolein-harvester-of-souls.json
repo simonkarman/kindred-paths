@@ -16,8 +16,12 @@
   },
   "rules": [
     {
+      "variant": "keyword",
+      "content": "deathtouch"
+    },
+    {
       "variant": "ability",
-      "content": "When ~ enter, create two 1/1 black Cat creature tokens with deathtouch."
+      "content": "When ~ enters, create two 1/1 black Cat creature tokens with deathtouch."
     },
     {
       "variant": "ability",
@@ -25,16 +29,13 @@
     }
   ],
   "pt": {
-    "power": 5,
+    "power": 2,
     "toughness": 3
   },
   "collectorNumber": 1,
   "art": "marjolein.png",
   "tags": {
     "status": "concept",
-    "createdAt": "2025-07-27",
-    "deck": "courage",
-    "count": 2,
-    "deleted": true
+    "createdAt": "2025-07-27"
   }
 }
