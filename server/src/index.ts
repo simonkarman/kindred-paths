@@ -459,9 +459,10 @@ app.post('/suggest/art', async (req, res) => {
       return;
     }
     const buffer = await imageResponse.arrayBuffer();
-    const fileName = `${card.id}-${image.id}.png`;
+    const cardId = computeCardIdFromName(card.name);
+    const fileName = `${cardId}-${image.id}.png`;
     await fs.writeFile(`${dir}/${fileName}`, Buffer.from(buffer));
-    console.log(`Saved art suggestion for ${card.id} (for image ${image.id}): ${fileName}`);
+    console.log(`Saved art suggestion for ${cardId} (for image ${image.id}): ${fileName}`);
     return { art: `suggestions/${fileName}` };
   }));
   res.json(arts);
