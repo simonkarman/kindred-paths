@@ -11,6 +11,10 @@ Make sure you have the following tools installed on your system:
 You can start the server and client in development mode.
 
 ```bash
+# Set the environment variables if you want to use AI suggestions
+export ANTHROPIC_API_KEY="..."
+export LEONARDO_API_KEY="..."
+
 # Make sure you have Docker running...
 npm install
 npm run dev

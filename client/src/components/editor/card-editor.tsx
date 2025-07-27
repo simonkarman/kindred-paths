@@ -2,7 +2,7 @@
 
 import { Card, CardColor, CardRarity, CardSuperType, CardType, Mana, RuleVariant, SerializedCard, SerializedCardSchema } from 'kindred-paths';
 import { useEffect, useState } from 'react';
-import { createCard, updateCard } from '@/utils/server';
+import { createCard, getArtSuggestions, updateCard } from '@/utils/server';
 import { capitalize } from '@/utils/typography';
 import { CardExplanation } from '@/components/card-explanation';
 import { CardNameInput } from '@/components/editor/card-name-input';
@@ -17,6 +17,7 @@ import { CardCollectorNumberInput } from '@/components/editor/card-collector-num
 import { CardTagsInput } from '@/components/editor/card-tags-input';
 import { CardPreview } from '@/components/editor/card-preview';
 import { useDeckName } from '@/components/deck-name-setter';
+import { CardArtInput } from '@/components/editor/card-art-input';
 
 export function CardEditor({ start }: { start: SerializedCard }) {
   const deckName = useDeckName();
@@ -126,19 +127,20 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     <div className="flex gap-8">
       <div className="space-y-6 w-2xl border border-zinc-200 bg-zinc-50 rounded-lg p-2 shadow">
         <h2 className="text-lg font-bold my-2 text-center">Create Card</h2>
-        {<CardTypesInput types={types} setTypes={setTypes} getErrorMessage={() => getErrorMessage('types')}/>}
+        <CardTypesInput types={types} setTypes={setTypes} getErrorMessage={() => getErrorMessage('types')}/>
         {pt
           && <CardPTInput pt={pt} setPt={setPt} getErrorMessage={() => getErrorMessage('pt')}/>}
         {types.some(s => ['land', 'creature', 'artifact', 'enchantment'].includes(s))
           && <CardSubtypesInput subtypes={subtypes} setSubtypes={setSubtypes} getErrorMessage={() => getErrorMessage('subtypes')}/>}
-        {<CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}
-                            getErrorMessage={(color: CardColor | 'colorless') => getErrorMessage(`manaCost.${color}`)}/>}
-        {<CardRulesInput rules={rules} setRules={setRules} getErrorMessage={() => getErrorMessage('rules')}/>}
-        {<CardSupertypeInput supertype={supertype} setSupertype={setSupertype} types={types} getErrorMessage={() => getErrorMessage('supertype')}/>}
-        {<CardRarityInput rarity={rarity} setRarity={setRarity} getErrorMessage={() => getErrorMessage('rarity')}/>}
-        {<CardNameInput name={name} setName={setName} getErrorMessage={() => getErrorMessage('name')} card={card} />}
-        {<CardCollectorNumberInput collectorNumber={collectorNumber} setCollectorNumber={setCollectorNumber}
-                                   getErrorMessage={() => getErrorMessage('collectorNumber')}/>}
+        <CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}
+                            getErrorMessage={(color: CardColor | 'colorless') => getErrorMessage(`manaCost.${color}`)}/>
+        <CardRulesInput rules={rules} setRules={setRules} getErrorMessage={() => getErrorMessage('rules')}/>
+        <CardSupertypeInput supertype={supertype} setSupertype={setSupertype} types={types} getErrorMessage={() => getErrorMessage('supertype')}/>
+        <CardRarityInput rarity={rarity} setRarity={setRarity} getErrorMessage={() => getErrorMessage('rarity')}/>
+        <CardNameInput name={name} setName={setName} getErrorMessage={() => getErrorMessage('name')} card={card} />
+        <CardArtInput art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card} />
+        <CardCollectorNumberInput collectorNumber={collectorNumber} setCollectorNumber={setCollectorNumber}
+                                   getErrorMessage={() => getErrorMessage('collectorNumber')}/>
         <CardTagsInput tags={tags} setTags={setTags} getErrorMessage={() => getErrorMessage('tags')}/>
 
         {/* Create Button */}

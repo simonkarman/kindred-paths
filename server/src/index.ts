@@ -5,7 +5,11 @@ import { Card, SerializedCardSchema, hash, SerializedCard } from 'kindred-paths'
 import { CardConjurer } from './card-conjurer';
 import sharp from 'sharp';
 import { Anthropic } from '@anthropic-ai/sdk';
+import { Leonardo } from "@leonardo-ai/sdk";
 import { z } from 'zod';
+import { GetGenerationByIdResponse } from '@leonardo-ai/sdk/sdk/models/operations';
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const set = {
   author: 'Simon Karman',
@@ -305,6 +309,17 @@ app.post('/cleanup', async (req, res) => {
     }
   }
 
+  // Ensure no cards reference art that is still a suggestion
+  for (const card of await getAllCards()) {
+    if (card.art && card.art.startsWith('suggestions/')) {
+      const message = `removed art suggestion for card ${card.id}: ${card.art}`;
+      messages.push(message);
+      delete card.art;
+      await saveCard(new Card(card));
+      console.log(message);
+    }
+  }
+
   // Render all cards
   for (const card of await getAllCards()) {
     try {
@@ -378,6 +393,78 @@ app.post('/suggest/name', async (req, res) => {
   }
   const card = new Card(body.data);
   res.json(await aiCardNameSuggestions(card));
+});
+
+const leonardo = new Leonardo({
+  bearerAuth: process.env.LEONARDO_API_KEY || '',
+});
+app.post('/suggest/art', async (req, res) => {
+  const body = SerializedCardSchema.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: 'Invalid card data', details: body.error });
+    return;
+  }
+  const card = new Card(body.data);
+
+  const result = await leonardo.image.createGeneration({
+    // wxh 1710x1250 - ratio 1.368 (see placeholder.png)
+    modelId: 'de7d3faf-762f-48e0-b3b7-9d0ac3a3fcf3',
+    width: 1024,
+    height: 768,
+    public: false,
+    prompt: `A Magic the Gathering card art for a custom card named "${card.name}". Artwork in the style of Magic: The Gathering artists like Johannes Voss, Chris Rahn, or Magali Villeneuve, focusing on a dynamic character/action moment that tells a clear story within a single frame, where the main subject takes up approximately 60% of the composition with supporting environmental elements enhancing the scene's impact. For the card: ${card.explain()}.`,
+    numImages: 2,
+  });
+  const generationId = result.object?.sdGenerationJob?.generationId;
+  console.info(`Card art suggestions for ${card.name} at generation: ${generationId}`);
+  if (!generationId) {
+    res.status(500).json({ error: 'Failed to generate card art' });
+    return;
+  }
+  await sleep(5000);
+
+  let retries = 0;
+  let generation: GetGenerationByIdResponse | undefined;
+  while (retries < 10) {
+    try {
+      generation = await leonardo.image.getGenerationById(generationId);
+      if (generation.object?.generationsByPk?.status === 'COMPLETE') {
+        break;
+      }
+      console.log(`Waiting for generation ${generationId} to complete...`);
+      await new Promise(resolve => setTimeout(resolve, 2500)); // Wait 2.5 seconds before retrying
+      retries++;
+    } catch (error) {
+      console.error(`Error fetching generation ${generationId}:`, error);
+      res.status(500).json({ error: 'Failed to fetch card art generation' });
+      return;
+    }
+  }
+  const images = generation?.object?.generationsByPk?.generatedImages?.map(image => ({
+    id: image.id!,
+    url: image.url!,
+  })) ?? [];
+  if (images.length === 0) {
+    res.status(404).json({ error: 'No images found for the given generation ID' });
+    return;
+  }
+
+  // Download the images to the 'art/suggestions/' directory
+  const dir = './art/suggestions';
+  await fs.mkdir(dir, { recursive: true });
+  const arts = await Promise.all(images.map(async (image) => {
+    const imageResponse = await fetch(image.url);
+    if (!imageResponse.ok) {
+      console.error(`Failed to download image ${image.id} from ${image.url}`);
+      return;
+    }
+    const buffer = await imageResponse.arrayBuffer();
+    const fileName = `${card.id}-${image.id}.png`;
+    await fs.writeFile(`${dir}/${fileName}`, Buffer.from(buffer));
+    console.log(`Saved art suggestion for ${card.id} (for image ${image.id}): ${fileName}`);
+    return { art: `suggestions/${fileName}` };
+  }));
+  res.json(arts);
 });
 
 cardConjurer.start().then(() => {

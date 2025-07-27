@@ -105,3 +105,19 @@ export async function getNameSuggestions(card: Card): Promise<NameSuggestion[]> 
   }
   return await response.json();
 }
+
+export async function getArtSuggestions(card: Card): Promise<string[]> {
+  const cardJson = card.toJson();
+  const response = await fetch(`${serverUrl}/suggest/art`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(cardJson),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch art suggestions');
+  }
+  return await response.json();
+}

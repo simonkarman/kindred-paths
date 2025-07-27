@@ -87,7 +87,7 @@ export const CardNameInput = (props: {
               </button>
             </div>
           </div>
-          <div className="max-h-64 overflow-y-auto">
+          <div className="max-h-80 overflow-y-auto">
             {suggestions.map((suggestion, index) => (
               <div
                 key={index}
