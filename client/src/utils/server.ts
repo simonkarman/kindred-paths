@@ -84,7 +84,6 @@ export async function updateCard(serializedCard: SerializedCard): Promise<Serial
   return responseJson;
 }
 
-
 export interface NameSuggestion {
   name: string;
   reason: string;
@@ -106,7 +105,33 @@ export async function getNameSuggestions(card: Card): Promise<NameSuggestion[]> 
   return await response.json();
 }
 
-export async function getArtSuggestions(card: Card): Promise<string[]> {
+export interface SettingSuggestion {
+  name: string;
+  setting: string;
+}
+
+export async function getArtSettingSuggestions(card: Card): Promise<SettingSuggestion[]> {
+  const cardJson = card.toJson();
+  const response = await fetch(`${serverUrl}/suggest/art-setting`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(cardJson),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch card art suggestions');
+  }
+  return await response.json();
+}
+
+export interface ArtSuggestion {
+  fileName: string;
+  base64Image: string;
+}
+
+export async function getArtSuggestions(card: Card): Promise<ArtSuggestion[]> {
   const cardJson = card.toJson();
   const response = await fetch(`${serverUrl}/suggest/art`, {
     method: 'POST',

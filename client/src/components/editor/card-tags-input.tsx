@@ -76,6 +76,7 @@ export const CardTagsInput = (props: {
 
   const renderValueInput = (tag: { key: string, value: string | number | boolean | undefined }, index: number) => {
     const valueType = getValueType(tag.value);
+    const disabled = ['setting'].includes(tag.key);
 
     switch (valueType) {
       case 'boolean':
@@ -83,7 +84,8 @@ export const CardTagsInput = (props: {
           <select
             value={tag.value ? 'true' : 'false'}
             onChange={(e) => updateTag(index, 'value', e.target.value === 'true')}
-            className="px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={disabled}
           >
             <option value="true">true</option>
             <option value="false">false</option>
@@ -95,7 +97,8 @@ export const CardTagsInput = (props: {
             type="number"
             value={tag.value as number}
             onChange={(e) => updateTag(index, 'value', parseFloat(e.target.value) || 0)}
-            className="px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={disabled}
           />
         );
       default: // string
@@ -105,7 +108,8 @@ export const CardTagsInput = (props: {
             value={tag.value as string}
             onChange={(e) => updateTag(index, 'value', e.target.value)}
             placeholder="Enter value..."
-            className="px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={disabled}
           />
         );
     }

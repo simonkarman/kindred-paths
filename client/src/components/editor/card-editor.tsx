@@ -122,7 +122,20 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     }
   };
 
-  ;
+  const artSetting: string = typeof tags?.["setting"] === 'string' ? tags["setting"] : '';
+  const setArtSetting = (setting: string | undefined) => {
+    const _tags = { ...(tags ?? {}) };
+    if (setting === undefined || setting.trim() === '') {
+      delete _tags["setting"];
+      setTags(_tags);
+      return;
+    } else {
+      setTags({
+        ...tags,
+        "setting": setting,
+      });
+    }
+  };
   return (<>
     <div className="flex gap-8">
       <div className="space-y-6 w-2xl border border-zinc-200 bg-zinc-50 rounded-lg p-2 shadow">
@@ -138,7 +151,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
         <CardSupertypeInput supertype={supertype} setSupertype={setSupertype} types={types} getErrorMessage={() => getErrorMessage('supertype')}/>
         <CardRarityInput rarity={rarity} setRarity={setRarity} getErrorMessage={() => getErrorMessage('rarity')}/>
         <CardNameInput name={name} setName={setName} getErrorMessage={() => getErrorMessage('name')} card={card} />
-        <CardArtInput art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card} />
+        <CardArtInput artSetting={artSetting} setArtSetting={setArtSetting} art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card} />
         <CardCollectorNumberInput collectorNumber={collectorNumber} setCollectorNumber={setCollectorNumber}
                                    getErrorMessage={() => getErrorMessage('collectorNumber')}/>
         <CardTagsInput tags={tags} setTags={setTags} getErrorMessage={() => getErrorMessage('tags')}/>

@@ -1,0 +1,29 @@
+{
+  "name": "Miffy, The Curious",
+  "rarity": "mythic",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "rabbit"
+  ],
+  "manaCost": {
+    "colorless": 2,
+    "white": 1,
+    "green": 1
+  },
+  "rules": [],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 401,
+  "art": "miffy-the-curious.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-29",
+    "deck": "miffy",
+    "count": 1
+  }
+}

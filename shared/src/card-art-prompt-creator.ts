@@ -11,10 +11,12 @@ export class CardArtPromptCreator {
 
   createPrompt(card: Card): string {
     const sections: string[] = [];
-    const dominantCardType = card.types[card.types.length - 1];
 
-    // General magic style section
+    // Add introduction section
+    const dominantCardType = card.types[card.types.length - 1];
     sections.push(`A Magic the Gathering artwork for a ${dominantCardType} named "${card.name}"`);
+
+    // Style section
     const focus: { [cardType: string]: string } = {
       'creature': ', focusing on a dynamic moment that tells a clear story within a single frame',
       'artifact': ', focusing on a close up of the artifact as the main subject',
@@ -23,9 +25,16 @@ export class CardArtPromptCreator {
       'land': ', focusing on an empty landscape or environment',
       'enchantment': ', focusing on a magical effect that is visible in the environment',
     };
-    const magicStyle = `in the style of Magic: The Gathering artists like Johannes Voss, Chris Rahn, or Magali Villeneuve${focus[dominantCardType] ?? ''}.` +
-      (dominantCardType === 'land' ? '' : ` The main subject takes up about 60% of the composition.`);
-    sections.push(magicStyle);
+    if (card.tags["deck"] === "miffy") {
+      const miffyStyle = `in the style of Miffy by Dick Bruna using simple colors and without shadows${focus[dominantCardType] ?? ''}.`;
+      sections.push(miffyStyle);
+    } else {
+      const magicStyle = `in the style of Magic: The Gathering artists like Johannes Voss, Chris Rahn, or Magali Villeneuve${focus[dominantCardType] ?? ''}.`;
+      sections.push(magicStyle);
+    }
+
+    // Add main subject section
+    sections.push(dominantCardType === 'land' ? '' : 'The main subject takes up about 60% of the composition.');
 
     // Add card type section
     sections.push(this[`${dominantCardType}Prompt`](card));

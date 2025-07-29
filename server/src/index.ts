@@ -86,11 +86,34 @@ async function saveRender(key: string, render: Buffer): Promise<void> {
 }
 
 async function getRender(card: Card): Promise<{ fromCache: boolean, render: Buffer }> {
-  const key = hash(JSON.stringify({ ...card.toJson(), id: undefined, tags: undefined }));
+  // If there is card art, add a hash of the image to the art property
+  // This ensures the card will be rendered if the art changes
+  let art: string | undefined = undefined;
+  if (card.art) {
+    try {
+      const artBuffer = await fs.readFile(`./art/${card.art}`);
+      const artHash = hash(artBuffer.toString('base64'));
+      art = `${card.art}-${artHash}`;
+    } catch (error) {
+      console.error(`Error reading art file ${art}:`, error);
+    }
+  }
+
+  // Create a unique key for the render based on card properties and art
+  const key = hash(JSON.stringify({
+    ...card.toJson(),
+    id: undefined,
+    tags: undefined,
+    art,
+  }));
+
+  // Check if the render already exists
   const existingRender = await getExistingRender(key);
   if (existingRender) {
     return { fromCache: true, render: existingRender };
   }
+
+  // If not, render the card using Card Conjurer
   const render = await cardConjurer.renderCard(card, set);
   await saveRender(key, render);
   return { fromCache: false, render };
@@ -339,8 +362,8 @@ app.post('/cleanup', async (req, res) => {
   res.json({ message: 'Cleanup completed', details: messages });
 });
 
+const anthropic = new Anthropic();
 const aiCardNameSuggestions = async (card: Card) => {
-  const anthropic = new Anthropic();
   const msg = await anthropic.messages.create({
     model: "claude-opus-4-20250514",
     max_tokens: 1000,
@@ -350,7 +373,7 @@ const aiCardNameSuggestions = async (card: Card) => {
       "Generate name suggestions and return ONLY valid JSON without any markdown formatting or code blocks. " +
       "Return as an array of objects with \"name\" and \"reason\" properties. " +
       "Each suggestion is an object with two properties. " +
-      "'name' - which is the the name you suggest for the card. " +
+      "'name' - which is the name you suggest for the card. " +
       "'reason' - which is a short explanation of why you chose this name. " +
       "Please add 5-10 suggestions. Avoid using the same name twice. " +
       "Use different styles of names, it is okay if the users doesn't use one of the provided suggestion directly but picks from multiple suggestions. " +
@@ -364,14 +387,14 @@ const aiCardNameSuggestions = async (card: Card) => {
         content: [
           {
             type: "text",
-            text: `Could you suggest some card names for ${card.explain({ withoutName: true})}`
+            text: `Could you suggest some card names for ${card.explain({ withoutName: true })}`
           }
         ]
       }
     ]
   });
 
-  const respondError = (reason: string) => [{ name: "No suggestions available", reason }];
+  const respondError = (reason: string) => [{ name: "No name suggestions available", reason }];
 
   const message = msg.content.find(content => content.type === 'text')?.text;
   if (!message) {
@@ -393,6 +416,63 @@ app.post('/suggest/name', async (req, res) => {
   }
   const card = new Card(body.data);
   res.json(await aiCardNameSuggestions(card));
+});
+
+const aiCardArtSettingSuggestions = async (card: Card) => {
+  const msg = await anthropic.messages.create({
+    model: "claude-opus-4-20250514",
+    max_tokens: 1000,
+    temperature: 1,
+    system: "You're an expert in coming up with creative art settings for custom Magic the Gathering cards based on a given card. " +
+      "Always respond with a JSON array where each entry is a suggestion for an art setting. " +
+      "An art setting describes what the card artist that will make the artwork for the card should create. " +
+      "The art setting should describe the location, what happens on the foreground, and what happens on the background. " +
+      "Generate art setting suggestions and return ONLY valid JSON without any markdown formatting or code blocks. " +
+      "Return as an array art setting suggestions, which are objects with \"name\" and \"setting\" properties. " +
+      "Each art setting suggestion is an object with two properties. " +
+      "'name' - which is a title for the art setting. " +
+      "'setting' - which is the short art setting in 1-2 sentences that can be fed to the image generation AI. " +
+      "Please add 5-10 suggestions. Avoid using the same suggestion twice. " +
+      "Use different styles of art settings, it is okay if the users doesn't use one of the provided suggestion directly but picks ideas from multiple suggestions. " +
+      "For sorceries and instants describe the action or event that is happening. " +
+      "For creatures use the name, power, toughness, rarity and rules (keywords and abilities) to describe the art setting. The rules should influence this quite a lot. " +
+      "For noncreature permanents use the name of the card to describe the location or object and use the rules (keywords and abilities) to describe the setting. " +
+      "In general, use different styles and approaches to naming the cards and describe what you would see in the world if the card would resolve.",
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `Could you suggest some card settings for ${card.explain()}`
+          }
+        ]
+      }
+    ]
+  });
+
+  const respondError = (reason: string) => [{ name: "No art setting suggestions available", reason }];
+
+  const message = msg.content.find(content => content.type === 'text')?.text;
+  if (!message) {
+    return respondError("No text was outputted by the AI model.");
+  }
+
+  try {
+    return z.array(z.object({ name: z.string().min(1), setting: z.string().min(1) })).parse(JSON.parse(message));
+  } catch (e) {
+    return respondError("The response from the AI model was not valid JSON.");
+  }
+}
+
+app.post('/suggest/art-setting', async (req, res) => {
+  const body = SerializedCardSchema.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: 'Invalid card data', details: body.error });
+    return;
+  }
+  const card = new Card(body.data);
+  res.json(await aiCardArtSettingSuggestions(card));
 });
 
 const leonardo = new Leonardo({
@@ -466,7 +546,7 @@ app.post('/suggest/art', async (req, res) => {
     const fileName = `${cardId}-${image.id}.png`;
     await fs.writeFile(`${artSuggestionDir}/${fileName}`, Buffer.from(buffer));
     console.log(`Saved art suggestion for ${cardId} (for image ${image.id}): ${fileName}`);
-    return { art: `suggestions/${fileName}` };
+    return { fileName: `suggestions/${fileName}`, base64Image: Buffer.from(buffer).toString('base64') };
   }));
   res.json(arts);
 });
@@ -485,17 +565,15 @@ app.get('/suggest/art/:id', async (req, res) => {
     const files = await fs.readdir(artSuggestionDir);
     const suggestions = files
       .filter(file => file.startsWith(`${cardId}-`) && file.endsWith('.png'))
-      .map(file => `suggestions/${file}`);
+      .map(file => ({
+        fileName: `suggestions/${file}`,
+        base64Image: fs.readFile(`${artSuggestionDir}/${file}`, 'base64'),
+      }));
     res.json(suggestions);
   } catch (error) {
     console.error(`Error reading art suggestions for card ID ${cardId}:`, error);
     res.status(500).json({ error: 'Failed to read art suggestions' });
   }
-});
-
-app.post('/suggest/art/:id', async (req, res) => {
-  // Mark suggestion as used
-
 });
 
 cardConjurer.start().then(() => {

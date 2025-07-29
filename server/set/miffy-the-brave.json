@@ -1,0 +1,29 @@
+{
+  "name": "Miffy, The Brave",
+  "rarity": "mythic",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "rabbit"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "white": 0,
+    "green": 2
+  },
+  "rules": [],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 403,
+  "art": "miffy-the-brave.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-29",
+    "deck": "miffy",
+    "count": 1
+  }
+}

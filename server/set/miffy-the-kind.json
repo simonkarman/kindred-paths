@@ -1,0 +1,28 @@
+{
+  "name": "Miffy, The Kind",
+  "rarity": "mythic",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "rabbit"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "white": 2
+  },
+  "rules": [],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 402,
+  "art": "miffy-the-kind.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-29",
+    "deck": "miffy",
+    "count": 1
+  }
+}
