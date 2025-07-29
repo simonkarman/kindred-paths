@@ -4,7 +4,9 @@
   "types": [
     "land"
   ],
-  "subtypes": [],
+  "subtypes": [
+    "cave"
+  ],
   "manaCost": {
     "colorless": 0
   },
@@ -27,10 +29,12 @@
     }
   ],
   "collectorNumber": 113,
+  "art": "suggestions/partnership-peak-cf4fae71-d894-4f6c-bafc-2e420cd61332.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
     "deck": "company",
-    "count": 3
+    "count": 3,
+    "setting": "Dark clouds with fireballs forming in and raining down from the sky."
   }
 }

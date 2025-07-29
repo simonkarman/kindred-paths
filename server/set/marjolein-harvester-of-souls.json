@@ -1,5 +1,5 @@
 {
-  "name": "Marjolein, Harvester of Souls",
+  "name": "Marjolein, Pet Keeper",
   "rarity": "mythic",
   "supertype": "legendary",
   "types": [
@@ -33,9 +33,10 @@
     "toughness": 3
   },
   "collectorNumber": 1,
-  "art": "marjolein.png",
+  "art": "suggestions/marjolein-pet-keeper-b75f6f2a-78d5-4284-b03c-7182e4c1e3c1.png",
   "tags": {
     "status": "concept",
-    "createdAt": "2025-07-27"
+    "createdAt": "2025-07-27",
+    "setting": "Two black cats can be seen walking in the background."
   }
 }

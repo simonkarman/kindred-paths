@@ -6,7 +6,7 @@
   ],
   "subtypes": [],
   "manaCost": {
-    "colorless": 3,
+    "colorless": 1,
     "blue": 1
   },
   "rules": [

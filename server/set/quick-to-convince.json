@@ -32,10 +32,12 @@
     }
   ],
   "collectorNumber": 110,
+  "art": "suggestions/quick-to-convince-c3910f8c-3b67-4923-973d-87c7b272ed7c.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
     "deck": "company",
-    "count": 2
+    "count": 2,
+    "setting": "A fiery tornado destroying a forest."
   }
 }

@@ -19,7 +19,7 @@
     },
     {
       "variant": "inline-reminder",
-      "content": "Whenever this creature enters or attacks, you may pay {r} to exile a red nonland card from your hand. You may cast those cards for as long as they remain exiled, and they cost {r} (or {1}) less to cast."
+      "content": "Whenever this creature enters or attacks, you may pay {r} to exile a red nonland card from your hand. You may cast that card for as long as it remains exiled, and it cost {r} (or {1}) less to cast."
     },
     {
       "variant": "ability",
@@ -35,6 +35,7 @@
     "toughness": 1
   },
   "collectorNumber": 102,
+  "art": "suggestions/luring-phoenix-d3630dd5-0986-4267-a204-2c170506a790.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",

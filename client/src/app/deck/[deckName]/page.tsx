@@ -7,7 +7,7 @@ import { getCards } from '@/utils/server';
 import { PageProps } from '@/utils/page-props';
 
 const n = (count: number) => Array.from({ length: count }, (_, i) => i + 1);
-const getCount = (card: Card) => typeof card.tags?.['count'] === 'number' ? card.tags['count'] : 0;
+const getCount = (card: Card) => typeof card.tags?.['count'] === 'number' ? card.tags['count'] : 1;
 
 export async function generateMetadata({ params: _params }: PageProps<{ deckName: string }>): Promise<Metadata> {
   const params = await _params;
@@ -21,7 +21,7 @@ export default async function DeckOverview({ params: _params }: Readonly<{ param
   const _cards = await getCards();
 
   const cards = _cards
-    .filter(c => c.tags?.["deleted"] !== true && c.tags?.["deck"] === deckName)
+    .filter(c => c.tags?.["deleted"] !== true && (deckName === "" || deckName === "*" || c.tags?.["deck"] === deckName))
     .toSorted((a, b) => a.collectorNumber - b.collectorNumber)
     .map(c => new Card(c));
 

@@ -1,0 +1,30 @@
+{
+  "name": "Fire Elemental",
+  "rarity": "uncommon",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "elemental"
+  ],
+  "manaCost": {
+    "colorless": 3,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ dies, return it to the battlefield at the beginning of the next end step."
+    }
+  ],
+  "pt": {
+    "power": 5,
+    "toughness": 1
+  },
+  "collectorNumber": 419,
+  "art": "suggestions/fire-elemental-507cfe1d-4cb5-4ac6-8e94-de8f07897fcf.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-28"
+  }
+}

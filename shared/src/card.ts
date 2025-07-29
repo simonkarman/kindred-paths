@@ -14,6 +14,15 @@ export type Mana = CardColor | 'colorless';
 export const cardColors = ['white', 'blue', 'black', 'red', 'green'] as const;
 export const wubrg = ['w', 'u', 'b', 'r', 'g'] as const;
 
+export const landSubtypes = ['plains', 'island', 'swamp', 'mountain', 'forest'] as const;
+export const landSubtypeToColor = (type: typeof landSubtypes[number] | string): CardColor | undefined => ({
+  plains: 'white',
+  island: 'blue',
+  swamp: 'black',
+  mountain: 'red',
+  forest: 'green',
+}[type] as CardColor | undefined);
+
 export const ruleVariants = ['reminder', 'keyword', 'ability', 'inline-reminder', 'flavor'] as const;
 export type RuleVariant = 'reminder' | 'keyword' | 'ability' | 'inline-reminder' | 'flavor';
 export type Rule = { variant: RuleVariant, content: string };

@@ -1,4 +1,5 @@
 export * from './card';
+export * from './card-art-prompt-creator';
 export * from './example-groups';
 export * from './families';
 export * from './group';

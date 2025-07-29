@@ -16,10 +16,12 @@
     }
   ],
   "collectorNumber": 111,
+  "art": "suggestions/enticing-blow-c1151ba9-004a-4675-b1db-f3cc123152b2.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
     "deck": "company",
-    "count": 1
+    "count": 1,
+    "setting": "Heavy wind blowing a human creature away with great force into a dark pit in the background."
   }
 }

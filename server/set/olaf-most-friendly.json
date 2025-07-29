@@ -31,10 +31,12 @@
     "toughness": 3
   },
   "collectorNumber": 107,
+  "art": "suggestions/olaf-most-friendly-7be1bfd3-2c38-4c29-9e10-1d95d0db430b.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
     "deck": "company",
-    "count": 3
+    "count": 3,
+    "setting": "With a group of goats standing behind him ready to rush forward on his command."
   }
 }

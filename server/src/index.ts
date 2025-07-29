@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import express from 'express';
 import cors from 'cors';
-import { Card, SerializedCardSchema, hash, SerializedCard } from 'kindred-paths';
+import { Card, CardArtPromptCreator, SerializedCardSchema, hash, SerializedCard } from 'kindred-paths';
 import { CardConjurer } from './card-conjurer';
 import sharp from 'sharp';
 import { Anthropic } from '@anthropic-ai/sdk';
@@ -398,6 +398,8 @@ app.post('/suggest/name', async (req, res) => {
 const leonardo = new Leonardo({
   bearerAuth: process.env.LEONARDO_API_KEY || '',
 });
+const cardArtPromptCreator = new CardArtPromptCreator();
+const artSuggestionDir = './art/suggestions';
 app.post('/suggest/art', async (req, res) => {
   const body = SerializedCardSchema.safeParse(req.body);
   if (!body.success) {
@@ -406,17 +408,19 @@ app.post('/suggest/art', async (req, res) => {
   }
   const card = new Card(body.data);
 
+  const prompt = cardArtPromptCreator.createPrompt(card);
   const result = await leonardo.image.createGeneration({
     // wxh 1710x1250 - ratio 1.368 (see placeholder.png)
     modelId: 'de7d3faf-762f-48e0-b3b7-9d0ac3a3fcf3',
     width: 1024,
     height: 768,
     public: false,
-    prompt: `A Magic the Gathering card art for a custom card named "${card.name}". Artwork in the style of Magic: The Gathering artists like Johannes Voss, Chris Rahn, or Magali Villeneuve, focusing on a dynamic character/action moment that tells a clear story within a single frame, where the main subject takes up approximately 60% of the composition with supporting environmental elements enhancing the scene's impact. For the card: ${card.explain()}.`,
-    numImages: 2,
+    prompt,
+    numImages: 4,
   });
   const generationId = result.object?.sdGenerationJob?.generationId;
   console.info(`Card art suggestions for ${card.name} at generation: ${generationId}`);
+  console.info('Prompt:', prompt);
   if (!generationId) {
     res.status(500).json({ error: 'Failed to generate card art' });
     return;
@@ -450,8 +454,7 @@ app.post('/suggest/art', async (req, res) => {
   }
 
   // Download the images to the 'art/suggestions/' directory
-  const dir = './art/suggestions';
-  await fs.mkdir(dir, { recursive: true });
+  await fs.mkdir(artSuggestionDir, { recursive: true });
   const arts = await Promise.all(images.map(async (image) => {
     const imageResponse = await fetch(image.url);
     if (!imageResponse.ok) {
@@ -461,11 +464,38 @@ app.post('/suggest/art', async (req, res) => {
     const buffer = await imageResponse.arrayBuffer();
     const cardId = computeCardIdFromName(card.name);
     const fileName = `${cardId}-${image.id}.png`;
-    await fs.writeFile(`${dir}/${fileName}`, Buffer.from(buffer));
+    await fs.writeFile(`${artSuggestionDir}/${fileName}`, Buffer.from(buffer));
     console.log(`Saved art suggestion for ${cardId} (for image ${image.id}): ${fileName}`);
     return { art: `suggestions/${fileName}` };
   }));
   res.json(arts);
+});
+
+app.get('/suggest/art/:id', async (req, res) => {
+  const cardId = req.params.id;
+
+  // Check if the card exists
+  const card = await getCardById(cardId);
+  if (!card) {
+    res.status(404).json({ error: `Card with ID ${cardId} not found` });
+    return;
+  }
+
+  try {
+    const files = await fs.readdir(artSuggestionDir);
+    const suggestions = files
+      .filter(file => file.startsWith(`${cardId}-`) && file.endsWith('.png'))
+      .map(file => `suggestions/${file}`);
+    res.json(suggestions);
+  } catch (error) {
+    console.error(`Error reading art suggestions for card ID ${cardId}:`, error);
+    res.status(500).json({ error: 'Failed to read art suggestions' });
+  }
+});
+
+app.post('/suggest/art/:id', async (req, res) => {
+  // Mark suggestion as used
+
 });
 
 cardConjurer.start().then(() => {

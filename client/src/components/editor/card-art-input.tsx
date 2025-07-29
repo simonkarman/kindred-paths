@@ -14,7 +14,7 @@ export const CardArtInput = (props: {
     <input
       id="cardArt"
       type="text"
-      value={props.art}
+      value={props.art ?? ''}
       onChange={(e) => e.target.value.length === 0 ? props.setArt(undefined) : props.setArt(e.target.value)}
       placeholder="Enter card art..."
       className="w-full bg-white px-1 py-0.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

@@ -11,7 +11,9 @@
   "manaCost": {
     "colorless": 0,
     "blue": 1,
-    "black": 1
+    "black": 1,
+    "white": 0,
+    "green": 0
   },
   "rules": [
     {
@@ -32,6 +34,7 @@
     "toughness": 2
   },
   "collectorNumber": 306,
+  "art": "suggestions/venomtail-swimmer-637e6db4-5332-4a76-979f-ff11417682b0.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-24",

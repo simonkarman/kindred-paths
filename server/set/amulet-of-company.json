@@ -19,10 +19,12 @@
     }
   ],
   "collectorNumber": 108,
+  "art": "suggestions/amulet-of-company-67ade113-e236-405a-8d29-134f4da228ff.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
     "deck": "company",
-    "count": 1
+    "count": 1,
+    "setting": "The amulet is on display in a small wooden box with black fitting."
   }
 }

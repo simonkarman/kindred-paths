@@ -19,7 +19,7 @@
     },
     {
       "variant": "inline-reminder",
-      "content": "Whenever this creature enters or attacks, you may pay {r}{r} to exile a red nonland card from your hand. You may cast those cards for as long as they remain exiled, and they cost {r}{r} (or {1}{r}, or {2}) less to cast."
+      "content": "Whenever this creature enters or attacks, you may pay {r}{r} to exile a red nonland card from your hand. You may cast that card for as long as it remains exiled, and it cost {r}{r} (or {1}{r}, or {2}) less to cast."
     },
     {
       "variant": "ability",
@@ -31,10 +31,12 @@
     "toughness": 1
   },
   "collectorNumber": 103,
+  "art": "suggestions/thrace-tactical-commander-19ee0d9b-6c56-4ead-8caf-42cbad4b6f61.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
     "deck": "company",
-    "count": 2
+    "count": 2,
+    "setting": "Dark clouds with fireballs forming and falling from the sky above."
   }
 }
