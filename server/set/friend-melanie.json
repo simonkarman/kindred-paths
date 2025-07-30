@@ -1,0 +1,36 @@
+{
+  "name": "Friend Melanie, Explorer",
+  "rarity": "uncommon",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "rabbit"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "white": 1,
+    "green": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ enters, search you library for a basic Plains or Forest card, reveal it, then put it into your hand, then shuffle."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever a land enters under you control, if you control three or more lands with different names, create a 2/2 green and white{lns}Rabbit creature token."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 454,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-30",
+    "deck": "miffy",
+    "count": 2
+  }
+}

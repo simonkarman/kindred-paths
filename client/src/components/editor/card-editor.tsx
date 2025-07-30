@@ -35,15 +35,9 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   const [pt, setPt] = useState<{ power: number, toughness: number } | undefined>(start.pt);
   const [collectorNumber, setCollectorNumber] = useState(start.collectorNumber);
   const [art, setArt] = useState<string | undefined>(start.art); // TODO!
-  const [tags, setTags] = useState<{ [key: string]: string | number | boolean } | undefined>({
-    ...start.tags,
-    ...(isCreate && hasActiveDeck ? {
-      deck: deckName,
-      count: 2,
-    } : {})
-  } as {
-    [key: string]: string | number | boolean
-  } | undefined);
+  const [tags, setTags] = useState<{ [key: string]: string | number | boolean } | undefined>(
+    start.tags as { [key: string]: string | number | boolean } | undefined
+  );
 
   // If types changes
   useEffect(() => {
@@ -59,6 +53,17 @@ export function CardEditor({ start }: { start: SerializedCard }) {
       setPt(undefined);
     }
   }, [types]);
+
+  // If deckName changes, update tags
+  useEffect(() => {
+    if (isCreate && deckName.length > 0 && deckName !== "*") {
+      setTags({
+        ...tags,
+        deck: deckName,
+        count: tags?.count ?? 2, // Default to 2 if not set
+      });
+    }
+  }, [deckName]);
 
   const serializedCard: SerializedCard = {
     id: start.id,
@@ -214,7 +219,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
             ? <CardPreview card={card}/>
             : <div className="w-80 h-100 bg-zinc-50 rounded-lg border border-zinc-200 flex items-center justify-center"></div>}
         </div>
-        <hr/>
+        <hr className="border-gray-200" />
 
         {/* Show Errors */}
         {((errors.length > 0) || (validationError !== undefined)) && (<>

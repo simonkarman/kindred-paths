@@ -1,0 +1,40 @@
+{
+  "name": "Local Farmer",
+  "rarity": "uncommon",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "farmer"
+  ],
+  "manaCost": {
+    "colorless": 2,
+    "white": 1,
+    "green": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ enters, create two 2/2 white and green Rabbit creature tokens."
+    },
+    {
+      "variant": "ability",
+      "content": "Tap two untapped creature tokens you control, {t}: Gain 2 life, then populate. Activate only as a sorcery."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "To populate, you create a token that's a copy of a creature token you control."
+    }
+  ],
+  "pt": {
+    "power": 0,
+    "toughness": 1
+  },
+  "collectorNumber": 455,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-30",
+    "deck": "miffy",
+    "count": 2
+  }
+}

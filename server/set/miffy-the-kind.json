@@ -6,18 +6,32 @@
     "creature"
   ],
   "subtypes": [
-    "rabbit"
+    "rabbit",
+    "advisor"
   ],
   "manaCost": {
     "colorless": 1,
     "white": 2
   },
-  "rules": [],
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "~ can't be blocked by creatures with power 3 or greater."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever ~ attacks, exile target creature you don't control with mana value X or less, where X is the number of creatures you control with power 2 or less."
+    },
+    {
+      "variant": "ability",
+      "content": "When ~ leaves the battlefield, return all cards exiled with it to the battlefield under their owners' control."
+    }
+  ],
   "pt": {
     "power": 2,
-    "toughness": 2
+    "toughness": 3
   },
-  "collectorNumber": 402,
+  "collectorNumber": 401,
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-29",

@@ -1,17 +1,29 @@
 {
   "name": "Father Bunny",
   "rarity": "rare",
+  "supertype": "legendary",
   "types": [
     "creature"
   ],
   "subtypes": [
-    "rabbit"
+    "rabbit",
+    "advisor"
   ],
   "manaCost": {
-    "colorless": 4,
-    "green": 1
+    "colorless": 5,
+    "green": 0,
+    "white": 1
   },
-  "rules": [],
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "If one or more tokens would be created under your control, twice that many of those tokens are created instead."
+    },
+    {
+      "variant": "ability",
+      "content": "When ~ enters, create a 1/1 white Rabbit creature token."
+    }
+  ],
   "pt": {
     "power": 2,
     "toughness": 2

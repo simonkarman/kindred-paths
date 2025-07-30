@@ -1,0 +1,27 @@
+{
+  "name": "Snuffy, Loyal Friend",
+  "rarity": "rare",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "dog",
+    "ranger"
+  ],
+  "manaCost": {
+    "colorless": 5,
+    "green": 1
+  },
+  "rules": [],
+  "pt": {
+    "power": 4,
+    "toughness": 4
+  },
+  "collectorNumber": 430,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-30",
+    "deck": "miffy",
+    "count": 1
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "Poppy Pig, Companion",
+  "rarity": "rare",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "pig",
+    "scout"
+  ],
+  "manaCost": {
+    "colorless": 4,
+    "white": 1,
+    "green": 1
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "vigilance"
+    },
+    {
+      "variant": "ability",
+      "content": "When ~ enters, distribute three +1/+1 counters among one, two, or three target creatures you control."
+    },
+    {
+      "variant": "ability",
+      "content": "Creatures you control with +1/+1 counters on them have vigilance."
+    }
+  ],
+  "pt": {
+    "power": 3,
+    "toughness": 3
+  },
+  "collectorNumber": 453,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-30",
+    "deck": "miffy",
+    "count": 1
+  }
+}

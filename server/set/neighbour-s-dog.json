@@ -1,0 +1,31 @@
+{
+  "name": "Neighbour's Dog",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "dog"
+  ],
+  "manaCost": {
+    "colorless": 0,
+    "green": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "As long as you control two other creatures with power 4 or greater, ~ gets +3/+3."
+    }
+  ],
+  "pt": {
+    "power": 1,
+    "toughness": 1
+  },
+  "collectorNumber": 434,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-30",
+    "deck": "miffy",
+    "count": 2
+  }
+}

@@ -1,29 +1,27 @@
 {
-  "name": "Miffy, The Brave",
-  "rarity": "mythic",
-  "supertype": "legendary",
+  "name": "Barbara Bear",
+  "rarity": "uncommon",
   "types": [
     "creature"
   ],
   "subtypes": [
-    "rabbit",
+    "bear",
     "druid"
   ],
   "manaCost": {
     "colorless": 1,
-    "white": 0,
-    "green": 2
+    "green": 1
   },
   "rules": [],
   "pt": {
-    "power": 2,
+    "power": 3,
     "toughness": 2
   },
-  "collectorNumber": 426,
+  "collectorNumber": 432,
   "tags": {
     "status": "concept",
-    "createdAt": "2025-07-29",
+    "createdAt": "2025-07-30",
     "deck": "miffy",
-    "count": 1
+    "count": 2
   }
 }

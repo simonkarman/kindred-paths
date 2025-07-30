@@ -1,0 +1,24 @@
+{
+  "name": "Forest Bear",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 2,
+    "green": 1
+  },
+  "rules": [],
+  "pt": {
+    "power": 3,
+    "toughness": 3
+  },
+  "collectorNumber": 433,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-30",
+    "deck": "miffy",
+    "count": 2
+  }
+}

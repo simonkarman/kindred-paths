@@ -6,19 +6,41 @@
     "creature"
   ],
   "subtypes": [
-    "rabbit"
+    "rabbit",
+    "scout"
   ],
   "manaCost": {
-    "colorless": 2,
+    "colorless": 3,
     "white": 1,
     "green": 1
   },
-  "rules": [],
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Convoke"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color."
+    },
+    {
+      "variant": "ability",
+      "content": "When ~ enters, put a +1/+1 counter on each tapped creature you control."
+    },
+    {
+      "variant": "ability",
+      "content": "At the beginning of you upkeep, if you control a creature with a +1/+1 counter on it, populate."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Create a token that's a copy of a creature token you control."
+    }
+  ],
   "pt": {
     "power": 3,
     "toughness": 4
   },
-  "collectorNumber": 401,
+  "collectorNumber": 451,
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-29",

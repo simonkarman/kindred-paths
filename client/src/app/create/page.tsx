@@ -1,7 +1,5 @@
 import { Metadata } from 'next';
 import { CardEditor } from '@/components/editor/card-editor';
-import Link from 'next/link';
-
 
 export async function generateMetadata(): Promise<Metadata> {
   return {

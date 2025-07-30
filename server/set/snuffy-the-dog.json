@@ -1,0 +1,27 @@
+{
+  "name": "Snuffy, Always Playful",
+  "rarity": "rare",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "dog",
+    "druid"
+  ],
+  "manaCost": {
+    "colorless": 3,
+    "green": 2
+  },
+  "rules": [],
+  "pt": {
+    "power": 4,
+    "toughness": 4
+  },
+  "collectorNumber": 429,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-30",
+    "deck": "miffy",
+    "count": 1
+  }
+}

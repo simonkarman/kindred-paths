@@ -1,0 +1,27 @@
+{
+  "name": "Boris Bear",
+  "rarity": "uncommon",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "bear",
+    "ranger"
+  ],
+  "manaCost": {
+    "colorless": 3,
+    "green": 1
+  },
+  "rules": [],
+  "pt": {
+    "power": 4,
+    "toughness": 4
+  },
+  "collectorNumber": 431,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-30",
+    "deck": "miffy",
+    "count": 2
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Kitty Nelly",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "cat",
+    "cleric"
+  ],
+  "manaCost": {
+    "colorless": 0,
+    "white": 1
+  },
+  "rules": [],
+  "pt": {
+    "power": 2,
+    "toughness": 3
+  },
+  "collectorNumber": 408,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-30",
+    "deck": "miffy",
+    "count": 2
+  }
+}

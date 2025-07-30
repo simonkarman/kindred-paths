@@ -12,7 +12,7 @@ import { deleteCard } from '@/utils/server';
 import { useDeckName } from '@/components/deck-name-setter';
 
 type Filter = { name: string, predicate: (card: Card) => boolean };
-type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' | 'power' | 'toughness' | 'art' | 'tags';
+type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' | 'power' | 'toughness' | 'art' | 'tags' | 'tag:count';
 
 const filterCategories: { category: string, filters: Filter[] }[] = [
   {
@@ -165,6 +165,21 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
         const tagsA = tagsAsString(a.tags);
         const tagsB = tagsAsString(b.tags);
         return tagsA.localeCompare(tagsB)
+      } else if (sortKey.k === 'tag:count') {
+        const tagAsNumber = (c: Card, tagName: string) => {
+          const tagValue = c.tags?.[tagName];
+          if (typeof tagValue === 'number') {
+            return tagValue;
+          } else if (typeof tagValue === 'string' && !isNaN(Number(tagValue))) {
+            return Number(tagValue);
+          } else if (typeof tagValue === 'boolean') {
+            return tagValue ? 1 : 0; // Treat boolean true as 1, false as 0
+          } else if (tagValue === undefined || tagValue === null) {
+            return 0.5;
+          }
+          return 99; // Default value for non-numeric tags
+        }
+        return tagAsNumber(a, 'count') - tagAsNumber(b, 'count');
       }
       return 0;
     });
@@ -175,7 +190,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
         <h2 className="font-bold text-lg mb-2">All Cards</h2>
         <Link
           className="inline-block text-xs bg-blue-600 text-white font-bold px-2 py-0.5 mt-1 rounded hover:bg-blue-800 active:bg-blue-900"
-          href="/create"
+          href="/create?t=/"
         >
           Create New Card
         </Link>
@@ -235,7 +250,8 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
     </div>}
     <ul className='flex flex-col items-start mb-5'>
       <li className="flex items-center px-2 border-b border-zinc-300 text-xs text-zinc-600">
-        <span onClick={() => sortOn('mana-value')} data-is-active={sortKey.k === "mana-value"} className="data-[is-active=true]:font-bold inline-block text-right pr-2 w-34">Cost</span>
+        <span onClick={() => sortOn('mana-value')} data-is-active={sortKey.k === "mana-value"} className="data-[is-active=true]:font-bold inline-block text-right pr-2 w-24">Cost</span>
+        <span onClick={() => sortOn('tag:count')} data-is-active={sortKey.k === "tag:count"} className="data-[is-active=true]:font-bold inline-block w-12 text-right pr-1.5">Count</span>
         <span onClick={() => sortOn('collector-number')} data-is-active={sortKey.k === "collector-number"} className="data-[is-active=true]:font-bold inline-block w-10 text-right pr-1.5">#</span>
         <span onClick={() => sortOn('name')} data-is-active={sortKey.k === "name"} className="data-[is-active=true]:font-bold inline-block w-74 border-r border-transparent mr-4">Name</span>
         <span onClick={() => sortOn('rarity')} data-is-active={sortKey.k === "rarity"} className="data-[is-active=true]:font-bold inline-block w-24">Rarity</span>
@@ -253,7 +269,8 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
           key={card.id}
           className="flex items-center px-2 py-0.5 border-t border-zinc-200 hover:bg-zinc-100"
         >
-          <span className="inline-block w-34 pr-2 text-right"><ManaCost cost={card.renderManaCost()} /></span>
+          <span className="inline-block w-24 pr-2 text-right"><ManaCost cost={card.renderManaCost()} /></span>
+          <span className="inline-block w-12 text-xs text-right pr-1.5 text-zinc-500">{card.tags?.["count"] ?? 1}x</span>
           <span className="inline-block w-10 text-xs text-right pr-1.5 text-zinc-500">{card.collectorNumber}</span>
           <span className="inline-flex gap-2 justify-between pr-2 w-74 font-bold border-r border-zinc-200 mr-4">
             <Link
