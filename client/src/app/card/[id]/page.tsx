@@ -22,11 +22,10 @@ export default async function CardView({ params: _params }: Readonly<{ params: P
     return <h1 className="text-red-500">Card not found</h1>;
   }
   return (<>
-    <p className="px-2">
-      <Link href={'/'} className="underline text-blue-600">Go back</Link>
-    </p>
     <div className="flex items-start gap-4">
-      <CardRender serializedCard={serializedCard} />
+      <div className="mt-10 shadow-xl rounded-2xl">
+        <CardRender serializedCard={serializedCard} />
+      </div>
       <div className="p-2 space-y-4">
         <CardExplanation serializedCard={serializedCard} />
         <p className="border-t pt-2 border-zinc-200 text-zinc-500">

@@ -1,14 +1,15 @@
 import { CardColor, cardColors, Mana } from 'kindred-paths';
+import { InputHeader } from '@/components/editor/input-header';
 
 export const CardManaCostInput = (props: {
   manaCost: { [type in Mana]?: number },
   setManaCost: (value: { [type in Mana]?: number }) => void,
-  getErrorMessage: (color: CardColor | 'colorless') => string | undefined
+  getErrorMessage: (color: CardColor | 'colorless') => string | undefined,
+  isChanged: boolean,
+  revert: () => void,
 }) => {
   return <div className="space-y-1">
-    <label htmlFor="cardManaCost" className="block font-medium text-zinc-800">
-      Card Mana Cost
-    </label>
+    <InputHeader propertyName="mana cost" isChanged={props.isChanged} revert={props.revert} />
     <div className="grid grid-cols-3 gap-2">
       {(['colorless', ...cardColors] as const).map((manaType) => (<div key={manaType}>
         <div className="flex items-center space-x-2">

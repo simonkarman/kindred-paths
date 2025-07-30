@@ -4,9 +4,7 @@
   "types": [
     "land"
   ],
-  "subtypes": [
-    "cave"
-  ],
+  "subtypes": [],
   "manaCost": {
     "colorless": 0
   },
@@ -29,7 +27,7 @@
     }
   ],
   "collectorNumber": 113,
-  "art": "suggestions/partnership-peak-cf4fae71-d894-4f6c-bafc-2e420cd61332.png",
+  "art": "partnership-peak-cf4fae71-d894-4f6c-bafc-2e420cd61332.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",

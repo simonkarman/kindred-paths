@@ -1,10 +1,13 @@
 import { RuleVariant, ruleVariants } from 'kindred-paths';
 import { capitalize } from '@/utils/typography';
+import { InputHeader } from '@/components/editor/input-header';
 
 export const CardRulesInput = (props: {
   rules?: { variant: RuleVariant, content: string }[],
   setRules: (value: { variant: RuleVariant, content: string }[] | undefined) => void,
   getErrorMessage: () => string | undefined,
+  isChanged: boolean,
+  revert: () => void,
 }) => {
   const rules = props.rules || [];
 
@@ -43,9 +46,7 @@ export const CardRulesInput = (props: {
 
   return (
     <div className="space-y-1">
-      <label className="block font-medium text-zinc-800">
-        Card Rules
-      </label>
+      <InputHeader propertyName="rules" isChanged={props.isChanged} revert={props.revert} />
 
       <div className="space-y-2">
         {rules.map((rule, index) => (

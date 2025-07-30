@@ -1,15 +1,16 @@
 import { cardRarities, CardRarity } from 'kindred-paths';
 import { capitalize, typographyRarityColors } from '@/utils/typography';
+import { InputHeader } from '@/components/editor/input-header';
 
 export const CardRarityInput = (props: {
   rarity: 'common' | 'uncommon' | 'rare' | 'mythic',
   setRarity: (value: CardRarity) => void,
   getErrorMessage: () => string | undefined,
+  isChanged: boolean,
+  revert: () => void,
 }) => {
   return <div className="space-y-1">
-    <label htmlFor="cardRarity" className="block font-medium text-zinc-800">
-      Card Rarity
-    </label>
+    <InputHeader propertyName="rarity" isChanged={props.isChanged} revert={props.revert} />
     <div className="px-1 flex gap-4 w-full justify-between">
       {cardRarities.map(rarityOption => (
         <div key={rarityOption} className="flex gap-1.5 items-center">

@@ -2,21 +2,29 @@ import { useEffect, useState } from 'react';
 
 export const useLocalStorageState = <T>(
   key: string,
-  initialValue: T | (() => T),
+  initialState: T | (() => T),
 ): [T, (value: T) => void] => {
-  const [state, setState] = useState<T>(() => {
-    if (typeof window === 'undefined') {
-      return initialValue instanceof Function ? initialValue() : initialValue;
-    }
-    const storedValue = localStorage.getItem(key);
-    return storedValue
-      ? JSON.parse(storedValue)
-      : (initialValue instanceof Function ? initialValue() : initialValue);
-  });
+  const _initialState = initialState instanceof Function ? initialState() : initialState;
+  const [state, setState] = useState<T>(_initialState);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(state));
-  }, [key, state]);
+    const currentValue = localStorage.getItem(key);
+    if (!isHydrated) {
+      try {
+        setState(currentValue ? JSON.parse(currentValue) : _initialState);
+      } finally {
+        setIsHydrated(true);
+      }
+    }
+  }, [key, _initialState]);
 
-  return [state, setState];
+  const setLocalStorageState = (value: T) => {
+    setState(value);
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } finally {}
+  }
+
+  return [isHydrated ? state : _initialState, setLocalStorageState];
 }

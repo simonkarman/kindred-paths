@@ -6,7 +6,7 @@ export function ManaCost(props: { cost: string }) {
     return (
       <span
         key={index}
-        className="inline-block text-sm uppercase font-bold border w-5 h-5 mr-0.25 rounded-full text-center"
+        className="inline-block text-xs uppercase font-bold border border-zinc-500 py-0.5 px-1 mr-0.25 rounded-full text-center"
         style={{
           backgroundColor: backgroundColor.main,
         }}

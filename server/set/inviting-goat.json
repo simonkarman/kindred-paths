@@ -31,11 +31,12 @@
     "toughness": 1
   },
   "collectorNumber": 101,
-  "art": "suggestions/inviting-goat-b15c79aa-9afe-413c-a349-a78e47c74a19.png",
+  "art": "inviting-goat-b15c79aa-9afe-413c-a349-a78e47c74a19.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-23",
     "deck": "company",
-    "count": 2
+    "count": 2,
+    "setting": "A friendly goat wearing tribal markings sits by a warm campfire, gesturing invitingly with its hoof while shadows of approaching creatures dance in the firelight."
   }
 }

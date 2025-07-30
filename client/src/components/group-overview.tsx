@@ -9,7 +9,8 @@ export const GroupOverview = (props: { cards: SerializedCard[] }) => {
     return { group, matches: group.matchTo(props.cards.map(serializedCard => new Card(serializedCard))) };
   });
 
-  return <>
+  return <div>
+    <h2 className="font-bold text-lg mb-2">Groups</h2>
     <div className="flex gap-2 flex-wrap">
       {groupMatches.map(({ group, matches }) => {
         // Find the worst status in the group: succeeded, ambiguous, or failed
@@ -66,5 +67,5 @@ export const GroupOverview = (props: { cards: SerializedCard[] }) => {
       </div>;
     })}
     </div>
-  </>;
+  </div>;
 }

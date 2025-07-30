@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import { existsSync } from 'fs';
 import express from 'express';
 import cors from 'cors';
 import { Card, CardArtPromptCreator, SerializedCardSchema, hash, SerializedCard } from 'kindred-paths';
@@ -53,7 +54,7 @@ async function getCardById(id: string): Promise<Card | undefined> {
     if (result.success) {
       return new Card(result.data);
     } else {
-      console.error('Invalid card data:', result.error);
+      console.error(`Invalid card data for ${id}:`, result.error);
       return undefined;
     }
   } catch (error) {
@@ -62,11 +63,13 @@ async function getCardById(id: string): Promise<Card | undefined> {
   }
 }
 
-async function saveCard(card: Card): Promise<void> {
+async function saveCard(card: Card, override?: Omit<Partial<SerializedCard>, 'id'>): Promise<SerializedCard> {
   const serializedCard = card.toJson();
   const path = `./set/${card.id}.json`;
   await fs.mkdir('./set', { recursive: true });
-  await fs.writeFile(path, JSON.stringify({ ...serializedCard, id: undefined }, null, 2), 'utf-8');
+  const value: SerializedCard = { ...serializedCard, ...override };
+  await fs.writeFile(path, JSON.stringify({ ...value, id: undefined }, null, 2), 'utf-8');
+  return value;
 }
 
 async function getExistingRender(key: string): Promise<Buffer | undefined> {
@@ -86,14 +89,13 @@ async function saveRender(key: string, render: Buffer): Promise<void> {
 }
 
 async function getRender(card: Card): Promise<{ fromCache: boolean, render: Buffer }> {
-  // If there is card art, add a hash of the image to the art property
-  // This ensures the card will be rendered if the art changes
+  // If there is card art, use a hash of the image as the art property
+  // This ensures the card will be rendered if the art itself changes
   let art: string | undefined = undefined;
   if (card.art) {
     try {
       const artBuffer = await fs.readFile(`./art/${card.art}`);
-      const artHash = hash(artBuffer.toString('base64'));
-      art = `${card.art}-${artHash}`;
+      art = hash(artBuffer.toString('base64'));
     } catch (error) {
       console.error(`Error reading art file ${art}:`, error);
     }
@@ -202,6 +204,26 @@ app.get("/card/:id/explain", async (req, res) => {
   res.send(card.explain());
 });
 
+const tryMoveArtSuggestionToArt = async (serializedCard: SerializedCard) => {
+  if (serializedCard.art && serializedCard.art.startsWith('suggestions/')) {
+    try {
+      await fs.mkdir('./art', { recursive: true });
+      const from = `./art/${serializedCard.art}`;
+      const toFileName = serializedCard.art.replace('suggestions/', '');
+      const to = `./art/${toFileName}`;
+      await fs.rename(from, to);
+      console.log(`Moved new art from ${from} to ${to}`);
+
+      // Now that the art has been moved, return the new art file name
+      return toFileName;
+    } catch (error) {
+      console.error(`Error moving new art for card ${serializedCard.id}:`, error);
+    }
+  }
+  // If no changes were made, we return the original art file name
+  return serializedCard.art;
+}
+
 app.post('/card', async (req, res) => {
   // Validate the request body against the SerializedCardSchema
   const body = SerializedCardSchema.safeParse(req.body);
@@ -230,10 +252,13 @@ app.post('/card', async (req, res) => {
     return;
   }
 
+  // If the new art is in the suggestions directory, we need to ensure it is moved to the art directory
+  const art = await tryMoveArtSuggestionToArt(body.data);
+
   // Save the card and return the response
   try {
-    await saveCard(card);
-    res.status(201).json(card.toJson());
+    const saved = await saveCard(card, { art });
+    res.status(201).json(saved);
   } catch (error) {
     console.error('Error saving card:', error);
     res.status(500).json({ error: 'Failed to save card' });
@@ -265,10 +290,28 @@ app.put('/card/:id', async (req, res) => {
     return;
   }
 
+  // Move the old art to the suggestions directory
+  // ... if existing card had art, and the art has changed, and it wasn't already in the 'suggestions/' directory
+  if (existingCard.art && existingCard.art !== body.data.art && !existingCard.art.startsWith('suggestions/')) {
+    const oldArtPath = `./art/${existingCard.art}`;
+    const suggestionsDir = './art/suggestions';
+    try {
+      await fs.mkdir(suggestionsDir, { recursive: true });
+      const newArtPath = `${suggestionsDir}/${existingCard.art}`;
+      await fs.rename(oldArtPath, newArtPath);
+      console.log(`Moved old art from ${oldArtPath} to ${newArtPath}`);
+    } catch (error) {
+      console.error(`Error moving old art for card ${cardId}:`, error);
+    }
+  }
+
+  // If the new art is in the suggestions directory, we need to ensure it is moved to the art directory
+  const art = await tryMoveArtSuggestionToArt(body.data);
+
   // Save the updated card
   try {
-    await saveCard(card);
-    res.status(200).json(card.toJson());
+    const saved = await saveCard(card, { art });
+    res.status(200).json(saved);
   } catch (error) {
     console.error('Error saving updated card:', error);
     res.status(500).json({ error: 'Failed to update card' });
@@ -297,6 +340,7 @@ app.post('/preview', async (req, res) => {
 
 app.post('/cleanup', async (req, res) => {
   const messages: string[] = [];
+  console.info("Cleanup requested...");
 
   // Rename cards that have an ID different from the computed ID based on their name
   for (const card of await getAllCards()) {
@@ -332,13 +376,39 @@ app.post('/cleanup', async (req, res) => {
     }
   }
 
-  // Ensure no cards reference art that is still a suggestion
+  // Ensure that all cards reference art that exists
+  const referencedArt = new Set<string>();
   for (const card of await getAllCards()) {
-    if (card.art && card.art.startsWith('suggestions/')) {
-      const message = `removed art suggestion for card ${card.id}: ${card.art}`;
+    if (card.art && !existsSync(`./art/${card.art}`)) {
+      const message = `removed missing art for card ${card.id}: ${card.art}`;
       messages.push(message);
       delete card.art;
       await saveCard(new Card(card));
+      console.log(message);
+    }
+
+    // Ensure that the art is not in the suggestions directory
+    const art = await tryMoveArtSuggestionToArt(card);
+    if (art !== card.art) {
+      const message = `updated art for card ${card.id} to ${art}`;
+      messages.push(message);
+      await saveCard(new Card({ ...card, art }));
+      console.log(message);
+    }
+
+    // Collect all referenced art
+    if (art) {
+      referencedArt.add(art);
+    }
+  }
+
+  // Validate that all art files in the art directory are referenced by at least one card
+  const artFiles = await fs.readdir('./art');
+  for (const artFile of artFiles.filter(file => file.endsWith('.png'))) {
+    if (!referencedArt.has(artFile)) {
+      const message = `removed unreferenced art file: ${artFile}`;
+      messages.push(message);
+      await fs.unlink(`./art/${artFile}`);
       console.log(message);
     }
   }
@@ -359,6 +429,7 @@ app.post('/cleanup', async (req, res) => {
     }
   }
 
+  console.info("Cleanup completed!");
   res.json({ message: 'Cleanup completed', details: messages });
 });
 

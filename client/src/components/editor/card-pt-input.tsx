@@ -1,12 +1,14 @@
+import { InputHeader } from '@/components/editor/input-header';
+
 export const CardPTInput = (props: {
   pt: { power: number, toughness: number },
   setPt: (value: { power: number, toughness: number }) => void,
   getErrorMessage: () => string | undefined,
+  isChanged: boolean,
+  revert: () => void,
 }) => {
   return <div className="space-y-1">
-    <label className="block font-medium text-zinc-800">
-      Power/Toughness
-    </label>
+    <InputHeader propertyName="Power/Toughness" isChanged={props.isChanged} revert={props.revert} />
     <div className="flex gap-2">
       <input
         type="number"

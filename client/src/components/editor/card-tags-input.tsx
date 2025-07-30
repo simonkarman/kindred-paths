@@ -1,8 +1,15 @@
+import { InputHeader } from '@/components/editor/input-header';
+import { useState } from 'react';
+
 export const CardTagsInput = (props: {
   tags: undefined | { [key: string]: string | number | boolean },
   setTags: (value: undefined | { [key: string]: string | number | boolean }) => void,
   getErrorMessage: () => string | undefined,
+  isChanged: boolean,
+  revert: () => void,
 }) => {
+  const [showTags, setShowTags] = useState(false);
+
   // Convert tags object to array for easier manipulation
   const tagsArray = props.tags !== undefined
     ? Object.entries(props.tags).map(([key, value]) => ({ key, value }))
@@ -117,10 +124,9 @@ export const CardTagsInput = (props: {
 
   return (
     <div className="space-y-1">
-      <label className="block font-medium text-zinc-800">
-        Card Tags
-      </label>
+      <InputHeader propertyName="tags" isChanged={props.isChanged} revert={props.revert} onTap={() => setShowTags(!showTags)} />
 
+      {showTags && (
       <div className="space-y-2">
         {tagsArray.map((tag, index) => (
           <div key={index} className="flex items-center gap-2 p-2 border border-zinc-200 rounded-md bg-zinc-50">
@@ -188,6 +194,7 @@ export const CardTagsInput = (props: {
           + Add Tag
         </button>
       </div>
+      )}
 
       {/* Error Message */}
       {props.getErrorMessage() && (

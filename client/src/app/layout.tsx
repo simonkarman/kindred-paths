@@ -4,6 +4,7 @@ import "./globals.css";
 import '@fortawesome/fontawesome-svg-core/styles.css';
 import { config } from '@fortawesome/fontawesome-svg-core';
 import { DeckNameSetter } from '@/components/deck-name-setter';
+import Link from 'next/link';
 config.autoAddCss = false; /* eslint-disable import/first */
 
 const geistSans = Geist({
@@ -29,11 +30,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased w-300 mx-auto`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased w-262 mx-auto`}
       >
-        <header className="flex justify-between p-2 border-b border-zinc-200">
+        <header className="print:hidden flex items-end justify-between p-2 border-zinc-200">
           <div>
-            <h1 className="font-bold text-lg">Kindred Paths</h1>
+            <Link href={"/"}>
+              <h1 className="font-bold text-lg">Kindred Paths</h1>
+            </Link>
             <p className="text-zinc-800 text-sm italic">
               A tool for managing the cards in Kindred Paths, the custom Magic the Gathering set
               by <a

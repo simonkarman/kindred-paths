@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { InputHeader } from '@/components/editor/input-header';
 
 export const CardSubtypesInput = (props: {
   subtypes: string[] | undefined,
   setSubtypes: (value: string[] | undefined) => void,
   getErrorMessage: () => string | undefined,
+  isChanged: boolean,
+  revert: () => void,
 }) => {
   const [newSubtype, setNewSubtype] = useState('');
 
@@ -40,9 +43,7 @@ export const CardSubtypesInput = (props: {
 
   return (
     <div className="space-y-1">
-      <label htmlFor="cardSubtypes" className="block font-medium text-zinc-800">
-        Card Subtypes
-      </label>
+      <InputHeader propertyName="subtypes" isChanged={props.isChanged} revert={props.revert} />
 
       {/* Display current subtypes */}
       <div className="min-h-[2.5rem] p-2 border border-zinc-300 rounded-md bg-zinc-50">

@@ -20,8 +20,7 @@ export default async function CardEdit({ params: _params }: Readonly<{ params: P
   }
   return (<>
     <p className="px-2 flex gap-4">
-      <Link href={'/'} className="underline text-blue-600">Go back</Link>
-      <Link href={`/card/${serializedCard.id}`} className="underline text-blue-600">Back to view {serializedCard.name}</Link>
+      <Link href={`/card/${serializedCard.id}`} className="underline text-blue-600">View {serializedCard.name}</Link>
     </p>
     <div className="flex items-start gap-4">
       <CardEditor start={serializedCard} />

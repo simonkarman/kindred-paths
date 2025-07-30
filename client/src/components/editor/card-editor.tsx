@@ -2,7 +2,7 @@
 
 import { Card, CardColor, CardRarity, CardSuperType, CardType, Mana, RuleVariant, SerializedCard, SerializedCardSchema } from 'kindred-paths';
 import { useEffect, useState } from 'react';
-import { createCard, getArtSuggestions, updateCard } from '@/utils/server';
+import { createCard, updateCard } from '@/utils/server';
 import { capitalize } from '@/utils/typography';
 import { CardExplanation } from '@/components/card-explanation';
 import { CardNameInput } from '@/components/editor/card-name-input';
@@ -21,7 +21,8 @@ import { CardArtInput } from '@/components/editor/card-art-input';
 
 export function CardEditor({ start }: { start: SerializedCard }) {
   const deckName = useDeckName();
-  const hasActiveDeck = start.id === "<new>" && deckName.length > 0 && deckName !== "*";
+  const isCreate = start.id === "<new>";
+  const hasActiveDeck = deckName.length > 0 && deckName !== "*";
 
   // Properties State
   const [name, setName] = useState(start.name);
@@ -36,7 +37,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   const [art, setArt] = useState<string | undefined>(start.art); // TODO!
   const [tags, setTags] = useState<{ [key: string]: string | number | boolean } | undefined>({
     ...start.tags,
-    ...(hasActiveDeck ? {
+    ...(isCreate && hasActiveDeck ? {
       deck: deckName,
       count: 2,
     } : {})
@@ -53,7 +54,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
 
     // reset pt if it no longer applies
     if (types.includes('creature') && !pt) {
-      setPt({ power: 2, toughness: 2 });
+      setPt(start.pt ?? { power: 2, toughness: 2 });
     } else if (!types.includes('creature') && pt) {
       setPt(undefined);
     }
@@ -73,6 +74,8 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     art,
     tags,
   };
+  const isChanged = isCreate || (JSON.stringify(serializedCard) !== JSON.stringify(start));
+  const canSave = isChanged && (!isCreate || name !== start.name);
 
   // Form State
   const [isLoading, setIsLoading] = useState(false);
@@ -123,9 +126,9 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   };
 
   const artSetting: string = typeof tags?.["setting"] === 'string' ? tags["setting"] : '';
-  const setArtSetting = (setting: string | undefined) => {
+  const setArtSetting = (setting: string | number | boolean | undefined) => {
     const _tags = { ...(tags ?? {}) };
-    if (setting === undefined || setting.trim() === '') {
+    if (setting === undefined || (typeof setting === 'string' && setting.trim() === '')) {
       delete _tags["setting"];
       setTags(_tags);
       return;
@@ -136,41 +139,85 @@ export function CardEditor({ start }: { start: SerializedCard }) {
       });
     }
   };
+
   return (<>
-    <div className="flex gap-8">
-      <div className="space-y-6 w-2xl border border-zinc-200 bg-zinc-50 rounded-lg p-2 shadow">
-        <h2 className="text-lg font-bold my-2 text-center">Create Card</h2>
-        <CardTypesInput types={types} setTypes={setTypes} getErrorMessage={() => getErrorMessage('types')}/>
-        {pt
-          && <CardPTInput pt={pt} setPt={setPt} getErrorMessage={() => getErrorMessage('pt')}/>}
-        {types.some(s => ['land', 'creature', 'artifact', 'enchantment'].includes(s))
-          && <CardSubtypesInput subtypes={subtypes} setSubtypes={setSubtypes} getErrorMessage={() => getErrorMessage('subtypes')}/>}
-        <CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}
-                            getErrorMessage={(color: CardColor | 'colorless') => getErrorMessage(`manaCost.${color}`)}/>
-        <CardRulesInput rules={rules} setRules={setRules} getErrorMessage={() => getErrorMessage('rules')}/>
-        <CardSupertypeInput supertype={supertype} setSupertype={setSupertype} types={types} getErrorMessage={() => getErrorMessage('supertype')}/>
-        <CardRarityInput rarity={rarity} setRarity={setRarity} getErrorMessage={() => getErrorMessage('rarity')}/>
-        <CardNameInput name={name} setName={setName} getErrorMessage={() => getErrorMessage('name')} card={card} />
-        <CardArtInput artSetting={artSetting} setArtSetting={setArtSetting} art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card} />
-        <CardCollectorNumberInput collectorNumber={collectorNumber} setCollectorNumber={setCollectorNumber}
-                                   getErrorMessage={() => getErrorMessage('collectorNumber')}/>
-        <CardTagsInput tags={tags} setTags={setTags} getErrorMessage={() => getErrorMessage('tags')}/>
+    <div className="absolute left-2 right-2 flex items-start gap-6">
+      <div className={`w-320 space-y-6 border ${isChanged ? 'border-orange-200' : 'border-zinc-200'} bg-white rounded-lg px-2 pb-2 shadow-lg`}>
+        <h2 className="text-lg font-bold my-2 text-center">{isCreate ? 'Create Card' : `Update ${serializedCard.name}`}</h2>
+        <div className="flex gap-6">
+          <div className="space-y-4 grow border-r-2 border-zinc-200 pr-6">
+            <CardTypesInput types={types} setTypes={setTypes} getErrorMessage={() => getErrorMessage('types')}
+                            isChanged={!isCreate && JSON.stringify(start.types) !== JSON.stringify(types)} revert={() => setTypes(start.types)}
+            />
+            {pt
+              && <CardPTInput pt={pt} setPt={setPt} getErrorMessage={() => getErrorMessage('pt')}
+                              isChanged={!isCreate && start.pt !== undefined && JSON.stringify(start.pt) !== JSON.stringify(pt)} revert={() => setPt(start.pt)}
+              />}
+            {types.some(s => ['land', 'creature', 'artifact', 'enchantment'].includes(s))
+              && <CardSubtypesInput subtypes={subtypes} setSubtypes={setSubtypes} getErrorMessage={() => getErrorMessage('subtypes')}
+                                    isChanged={!isCreate && JSON.stringify(start.subtypes) !== JSON.stringify(subtypes)} revert={() => setSubtypes(start.subtypes)}
+              />}
+            <CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}
+                               getErrorMessage={(color: CardColor | 'colorless') => getErrorMessage(`manaCost.${color}`)}
+                               isChanged={!isCreate && JSON.stringify(start.manaCost) !== JSON.stringify(manaCost)} revert={() => setManaCost(start.manaCost)}
+            />
+            <CardRulesInput rules={rules} setRules={setRules} getErrorMessage={() => getErrorMessage('rules')}
+                            isChanged={!isCreate && JSON.stringify(start.rules) !== JSON.stringify(rules)} revert={() => setRules(start.rules)}
+            />
+            <CardSupertypeInput supertype={supertype} setSupertype={setSupertype} types={types} getErrorMessage={() => getErrorMessage('supertype')}
+                                isChanged={!isCreate && JSON.stringify(start.supertype) !== JSON.stringify(supertype)} revert={() => setSupertype(start.supertype)}
+            />
+          </div>
+          <div className="space-y-4 w-150">
+            <CardNameInput name={name} setName={setName} getErrorMessage={() => getErrorMessage('name')} card={card}
+                           isChanged={!isCreate && JSON.stringify(start.name) !== JSON.stringify(name)} revert={() => setName(start.name)}
+            />
+            <CardRarityInput rarity={rarity} setRarity={setRarity} getErrorMessage={() => getErrorMessage('rarity')}
+                             isChanged={!isCreate && JSON.stringify(start.rarity) !== JSON.stringify(rarity)} revert={() => setRarity(start.rarity)}
+            />
+            <CardArtInput artSetting={artSetting} setArtSetting={setArtSetting} art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card}
+                          isChanged={!isCreate && JSON.stringify(start.art) !== JSON.stringify(art)} revert={() => setArt(start.art)}
+                          artSettingIsChanged={!isCreate && JSON.stringify(start.tags?.setting) !== JSON.stringify(tags?.["setting"])} revertArtSetting={() => setArtSetting(start.tags?.setting)}
+            />
+            <CardCollectorNumberInput collectorNumber={collectorNumber} setCollectorNumber={setCollectorNumber}
+                                      getErrorMessage={() => getErrorMessage('collectorNumber')}
+                                      isChanged={!isCreate && JSON.stringify(start.collectorNumber) !== JSON.stringify(collectorNumber)} revert={() => setCollectorNumber(start.collectorNumber)}
+            />
+            <CardTagsInput tags={tags} setTags={setTags} getErrorMessage={() => getErrorMessage('tags')}
+                           isChanged={!isCreate && JSON.stringify(start.tags) !== JSON.stringify(tags)} revert={() => setTags(start.tags as { [key: string]: string | number | boolean } | undefined)}
+            />
+          </div>
+        </div>
 
         {/* Create Button */}
-        <button
-          onClick={handleCreateCard}
-          disabled={(errors.length > 0) || (validationError !== undefined) || isLoading}
-          className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? `${serializedCard.id === "<new>" ? 'Creating' : 'Updating'}...` : `${serializedCard.id === "<new>" ? "Create" : "Update"} Card`}
-        </button>
+        <div className="space-y-1">
+          {!canSave && <p className="text-center text-zinc-600 text-sm">
+            {isCreate ? "You must first provide a name for the new card." : "You must first make changes, before you can save them."}
+          </p>}
+          {((errors.length > 0) || (validationError !== undefined) || isLoading) && <p className="text-center text-red-600 text-sm">
+            You must fix the above errors before you can {isCreate ? 'create' : 'update'} the card.
+          </p>}
+          <button
+            onClick={handleCreateCard}
+            disabled={(errors.length > 0) || (validationError !== undefined) || isLoading || !canSave}
+            className="w-full py-2 px-4 disabled:bg-gray-500 bg-orange-600 text-white font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading
+              ? `${isCreate ? 'Creating' : 'Updating'}...`
+              : (isCreate ? "Create card" : "Save changes")}
+          </button>
+        </div>
       </div>
       <div className="space-y-6 w-md pt-4">
-        {/* Show Card Explanation */}
-        {card && <CardExplanation serializedCard={serializedCard}/>}
+        <div className="flex w-full items-center justify-center">
+          {(card !== undefined && errors.length === 0)
+            ? <CardPreview card={card}/>
+            : <div className="w-80 h-100 bg-zinc-50 rounded-lg border border-zinc-200 flex items-center justify-center"></div>}
+        </div>
+        <hr/>
 
         {/* Show Errors */}
-        {((errors.length > 0) || (validationError !== undefined)) && (
+        {((errors.length > 0) || (validationError !== undefined)) && (<>
           <div className="text-red-700">
             <h3 className="font-bold">Errors:</h3>
             <ul className="list-disc pl-5">
@@ -186,11 +233,10 @@ export function CardEditor({ start }: { start: SerializedCard }) {
               )}
             </ul>
           </div>
-        )}
-        <hr/>
-        <div className="flex w-full items-center justify-center">
-          {card !== undefined && errors.length === 0 && <CardPreview card={card}/>}
-        </div>
+        </>)}
+
+        {/* Show Card Explanation */}
+        {card && <CardExplanation serializedCard={serializedCard}/>}
       </div>
     </div>
   </>);

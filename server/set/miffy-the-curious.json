@@ -15,11 +15,10 @@
   },
   "rules": [],
   "pt": {
-    "power": 2,
-    "toughness": 2
+    "power": 3,
+    "toughness": 4
   },
   "collectorNumber": 401,
-  "art": "miffy-the-curious.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-29",

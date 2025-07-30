@@ -11,9 +11,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CardCreate() {
   return <>
-    <p className="px-2">
-      <Link href={'/'} className="underline text-blue-600">Go back</Link>
-    </p>
     <CardEditor start={{
       id: '<new>',
       name: 'New Card',

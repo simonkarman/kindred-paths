@@ -16,7 +16,6 @@ export function CardExplanation({ serializedCard }: { serializedCard: Serialized
           <span className="font-bold">Power/Toughness:</span> {card.pt.power}/{card.pt.toughness} <br />
         </>
       )}
-      <span className="font-bold">Collector Number:</span> {card.collectorNumber} <br />
       <span className="font-bold">Rarity:</span> {capitalize(card.rarity)} <br />
     </p>
     <p>
@@ -29,9 +28,8 @@ export function CardExplanation({ serializedCard }: { serializedCard: Serialized
       </span>)}
     </p>
     <p>
+      <span className="font-bold">Collector Number:</span> {card.collectorNumber} <br />
       <span className="font-bold">Art:</span> {card.art ?? <span className="italic text-gray-600">not set</span>}<br/>
-      <span className="underline font-bold">Art Prompt:</span><br/>
-      {new CardArtPromptCreator().createPrompt(card)}
     </p>
     {card.tags && Object.entries(card.tags).length > 0 && (<div>
       <p className="font-bold">Tags:</p>

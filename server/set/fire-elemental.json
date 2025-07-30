@@ -21,10 +21,12 @@
     "power": 5,
     "toughness": 1
   },
-  "collectorNumber": 419,
-  "art": "suggestions/fire-elemental-507cfe1d-4cb5-4ac6-8e94-de8f07897fcf.png",
+  "collectorNumber": 1002,
+  "art": "fire-elemental-b7738f87-c56e-4cfc-bcf5-4929cbd93499.png",
   "tags": {
     "status": "concept",
-    "createdAt": "2025-07-28"
+    "createdAt": "2025-07-28",
+    "setting": "A massive fire elemental collapses into ash and embers in the foreground, while in the background, the same creature begins to reform from swirling flames and smoke against a darkened sky.",
+    "createdBy": "Rens Rooimans"
   }
 }

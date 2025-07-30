@@ -1,12 +1,14 @@
+import { InputHeader } from '@/components/editor/input-header';
+
 export const CardCollectorNumberInput = (props: {
   collectorNumber: number,
   setCollectorNumber: (value: number) => void,
   getErrorMessage: () => string | undefined,
+  isChanged: boolean,
+  revert: () => void,
 }) => {
   return <div className="space-y-1">
-    <label htmlFor="cardCollectorNumber" className="block font-medium text-zinc-800">
-      Collector Number
-    </label>
+    <InputHeader propertyName="collector number" isChanged={props.isChanged} revert={props.revert} />
     <input
       id="cardCollectorNumber"
       type="number"

@@ -1,15 +1,16 @@
 import { CardSuperType, CardType } from 'kindred-paths';
+import { InputHeader } from '@/components/editor/input-header';
 
 export const CardSupertypeInput = (props: {
   supertype: 'basic' | 'legendary' | undefined,
   setSupertype: (value: CardSuperType) => void,
   types: [CardType, ...CardType[]],
   getErrorMessage: () => string | undefined,
+  isChanged: boolean,
+  revert: () => void,
 }) => {
   return <div className="space-y-1">
-    <label className="block font-medium text-zinc-800">
-      Card Super Type
-    </label>
+    <InputHeader propertyName="supertype" isChanged={props.isChanged} revert={props.revert} />
     <div className="space-y-2 flex items-baseline gap-4">
       {/* Legendary checkbox */}
       <label className="flex items-center">
