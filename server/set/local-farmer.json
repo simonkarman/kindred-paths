@@ -19,7 +19,7 @@
     },
     {
       "variant": "ability",
-      "content": "Tap two untapped creature tokens you control, {t}: Gain 2 life, then populate. Activate only as a sorcery."
+      "content": "{t}, Tap two other creatures you control: Gain 2 life, then populate. Activate only as a sorcery."
     },
     {
       "variant": "inline-reminder",

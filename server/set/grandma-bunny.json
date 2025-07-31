@@ -28,7 +28,11 @@
     },
     {
       "variant": "ability",
-      "content": "• Create a 1/1 white Rabbit creature token. It gains haste until end of turn."
+      "content": "• Create a 1/1 white Rabbit creature token."
+    },
+    {
+      "variant": "ability",
+      "content": "• Gain 2 life."
     }
   ],
   "pt": {

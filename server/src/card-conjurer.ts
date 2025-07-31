@@ -28,7 +28,7 @@ export class CardConjurer {
     });
   }
 
-  async renderCard(card: Card, set: { shortName: string, symbol: string, author: string }): Promise<Buffer> {
+  async renderCard(card: Card, set: { shortName: string, symbol: string, author: string, collectorNumberOffset?: number }): Promise<Buffer> {
     if (!this.browser) {
       throw new Error('Browser is not started. Call start() first.');
     }
@@ -123,7 +123,8 @@ export class CardConjurer {
       // Handle collector section
       await page.click('#creator-menu-tabs h3:has-text("Collector")');
       await page.waitForLoadState('networkidle');
-      await page.fill('#creator-menu-bottomInfo #info-number', ("0000" + card.collectorNumber.toString()).slice(-4));
+      const collectorNumber = card.collectorNumber - (set.collectorNumberOffset ?? 0);
+      await page.fill('#creator-menu-bottomInfo #info-number', ("0000" + collectorNumber.toString()).slice(-4));
       await page.fill('#creator-menu-bottomInfo #info-rarity', card.rarity[0].toUpperCase());
       await page.fill('#creator-menu-bottomInfo #info-set', set.shortName);
       await page.fill('#creator-menu-bottomInfo #info-language', 'EN');
@@ -138,6 +139,7 @@ export class CardConjurer {
         page.click('#downloadAlt'),
       ]);
       await imgPage.waitForLoadState();
+      await sleep(500); // Wait a bit more for the image to load
       const buffer = await getBase64Image(imgPage);
 
       // Close the context

@@ -12,11 +12,35 @@ import { GetGenerationByIdResponse } from '@leonardo-ai/sdk/sdk/models/operation
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const set = {
-  author: 'Simon Karman',
-  shortName: 'KPA',
-  symbol: 'ELD',
+type Set = { author: string, shortName: string, symbol: string, collectorNumberOffset?: number };
+const sets: { [name: string]: Set } = {
+  default: {
+    author: 'Simon Karman',
+    shortName: 'KPA',
+    symbol: 'ELD',
+  },
+  miffy: {
+    author: 'Simon Karman',
+    shortName: 'MFY',
+    symbol: 'custom/mfy',
+    collectorNumberOffset: 400,
+  }
 };
+
+const getSetForCard = (card: Card): Set => {
+  // If the card has a string value for deck in the tags, use that as the set
+  if (typeof card.tags.deck === 'string' && card.tags.deck in sets) {
+    return sets[card.tags.deck];
+  }
+
+  // If the card has a string value for the set in the tags, use that as the set
+  if (typeof card.tags.set === 'string' && card.tags.set in sets) {
+    return sets[card.tags.set];
+  }
+
+  // Otherwise, use the default set
+  return sets.default;
+}
 
 const computeCardIdFromName = (name: string) => {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-');
@@ -101,11 +125,18 @@ async function getRender(card: Card): Promise<{ fromCache: boolean, render: Buff
     }
   }
 
+  // Get the set for the card
+  const set = getSetForCard(card);
+
   // Create a unique key for the render based on card properties and art
   const key = hash(JSON.stringify({
     ...card.toJson(),
     id: undefined,
     tags: undefined,
+    collectorNumber: card.collectorNumber - (set.collectorNumberOffset || 0),
+
+    // Include other properties that might affect the render
+    set,
     art,
   }));
 
