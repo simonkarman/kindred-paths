@@ -10,11 +10,28 @@
     "druid"
   ],
   "manaCost": {
-    "colorless": 1,
+    "colorless": 0,
     "white": 0,
-    "green": 2
+    "green": 3
   },
-  "rules": [],
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "ward {2}"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}."
+    },
+    {
+      "variant": "ability",
+      "content": "Each creature you control enters with an additional +1/+1 counter on it."
+    },
+    {
+      "variant": "ability",
+      "content": "When a creature with power 4 or greater enters under your control, you may search your library for a basic Forest card, reveal it, put it into your hand, then shuffle."
+    }
+  ],
   "pt": {
     "power": 2,
     "toughness": 2

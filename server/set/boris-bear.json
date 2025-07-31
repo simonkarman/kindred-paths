@@ -12,10 +12,23 @@
     "colorless": 3,
     "green": 1
   },
-  "rules": [],
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "ward {1}"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {1}."
+    },
+    {
+      "variant": "ability",
+      "content": "When ~ enters, you may search your library for a creature card with mana value X or less, where X is the highest power among creatures you control, put that card into your hand, then shuffle.{lns}"
+    }
+  ],
   "pt": {
-    "power": 4,
-    "toughness": 4
+    "power": 3,
+    "toughness": 3
   },
   "collectorNumber": 431,
   "tags": {

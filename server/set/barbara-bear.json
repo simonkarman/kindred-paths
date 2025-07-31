@@ -9,13 +9,30 @@
     "druid"
   ],
   "manaCost": {
-    "colorless": 1,
+    "colorless": 4,
     "green": 1
   },
-  "rules": [],
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "ward {3}"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {3}."
+    },
+    {
+      "variant": "ability",
+      "content": "When ~ enters, if you control six or more lands, create a 4/4 green Rabbit creature token."
+    },
+    {
+      "variant": "ability",
+      "content": "{i}Landfall{/i} {-} Whenever a land you control enters, if you control six or more lands, create a 4/4 green Rabbit creature token."
+    }
+  ],
   "pt": {
-    "power": 3,
-    "toughness": 2
+    "power": 4,
+    "toughness": 4
   },
   "collectorNumber": 432,
   "tags": {

@@ -5,7 +5,7 @@
     "creature"
   ],
   "subtypes": [
-    "farmer"
+    "human"
   ],
   "manaCost": {
     "colorless": 2,

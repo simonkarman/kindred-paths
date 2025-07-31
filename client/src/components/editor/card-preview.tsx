@@ -4,7 +4,7 @@ import { serverUrl } from '@/utils/server';
 
 export function CardPreview({ card }: { card: Card }) {
   const [imageUrl, setImageUrl] = useState<string>();
-  const [cardJson, setCardJson] = useState<string>();
+  const [cardKeyRelevantForRendering, setCardKeyRelevantForRendering] = useState<string>();
   const [outdated, setOutdated] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
 
@@ -18,7 +18,7 @@ export function CardPreview({ card }: { card: Card }) {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: cardJson,
+          body: JSON.stringify(card.toJson()),
         });
 
         if (response.ok) {
@@ -33,7 +33,7 @@ export function CardPreview({ card }: { card: Card }) {
       }
     };
 
-    if (cardJson) {
+    if (cardKeyRelevantForRendering) {
       fetchImage();
     }
 
@@ -43,14 +43,14 @@ export function CardPreview({ card }: { card: Card }) {
         URL.revokeObjectURL(imageUrl);
       }
     };
-  }, [cardJson]); // Re-fetch when card changes
+  }, [cardKeyRelevantForRendering]); // Re-fetch when card changes
 
   const currentCardJson = () => {
-    return JSON.stringify({ ...card.toJson(), tags: {} });
+    return JSON.stringify({ ...card.toJson(), tags: { deck: card.tags.deck, set: card.tags.set } });
   };
 
   useEffect(() => {
-    if (!cardJson || currentCardJson() !== cardJson) {
+    if (!cardKeyRelevantForRendering || currentCardJson() !== cardKeyRelevantForRendering) {
       setOutdated(true);
     }
   }, [card]);
@@ -58,7 +58,7 @@ export function CardPreview({ card }: { card: Card }) {
   return <div>
     <button
       disabled={isRendering}
-      onClick={() => setCardJson(currentCardJson())}
+      onClick={() => setCardKeyRelevantForRendering(currentCardJson())}
       className="block w-full px-3 py-2 mb-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
       Preview

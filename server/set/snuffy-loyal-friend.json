@@ -12,10 +12,23 @@
     "colorless": 5,
     "green": 1
   },
-  "rules": [],
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "{1}{g}, {t}, Exert ~: Create two 4/4 green Rabbit creature tokens."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "An exerted permanent won't untap during your next untap step."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever ~ untaps, draw cards equal to the number of other creatures you control with power 4 or greater."
+    }
+  ],
   "pt": {
-    "power": 4,
-    "toughness": 4
+    "power": 6,
+    "toughness": 6
   },
   "collectorNumber": 430,
   "tags": {

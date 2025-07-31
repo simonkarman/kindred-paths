@@ -14,13 +14,17 @@
   },
   "rules": [
     {
-      "variant": "keyword",
-      "content": "flying"
+      "variant": "ability",
+      "content": "When ~ enters, you may return target creature card with power 2 or less from your graveyard to your hand."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever a creature with power 2 or less enters under your control, put your choice of a flying counter or a +1/+1 counter on ~."
     }
   ],
   "pt": {
-    "power": 2,
-    "toughness": 2
+    "power": 1,
+    "toughness": 1
   },
   "collectorNumber": 409,
   "tags": {

@@ -20,11 +20,11 @@
     },
     {
       "variant": "ability",
-      "content": "Whenever ~ attacks, exile target creature you don't control with mana value X or less, where X is the number of creatures you control with power 2 or less."
+      "content": "Whenever ~ attacks, exile target creature an opponent controls with mana value X or less, where X is the number of creatures you control with power 2 or less."
     },
     {
       "variant": "ability",
-      "content": "When ~ leaves the battlefield, return all cards exiled with it to the battlefield under their owners' control."
+      "content": "When ~ leaves the battlefield, create a 1/1 white Rabbit creature token for each card exiled with it. Then return those cards to the battlefield under their owners' control."
     }
   ],
   "pt": {

@@ -19,6 +19,10 @@
       "content": "vigilance"
     },
     {
+      "variant": "inline-reminder",
+      "content": "Attacking doesn't cause this creature to tap."
+    },
+    {
       "variant": "ability",
       "content": "When ~ enters, distribute three +1/+1 counters among one, two, or three target creatures you control."
     },
