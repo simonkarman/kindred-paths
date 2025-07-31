@@ -29,7 +29,7 @@
     },
     {
       "variant": "ability",
-      "content": "At the beginning of you upkeep, if you control a creature with a +1/+1 counter on it, populate."
+      "content": "At the beginning of you upkeep, if you control a creature token with a +1/+1 counter on it, populate."
     },
     {
       "variant": "inline-reminder",
@@ -38,7 +38,7 @@
   ],
   "pt": {
     "power": 3,
-    "toughness": 4
+    "toughness": 3
   },
   "collectorNumber": 451,
   "tags": {
