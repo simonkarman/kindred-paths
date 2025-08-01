@@ -32,6 +32,7 @@
     "toughness": 3
   },
   "collectorNumber": 401,
+  "art": "mfy/miffy-the-kind.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-29",

@@ -1,41 +1,30 @@
 {
-  "name": "Poppy Pig, Companion",
+  "name": "Poppy Pig, Adventurer",
   "rarity": "rare",
+  "supertype": "legendary",
   "types": [
     "creature"
   ],
   "subtypes": [
-    "pig",
-    "scout"
+    "pig"
   ],
   "manaCost": {
-    "colorless": 4,
+    "colorless": 0,
     "white": 1,
     "green": 1
   },
   "rules": [
     {
-      "variant": "keyword",
-      "content": "vigilance"
-    },
-    {
-      "variant": "inline-reminder",
-      "content": "Attacking doesn't cause this creature to tap."
-    },
-    {
       "variant": "ability",
-      "content": "When ~ enters, distribute three +1/+1 counters among one, two, or three target creatures you control."
-    },
-    {
-      "variant": "ability",
-      "content": "Creatures you control with +1/+1 counters on them have vigilance."
+      "content": "Whenever a creature you control deals combat damage to a player, put a +1/+1 counter on that creature, then you gain 1 life for each counter on it."
     }
   ],
   "pt": {
-    "power": 3,
-    "toughness": 3
+    "power": 1,
+    "toughness": 2
   },
-  "collectorNumber": 453,
+  "collectorNumber": 452,
+  "art": "mfy/poppy-pig-adventurer.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-30",

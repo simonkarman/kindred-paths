@@ -26,6 +26,7 @@
     "toughness": 2
   },
   "collectorNumber": 433,
+  "art": "mfy/friendly-bear.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-30",

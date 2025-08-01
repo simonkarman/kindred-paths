@@ -35,6 +35,7 @@
     "toughness": 4
   },
   "collectorNumber": 405,
+  "art": "mfy/mother-bunny.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-29",

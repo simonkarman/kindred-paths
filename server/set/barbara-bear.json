@@ -35,6 +35,7 @@
     "toughness": 4
   },
   "collectorNumber": 432,
+  "art": "mfy/barbara-bear.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-30",
