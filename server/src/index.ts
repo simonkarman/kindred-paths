@@ -44,18 +44,20 @@ const getSetForCard = (card: Card): Set => {
 
 const computeCardId = (card: SerializedCard) => {
   const deck = typeof card.tags?.deck === 'string' ? `${card.tags.deck}-` : '';
-  const name = (deck + `${card.collectorNumber}-` + card.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-');
+  const prefix = deck + `${card.collectorNumber}-`;
+  const sanitize = (str: string) => (prefix + str).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-');
+
   if (card.supertype === 'token') {
     const pt = card.pt ? `${card.pt.power}-${card.pt.toughness}-` : '';
     const colors = card.tokenColors
       ? (card.tokenColors.length === 0 ? 'colorless-' : card.tokenColors.map(tc => `${tc}-`).join(''))
       : 'colorless-';
-    return `${pt}${colors}${name}-token`;
+    return sanitize(`${pt}${colors}${card.name}-token`);
   }
   if (card.supertype === 'basic') {
-    return `basic-${name}-${card.tags?.deck || card.collectorNumber}`;
+    return sanitize(`basic-${card.name}-${card.tags?.deck || card.collectorNumber}`);
   }
-  return name;
+  return sanitize(card.name);
 }
 
 let cardConjurerUrl = process.env.CARD_CONJURER_URL || "http://localhost:4102";
@@ -471,28 +473,30 @@ app.post('/cleanup', async (req, res) => {
   const artFiles = await fs.readdir('./art');
   for (const artFile of artFiles.filter(file => file.endsWith('.png'))) {
     if (!referencedArt.has(artFile)) {
-      const message = `removed unreferenced art file: ${artFile}`;
+      const message = `moved unreferenced art file to the suggestions directory: ${artFile}`;
       messages.push(message);
-      await fs.unlink(`./art/${artFile}`);
+      // Move it to the suggestions directory
+      await fs.mkdir('./art/suggestions', { recursive: true });
+      await fs.rename(`./art/${artFile}`, `./art/suggestions/${artFile}`);
       console.log(message);
     }
   }
 
   // Render all cards
-  for (const card of await getAllCards()) {
-    try {
-      const { fromCache } = await getRender(new Card(card));
-      if (!fromCache) {
-        const message = `rendered card ${card.id}`;
-        messages.push(message);
-        console.log(message);
-      }
-    } catch (error) {
-      const message = `failed to render card ${card.id}: ${(error as Error).message}`;
-      messages.push(message);
-      console.error(message);
-    }
-  }
+  // for (const card of await getAllCards()) {
+  //   try {
+  //     const { fromCache } = await getRender(new Card(card));
+  //     if (!fromCache) {
+  //       const message = `rendered card ${card.id}`;
+  //       messages.push(message);
+  //       console.log(message);
+  //     }
+  //   } catch (error) {
+  //     const message = `failed to render card ${card.id}: ${(error as Error).message}`;
+  //     messages.push(message);
+  //     console.error(message);
+  //   }
+  // }
 
   console.info("Cleanup completed!");
   res.json({ message: 'Cleanup completed', details: messages });
