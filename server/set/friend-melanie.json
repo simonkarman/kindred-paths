@@ -1,5 +1,5 @@
 {
-  "name": "Friend Melanie, Explorer",
+  "name": "Melanie, Miffy's Friend",
   "rarity": "uncommon",
   "types": [
     "creature"
@@ -27,7 +27,7 @@
     "toughness": 2
   },
   "collectorNumber": 454,
-  "art": "mfy/friend-melanie-explorer.png",
+  "art": "mfy/friend-melanie.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-30",
