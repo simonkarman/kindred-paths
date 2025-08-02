@@ -11,8 +11,8 @@
   },
   "rules": [
     {
-      "variant": "ability",
-      "content": "Extort"
+      "variant": "keyword",
+      "content": "extort"
     },
     {
       "variant": "inline-reminder",

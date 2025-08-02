@@ -5,9 +5,7 @@
     "land"
   ],
   "subtypes": [],
-  "manaCost": {
-    "colorless": 0
-  },
+  "manaCost": {},
   "rules": [],
   "collectorNumber": 436,
   "tags": {

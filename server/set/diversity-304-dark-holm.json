@@ -8,9 +8,7 @@
     "island",
     "swamp"
   ],
-  "manaCost": {
-    "colorless": 0
-  },
+  "manaCost": {},
   "rules": [
     {
       "variant": "reminder",

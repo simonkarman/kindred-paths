@@ -9,7 +9,6 @@
     "pig"
   ],
   "manaCost": {
-    "colorless": 0,
     "white": 1,
     "green": 1
   },

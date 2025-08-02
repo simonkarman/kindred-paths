@@ -8,9 +8,7 @@
     "plains",
     "forest"
   ],
-  "manaCost": {
-    "colorless": 0
-  },
+  "manaCost": {},
   "rules": [],
   "collectorNumber": 461,
   "tags": {

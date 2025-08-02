@@ -6,7 +6,6 @@
   ],
   "subtypes": [],
   "manaCost": {
-    "colorless": 0,
     "white": 1
   },
   "rules": [

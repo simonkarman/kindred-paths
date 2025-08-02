@@ -9,7 +9,6 @@
     "warlock"
   ],
   "manaCost": {
-    "colorless": 0,
     "black": 1
   },
   "rules": [

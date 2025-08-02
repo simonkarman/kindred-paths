@@ -443,6 +443,28 @@ app.post('/cleanup', async (req, res) => {
     }
   }
 
+  // Ensure that 0 values in the mana cost are removed
+  for (const card of await getAllCards()) {
+    if (!Object.values(card.manaCost).includes(0)) {
+      continue; // No 0 values to remove
+    }
+
+    // Create a new mana cost object without 0 values
+    const newManaCost: { [key: string]: number } = {};
+    for (const [key, value] of Object.entries(card.manaCost)) {
+      if (value !== 0) {
+        newManaCost[key] = value;
+      }
+    }
+
+    // Update the card with the new mana cost
+    card.manaCost = newManaCost;
+    const message = `removed 0 values from mana cost for card ${card.id}`;
+    messages.push(message);
+    await saveCard(new Card(card));
+    console.log(message);
+  }
+
   // Ensure that all cards reference art that exists
   const referencedArt = new Set<string>();
   for (const card of await getAllCards()) {

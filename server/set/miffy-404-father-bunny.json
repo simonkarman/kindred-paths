@@ -11,7 +11,6 @@
   ],
   "manaCost": {
     "colorless": 5,
-    "green": 0,
     "white": 1
   },
   "rules": [

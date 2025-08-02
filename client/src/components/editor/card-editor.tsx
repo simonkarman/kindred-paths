@@ -264,12 +264,12 @@ export function CardEditor({ start }: { start: SerializedCard }) {
         </>)}
 
         {/* Show Card Json */}
-        <div className="space-y-1">
-          <h3 className="font-bold">Card JSON:</h3>
-          <pre className="bg-gray-50 p-2 rounded-md overflow-x-auto text-sm">
-            {JSON.stringify(serializedCard, null, 2)}
-          </pre>
-        </div>
+        {/*<div className="space-y-1">*/}
+        {/*  <h3 className="font-bold">Card JSON:</h3>*/}
+        {/*  <pre className="bg-gray-50 p-2 rounded-md overflow-x-auto text-sm">*/}
+        {/*    {JSON.stringify(serializedCard, null, 2)}*/}
+        {/*  </pre>*/}
+        {/*</div>*/}
 
         {/* Show Card Explanation */}
         {card && <CardExplanation serializedCard={serializedCard}/>}

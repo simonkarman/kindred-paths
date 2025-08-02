@@ -9,11 +9,8 @@
     "scorpion"
   ],
   "manaCost": {
-    "colorless": 0,
     "blue": 1,
-    "black": 1,
-    "white": 0,
-    "green": 0
+    "black": 1
   },
   "rules": [
     {

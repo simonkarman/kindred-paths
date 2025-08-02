@@ -8,9 +8,7 @@
   "subtypes": [
     "island"
   ],
-  "manaCost": {
-    "colorless": 0
-  },
+  "manaCost": {},
   "rules": [
     {
       "variant": "reminder",

@@ -10,8 +10,6 @@
     "druid"
   ],
   "manaCost": {
-    "colorless": 0,
-    "white": 0,
     "green": 3
   },
   "rules": [
