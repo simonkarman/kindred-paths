@@ -23,10 +23,13 @@ export const CardManaCostInput = (props: {
             value={props.manaCost[manaType as Mana] || 0}
             onChange={(e) => {
               const value = parseInt(e.target.value, 10);
-              props.setManaCost({
-                ...props.manaCost,
-                [manaType]: isNaN(value) ? undefined : value,
-              });
+              const nextManaCost = { ...props.manaCost };
+              if (isNaN(value) || value === 0) {
+                delete nextManaCost[manaType as Mana];
+              } else {
+                nextManaCost[manaType as Mana] = value;
+              }
+              props.setManaCost(nextManaCost);
             }}
             className="w-full bg-white px-1 py-0.5 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />

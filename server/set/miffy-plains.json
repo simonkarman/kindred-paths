@@ -1,5 +1,5 @@
 {
-  "name": "Miffy Plains",
+  "name": "Plains",
   "rarity": "common",
   "supertype": "basic",
   "types": [
@@ -8,9 +8,7 @@
   "subtypes": [
     "plains"
   ],
-  "manaCost": {
-    "colorless": 0
-  },
+  "manaCost": {},
   "rules": [],
   "collectorNumber": 417,
   "tags": {

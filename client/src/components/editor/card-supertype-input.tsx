@@ -2,7 +2,7 @@ import { CardSuperType, CardType } from 'kindred-paths';
 import { InputHeader } from '@/components/editor/input-header';
 
 export const CardSupertypeInput = (props: {
-  supertype: 'basic' | 'legendary' | undefined,
+  supertype: CardSuperType,
   setSupertype: (value: CardSuperType) => void,
   types: [CardType, ...CardType[]],
   getErrorMessage: () => string | undefined,
@@ -27,6 +27,23 @@ export const CardSupertypeInput = (props: {
           className="mr-2"
         />
         Legendary
+      </label>
+
+      {/* Token checkbox */}
+      <label className="flex items-center">
+        <input
+          type="checkbox"
+          checked={props.supertype === 'token'}
+          onChange={(e) => {
+            if (e.target.checked) {
+              props.setSupertype('token');
+            } else {
+              props.setSupertype(undefined);
+            }
+          }}
+          className="mr-2"
+        />
+        Token
       </label>
 
       {/* Basic checkbox - only show if types.length === 1 && types[0] === 'land' */}

@@ -1,17 +1,18 @@
 {
-  "name": "2/2 WG Rabbit Token",
+  "name": "Rabbit",
   "rarity": "common",
+  "supertype": "token",
+  "tokenColors": [
+    "white",
+    "green"
+  ],
   "types": [
     "creature"
   ],
   "subtypes": [
     "rabbit"
   ],
-  "manaCost": {
-    "colorless": 0,
-    "white": 1,
-    "green": 1
-  },
+  "manaCost": {},
   "rules": [],
   "pt": {
     "power": 2,

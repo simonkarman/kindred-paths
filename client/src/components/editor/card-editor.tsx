@@ -18,6 +18,7 @@ import { CardTagsInput } from '@/components/editor/card-tags-input';
 import { CardPreview } from '@/components/editor/card-preview';
 import { useDeckName } from '@/components/deck-name-setter';
 import { CardArtInput } from '@/components/editor/card-art-input';
+import { CardTokenColorsInput } from '@/components/editor/card-token-colors-input';
 
 export function CardEditor({ start }: { start: SerializedCard }) {
   const deckName = useDeckName();
@@ -28,16 +29,32 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   const [name, setName] = useState(start.name);
   const [rarity, setRarity] = useState<CardRarity>(start.rarity);
   const [supertype, setSupertype] = useState<CardSuperType>(start.supertype);
+  const [tokenColors, setTokenColors] = useState<CardColor[] | undefined>(start.tokenColors);
   const [subtypes, setSubtypes] = useState<string[] | undefined>(start.subtypes);
   const [types, setTypes] = useState<[CardType, ...CardType[]]>(start.types);
   const [manaCost, setManaCost] = useState<{ [type in Mana]?: number }>(start.manaCost);
   const [rules, setRules] = useState<{ variant: RuleVariant, content: string }[] | undefined>(start.rules);
   const [pt, setPt] = useState<{ power: number, toughness: number } | undefined>(start.pt);
   const [collectorNumber, setCollectorNumber] = useState(start.collectorNumber);
-  const [art, setArt] = useState<string | undefined>(start.art); // TODO!
+  const [art, setArt] = useState<string | undefined>(start.art);
   const [tags, setTags] = useState<{ [key: string]: string | number | boolean } | undefined>(
     start.tags as { [key: string]: string | number | boolean } | undefined
   );
+
+  // If supertype changes
+  useEffect(() => {
+    // Update tokenColors
+    if (supertype === 'token') {
+      setTokenColors([]);
+    } else {
+      setTokenColors(undefined);
+    }
+
+    // And update mana cost
+    if (supertype === 'basic' || supertype === 'token') {
+      setManaCost({});
+    }
+  }, [supertype]);
 
   // If types changes
   useEffect(() => {
@@ -70,6 +87,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     name,
     rarity,
     supertype,
+    tokenColors,
     types,
     subtypes,
     manaCost,
@@ -162,16 +180,21 @@ export function CardEditor({ start }: { start: SerializedCard }) {
               && <CardSubtypesInput subtypes={subtypes} setSubtypes={setSubtypes} getErrorMessage={() => getErrorMessage('subtypes')}
                                     isChanged={!isCreate && JSON.stringify(start.subtypes) !== JSON.stringify(subtypes)} revert={() => setSubtypes(start.subtypes)}
               />}
-            <CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}
+            {(supertype !== 'basic' && supertype !== 'token')
+              && <CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}
                                getErrorMessage={(color: CardColor | 'colorless') => getErrorMessage(`manaCost.${color}`)}
                                isChanged={!isCreate && JSON.stringify(start.manaCost) !== JSON.stringify(manaCost)} revert={() => setManaCost(start.manaCost)}
-            />
+            />}
             <CardRulesInput rules={rules} setRules={setRules} getErrorMessage={() => getErrorMessage('rules')}
                             isChanged={!isCreate && JSON.stringify(start.rules) !== JSON.stringify(rules)} revert={() => setRules(start.rules)}
             />
             <CardSupertypeInput supertype={supertype} setSupertype={setSupertype} types={types} getErrorMessage={() => getErrorMessage('supertype')}
                                 isChanged={!isCreate && JSON.stringify(start.supertype) !== JSON.stringify(supertype)} revert={() => setSupertype(start.supertype)}
             />
+            {tokenColors !== undefined
+              && <CardTokenColorsInput tokenColors={tokenColors} setTokenColors={setTokenColors} getErrorMessage={() => getErrorMessage('tokenColors')}
+                                isChanged={!isCreate && start.tokenColors !== undefined && JSON.stringify(start.tokenColors) !== JSON.stringify(tokenColors)} revert={() => setTokenColors(start.tokenColors)}
+            />}
           </div>
           <div className="space-y-4 w-150">
             <CardNameInput name={name} setName={setName} getErrorMessage={() => getErrorMessage('name')} card={card}
@@ -239,6 +262,14 @@ export function CardEditor({ start }: { start: SerializedCard }) {
             </ul>
           </div>
         </>)}
+
+        {/* Show Card Json */}
+        <div className="space-y-1">
+          <h3 className="font-bold">Card JSON:</h3>
+          <pre className="bg-gray-50 p-2 rounded-md overflow-x-auto text-sm">
+            {JSON.stringify(serializedCard, null, 2)}
+          </pre>
+        </div>
 
         {/* Show Card Explanation */}
         {card && <CardExplanation serializedCard={serializedCard}/>}

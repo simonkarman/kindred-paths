@@ -1,27 +1,21 @@
 {
-  "name": "Rabbit",
+  "name": "Treasure",
   "rarity": "common",
   "supertype": "token",
-  "tokenColors": [
-    "green"
-  ],
+  "tokenColors": [],
   "types": [
-    "creature"
+    "artifact"
   ],
   "subtypes": [
-    "rabbit"
+    "treasure"
   ],
   "manaCost": {},
   "rules": [],
-  "pt": {
-    "power": 4,
-    "toughness": 4
-  },
-  "collectorNumber": 441,
+  "collectorNumber": 599,
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-02",
     "deck": "miffy",
-    "count": 10
+    "count": 0
   }
 }

@@ -14,6 +14,7 @@ export default async function CardCreate() {
       name: 'New Card',
       rarity: 'common',
       supertype: undefined,
+      tokenColors: undefined,
       types: ['creature'],
       subtypes: undefined,
       manaCost: { colorless: 1 },

@@ -42,8 +42,20 @@ const getSetForCard = (card: Card): Set => {
   return sets.default;
 }
 
-const computeCardIdFromName = (name: string) => {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-');
+const computeCardId = (card: SerializedCard) => {
+  const deck = typeof card.tags?.deck === 'string' ? `${card.tags.deck}-` : '';
+  const name = (deck + `${card.collectorNumber}-` + card.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-');
+  if (card.supertype === 'token') {
+    const pt = card.pt ? `${card.pt.power}-${card.pt.toughness}-` : '';
+    const colors = card.tokenColors
+      ? (card.tokenColors.length === 0 ? 'colorless-' : card.tokenColors.map(tc => `${tc}-`).join(''))
+      : 'colorless-';
+    return `${pt}${colors}${name}-token`;
+  }
+  if (card.supertype === 'basic') {
+    return `basic-${name}-${card.tags?.deck || card.collectorNumber}`;
+  }
+  return name;
 }
 
 let cardConjurerUrl = process.env.CARD_CONJURER_URL || "http://localhost:4102";
@@ -264,7 +276,7 @@ app.post('/card', async (req, res) => {
   }
 
   // Set the ID based on the card name
-  const id = computeCardIdFromName(body.data.name);
+  const id = computeCardId(body.data);
 
   // Check if card with this ID already exists
   const existingCard = await getCardById(id);
@@ -284,7 +296,7 @@ app.post('/card', async (req, res) => {
   }
 
   // If the new art is in the suggestions directory, we need to ensure it is moved to the art directory
-  const art = await tryMoveArtSuggestionToArt(body.data);
+  const art = await tryMoveArtSuggestionToArt(card.toJson());
 
   // Save the card and return the response
   try {
@@ -297,7 +309,7 @@ app.post('/card', async (req, res) => {
 });
 
 app.put('/card/:id', async (req, res) => {
-  const cardId = req.params.id;
+  const previousCardId = req.params.id;
   const body = SerializedCardSchema.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
@@ -305,25 +317,38 @@ app.put('/card/:id', async (req, res) => {
   }
 
   // Check if the card exists
-  const existingCard = await getCardById(cardId);
+  const existingCard = await getCardById(previousCardId);
   if (!existingCard) {
-    res.status(404).json({ error: `Card with ID ${cardId} not found` });
+    res.status(404).json({ error: `Card with ID ${previousCardId} not found` });
     return;
   }
+
+  // If the card changing resulted in a change in the card ID, then we need to update the file name
+  let nextCardId = computeCardId(body.data);
+  if (nextCardId !== previousCardId && await getCardById(nextCardId)) {
+    console.warn(`Card with ID ${nextCardId} already exists, sticking to old ID for ${previousCardId}`);
+    nextCardId = previousCardId; // Keep the old ID
+  }
+  body.data.id = nextCardId;
 
   // Update the card with new data
   let card;
   try {
-    card = new Card({ ...body.data, id: cardId });
+    card = new Card(body.data);
   } catch (error) {
     console.error('Error updating card:', error);
     res.status(400).json({ error: 'Invalid card data', details: error });
     return;
   }
 
+  // If the new card ID is different from the old one, we need to delete the old file
+  if (nextCardId !== previousCardId) {
+    await fs.rm(`./set/${previousCardId}.json`);
+  }
+
   // Move the old art to the suggestions directory
   // ... if existing card had art, and the art has changed, and it wasn't already in the 'suggestions/' directory
-  if (existingCard.art && existingCard.art !== body.data.art && !existingCard.art.startsWith('suggestions/')) {
+  if (existingCard.art && existingCard.art !== card.art && !existingCard.art.startsWith('suggestions/')) {
     const oldArtPath = `./art/${existingCard.art}`;
     const suggestionsDir = './art/suggestions';
     try {
@@ -332,12 +357,12 @@ app.put('/card/:id', async (req, res) => {
       await fs.rename(oldArtPath, newArtPath);
       console.log(`Moved old art from ${oldArtPath} to ${newArtPath}`);
     } catch (error) {
-      console.error(`Error moving old art for card ${cardId}:`, error);
+      console.error(`Error moving old art for card ${previousCardId}:`, error);
     }
   }
 
   // If the new art is in the suggestions directory, we need to ensure it is moved to the art directory
-  const art = await tryMoveArtSuggestionToArt(body.data);
+  const art = await tryMoveArtSuggestionToArt(card.toJson());
 
   // Save the updated card
   try {
@@ -362,7 +387,7 @@ app.post('/preview', async (req, res) => {
 
   // Save the card json to the previews directory
   if (!fromCache) {
-    const previewId = `${new Date().toISOString()}-${computeCardIdFromName(card.name)}`;
+    const previewId = `${new Date().toISOString()}-${computeCardId(card)}`;
     const previewPath = `./previews/${previewId}.json`;
     await fs.mkdir('./previews', { recursive: true });
     await fs.writeFile(previewPath, JSON.stringify(card.toJson(), null, 2), 'utf-8');
@@ -375,8 +400,17 @@ app.post('/cleanup', async (req, res) => {
 
   // Rename cards that have an ID different from the computed ID based on their name
   for (const card of await getAllCards()) {
-    const cardId = computeCardIdFromName(card.name);
+    const cardId = computeCardId(card);
     if (card.id !== cardId) {
+      // check that the new cardId does not already exist
+      const existingCard = await getCardById(cardId);
+      if (existingCard) {
+        const message = `skipped renaming card ${card.id} to ${cardId} because it already exists`;
+        messages.push(message);
+        console.warn(message);
+        continue;
+      }
+
       const message = `renamed card ${card.id} to ${cardId}`;
       messages.push(message);
       await fs.rename(`./set/${card.id}.json`, `./set/${cardId}.json`);
@@ -644,7 +678,7 @@ app.post('/suggest/art', async (req, res) => {
       return;
     }
     const buffer = await imageResponse.arrayBuffer();
-    const cardId = computeCardIdFromName(card.name);
+    const cardId = computeCardId(card);
     const fileName = `${cardId}-${image.id}.png`;
     await fs.writeFile(`${artSuggestionDir}/${fileName}`, Buffer.from(buffer));
     console.log(`Saved art suggestion for ${cardId} (for image ${image.id}): ${fileName}`);

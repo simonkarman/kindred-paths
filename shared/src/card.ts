@@ -3,11 +3,14 @@ import { SerializedCard } from './serialized-card';
 export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
 
-export type CardSuperType = undefined | 'basic' | 'legendary';
+export type CardSuperType = undefined | 'basic' | 'token' | 'legendary';
 export const cardSuperTypes = [undefined, 'basic', 'legendary'] as const;
 
 export type CardType = 'enchantment' | 'artifact' | 'instant' | 'sorcery' | 'creature' | 'land';
 export const cardTypes = ['enchantment', 'artifact', 'instant', 'sorcery', 'creature', 'land'] as const;
+
+export type PermanentCardType = Exclude<CardType, 'instant' | 'sorcery'>;
+export const permanentCardTypes = ['enchantment', 'artifact', 'creature', 'land'] as const;
 
 export type CardColor = 'white' | 'blue' | 'black' | 'red' | 'green';
 export type Mana = CardColor | 'colorless';
@@ -34,6 +37,7 @@ export class Card {
   public readonly name: string;
   public readonly rarity: CardRarity;
   public readonly supertype: CardSuperType;
+  public readonly tokenColors?: CardColor[];
   public readonly types: [CardType, ...CardType[]];
   public readonly subtypes: string[];
   public readonly manaCost: { [type in Mana]?: number };
@@ -48,6 +52,7 @@ export class Card {
     this.name = props.name;
     this.rarity = props.rarity;
     this.supertype = props.supertype;
+    this.tokenColors = props.tokenColors;
     this.types = props.types;
     this.subtypes = props.subtypes ?? [];
     this.manaCost = props.manaCost;
@@ -63,6 +68,21 @@ export class Card {
     }
     if (this.supertype === 'basic' && this.rarity !== 'common') {
       throw new Error('super type basic must have common rarity');
+    }
+    if (this.supertype === 'token' && this.rarity !== 'common') {
+      throw new Error('super type token must have common rarity');
+    }
+    if (this.supertype === 'token' && !permanentCardTypes.some(pct => this.types.includes(pct))) {
+      throw new Error('super type token must be associated with a permanent type (enchantment, artifact, creature, land)');
+    }
+    if (this.supertype === 'token' && this.tokenColors === undefined) {
+      throw new Error('super type token must have token colors defined');
+    }
+    if (this.tokenColors && this.supertype !== 'token') {
+      throw new Error('token colors can only be defined for token cards');
+    }
+    if (this.supertype === 'token' && Object.keys(this.manaCost).length > 0) {
+      throw new Error('token cards cannot have a mana cost');
     }
 
     // Check that card has at least one type
@@ -209,6 +229,9 @@ export class Card {
   }
 
   public color(): CardColor[] {
+    if (this.supertype === 'token') {
+      return this.tokenColors ?? [];
+    }
     return this.colorOf(this.renderManaCost());
   }
 
@@ -242,6 +265,7 @@ export class Card {
       name: this.name,
       rarity: this.rarity,
       supertype: this.supertype,
+      tokenColors: this.tokenColors,
       types: this.types,
       subtypes: this.subtypes,
       manaCost: this.manaCost,
@@ -256,7 +280,7 @@ export class Card {
   public explain(props?: { withoutName?: boolean }): string {
     let readable = props?.withoutName ? '' : `"${this.name}" (#${this.collectorNumber}) is `;
     readable += `a ${this.rarity} `
-    if (this.supertype) {
+    if (this.supertype === 'basic' || this.supertype === 'legendary') {
       readable += `${this.supertype} `;
     }
     if (this.pt) {
@@ -265,11 +289,16 @@ export class Card {
     const color = this.color();
     if (color.length > 0) {
       readable += `${color.join(' and ')} `;
+    } else {
+      readable += `colorless `;
     }
     if (this.subtypes.length > 0) {
       readable += `${this.subtypes.join(' and ')} `;
     }
     readable += this.types.join(' ');
+    if (this.supertype === 'token') {
+      readable += ` token`;
+    }
     if (this.manaValue() > 0) {
       readable += ` for ${this.renderManaCost()} mana`;
     }

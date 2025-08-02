@@ -1,5 +1,5 @@
 {
-  "name": "Miffy Forest",
+  "name": "Forest",
   "rarity": "common",
   "supertype": "basic",
   "types": [
@@ -8,9 +8,7 @@
   "subtypes": [
     "forest"
   ],
-  "manaCost": {
-    "colorless": 0
-  },
+  "manaCost": {},
   "rules": [],
   "collectorNumber": 442,
   "tags": {

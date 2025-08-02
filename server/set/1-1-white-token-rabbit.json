@@ -1,16 +1,17 @@
 {
-  "name": "1/1 W Rabbit Token",
+  "name": "Rabbit",
   "rarity": "common",
+  "supertype": "token",
+  "tokenColors": [
+    "white"
+  ],
   "types": [
     "creature"
   ],
   "subtypes": [
     "rabbit"
   ],
-  "manaCost": {
-    "colorless": 0,
-    "white": 1
-  },
+  "manaCost": {},
   "rules": [],
   "pt": {
     "power": 1,
