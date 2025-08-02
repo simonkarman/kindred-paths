@@ -47,14 +47,19 @@ export default async function DeckOverview({ params: _params }: Readonly<{ param
   const { deckName } = await _params;
   const _cards = await getCards();
 
-  const cards = _cards
+  const cardsIncludingTokens = _cards
     .filter(c => c.tags?.["deleted"] !== true && (deckName === "" || deckName === "*" || c.tags?.["deck"] === deckName))
     .toSorted((a, b) => a.collectorNumber - b.collectorNumber)
     .map(c => new Card(c));
 
-  const totalCount = cards.reduce((acc, card) => acc + getCount(card), 0);
+  const cardsWithoutTokens = cardsIncludingTokens.filter(c => c.supertype !== "token");
+  const tokens = cardsIncludingTokens.filter(c => c.supertype === "token");
+  const cardsWithoutTokensAndBasicLands = cardsWithoutTokens.filter(c => c.supertype !== "basic");
+  const basicLands = cardsWithoutTokens.filter(c => c.supertype === "basic");
 
-  const manaValueDistribution = cards
+  const totalCount = cardsWithoutTokens.reduce((acc, card) => acc + getCount(card), 0);
+
+  const manaValueDistribution = cardsWithoutTokens
     .filter(c => c.types.length !== 1 || c.types[0] !== "land")
     .reduce((acc, card) => {
       const manaCost = card.manaValue() + ' mana';
@@ -68,7 +73,7 @@ export default async function DeckOverview({ params: _params }: Readonly<{ param
       return acc;
     }, {} as { [manaValue: string]: number });
 
-  const cardTypeDistribution = cards.reduce((acc, card) => {
+  const cardTypeDistribution = cardsWithoutTokens.reduce((acc, card) => {
     const types = card.types;
     const count = getCount(card);
     if (types.length === 0) {
@@ -85,8 +90,7 @@ export default async function DeckOverview({ params: _params }: Readonly<{ param
     return acc;
   }, {} as { [type: string]: number });
 
-  const nonBasicLandCards = cards.filter(c => c.supertype !== "basic");
-  const subtypeDistribution = nonBasicLandCards.reduce((acc, card) => {
+  const subtypeDistribution = cardsWithoutTokensAndBasicLands.reduce((acc, card) => {
     const subtypes = card.subtypes || [];
     const count = getCount(card);
     if (subtypes.length === 0) {
@@ -115,7 +119,7 @@ export default async function DeckOverview({ params: _params }: Readonly<{ param
         <BarDistribution title="Subtype" data={subtypeDistribution} />
       </div>
       <ul className="not-print:hidden grid grid-cols-2 py-2 gap-y-1 gap-x-4">
-        {cards.map(card => (
+        {cardsIncludingTokens.map(card => (
           <li key={card.id} className="border-b border-zinc-100 py-2">
             {getCount(card)}x{' '}
             <Link href={`/card/${card.id}`} className="text-blue-600 hover:underline">
@@ -124,16 +128,16 @@ export default async function DeckOverview({ params: _params }: Readonly<{ param
             <span className="text-xs text-zinc-600">is {card.explain({ withoutName: true })}</span>
           </li>
         ))}
-        {cards.length === 0 && (
+        {cardsIncludingTokens.length === 0 && (
           <li className="text-zinc-500">No cards in this deck.</li>
         )}
       </ul>
       <hr className="mb-10 border-zinc-50 break-after-page" />
     </div>
     <div className="grid grid-cols-3">
-      {nonBasicLandCards.map(card => n(getCount(card)).map(i => <Link className="border-3 bg-zinc-500" key={card.id + i} href={`/edit/${card.id}?t=/deck/${deckName}`}>
+      {[cardsWithoutTokensAndBasicLands, basicLands, tokens].map((group, groupIndex) => group.map(card => n(getCount(card)).map(i => <Link className="border-3 bg-zinc-500" key={groupIndex + card.id + i} href={`/edit/${card.id}?t=/deck/${deckName}`}>
         <CardRender serializedCard={card.toJson()} scale={0.6} quality={80} />
-      </Link>))}
+      </Link>)))}
     </div>
   </>;
 };
