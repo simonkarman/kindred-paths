@@ -45,7 +45,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   useEffect(() => {
     // Update tokenColors
     if (supertype === 'token') {
-      setTokenColors([]);
+      setTokenColors(tokenColors ?? []);
     } else {
       setTokenColors(undefined);
     }

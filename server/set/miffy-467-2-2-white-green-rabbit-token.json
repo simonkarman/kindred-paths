@@ -13,12 +13,18 @@
     "rabbit"
   ],
   "manaCost": {},
-  "rules": [],
+  "rules": [
+    {
+      "variant": "reminder",
+      "content": "This creature token is green and white."
+    }
+  ],
   "pt": {
     "power": 2,
     "toughness": 2
   },
-  "collectorNumber": 466,
+  "collectorNumber": 467,
+  "art": "mfy/miffy-the-curious.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-02",

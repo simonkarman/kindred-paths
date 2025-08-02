@@ -17,6 +17,16 @@ export type Mana = CardColor | 'colorless';
 export const cardColors = ['white', 'blue', 'black', 'red', 'green'] as const;
 export const wubrg = ['w', 'u', 'b', 'r', 'g'] as const;
 
+export const cardColorToSingleCharacterColor = (color: CardColor): typeof wubrg[number] => {
+  switch (color) {
+    case 'white': return 'w';
+    case 'blue': return 'u';
+    case 'black': return 'b';
+    case 'red': return 'r';
+    case 'green': return 'g';
+  }
+}
+
 export const landSubtypes = ['plains', 'island', 'swamp', 'mountain', 'forest'] as const;
 export const landSubtypeToColor = (type: typeof landSubtypes[number] | string): CardColor | undefined => ({
   plains: 'white',

@@ -3,7 +3,7 @@
   "rarity": "common",
   "supertype": "token",
   "tokenColors": [
-    "green"
+    "white"
   ],
   "types": [
     "creature"
@@ -14,10 +14,11 @@
   "manaCost": {},
   "rules": [],
   "pt": {
-    "power": 4,
-    "toughness": 4
+    "power": 1,
+    "toughness": 1
   },
-  "collectorNumber": 441,
+  "collectorNumber": 418,
+  "art": "mfy/miffy-the-kind.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-02",
