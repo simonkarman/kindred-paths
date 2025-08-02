@@ -55,7 +55,7 @@ const computeCardId = (card: SerializedCard) => {
     return sanitize(`${pt}${colors}${card.name}-token`);
   }
   if (card.supertype === 'basic') {
-    return sanitize(`basic-${card.name}-${card.tags?.deck || card.collectorNumber}`);
+    return sanitize(`basic-${card.name}`);
   }
   return sanitize(card.name);
 }
