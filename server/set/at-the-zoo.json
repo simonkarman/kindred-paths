@@ -1,0 +1,21 @@
+{
+  "name": "At the Zoo",
+  "rarity": "rare",
+  "types": [
+    "sorcery"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 3,
+    "white": 1,
+    "green": 1
+  },
+  "rules": [],
+  "collectorNumber": 462,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 1
+  }
+}

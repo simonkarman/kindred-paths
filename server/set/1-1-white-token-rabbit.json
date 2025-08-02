@@ -1,0 +1,26 @@
+{
+  "name": "1/1 W Rabbit Token",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "rabbit"
+  ],
+  "manaCost": {
+    "colorless": 0,
+    "white": 1
+  },
+  "rules": [],
+  "pt": {
+    "power": 1,
+    "toughness": 1
+  },
+  "collectorNumber": 416,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 10
+  }
+}

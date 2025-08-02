@@ -1,0 +1,22 @@
+{
+  "name": "Poppy Pigs Woodfields",
+  "rarity": "rare",
+  "types": [
+    "land"
+  ],
+  "subtypes": [
+    "plains",
+    "forest"
+  ],
+  "manaCost": {
+    "colorless": 0
+  },
+  "rules": [],
+  "collectorNumber": 460,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 1
+  }
+}

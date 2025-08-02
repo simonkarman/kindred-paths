@@ -1,0 +1,21 @@
+{
+  "name": "The Family Tree",
+  "rarity": "uncommon",
+  "types": [
+    "instant"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 4,
+    "white": 1,
+    "green": 1
+  },
+  "rules": [],
+  "collectorNumber": 463,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 1
+  }
+}

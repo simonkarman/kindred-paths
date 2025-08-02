@@ -1,0 +1,22 @@
+{
+  "name": "Melanie's Outerlands",
+  "rarity": "uncommon",
+  "types": [
+    "land"
+  ],
+  "subtypes": [
+    "plains",
+    "forest"
+  ],
+  "manaCost": {
+    "colorless": 0
+  },
+  "rules": [],
+  "collectorNumber": 461,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 1
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "2/2 WG Rabbit Token",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "rabbit"
+  ],
+  "manaCost": {
+    "colorless": 0,
+    "white": 1,
+    "green": 1
+  },
+  "rules": [],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 466,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 10
+  }
+}

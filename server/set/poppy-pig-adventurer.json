@@ -16,7 +16,7 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "Whenever a creature you control deals combat damage to a player, put a +1/+1 counter on that creature, then you gain 1 life for each counter on it."
+      "content": "Whenever a creature you control deals combat damage to a player, put a +1/+1 counter on that creature, then you gain 1 life for the number of +1/+1 counters on that creature."
     }
   ],
   "pt": {

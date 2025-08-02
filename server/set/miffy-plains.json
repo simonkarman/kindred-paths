@@ -1,0 +1,22 @@
+{
+  "name": "Miffy Plains",
+  "rarity": "common",
+  "supertype": "basic",
+  "types": [
+    "land"
+  ],
+  "subtypes": [
+    "plains"
+  ],
+  "manaCost": {
+    "colorless": 0
+  },
+  "rules": [],
+  "collectorNumber": 417,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 7
+  }
+}

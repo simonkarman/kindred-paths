@@ -1,0 +1,22 @@
+{
+  "name": "Miffy Forest",
+  "rarity": "common",
+  "supertype": "basic",
+  "types": [
+    "land"
+  ],
+  "subtypes": [
+    "forest"
+  ],
+  "manaCost": {
+    "colorless": 0
+  },
+  "rules": [],
+  "collectorNumber": 442,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 7
+  }
+}

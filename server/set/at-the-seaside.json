@@ -1,0 +1,20 @@
+{
+  "name": "At the Seaside",
+  "rarity": "rare",
+  "types": [
+    "sorcery"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 2,
+    "white": 2
+  },
+  "rules": [],
+  "collectorNumber": 412,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 1
+  }
+}

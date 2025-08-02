@@ -1,0 +1,26 @@
+{
+  "name": "4/4 G Rabbit Token",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "rabbit"
+  ],
+  "manaCost": {
+    "colorless": 0,
+    "green": 1
+  },
+  "rules": [],
+  "pt": {
+    "power": 4,
+    "toughness": 4
+  },
+  "collectorNumber": 441,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 10
+  }
+}

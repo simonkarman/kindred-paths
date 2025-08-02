@@ -1,0 +1,22 @@
+{
+  "name": "Red Balloon",
+  "rarity": "common",
+  "supertype": "legendary",
+  "types": [
+    "artifact"
+  ],
+  "subtypes": [
+    "equipment"
+  ],
+  "manaCost": {
+    "colorless": 1
+  },
+  "rules": [],
+  "collectorNumber": 415,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 1
+  }
+}

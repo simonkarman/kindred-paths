@@ -1,0 +1,20 @@
+{
+  "name": "One Rabbit Home",
+  "rarity": "common",
+  "types": [
+    "artifact"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 2,
+    "white": 0
+  },
+  "rules": [],
+  "collectorNumber": 414,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 1
+  }
+}

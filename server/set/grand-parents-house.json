@@ -1,0 +1,19 @@
+{
+  "name": "Grand Parents House",
+  "rarity": "rare",
+  "types": [
+    "land"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 0
+  },
+  "rules": [],
+  "collectorNumber": 410,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 1
+  }
+}

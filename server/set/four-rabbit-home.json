@@ -1,0 +1,19 @@
+{
+  "name": "Four Rabbit Home",
+  "rarity": "common",
+  "types": [
+    "artifact"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 3
+  },
+  "rules": [],
+  "collectorNumber": 440,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "deck": "miffy",
+    "count": 1
+  }
+}
