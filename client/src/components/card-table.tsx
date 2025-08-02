@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { RarityText } from '@/components/rarity-text';
 import { ManaCost } from '@/components/mana-cost';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilter, faImage, faPenToSquare, faShieldCat, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faClone, faFilter, faImage, faPenToSquare, faShieldCat, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import { deleteCard } from '@/utils/server';
 import { useDeckName } from '@/components/deck-name-setter';
@@ -284,6 +284,10 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
                 className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
                 href={`/edit/${card.id}?t=/`}
               ><FontAwesomeIcon icon={faPenToSquare} /></Link>
+              <Link
+                className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
+                href={`/clone/${card.id}?t=/`}
+              ><FontAwesomeIcon icon={faClone} /></Link>
               <button
                 className="text-zinc-600 hover:text-red-700 active:text-red-500"
                 onClick={() => del(card.id)}

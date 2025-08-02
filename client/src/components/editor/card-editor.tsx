@@ -73,7 +73,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
 
   // If deckName changes, update tags
   useEffect(() => {
-    if (isCreate && deckName.length > 0 && deckName !== "*") {
+    if (isCreate && hasActiveDeck) {
       setTags({
         ...tags,
         deck: deckName,
@@ -114,6 +114,24 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     card = new Card(serializedCard);
   } catch (e: unknown) {
     validationError = (e as Error).message;
+  }
+
+  // Handle cancel/discard
+  const handleDiscard = () => {
+    // If the URL has a 't' parameter, redirect to that location
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('t')) {
+      window.location.href = urlParams.get('t')!;
+    } else {
+      // If no 't' parameter, redirect based on whether it's a create or edit
+      if (isCreate) {
+        // If creating a new card, just redirect to the home page
+        window.location.href = '/';
+      } else {
+        // If editing an existing card, redirect to the card's page
+        window.location.href = `/card/${start.id}`;
+      }
+    }
   }
 
   // Handle form submission
@@ -220,20 +238,28 @@ export function CardEditor({ start }: { start: SerializedCard }) {
         {/* Create Button */}
         <div className="space-y-1">
           {!canSave && <p className="text-center text-zinc-600 text-sm">
-            {isCreate ? "You must first provide a name for the new card." : "You must first make changes, before you can save them."}
+            {isCreate ? "You must first provide a new name for the card." : "You must first make changes, before you can save them."}
           </p>}
           {((errors.length > 0) || (validationError !== undefined) || isLoading) && <p className="text-center text-red-600 text-sm">
             You must fix the above errors before you can {isCreate ? 'create' : 'update'} the card.
           </p>}
-          <button
-            onClick={handleCreateCard}
-            disabled={(errors.length > 0) || (validationError !== undefined) || isLoading || !canSave}
-            className="w-full py-2 px-4 disabled:bg-gray-500 bg-orange-600 text-white font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading
-              ? `${isCreate ? 'Creating' : 'Updating'}...`
-              : (isCreate ? "Create card" : "Save changes")}
-          </button>
+          <div className="flex gap-4 items-baseline">
+            <button
+              onClick={handleCreateCard}
+              disabled={(errors.length > 0) || (validationError !== undefined) || isLoading || !canSave}
+              className="w-full py-2 px-4 disabled:bg-gray-500 bg-orange-600 text-white font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading
+                ? `${isCreate ? 'Creating' : 'Updating'}...`
+                : (isCreate ? "Create card" : "Save changes")}
+            </button>
+            <button
+              onClick={handleDiscard}
+              className="w-60 mt-2 py-2 px-4 bg-gray-200 text-gray-800 font-medium rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            >
+              {isCreate ? 'Cancel Card Creation' : 'Discard changes'}
+            </button>
+          </div>
         </div>
       </div>
       <div className="space-y-6 w-md pt-4">
