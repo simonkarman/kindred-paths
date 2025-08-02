@@ -1,5 +1,5 @@
 {
-  "name": "Snuffy, Always Playful",
+  "name": "Snuffy, Young and Playful",
   "rarity": "rare",
   "types": [
     "creature"
@@ -43,7 +43,7 @@
     "toughness": 5
   },
   "collectorNumber": 429,
-  "art": "mfy/snuffy-always-playful.png",
+  "art": "mfy/snuffy-always-playful.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-30",

@@ -32,11 +32,12 @@
     "toughness": 3
   },
   "collectorNumber": 401,
-  "art": "mfy/miffy-the-kind.png",
+  "art": "mfy/miffy-the-kind.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-29",
     "deck": "miffy",
-    "count": 1
+    "count": 1,
+    "setting": "Miffy on a yellow background holding a red balloon her hand."
   }
 }
