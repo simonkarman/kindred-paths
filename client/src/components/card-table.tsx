@@ -301,7 +301,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
             ? <FontAwesomeIcon className="ml-2 text-zinc-400" icon={faImage} />
             : '-'
           }</span>
-          <span className="inline-block w-8 text-center">{card.hasToken() ? <FontAwesomeIcon className="ml-2 text-zinc-400" icon={faShieldCat} /> : ''}</span>
+          <span className="inline-block w-8 text-center">{card.getCreatableTokenNames().length > 0 ? <FontAwesomeIcon className="ml-2 text-zinc-400" icon={faShieldCat} /> : ''}</span>
         </li>
       })}
     </ul>

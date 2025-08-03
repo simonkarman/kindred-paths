@@ -6,9 +6,22 @@
   ],
   "subtypes": [],
   "manaCost": {
-    "colorless": 3
+    "colorless": 2
   },
-  "rules": [],
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "{t}: Add {g}. Activate only if you control a creature token."
+    },
+    {
+      "variant": "ability",
+      "content": "{3}{g}, {t}, Put a stun counter on ~: Create a 4/4 green Rabbit creature token. Activate only if you control no creature tokens and only as a sorcery."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "If a permanent with a stun counter on it would become untapped, instead remove a stun counter from it."
+    }
+  ],
   "collectorNumber": 440,
   "tags": {
     "status": "concept",

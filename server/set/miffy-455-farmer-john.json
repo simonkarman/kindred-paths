@@ -15,15 +15,15 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "When ~ enters, create two 2/2 white and green Rabbit creature tokens."
+      "content": "When ~ enters, create two 2/2 green and white Rabbit creature tokens."
     },
     {
       "variant": "ability",
-      "content": "{t}, Tap two other creatures you control: Gain 2 life, then populate. Activate only as a sorcery."
+      "content": "{t}, Tap two other creatures you control: Gain 2 life, then populate twice. Activate only as a sorcery."
     },
     {
       "variant": "inline-reminder",
-      "content": "To populate, you create a token that's a copy of a creature token you control."
+      "content": "To populate, create a token that’s a copy of a creature token you control."
     }
   ],
   "pt": {

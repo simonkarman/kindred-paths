@@ -16,12 +16,18 @@ export async function generateMetadata({ params: _params }: PageProps<{ deckName
   }
 }
 
-const BarDistribution = ({ title, data }: { title: string, data: Record<string, number> }) => {
+const BarDistribution = ({ title, data, check: _check, fullWidth }: {
+  title: string,
+  data: Record<string, number>,
+  check?: string[],
+  fullWidth?: boolean
+}) => {
+  const check = _check ?? [];
   const maxValue = Math.max(...Object.values(data));
   return (
     <div>
       <h3 className="font-bold mb-2 text-center">{title}<span className="pl-1 font-normal">Distribution</span></h3>
-      <div className="space-y-1 w-70">
+      <div className={`space-y-1 ${fullWidth ? 'w-full' : 'w-70'}`}>
         {Object.entries(data)
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([key, value]) => (
@@ -34,7 +40,11 @@ const BarDistribution = ({ title, data }: { title: string, data: Record<string, 
                   <span className="text-xs text-white font-bold">{value}x</span>
                 </div>
               </div>
-              <span className="inline-block h-6 font-mono text-right w-full pr-2 py-0.5">{key}</span>
+              <span className="inline-block h-6 font-mono text-right w-full pr-2 py-0.5">
+                {key}
+                {check.includes(key) && <span className="text-green-500"> ✔</span>}
+                {check.length > 0 && !check.includes(key) && <span className="text-red-500"> ✘</span>}
+              </span>
             </div>
           ))}
       </div>
@@ -107,6 +117,20 @@ export default async function DeckOverview({ params: _params }: Readonly<{ param
     return acc;
   }, {} as { [subtype: string]: number });
 
+  const creatableTokenNames = cardsIncludingTokens.reduce((tokens, card) => [...tokens, ...card.getCreatableTokenNames()], [] as string[]);
+  const tokenDistribution = creatableTokenNames.reduce((acc, token) => {
+    if (token in acc) {
+      acc[token] += 1;
+    } else {
+      acc[token] = 1;
+    }
+    return acc;
+  }, {} as { [tokenName: string]: number });
+  const availableTokenNames = [
+    ...tokens.map(token => token.getReferenceName()),
+    ...tokens.map(token => token.name + ' token'),
+  ];
+
   return <>
     <div className="space-y-3">
       <div>
@@ -118,6 +142,7 @@ export default async function DeckOverview({ params: _params }: Readonly<{ param
         <BarDistribution title="Card Type" data={cardTypeDistribution} />
         <BarDistribution title="Subtype" data={subtypeDistribution} />
       </div>
+      <BarDistribution title="Creatable Token Name" data={tokenDistribution} check={availableTokenNames} fullWidth />
       <ul className="not-print:hidden grid grid-cols-2 py-2 gap-y-1 gap-x-4">
         {cardsIncludingTokens.map(card => (
           <li key={card.id} className="border-b border-zinc-100 py-2">

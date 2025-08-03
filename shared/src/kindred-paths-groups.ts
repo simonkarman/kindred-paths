@@ -1,6 +1,7 @@
 import { primaryRacesPerAllColors, families, primaryRacesPerPrimaryColor } from './families';
 import { Group, Requirement } from './group';
-import { Card, CardColor, cardColors, CardRarity, CardSuperType, CardType } from './card';
+import { Card, CardRarity, CardSuperType, CardType } from './card';
+import { CardColor, cardColors } from './colors';
 
 const n = (count: number) => Array.from({ length: count }, (_, i) => i + 1);
 const s = (value: string | undefined) => (value === undefined || value.length === 0) ? '' : `${value} `;

@@ -20,7 +20,7 @@
     },
     {
       "variant": "ability",
-      "content": "When ~ enters, create a 1/1 white Rabbit creature token."
+      "content": "When ~ enters, create a 1/1 white Rabbit creature token and create a Treasure token."
     }
   ],
   "pt": {

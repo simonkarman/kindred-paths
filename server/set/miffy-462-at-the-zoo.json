@@ -10,7 +10,12 @@
     "white": 1,
     "green": 1
   },
-  "rules": [],
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Create three 2/2 green and white Rabbit creature tokens."
+    }
+  ],
   "collectorNumber": 462,
   "tags": {
     "status": "concept",

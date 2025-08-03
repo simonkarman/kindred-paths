@@ -1,6 +1,6 @@
 import { chromium, Browser, Page } from 'playwright';
 import { setTimeout as sleep } from 'timers/promises';
-import { Card, PermanentCardType, cardColorToSingleCharacterColor } from 'kindred-paths';
+import { Card, PermanentCardType, colorToShort } from 'kindred-paths';
 
 export class CardConjurer {
   private browser: Browser | null;
@@ -52,7 +52,7 @@ export class CardConjurer {
         const dominantCardType = (card.types[card.types.length - 1]) as PermanentCardType;
         frameColor = numberOfColors === 0
           ? ({ "creature": "C", "artifact": 'A', "enchantment": "C", "land": 'L' }[dominantCardType])
-          : (numberOfColors > 1 ? 'M' : cardColorToSingleCharacterColor(card.tokenColors![0]).toUpperCase());
+          : (numberOfColors > 1 ? 'M' : colorToShort(card.tokenColors![0]).toUpperCase());
         const frameName = frameColor === 'C' ? 'frameCThumb' : `tokenFrame${frameColor}${tokenType}Thumb`;
 
         // Select frame pack

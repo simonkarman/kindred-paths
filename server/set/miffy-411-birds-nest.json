@@ -4,9 +4,20 @@
   "types": [
     "land"
   ],
-  "subtypes": [],
+  "subtypes": [
+    "plains"
+  ],
   "manaCost": {},
-  "rules": [],
+  "rules": [
+    {
+      "variant": "reminder",
+      "content": "{t}: Add {w}."
+    },
+    {
+      "variant": "ability",
+      "content": "{3}{w}, {t}, Sacrifice ~: Create a 1/1 white Rabbit creature token."
+    }
+  ],
   "collectorNumber": 411,
   "tags": {
     "status": "concept",

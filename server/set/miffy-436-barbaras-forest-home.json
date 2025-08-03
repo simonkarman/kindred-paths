@@ -1,12 +1,10 @@
 {
-  "name": "Boris' Forest Home",
-  "rarity": "rare",
+  "name": "Barbaras Forest Home",
+  "rarity": "uncommon",
   "types": [
     "land"
   ],
-  "subtypes": [
-    "forest"
-  ],
+  "subtypes": [],
   "manaCost": {},
   "rules": [
     {
@@ -19,10 +17,10 @@
     },
     {
       "variant": "ability",
-      "content": "When ~ enters, if you control a land named Barbaras Forest Home, you may sacrifice that and this land. If you do, create a 4/4 green Rabbit creature token."
+      "content": "When ~ enters, if you control a land named Boris' Forest Home, you may sacrifice that and this land. If you do, create a 4/4 green Rabbit creature token."
     }
   ],
-  "collectorNumber": 435,
+  "collectorNumber": 436,
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-02",

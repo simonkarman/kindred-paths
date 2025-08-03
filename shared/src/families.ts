@@ -1,4 +1,4 @@
-import { CardColor } from './card';
+import { CardColor } from './colors';
 
 export type Family = {
   name: string,

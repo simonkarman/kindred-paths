@@ -15,7 +15,7 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "When ~ enters, search you library for a basic Plains or Forest card, reveal it, then put it into your hand, then shuffle."
+      "content": "When ~ enters, search you library for a Plains or Forest card, reveal it, then put it into your hand, then shuffle."
     },
     {
       "variant": "ability",

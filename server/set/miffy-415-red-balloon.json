@@ -9,9 +9,38 @@
     "equipment"
   ],
   "manaCost": {
-    "colorless": 1
+    "colorless": 2
   },
-  "rules": [],
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "flash"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "You may cast this spell any time you could cast an instant."
+    },
+    {
+      "variant": "ability",
+      "content": "When ~ enters, attach it to up to one target creature you control."
+    },
+    {
+      "variant": "ability",
+      "content": "Equipped creature gets +1/+1 and has reach."
+    },
+    {
+      "variant": "ability",
+      "content": "When equipped creature attacks, up to one target creature an opponent controls must block it this turn if able."
+    },
+    {
+      "variant": "ability",
+      "content": "Equip {1}"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "{1}: Attach to target creature you control. Equip only as a sorcery."
+    }
+  ],
   "collectorNumber": 415,
   "tags": {
     "status": "concept",

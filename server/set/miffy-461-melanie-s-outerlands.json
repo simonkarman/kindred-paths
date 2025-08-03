@@ -9,7 +9,16 @@
     "forest"
   ],
   "manaCost": {},
-  "rules": [],
+  "rules": [
+    {
+      "variant": "reminder",
+      "content": "{t}: Add {g} or {w}."
+    },
+    {
+      "variant": "ability",
+      "content": "~ enters tapped unless you control two or more creatures."
+    }
+  ],
   "collectorNumber": 461,
   "tags": {
     "status": "concept",

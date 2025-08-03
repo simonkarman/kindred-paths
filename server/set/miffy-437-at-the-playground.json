@@ -9,7 +9,12 @@
     "colorless": 1,
     "green": 2
   },
-  "rules": [],
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Distribute three +1/+1 counter among one, two or three target creatures you control. Those creatures gain trample until end of turn."
+    }
+  ],
   "collectorNumber": 437,
   "tags": {
     "status": "concept",

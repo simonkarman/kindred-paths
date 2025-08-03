@@ -1,4 +1,4 @@
-import { Card, cardColors, landSubtypeToColor } from './card';
+import { Card, landSubtypeToColor } from './card';
 
 const fixSpacing = (text: string): string => {
   return text

@@ -6,7 +6,20 @@
   ],
   "subtypes": [],
   "manaCost": {},
-  "rules": [],
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "This land enters tapped."
+    },
+    {
+      "variant": "ability",
+      "content": "{t}: Add {w}."
+    },
+    {
+      "variant": "ability",
+      "content": "When ~ enters, look at the top four cards of your library. You may reveal a Rabbit, Bird, or Cat card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+    }
+  ],
   "collectorNumber": 410,
   "tags": {
     "status": "concept",

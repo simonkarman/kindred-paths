@@ -9,7 +9,20 @@
     "forest"
   ],
   "manaCost": {},
-  "rules": [],
+  "rules": [
+    {
+      "variant": "reminder",
+      "content": "{t}: Add {g} or {w}."
+    },
+    {
+      "variant": "ability",
+      "content": "~ enters tapped."
+    },
+    {
+      "variant": "ability",
+      "content": "{6}{g}{w}, {t}, Sacrifice ~: Create two 2/2 green and white Rabbit creature tokens."
+    }
+  ],
   "collectorNumber": 460,
   "tags": {
     "status": "concept",

@@ -1,4 +1,5 @@
 import { SerializedCard } from './serialized-card';
+import { CardColor, cardColors, Mana, toOrderedColors, wubrg } from './colors';
 
 export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
@@ -11,21 +12,6 @@ export const cardTypes = ['enchantment', 'artifact', 'instant', 'sorcery', 'crea
 
 export type PermanentCardType = Exclude<CardType, 'instant' | 'sorcery'>;
 export const permanentCardTypes = ['enchantment', 'artifact', 'creature', 'land'] as const;
-
-export type CardColor = 'white' | 'blue' | 'black' | 'red' | 'green';
-export type Mana = CardColor | 'colorless';
-export const cardColors = ['white', 'blue', 'black', 'red', 'green'] as const;
-export const wubrg = ['w', 'u', 'b', 'r', 'g'] as const;
-
-export const cardColorToSingleCharacterColor = (color: CardColor): typeof wubrg[number] => {
-  switch (color) {
-    case 'white': return 'w';
-    case 'blue': return 'u';
-    case 'black': return 'b';
-    case 'red': return 'r';
-    case 'green': return 'g';
-  }
-}
 
 export const landSubtypes = ['plains', 'island', 'swamp', 'mountain', 'forest'] as const;
 export const landSubtypeToColor = (type: typeof landSubtypes[number] | string): CardColor | undefined => ({
@@ -169,7 +155,8 @@ export class Card {
     if (this.manaCost['colorless'] !== undefined && this.manaCost['colorless'] > 0) {
       result += '{' + this.manaCost['colorless'] + '}';
     }
-    for (const color of cardColors) {
+    const colors = toOrderedColors(Object.keys(this.manaCost).filter(c => c !== 'colorless') as CardColor[]);
+    for (const color of colors) {
       const amount = this.manaCost[color];
       if (amount !== undefined && amount > 0) {
         result += `{${wubrg[cardColors.indexOf(color)]}}`.repeat(amount);
@@ -240,7 +227,7 @@ export class Card {
 
   public color(): CardColor[] {
     if (this.supertype === 'token') {
-      return this.tokenColors ?? [];
+      return toOrderedColors(this.tokenColors ?? []);
     }
     return this.colorOf(this.renderManaCost());
   }
@@ -266,7 +253,7 @@ export class Card {
         }
       }
     }
-    return [...result];
+    return toOrderedColors([...result]);
   }
 
   public toJson(): SerializedCard {
@@ -287,28 +274,34 @@ export class Card {
     });
   }
 
-  public explain(props?: { withoutName?: boolean }): string {
-    let readable = props?.withoutName ? '' : `"${this.name}" (#${this.collectorNumber}) is `;
-    readable += `a ${this.rarity} `
+  getReferenceName(): string {
+    let referenceName = '';
     if (this.supertype === 'basic' || this.supertype === 'legendary') {
-      readable += `${this.supertype} `;
+      referenceName += `${this.supertype} `;
     }
     if (this.pt) {
-      readable += `${this.pt.power}/${this.pt.toughness} `;
+      referenceName += `${this.pt.power}/${this.pt.toughness} `;
     }
     const color = this.color();
     if (color.length > 0) {
-      readable += `${color.join(' and ')} `;
-    } else {
-      readable += `colorless `;
+      referenceName += `${color.join(' and ')} `;
+    } else if (!this.types.includes('artifact')) {
+      referenceName += `colorless `;
     }
     if (this.subtypes.length > 0) {
-      readable += `${this.subtypes.join(' and ')} `;
+      referenceName += `${this.subtypes.map(capitalize).join(' ')} `;
     }
-    readable += this.types.join(' ');
+    referenceName += this.types.join(' ');
     if (this.supertype === 'token') {
-      readable += ` token`;
+      referenceName += ` token`;
     }
+    return referenceName;
+  }
+
+  public explain(props?: { withoutName?: boolean }): string {
+    let readable = props?.withoutName ? '' : `"${this.name}" (#${this.collectorNumber}) is `;
+    readable += `a ${this.rarity} `;
+    readable += this.getReferenceName();
     if (this.manaValue() > 0) {
       readable += ` for ${this.renderManaCost()} mana`;
     }
@@ -326,7 +319,14 @@ export class Card {
     return readable;
   }
 
-  hasToken() {
-    return this.rules.some(r => r.variant === 'ability' && r.content.toLowerCase().includes('create'));
+  getCreatableTokenNames(): string[] {
+    return this.rules
+      .filter(r => r.variant === 'ability' && r.content.toLowerCase().includes('create'))
+      .flatMap(r => {
+        const tokenRegex = /create (?:a|one|two|three|four|five|six|seven|eight|nine|ten|eleven) ([a-zA-Z0-9\/\s]+? token)s?/gi;
+        const match = r.content.matchAll(tokenRegex);
+        return Array.from(match).map(m => m[1].trim());
+      })
+      .filter(token => token.length > 0);
   }
 }
