@@ -1,10 +1,12 @@
 {
-  "name": "Barbaras Forest Home",
+  "name": "Barbara's Forest Home",
   "rarity": "uncommon",
   "types": [
     "land"
   ],
-  "subtypes": [],
+  "subtypes": [
+    "forest"
+  ],
   "manaCost": {},
   "rules": [
     {

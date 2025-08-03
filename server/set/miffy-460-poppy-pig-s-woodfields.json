@@ -1,12 +1,12 @@
 {
-  "name": "Poppy Pigs Woodfields",
+  "name": "Poppy Pig's Woodfields",
   "rarity": "rare",
   "types": [
     "land"
   ],
   "subtypes": [
-    "plains",
-    "forest"
+    "forest",
+    "plains"
   ],
   "manaCost": {},
   "rules": [
