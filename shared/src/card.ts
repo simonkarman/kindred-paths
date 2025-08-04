@@ -5,7 +5,7 @@ export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
 
 export type CardSuperType = undefined | 'basic' | 'token' | 'legendary';
-export const cardSuperTypes = [undefined, 'basic', 'legendary'] as const;
+export const cardSuperTypes = [undefined, 'basic', 'token', 'legendary'] as const;
 
 export type CardType = 'enchantment' | 'artifact' | 'instant' | 'sorcery' | 'creature' | 'land';
 export const cardTypes = ['enchantment', 'artifact', 'instant', 'sorcery', 'creature', 'land'] as const;
@@ -328,5 +328,67 @@ export class Card {
         return Array.from(match).map(m => m[1].trim());
       })
       .filter(token => token.length > 0);
+  }
+
+  /**
+   * Get a tag value as a string.
+   *
+   * @param tagName the name of the tag to get
+   * @param options additional options
+   *                - if stringify is true, non-string values will be converted to strings
+   *
+   * @return the tag value as a string, or undefined if the tag does not exist or is not a string
+   */
+  getTagAsString(tagName: string, options?: {
+    stringify?: boolean,
+  }): string | undefined {
+    const tagValue = this.tags[tagName];
+    if (tagValue === undefined) {
+      return undefined;
+    }
+    if (typeof tagValue === 'string') {
+      return tagValue;
+    }
+    const stringify = options?.stringify ?? false;
+    if (!stringify) {
+      return undefined;
+    }
+    return typeof tagValue === 'boolean' ? (tagValue ? 'true' : 'false') : tagValue.toString();
+  }
+
+  /**
+   * Get a tag value as a number.
+   *
+   * @param tagName the name of the tag to get
+   * @param options additional options
+   *                - if parseFromUndefined is true, undefined values will be parsed as 0
+   *                - if parseFromString is true, string values will be parsed as numbers
+   *                - if parseFromBoolean is true, boolean values will be parsed as 1 for true and 0 for false
+   *
+   * @return the tag value as a number, or undefined if the tag does not exist or cannot be parsed
+   */
+  getTagAsNumber(tagName: string, options?: {
+    parseFromUndefined?: boolean,
+    parseFromString?: boolean,
+    parseFromBoolean?: boolean,
+  }): number | undefined {
+    const tagValue = this.tags[tagName];
+    if (tagValue === undefined) {
+      if (options?.parseFromUndefined) {
+        return 0;
+      }
+      return undefined;
+    }
+    if (typeof tagValue === 'number') {
+      return tagValue;
+    }
+    if (options?.parseFromString && typeof tagValue === 'string') {
+      const parsed = parseFloat(tagValue);
+      return isNaN(parsed) ? undefined : parsed;
+    }
+    if (options?.parseFromBoolean && typeof tagValue === 'boolean') {
+      return tagValue ? 1 : 0;
+    }
+    return undefined;
   }
 }

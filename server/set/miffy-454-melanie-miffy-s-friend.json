@@ -19,7 +19,7 @@
     },
     {
       "variant": "ability",
-      "content": "Whenever a land enters under you control, if you control three or more lands with different names, create a 2/2 green and white{lns}Rabbit creature token."
+      "content": "Whenever a land enters under you control, if you control seven or more lands with different names, create a 2/2 green and white{lns}Rabbit creature token."
     }
   ],
   "pt": {

@@ -7,3 +7,4 @@ export * from './hash';
 export * from './kindred-paths-groups';
 export * from './random';
 export * from './serialized-card';
+export * from './statistics';

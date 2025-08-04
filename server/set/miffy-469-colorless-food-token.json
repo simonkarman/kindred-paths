@@ -1,0 +1,26 @@
+{
+  "name": "Food",
+  "rarity": "common",
+  "supertype": "token",
+  "tokenColors": [],
+  "types": [
+    "artifact"
+  ],
+  "subtypes": [
+    "food"
+  ],
+  "manaCost": {},
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "{2}, {t}, Sacrifice this artifact: You gain 3 life."
+    }
+  ],
+  "collectorNumber": 469,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-04",
+    "deck": "miffy",
+    "count": 1
+  }
+}

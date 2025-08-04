@@ -18,11 +18,10 @@
     "toughness": 4
   },
   "collectorNumber": 443,
-  "art": "mfy/miffy-the-brave.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-02",
     "deck": "miffy",
-    "count": 5
+    "count": 6
   }
 }
