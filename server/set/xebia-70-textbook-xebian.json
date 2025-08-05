@@ -1,0 +1,43 @@
+{
+  "name": "Textbook Xebian",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "wizard",
+    "engineer"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "blue": 1,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Prowess"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn."
+    },
+    {
+      "variant": "flavor",
+      "content": "\"'Authority' is our mission, 'Shaping Tomorrow with AI Today' is our vision\" - any Xebian"
+    }
+  ],
+  "pt": {
+    "power": 3,
+    "toughness": 3
+  },
+  "collectorNumber": 70,
+  "art": "xebia-1-xebian-a6009057-fb21-4b8a-b775-16d21a0eabf8.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-05",
+    "deck": "xebia",
+    "count": 2,
+    "setting": "A wizard in goggles and a singed lab coat stands amid a cluttered workshop, adjusting a sparking contraption while blueprints float magically around them."
+  }
+}
