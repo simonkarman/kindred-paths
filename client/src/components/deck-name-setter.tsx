@@ -49,7 +49,7 @@ export function DeckNameSetter() {
         className="text-sm bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 transition-colors"
         href={"/deck/" + encodeURIComponent(activeDeckName)}
       >
-        View Deck
+        Print Deck
       </Link>
     </div>
   </>

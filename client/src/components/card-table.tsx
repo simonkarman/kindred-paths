@@ -118,7 +118,6 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
     });
 
   return <ul className='flex flex-col items-start'>
-    <li>{searchText}</li>
     <li className="flex items-center px-2 border-b border-zinc-300 text-xs text-zinc-600">
       <span onClick={() => sortOn('mana-value')} data-is-active={sortKey.k === "mana-value"} className="data-[is-active=true]:font-bold inline-block text-right pr-2 w-24">Cost</span>
       <span onClick={() => sortOn('tag:count')} data-is-active={sortKey.k === "tag:count"} className="data-[is-active=true]:font-bold inline-block w-12 text-right pr-1.5">Count</span>
