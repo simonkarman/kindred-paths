@@ -1,6 +1,8 @@
 # Kindred Paths
 A tool for managing the cards in Kindred Paths, the custom Magic the Gathering set by [Simon Karman](https://simonkarman.nl).
 
+![Kindred Paths](./kindred-paths.png)
+
 ## Prerequisites
 Make sure you have the following tools installed on your system:
 - **Git** — should be available by default, otherwise recommended to install from [git-scm](https://git-scm.com/downloads).
