@@ -1,0 +1,43 @@
+{
+  "name": "Null Wanderer",
+  "rarity": "uncommon",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "human"
+  ],
+  "manaCost": {},
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Have You Tried Turning It Off and On Again?"
+    },
+    {
+      "variant": "ability",
+      "content": "Kotlin"
+    },
+    {
+      "variant": "ability",
+      "content": "Typescript"
+    },
+    {
+      "variant": "flavor",
+      "content": "XSD"
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 1,
+  "art": "xebia-1-null-wanderer-3c35003d-1399-48b5-9165-1dea18182c3b.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-05",
+    "deck": "xebia",
+    "count": 2,
+    "setting": "A mysterious hooded figure sitting in a dark cyberpunk environment, surrounded by floating holographic code windows and data streams. The character has glowing blue circuit patterns subtly visible on their skin and clothing. Multiple monitors display scrolling Java and TypeScript code in neon green and blue text. The figure's eyes glow with a soft digital light as they manipulate ethereal data constructs with their hands. The background shows a blend of ancient ruins and modern server rooms, representing the bridge between old magic and new technology. Particle effects of binary code and magical energy swirl around them. The overall color palette is dark with electric blue, neon green, and purple accents. The art style should be detailed fantasy illustration with cyberpunk elements, suitable for a Magic: The Gathering card. The character appears neither fully human nor machine, embodying the 'null' aspect - existing between states of reality and digital space."
+  }
+}
