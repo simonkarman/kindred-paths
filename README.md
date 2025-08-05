@@ -32,8 +32,11 @@ export LEONARDO_API_KEY="..."
 docker ps
 
 # Install playwright dependencies
-npx playwright install
-npx playwright install chrome
+(
+  cd ./server
+  npx playwright install
+  npx playwright install chrome
+}
 
 # Install and start the application (port 4100)
 npm install
