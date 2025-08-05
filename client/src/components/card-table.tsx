@@ -1,83 +1,17 @@
 "use client";
 
-import { Card, cardRarities, cardSuperTypes, cardTypes, SerializedCard } from 'kindred-paths';
-import { colorToTypographyColor, typographyColors } from '@/utils/typography';
+import { Card, SerializedCard } from 'kindred-paths';
 import { useState } from 'react';
 import { RarityText } from '@/components/rarity-text';
 import { ManaCost } from '@/components/mana-cost';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClone, faFilter, faImage, faPenToSquare, faShieldCat, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faClone, faImage, faPenToSquare, faShieldCat, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import { deleteCard } from '@/utils/server';
 import { useDeckName } from '@/components/deck-name-setter';
+import { filterCardsBasedOnSearch, useSearch } from '@/utils/use-search';
 
-type Filter = { name: string, predicate: (card: Card) => boolean };
 type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' | 'power' | 'toughness' | 'art' | 'tags' | 'tag:count';
-
-const filterCategories: { category: string, filters: Filter[] }[] = [
-  {
-    category: 'Rarity',
-    filters: cardRarities.map(cardRarity => ({
-      name: `${cardRarity}s`,
-      predicate: (card: Card) => card.rarity === cardRarity,
-    })),
-  },
-  {
-    category: 'Color',
-    filters: Array.from(typographyColors.entries()).map(([tc]) => ({
-      name: `${tc} cards`,
-      predicate: (card: Card) => colorToTypographyColor(card.color()) === tc,
-    })),
-  },
-  {
-    category: 'Super Type',
-    filters: cardSuperTypes.filter(s => s !== undefined).map(cardSuperType => ({
-      name: cardSuperType,
-      predicate: (card: Card) => card.supertype === cardSuperType,
-    })),
-  },
-  {
-    category: 'Type',
-    filters: cardTypes.map(cardType => ({
-      name: cardType.endsWith('y') ? `${cardType.slice(0, -1)}ies` : `${cardType}s`,
-      predicate: (card: Card) => card.types.includes(cardType),
-    })),
-  },
-  {
-    category: 'Art',
-    filters: [false, true].map(hasArt => ({
-      name: hasArt ? 'Has Art' : 'No Art',
-      predicate: (card: Card) => (card.art === undefined) === !hasArt,
-    })),
-  },
-  {
-    category: 'Tags',
-    filters: ['status=concept', 'status=playable', '!status=playable', '!status', 'status'].map(_tag => {
-      const isNegation = _tag.startsWith('!');
-      const tag = isNegation ? _tag.slice(1) : _tag;
-      const [tagName, expectedTagValue] = tag.split('=');
-      const isEquation = expectedTagValue !== undefined;
-
-      const name = isEquation
-       ? (isNegation ? `not ${tagName}=${expectedTagValue}` : `${tagName}=${expectedTagValue}`)
-       : (isNegation ? `no ${tagName}` : `has ${tagName}`);
-
-      return {
-        name,
-        predicate: (card: Card) => {
-          const cardTagValue = card.tags?.[tagName];
-          let result;
-          if (isEquation) {
-            result = cardTagValue?.toString() === expectedTagValue;
-          } else {
-            result = cardTagValue !== undefined && cardTagValue !== false && cardTagValue !== '' && cardTagValue !== 0;
-          }
-          return isNegation ? !result : result;
-        },
-      };
-    }),
-  },
-];
 
 const tagsAsString = (tags: Card["tags"]) => {
   return tags
@@ -93,8 +27,8 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
   const deckName = useDeckName();
   const hasDeckName = deckName.length !== 0 && deckName !== '*';
 
-  const [filters, setFilters] = useState<Filter[]>([]);
-  const [showPossibleFilters, setShowPossibleFilters] = useState(false);
+  const [searchText] = useSearch();
+
   const [sortKey, setSortKey] = useState<{ k: SortKey, d: 'asc' | 'desc' }>({ k: 'collector-number', d: 'asc' });
   const sortOn = (key: SortKey) => {
     if (sortKey.k === key) {
@@ -110,11 +44,10 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
     deleteCard(id).catch(() => setDeletedCardIds(p => p.filter(cardId => cardId !== id)));
   };
 
-  const cards = props.cards
+  const cards = filterCardsBasedOnSearch(props.cards, searchText)
     .filter(c => !deletedCardIds.includes(c.id))
     .filter(c => !hasDeckName || c.tags?.['deck'] === deckName)
     .map(serializedCard => new Card(serializedCard))
-    .filter(c => !filters.some(filter => !filter.predicate(c)))
     .sort((a, b) => {
       if (sortKey.d === 'desc') {
         const temp = a;
@@ -184,126 +117,62 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
       return 0;
     });
 
-  return <div>
-    <div className="flex justify-between">
-      <div className="flex items-start gap-3">
-        <h2 className="font-bold text-lg mb-2">All Cards</h2>
-        <Link
-          className="inline-block text-xs bg-blue-600 text-white font-bold px-2 py-0.5 mt-1 rounded hover:bg-blue-800 active:bg-blue-900"
-          href="/create?t=/"
-        >
-          Create New Card
-        </Link>
-      </div>
-      <button
-        className="bg-zinc-50 rounded border px-2 py-0.5 hover:bg-green-100 border-zinc-300 font-bold"
-        onClick={() => setShowPossibleFilters(!showPossibleFilters)}
+  return <ul className='flex flex-col items-start'>
+    <li>{searchText}</li>
+    <li className="flex items-center px-2 border-b border-zinc-300 text-xs text-zinc-600">
+      <span onClick={() => sortOn('mana-value')} data-is-active={sortKey.k === "mana-value"} className="data-[is-active=true]:font-bold inline-block text-right pr-2 w-24">Cost</span>
+      <span onClick={() => sortOn('tag:count')} data-is-active={sortKey.k === "tag:count"} className="data-[is-active=true]:font-bold inline-block w-12 text-right pr-1.5">Count</span>
+      <span onClick={() => sortOn('collector-number')} data-is-active={sortKey.k === "collector-number"} className="data-[is-active=true]:font-bold inline-block w-10 text-right pr-1.5">#</span>
+      <span onClick={() => sortOn('name')} data-is-active={sortKey.k === "name"} className="data-[is-active=true]:font-bold inline-block w-74 border-r border-transparent mr-4">Name</span>
+      <span onClick={() => sortOn('rarity')} data-is-active={sortKey.k === "rarity"} className="data-[is-active=true]:font-bold inline-block w-24">Rarity</span>
+      <span onClick={() => sortOn('types')} data-is-active={sortKey.k === "types"} className="data-[is-active=true]:font-bold inline-block w-80">Types</span>
+      <span className="inline-block w-8 text-center">
+        <span onClick={() => sortOn('power')} data-is-active={sortKey.k === "power"} className="data-[is-active=true]:font-bold">P</span>
+        /
+        <span onClick={() => sortOn('toughness')} data-is-active={sortKey.k === "toughness"} className="data-[is-active=true]:font-bold">T</span>
+      </span>
+      <span onClick={() => sortOn('art')} data-is-active={sortKey.k === "art"} className="data-[is-active=true]:font-bold inline-block w-12 text-center">Art</span>
+      <span className="inline-block w-8 text-center">Token</span>
+    </li>
+    {cards.map((card) => {
+      return <li
+        key={card.id}
+        className="flex items-center px-2 py-0.5 border-t border-zinc-200 hover:bg-zinc-100"
       >
-        <FontAwesomeIcon icon={faFilter} className="text-zinc-400 pr-1" />
-        Filters
-      </button>
-    </div>
-    <div className="flex gap-2 items-center justify-end text-sm my-2">
-      {filters.map(filter => {
-        return <button
-          key={filter.name}
-          className="flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-50 border-zinc-300 border text-sm"
-        >
-          <input type="checkbox" checked onChange={() => setFilters(filters.filter(f => f !== filter))} />
-          {filter.name}
-        </button>;
-      })}
-    </div>
-    {showPossibleFilters && <div>
-      <div className="flex flex-wrap justify-end gap-2">
-        {filterCategories.map(category => (<ul
-          key={category.category}
-          className="flex flex-col gap-1 border rounded border-zinc-100 bg-zinc-50 py-1 px-1"
-        >
-          <li className="font-bold text-sm">
-            <FontAwesomeIcon icon={faFilter} className="text-zinc-200 pr-1" />
-            {category.category}
-          </li>
-          {category.filters.map(filter => (
-            <li key={filter.name} className="flex items-center gap-1 px-1">
-              <input
-                type="checkbox"
-                checked={filters.includes(filter)}
-                onChange={() => {
-                  if (filters.includes(filter)) {
-                    setFilters(filters.filter(f => f !== filter));
-                  } else {
-                    setFilters([...filters, filter]);
-                  }
-                }}
-              />
-              {filter.name}
-            </li>))}
-        </ul>))}
-      </div>
-      <button
-        className="mt-2 bg-red-100 hover:bg-red-200 px-2 py-1 rounded text-sm font-bold"
-        onClick={() => setShowPossibleFilters(false)}
-      >
-        Close
-      </button>
-    </div>}
-    <ul className='flex flex-col items-start mb-5'>
-      <li className="flex items-center px-2 border-b border-zinc-300 text-xs text-zinc-600">
-        <span onClick={() => sortOn('mana-value')} data-is-active={sortKey.k === "mana-value"} className="data-[is-active=true]:font-bold inline-block text-right pr-2 w-24">Cost</span>
-        <span onClick={() => sortOn('tag:count')} data-is-active={sortKey.k === "tag:count"} className="data-[is-active=true]:font-bold inline-block w-12 text-right pr-1.5">Count</span>
-        <span onClick={() => sortOn('collector-number')} data-is-active={sortKey.k === "collector-number"} className="data-[is-active=true]:font-bold inline-block w-10 text-right pr-1.5">#</span>
-        <span onClick={() => sortOn('name')} data-is-active={sortKey.k === "name"} className="data-[is-active=true]:font-bold inline-block w-74 border-r border-transparent mr-4">Name</span>
-        <span onClick={() => sortOn('rarity')} data-is-active={sortKey.k === "rarity"} className="data-[is-active=true]:font-bold inline-block w-24">Rarity</span>
-        <span onClick={() => sortOn('types')} data-is-active={sortKey.k === "types"} className="data-[is-active=true]:font-bold inline-block w-80">Types</span>
-        <span className="inline-block w-8 text-center">
-          <span onClick={() => sortOn('power')} data-is-active={sortKey.k === "power"} className="data-[is-active=true]:font-bold">P</span>
-          /
-          <span onClick={() => sortOn('toughness')} data-is-active={sortKey.k === "toughness"} className="data-[is-active=true]:font-bold">T</span>
-        </span>
-        <span onClick={() => sortOn('art')} data-is-active={sortKey.k === "art"} className="data-[is-active=true]:font-bold inline-block w-12 text-center">Art</span>
-        <span className="inline-block w-8 text-center">Token</span>
-      </li>
-      {cards.map((card) => {
-        return <li
-          key={card.id}
-          className="flex items-center px-2 py-0.5 border-t border-zinc-200 hover:bg-zinc-100"
-        >
-          <span className="inline-block w-24 pr-2 text-right"><ManaCost cost={card.renderManaCost()} /></span>
-          <span className="inline-block w-12 text-xs text-right pr-1.5 text-zinc-500">{card.tags?.["count"] ?? 1}x</span>
-          <span className="inline-block w-10 text-xs text-right pr-1.5 text-zinc-500">{card.collectorNumber}</span>
-          <span className="inline-flex gap-2 justify-between pr-2 w-74 font-bold border-r border-zinc-200 mr-4">
+        <span className="inline-block w-24 pr-2 text-right"><ManaCost cost={card.renderManaCost()} /></span>
+        <span className="inline-block w-12 text-xs text-right pr-1.5 text-zinc-500">{card.tags?.["count"] ?? 1}x</span>
+        <span className="inline-block w-10 text-xs text-right pr-1.5 text-zinc-500">{card.collectorNumber}</span>
+        <span className="inline-flex gap-2 justify-between pr-2 w-74 font-bold border-r border-zinc-200 mr-4">
+          <Link
+            className="hover:text-orange-700 active:text-orange-500"
+            href={`/card/${card.id}`}
+          >
+            {card.name}
+          </Link>
+          <span className="flex gap-1">
             <Link
-              className="hover:text-orange-700 active:text-orange-500"
-              href={`/card/${card.id}`}
-            >
-              {card.name}
-            </Link>
-            <span className="flex gap-1">
-              <Link
-                className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
-                href={`/edit/${card.id}?t=/`}
-              ><FontAwesomeIcon icon={faPenToSquare} /></Link>
-              <Link
-                className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
-                href={`/clone/${card.id}?t=/`}
-              ><FontAwesomeIcon icon={faClone} /></Link>
-              <button
-                className="text-zinc-600 hover:text-red-700 active:text-red-500"
-                onClick={() => del(card.id)}
-              ><FontAwesomeIcon icon={faTrashCan} /></button>
-              </span>
-          </span>
-          <span className="w-24 border-zinc-200"><RarityText rarity={card.rarity} /></span>
-          <span className="inline-block w-80">{card.renderTypeLine()}</span>
-          <span className="inline-block w-8 text-center">{card.pt ? `${card.pt.power}/${card.pt.toughness}` : ''}</span>
-          <span className="inline-block w-12 text-center">{card.art
-            ? <FontAwesomeIcon className="ml-2 text-zinc-400" icon={faImage} />
-            : '-'
-          }</span>
-          <span className="inline-block w-8 text-center">{card.getCreatableTokenNames().length > 0 ? <FontAwesomeIcon className="ml-2 text-zinc-400" icon={faShieldCat} /> : ''}</span>
-        </li>
-      })}
-    </ul>
-  </div>;
+              className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
+              href={`/edit/${card.id}?t=/`}
+            ><FontAwesomeIcon icon={faPenToSquare} /></Link>
+            <Link
+              className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
+              href={`/clone/${card.id}?t=/`}
+            ><FontAwesomeIcon icon={faClone} /></Link>
+            <button
+              className="text-zinc-600 hover:text-red-700 active:text-red-500"
+              onClick={() => del(card.id)}
+            ><FontAwesomeIcon icon={faTrashCan} /></button>
+            </span>
+        </span>
+        <span className="w-24 border-zinc-200"><RarityText rarity={card.rarity} /></span>
+        <span className="inline-block w-80">{card.renderTypeLine()}</span>
+        <span className="inline-block w-8 text-center">{card.pt ? `${card.pt.power}/${card.pt.toughness}` : ''}</span>
+        <span className="inline-block w-12 text-center">{card.art
+          ? <FontAwesomeIcon className="ml-2 text-zinc-400" icon={faImage} />
+          : '-'
+        }</span>
+        <span className="inline-block w-8 text-center">{card.getCreatableTokenNames().length > 0 ? <FontAwesomeIcon className="ml-2 text-zinc-400" icon={faShieldCat} /> : ''}</span>
+      </li>
+    })}
+  </ul>;
 }
