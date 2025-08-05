@@ -23,7 +23,7 @@ import { CardTokenColorsInput } from '@/components/editor/card-token-colors-inpu
 export function CardEditor({ start }: { start: SerializedCard }) {
   const deckName = useDeckName();
   const isCreate = start.id === "<new>";
-  const hasActiveDeck = deckName.length > 0 && deckName !== "*";
+  const hasActiveDeck = deckName.length !== 0;
 
   // Properties State
   const [name, setName] = useState(start.name);

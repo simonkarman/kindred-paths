@@ -25,7 +25,7 @@ const tagsAsString = (tags: Card["tags"]) => {
 
 export const CardTable = (props: { cards: SerializedCard[] }) => {
   const deckName = useDeckName();
-  const hasDeckName = deckName.length !== 0 && deckName !== '*';
+  const hasDeckName = deckName.length !== 0;
 
   const [searchText] = useSearch();
 

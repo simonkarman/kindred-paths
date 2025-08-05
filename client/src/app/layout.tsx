@@ -5,6 +5,7 @@ import '@fortawesome/fontawesome-svg-core/styles.css';
 import { config } from '@fortawesome/fontawesome-svg-core';
 import { DeckNameSetter } from '@/components/deck-name-setter';
 import Link from 'next/link';
+import { getCards } from '@/utils/server';
 config.autoAddCss = false; /* eslint-disable import/first */
 
 const geistSans = Geist({
@@ -22,11 +23,13 @@ export const metadata: Metadata = {
   description: "A tool for managing the cards in Kindred Paths, the custom Magic the Gathering set by Simon Karman.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const deckNames = Array.from(new Set((await getCards()).flatMap(c => typeof c.tags?.deck === "string" ? [c.tags.deck] : [])));
+
   return (
     <html lang="en">
       <body
@@ -49,7 +52,7 @@ export default function RootLayout({
             </p>
           </div>
           <div>
-            <DeckNameSetter />
+            <DeckNameSetter deckNames={deckNames} />
           </div>
         </header>
         <main className="p-2 space-y-2">

@@ -12,16 +12,16 @@ const n = (count: number) => Array.from({ length: count }, (_, i) => i + 1);
 export async function generateMetadata({ params: _params }: PageProps<{ deckName: string }>): Promise<Metadata> {
   const params = await _params;
   return {
-    title: `KPA: ${capitalize(params.deckName)} Deck`,
+    title: `KPA: Print ${capitalize(params.deckName)} Deck`,
   }
 }
 
-export default async function DeckOverview({ params: _params }: Readonly<{ params: Promise<{ deckName: string }> }>) {
+export default async function Print({ params: _params }: Readonly<{ params: Promise<{ deckName: string }> }>) {
   const { deckName } = await _params;
   const _cards = await getCards();
 
   const cardsIncludingTokens = _cards
-    .filter(c => deckName === "" || deckName === "*" || c.tags?.["deck"] === deckName)
+    .filter(c => deckName === "" || c.tags?.["deck"] === deckName)
     .toSorted((a, b) => a.collectorNumber - b.collectorNumber);
 
   const { cardsWithoutTokensAndBasicLands, basicLands, tokens } = getStatistics(cardsIncludingTokens);
@@ -60,7 +60,7 @@ export default async function DeckOverview({ params: _params }: Readonly<{ param
     <div className="grid grid-cols-3">
       {[cardsWithoutTokensAndBasicLands, basicLands, tokens].map((group, groupIndex) => group
         .map(card => n(card.getTagAsNumber("count") ?? 0)
-          .map(i => <Link className="border-3 bg-zinc-500" key={groupIndex + card.id + i} href={`/edit/${card.id}?t=/deck/${deckName}`}>
+          .map(i => <Link className="border-3 bg-zinc-500" key={groupIndex + card.id + i} href={`/edit/${card.id}?t=/print/${deckName}`}>
             <CardRender serializedCard={card.toJson()} scale={0.6} quality={80} />
           </Link>
         )
