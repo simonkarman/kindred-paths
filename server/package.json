@@ -6,7 +6,8 @@
   "private": true,
   "scripts": {
     "start": "ts-node src/index.ts",
-    "dev": "./card-conjurer.sh && nodemon --exec ts-node src/index.ts --watch src --watch package.json"
+    "dev": "./card-conjurer.sh && nodemon --exec ts-node src/index.ts --watch src --watch package.json",
+    "postinstall": "npx playwright install chromium && npx playwright install"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
