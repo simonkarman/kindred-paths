@@ -35,7 +35,7 @@ docker ps
 (
   cd ./server
   npx playwright install
-  npx playwright install chrome
+  npx playwright install chromium
 )
 
 # Install and start the application (port 4100)
