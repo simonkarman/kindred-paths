@@ -1,0 +1,52 @@
+{
+  "name": "The Weather Painter Rainbow",
+  "rarity": "mythic",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "white": 1,
+    "blue": 1,
+    "black": 1,
+    "red": 1,
+    "green": 1,
+    "colorless": 2
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "flying"
+    },
+    {
+      "variant": "ability",
+      "content": "Sacrifice Rainbow, the Living Canvas: Counter target creature spell."
+    },
+    {
+      "variant": "ability",
+      "content": "Other creatures you control with the type Painter have \"Exile this creature: Counter target spell.\""
+    },
+    {
+      "variant": "ability",
+      "content": "At the beginning of your upkeep, you may return a target card of type Painter from exile to the battlefield under your control."
+    },
+    {
+      "variant": "flavor",
+      "content": "Where the storm ends and color begins, all other magic is unmade."
+    }
+  ],
+  "pt": {
+    "power": 4,
+    "toughness": 4
+  },
+  "collectorNumber": 4,
+  "art": "1-the-weather-painter-rainbow-afd8eb4d-c00b-4ec0-bfb1-7ffb0cec29b5.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-05",
+    "setting": "A majestic rainbow-winged entity hovers above a floating artist's studio in the clouds, while painter creatures below channel colorful magic into swirling spell-shields that dissolve incoming threats.",
+    "deck": "xebia",
+    "count": 1
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "Simonus Maximus Generatus Ainus",
+  "rarity": "mythic",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "elder"
+  ],
+  "manaCost": {
+    "colorless": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Does stuff with AI"
+    }
+  ],
+  "pt": {
+    "power": 42,
+    "toughness": 35
+  },
+  "collectorNumber": 5,
+  "art": "xebia-1-simonus-maximus-generatus-ainus-5d99bc8b-6553-45af-a2fd-5a27322d1ecc.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-05",
+    "deck": "xebia",
+    "count": 1,
+    "setting": "A massive crystalline being emerges from a quantum computing facility, its body composed of flowing data streams and neural networks, while reality glitches and fragments around its towering form."
+  }
+}

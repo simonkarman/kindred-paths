@@ -1,0 +1,35 @@
+{
+  "name": "Jacco",
+  "rarity": "mythic",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "consultant"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "blue": 1,
+    "black": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "bugfixing"
+    }
+  ],
+  "pt": {
+    "power": 6,
+    "toughness": 4
+  },
+  "collectorNumber": 2,
+  "art": "1-jacco-9b0da25d-50c4-403a-998a-e80b51f7139b.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-05",
+    "setting": "A muscular figure wrapped in broken chains stands triumphant on a shattered platform, ethereal wisps of colorless mana radiating from its form.",
+    "deck": "xebia",
+    "count": 1
+  }
+}
