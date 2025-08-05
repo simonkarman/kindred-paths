@@ -1,5 +1,13 @@
 # Kindred Paths
-A tool for managing the cards in Kindred Paths, the custom Magic the Gathering set by [Simon Karman](https://simonkarman.nl).
+A tool for managing a collection of custom Magic the Gathering cards by [Simon Karman](https://simonkarman.nl).
+
+## Features
+- **Card Management**: Add, edit, and delete Magic the Gathering cards from your collection.
+- **View Rendered Cards**: View rendered Magic the Gathering cards in your collection with details like name, type, mana cost, artwork, and more.
+- **Card AI Suggestions**: Get AI-generated text suggestions for things such as card names (via Anthropic).
+- **Card AI Artwork**: Get AI-generated suggestions for card artwork (via LeonardoAI).
+- **Deck Management**: Create and manage decks using the cards in your collection.
+- **Printing**: Create a printable PDF of cards on A4 format suitable for easy cut out for play testing purposes.
 
 ![Kindred Paths](./kindred-paths.png)
 
