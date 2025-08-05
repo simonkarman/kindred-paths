@@ -36,7 +36,7 @@ docker ps
   cd ./server
   npx playwright install
   npx playwright install chrome
-}
+)
 
 # Install and start the application (port 4100)
 npm install
