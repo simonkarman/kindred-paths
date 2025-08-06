@@ -7,11 +7,16 @@ export const InputHeader = (props: {
   isChanged: boolean,
   revert: () => void,
   onTap?: () => void,
+  children?: React.ReactNode,
 }) => {
-  const htmlId = `card${capitalize(props.propertyName).replace(/\s+/g, '')}`;
-  return <div className="flex items-baseline-last gap-3 border-t border-gray-50 pt-2" onClick={props.onTap}>
-    <label htmlFor={htmlId} className="flex items-center gap-3 font-medium text-zinc-800">
-      <FontAwesomeIcon className={`${props.isChanged ? 'text-orange-400' : 'text-gray-200'} text-sm`} icon={
+  const htmlId = `card${capitalize(props.propertyName).replace(/\s+\//g, '')}`;
+  return <div className="flex items-baseline-last gap-3 border-t border-zinc-100 pt-2 mb-2">
+    <label
+      htmlFor={htmlId}
+      className={`flex items-center gap-3 font-medium text-zinc-700 ${props.onTap ? 'cursor-pointer' : ''}`}
+      onClick={props.onTap}
+    >
+      <FontAwesomeIcon className={`${props.isChanged ? 'text-orange-400' : 'text-zinc-200'} text-sm`} icon={
         props.isChanged ? faPencilSquare : faSquare
       }/>
       {props.propertyName.split(' ').map(s => capitalize(s)).join(' ')}
@@ -25,5 +30,6 @@ export const InputHeader = (props: {
         (Revert Changes)
       </button>
     )}
+    {props.children}
   </div>;
 }

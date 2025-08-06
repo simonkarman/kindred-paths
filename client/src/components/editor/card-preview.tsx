@@ -2,7 +2,12 @@ import { Card } from 'kindred-paths';
 import { useEffect, useState } from 'react';
 import { serverUrl } from '@/utils/server';
 
-export function CardPreview({ card }: { card: Card }) {
+export function CardPreview({ card }: { card?: Card }) {
+  if (!card) {
+    return <div className="w-full max-w-50">
+      <p className="text-center text-zinc-500">No card</p>
+    </div>;
+  }
   const [imageUrl, setImageUrl] = useState<string>();
   const [cardKeyRelevantForRendering, setCardKeyRelevantForRendering] = useState<string>();
   const [outdated, setOutdated] = useState(false);
@@ -55,7 +60,7 @@ export function CardPreview({ card }: { card: Card }) {
     }
   }, [card]);
 
-  return <div>
+  return <div className="w-full max-w-50">
     <button
       disabled={isRendering}
       onClick={() => setCardKeyRelevantForRendering(currentCardJson())}
@@ -63,7 +68,7 @@ export function CardPreview({ card }: { card: Card }) {
     >
       Preview
     </button>
-    {isRendering && <div className="block aspect-[63/88] w-100 bg-purple-50 rounded-3xl border text-center align-middle">Rendering...</div>}
+    {isRendering && <div className="block aspect-[63/88] w-full max-w-100 bg-purple-50 rounded-3xl border text-center align-middle">Rendering...</div>}
     {imageUrl && !isRendering &&
       <img
         alt={`${card.name} image`}

@@ -13,7 +13,7 @@ export const CardRarityInput = (props: {
     <InputHeader propertyName="rarity" isChanged={props.isChanged} revert={props.revert} />
     <div className="px-1 flex gap-4 w-full justify-between">
       {cardRarities.map(rarityOption => (
-        <div key={rarityOption} className="flex gap-1.5 items-center">
+        <div key={rarityOption} className="flex gap-2 items-center">
           <input
             type="radio"
             id={`rarity-${rarityOption}`}

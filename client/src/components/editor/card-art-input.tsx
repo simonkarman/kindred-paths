@@ -1,7 +1,6 @@
 import { getArtSettingSuggestions, SettingSuggestion, getArtSuggestions, ArtSuggestion } from '@/utils/server';
 import { Card } from 'kindred-paths';
 import { AiSuggestionsInput } from '@/components/editor/ai-suggestions-input';
-import { InputHeader } from '@/components/editor/input-header';
 
 export const CardArtInput = (props: {
   artSetting: string | undefined,
@@ -15,7 +14,7 @@ export const CardArtInput = (props: {
   artSettingIsChanged: boolean,
   revertArtSetting: () => void,
 }) => {
-  return <div className="space-y-2 border border-zinc-200 p-2 rounded-lg bg-zinc-50">
+  return <div className="space-y-2">
     <AiSuggestionsInput
       propertyName={"Art Setting"}
       propertyValue={props.artSetting}

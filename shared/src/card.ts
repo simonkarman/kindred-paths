@@ -8,7 +8,7 @@ export type CardSuperType = undefined | 'basic' | 'token' | 'legendary';
 export const cardSuperTypes = [undefined, 'basic', 'token', 'legendary'] as const;
 
 export type CardType = 'enchantment' | 'artifact' | 'instant' | 'sorcery' | 'creature' | 'land';
-export const cardTypes = ['enchantment', 'artifact', 'instant', 'sorcery', 'creature', 'land'] as const;
+export const cardTypes = ['enchantment', 'artifact', 'creature', 'land', 'instant', 'sorcery'] as const;
 
 export type PermanentCardType = Exclude<CardType, 'instant' | 'sorcery'>;
 export const permanentCardTypes = ['enchantment', 'artifact', 'creature', 'land'] as const;
@@ -86,6 +86,11 @@ export class Card {
       throw new Error('card must have at least one type');
     }
     if (this.types.length > 1) {
+      // instance and sorcery cannot be combined with other types
+      if (this.types.includes('instant') || this.types.includes('sorcery')) {
+        throw new Error('instant and sorcery cannot be combined with other types');
+      }
+
       // If there are multiple types, make sure that land always comes last
       if (this.types.includes('land') && this.types[this.types.length - 1] !== 'land') {
         throw new Error('if there are multiple types, land must always come last');
@@ -96,11 +101,6 @@ export class Card {
         if (this.types[this.types.length - 1] !== 'creature' && (this.types[this.types.length - 1] !== 'land' || this.types[this.types.length - 2] !== 'creature')) {
           throw new Error('if there is a creature type, it must be last, unless land is last, then it must be second to last');
         }
-      }
-
-      // instance and sorcery cannot be combined with other types
-      if (this.types.includes('instant') || this.types.includes('sorcery')) {
-          throw new Error('instant and sorcery cannot be combined with other types');
       }
     }
 
@@ -151,11 +151,17 @@ export class Card {
   }
 
   public renderManaCost(): string {
+    if (this.manaValue() === 0) {
+      return '{0}';
+    }
     let result = '';
+    if (this.manaCost['x'] !== undefined && this.manaCost['x'] > 0) {
+      result += `{x}`.repeat(this.manaCost['x']);
+    }
     if (this.manaCost['colorless'] !== undefined && this.manaCost['colorless'] > 0) {
       result += '{' + this.manaCost['colorless'] + '}';
     }
-    const colors = toOrderedColors(Object.keys(this.manaCost).filter(c => c !== 'colorless') as CardColor[]);
+    const colors = toOrderedColors(Object.keys(this.manaCost).filter(c => !['colorless', 'x'].includes(c)) as CardColor[]);
     for (const color of colors) {
       const amount = this.manaCost[color];
       if (amount !== undefined && amount > 0) {

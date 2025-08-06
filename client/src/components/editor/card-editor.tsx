@@ -57,6 +57,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   }, [supertype]);
 
   // If types changes
+  const canHavePT = types.includes('creature') || (types.includes('artifact') && subtypes?.includes('vehicle'));
   useEffect(() => {
     // reset supertype if it no longer applies
     if (supertype === 'basic' && (types.length !== 1 || types[0] !== 'land')) {
@@ -64,12 +65,12 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     }
 
     // reset pt if it no longer applies
-    if (types.includes('creature') && !pt) {
+    if (canHavePT && !pt) {
       setPt(start.pt ?? { power: 2, toughness: 2 });
-    } else if (!types.includes('creature') && pt) {
+    } else if (!canHavePT && pt) {
       setPt(undefined);
     }
-  }, [types]);
+  }, [subtypes, types]);
 
   // If deckName changes, update tags
   useEffect(() => {
@@ -182,123 +183,104 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   };
 
   return (<>
-    <div className="absolute left-2 right-2 flex items-start gap-6">
-      <div className={`w-320 space-y-6 border ${isChanged ? 'border-orange-200' : 'border-zinc-200'} bg-white rounded-lg px-2 pb-2 shadow-lg`}>
-        <h2 className="text-lg font-bold my-2 text-center">{isCreate ? 'Create Card' : `Update ${serializedCard.name}`}</h2>
-        <div className="flex gap-6">
-          <div className="space-y-4 grow border-r-2 border-zinc-200 pr-6">
-            <CardTypesInput types={types} setTypes={setTypes} getErrorMessage={() => getErrorMessage('types')}
-                            isChanged={!isCreate && JSON.stringify(start.types) !== JSON.stringify(types)} revert={() => setTypes(start.types)}
-            />
-            {pt
-              && <CardPTInput pt={pt} setPt={setPt} getErrorMessage={() => getErrorMessage('pt')}
-                              isChanged={!isCreate && start.pt !== undefined && JSON.stringify(start.pt) !== JSON.stringify(pt)} revert={() => setPt(start.pt)}
-              />}
-            {types.some(s => ['land', 'creature', 'artifact', 'enchantment'].includes(s))
-              && <CardSubtypesInput subtypes={subtypes} setSubtypes={setSubtypes} getErrorMessage={() => getErrorMessage('subtypes')}
-                                    isChanged={!isCreate && JSON.stringify(start.subtypes) !== JSON.stringify(subtypes)} revert={() => setSubtypes(start.subtypes)}
-              />}
-            {(supertype !== 'basic' && supertype !== 'token')
-              && <CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}
-                               getErrorMessage={(color: CardColor | 'colorless') => getErrorMessage(`manaCost.${color}`)}
-                               isChanged={!isCreate && JSON.stringify(start.manaCost) !== JSON.stringify(manaCost)} revert={() => setManaCost(start.manaCost)}
+    <div className={`mx-auto space-y-6 border ${isChanged ? 'border-orange-200' : 'border-zinc-200'} bg-white rounded-lg px-3 pb-2 shadow-lg`}>
+      <h2 className="text-lg font-bold mt-2 mb-1 text-center">{isCreate ? 'Create Card' : `Update ${serializedCard.name}`}</h2>
+      <div className="flex gap-3">
+        <div className="max-w-80 space-y-4 border-r border-zinc-100 pr-3">
+          <CardSupertypeInput supertype={supertype} setSupertype={setSupertype} types={types} getErrorMessage={() => getErrorMessage('supertype')}
+                              isChanged={!isCreate && JSON.stringify(start.supertype) !== JSON.stringify(supertype)} revert={() => setSupertype(start.supertype)}
+          />
+          <CardTypesInput types={types} setTypes={setTypes} getErrorMessage={() => getErrorMessage('types')}
+                          isChanged={!isCreate && JSON.stringify(start.types) !== JSON.stringify(types)} revert={() => setTypes(start.types)}
+          />
+          {types.some(s => ['land', 'creature', 'artifact', 'enchantment'].includes(s))
+            && <CardSubtypesInput subtypes={subtypes} setSubtypes={setSubtypes} getErrorMessage={() => getErrorMessage('subtypes')}
+                                  types={types}
+                                  isChanged={!isCreate && JSON.stringify(start.subtypes) !== JSON.stringify(subtypes)} revert={() => setSubtypes(start.subtypes)}
             />}
-            <CardRulesInput rules={rules} setRules={setRules} getErrorMessage={() => getErrorMessage('rules')}
-                            isChanged={!isCreate && JSON.stringify(start.rules) !== JSON.stringify(rules)} revert={() => setRules(start.rules)}
-            />
-            <CardSupertypeInput supertype={supertype} setSupertype={setSupertype} types={types} getErrorMessage={() => getErrorMessage('supertype')}
-                                isChanged={!isCreate && JSON.stringify(start.supertype) !== JSON.stringify(supertype)} revert={() => setSupertype(start.supertype)}
-            />
-            {tokenColors !== undefined
-              && <CardTokenColorsInput tokenColors={tokenColors} setTokenColors={setTokenColors} getErrorMessage={() => getErrorMessage('tokenColors')}
-                                isChanged={!isCreate && start.tokenColors !== undefined && JSON.stringify(start.tokenColors) !== JSON.stringify(tokenColors)} revert={() => setTokenColors(start.tokenColors)}
+          {pt
+            && <CardPTInput pt={pt} setPt={setPt} getErrorMessage={() => getErrorMessage('pt')}
+                            isChanged={!isCreate && start.pt !== undefined && JSON.stringify(start.pt) !== JSON.stringify(pt)} revert={() => setPt(start.pt)}
             />}
-          </div>
-          <div className="space-y-4 w-150">
-            <CardNameInput name={name} setName={setName} getErrorMessage={() => getErrorMessage('name')} card={card}
-                           isChanged={!isCreate && JSON.stringify(start.name) !== JSON.stringify(name)} revert={() => setName(start.name)}
-            />
-            <CardRarityInput rarity={rarity} setRarity={setRarity} getErrorMessage={() => getErrorMessage('rarity')}
-                             isChanged={!isCreate && JSON.stringify(start.rarity) !== JSON.stringify(rarity)} revert={() => setRarity(start.rarity)}
-            />
-            <CardArtInput artSetting={artSetting} setArtSetting={setArtSetting} art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card}
-                          isChanged={!isCreate && JSON.stringify(start.art) !== JSON.stringify(art)} revert={() => setArt(start.art)}
-                          artSettingIsChanged={!isCreate && JSON.stringify(start.tags?.setting) !== JSON.stringify(tags?.["setting"])} revertArtSetting={() => setArtSetting(start.tags?.setting)}
-            />
-            <CardCollectorNumberInput collectorNumber={collectorNumber} setCollectorNumber={setCollectorNumber}
-                                      getErrorMessage={() => getErrorMessage('collectorNumber')}
-                                      isChanged={!isCreate && JSON.stringify(start.collectorNumber) !== JSON.stringify(collectorNumber)} revert={() => setCollectorNumber(start.collectorNumber)}
-            />
-            <CardTagsInput tags={tags} setTags={setTags} getErrorMessage={() => getErrorMessage('tags')}
-                           isChanged={!isCreate && JSON.stringify(start.tags) !== JSON.stringify(tags)} revert={() => setTags(start.tags as { [key: string]: string | number | boolean } | undefined)}
-            />
-          </div>
+          {(supertype !== 'basic' && supertype !== 'token')
+            && <CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}
+                                  getErrorMessage={(color: Mana) => getErrorMessage(`manaCost.${color}`)}
+                                  isChanged={!isCreate && JSON.stringify(start.manaCost) !== JSON.stringify(manaCost)} revert={() => setManaCost(start.manaCost)}
+            />}
+          {tokenColors !== undefined
+            && <CardTokenColorsInput tokenColors={tokenColors} setTokenColors={setTokenColors} getErrorMessage={() => getErrorMessage('tokenColors')}
+                                     isChanged={!isCreate && start.tokenColors !== undefined && JSON.stringify(start.tokenColors) !== JSON.stringify(tokenColors)} revert={() => setTokenColors(start.tokenColors)}
+            />}
         </div>
-
-        {/* Create Button */}
-        <div className="space-y-1">
-          {!canSave && <p className="text-center text-zinc-600 text-sm">
-            {isCreate ? "You must first provide a new name for the card." : "You must first make changes, before you can save them."}
+        <div className="max-w-110 space-y-4 border-r border-zinc-100 pr-3">
+          <CardRulesInput rules={rules} setRules={setRules} getErrorMessage={() => getErrorMessage('rules')}
+                          isChanged={!isCreate && JSON.stringify(start.rules) !== JSON.stringify(rules)} revert={() => setRules(start.rules)}
+          />
+          <CardRarityInput rarity={rarity} setRarity={setRarity} getErrorMessage={() => getErrorMessage('rarity')}
+                           isChanged={!isCreate && JSON.stringify(start.rarity) !== JSON.stringify(rarity)} revert={() => setRarity(start.rarity)}
+          />
+          <CardNameInput name={name} setName={setName} getErrorMessage={() => getErrorMessage('name')} card={card}
+                         isChanged={!isCreate && JSON.stringify(start.name) !== JSON.stringify(name)} revert={() => setName(start.name)}
+          />
+          {card && <p>
+            <span className="text-zinc-600 text-sm italic">
+              {card.explain()}
+            </span>
           </p>}
-          {((errors.length > 0) || (validationError !== undefined) || isLoading) && <p className="text-center text-red-600 text-sm">
-            You must fix the above errors before you can {isCreate ? 'create' : 'update'} the card.
-          </p>}
-          <div className="flex gap-4 items-baseline">
-            <button
-              onClick={handleCreateCard}
-              disabled={(errors.length > 0) || (validationError !== undefined) || isLoading || !canSave}
-              className="w-full py-2 px-4 disabled:bg-gray-500 bg-orange-600 text-white font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading
-                ? `${isCreate ? 'Creating' : 'Updating'}...`
-                : (isCreate ? "Create card" : "Save changes")}
-            </button>
-            <button
-              onClick={handleDiscard}
-              className="w-60 mt-2 py-2 px-4 bg-gray-200 text-gray-800 font-medium rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-            >
-              {isCreate ? 'Cancel Card Creation' : 'Discard changes'}
-            </button>
-          </div>
+          {!card && <ul className="list-disc pl-5 text-red-600 text-sm">
+            {errors.map((err, index) => (
+              <li key={index}>
+                <strong>{capitalize(err.path)}:</strong> {err.message}
+              </li>
+            ))}
+            {validationError && (
+              <li>
+                <strong>Validation Error:</strong> {validationError}
+              </li>
+            )}
+          </ul>}
+          <CardCollectorNumberInput collectorNumber={collectorNumber} setCollectorNumber={setCollectorNumber}
+                                    getErrorMessage={() => getErrorMessage('collectorNumber')}
+                                    isChanged={!isCreate && JSON.stringify(start.collectorNumber) !== JSON.stringify(collectorNumber)} revert={() => setCollectorNumber(start.collectorNumber)}
+          />
+          <CardTagsInput tags={tags} setTags={setTags} getErrorMessage={() => getErrorMessage('tags')}
+                         isChanged={!isCreate && JSON.stringify(start.tags) !== JSON.stringify(tags)} revert={() => setTags(start.tags as { [key: string]: string | number | boolean } | undefined)}
+          />
+        </div>
+        <div className="max-w-100 space-y-4">
+          <CardArtInput artSetting={artSetting} setArtSetting={setArtSetting} art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card}
+                        isChanged={!isCreate && JSON.stringify(start.art) !== JSON.stringify(art)} revert={() => setArt(start.art)}
+                        artSettingIsChanged={!isCreate && JSON.stringify(start.tags?.setting) !== JSON.stringify(tags?.["setting"])} revertArtSetting={() => setArtSetting(start.tags?.setting)}
+          />
+          <CardPreview card={card}/>
         </div>
       </div>
-      <div className="space-y-6 w-md pt-4">
-        <div className="flex w-full items-center justify-center">
-          {(card !== undefined && errors.length === 0)
-            ? <CardPreview card={card}/>
-            : <div className="w-80 h-100 bg-zinc-50 rounded-lg border border-zinc-200 flex items-center justify-center"></div>}
+
+      {/* Create Button */}
+      <div className="space-y-1">
+        {!canSave && <p className="text-center text-zinc-600 text-sm">
+          {isCreate ? "You must first provide a new name for the card." : "You must first make changes, before you can save them."}
+        </p>}
+        {((errors.length > 0) || (validationError !== undefined) || isLoading) && <p className="text-center text-red-600 text-sm">
+          You must fix the above errors before you can {isCreate ? 'create' : 'update'} the card.
+        </p>}
+        <div className="flex gap-4 items-baseline">
+          <button
+            onClick={handleCreateCard}
+            disabled={(errors.length > 0) || (validationError !== undefined) || isLoading || !canSave}
+            className="w-full py-2 px-4 disabled:bg-zinc-500 bg-orange-600 text-white font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading
+              ? `${isCreate ? 'Creating' : 'Updating'}...`
+              : (isCreate ? "Create card" : "Save changes")}
+          </button>
+          <button
+            onClick={handleDiscard}
+            className="w-60 mt-2 py-2 px-4 bg-zinc-200 text-zinc-800 font-medium rounded-md hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+          >
+            {isCreate ? 'Cancel Card Creation' : 'Discard changes'}
+          </button>
         </div>
-        <hr className="border-gray-200" />
-
-        {/* Show Errors */}
-        {((errors.length > 0) || (validationError !== undefined)) && (<>
-          <div className="text-red-700">
-            <h3 className="font-bold">Errors:</h3>
-            <ul className="list-disc pl-5">
-              {errors.map((err, index) => (
-                <li key={index}>
-                  <strong>{capitalize(err.path)}:</strong> {err.message}
-                </li>
-              ))}
-              {validationError && (
-                <li>
-                  <strong>Validation Error:</strong> {validationError}
-                </li>
-              )}
-            </ul>
-          </div>
-        </>)}
-
-        {/* Show Card Json */}
-        {/*<div className="space-y-1">*/}
-        {/*  <h3 className="font-bold">Card JSON:</h3>*/}
-        {/*  <pre className="bg-gray-50 p-2 rounded-md overflow-x-auto text-sm">*/}
-        {/*    {JSON.stringify(serializedCard, null, 2)}*/}
-        {/*  </pre>*/}
-        {/*</div>*/}
-
-        {/* Show Card Explanation */}
-        {card && <CardExplanation serializedCard={serializedCard}/>}
       </div>
     </div>
   </>);

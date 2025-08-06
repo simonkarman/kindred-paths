@@ -126,17 +126,30 @@ export const CardTagsInput = (props: {
     <div className="space-y-1">
       <InputHeader propertyName="tags" isChanged={props.isChanged} revert={props.revert} onTap={() => setShowTags(!showTags)} />
 
+      {!showTags && (
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-zinc-600">{
+            tagsArray.filter(({ key }) => !['setting', 'createdAt'].includes(key)).map(({ key, value}) => `${key}=${value}`).join(', ')
+          }</span>
+          <button
+            onClick={() => setShowTags(true)}
+            className="px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Edit
+          </button>
+        </div>
+      )}
       {showTags && (
       <div className="space-y-2">
         {tagsArray.map((tag, index) => (
-          <div key={index} className="flex items-center gap-2 p-2 border border-zinc-200 rounded-md bg-zinc-50">
+          <div key={index} className="flex items-center gap-2">
             {/* Key Input */}
             <input
               type="text"
               value={tag.key}
               onChange={(e) => updateTag(index, 'key', e.target.value)}
               placeholder="Key..."
-              className="w-32 px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-24 px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             {/* Type Selector */}
@@ -154,26 +167,6 @@ export const CardTagsInput = (props: {
             <div className="flex-1">
               {renderValueInput(tag, index)}
             </div>
-
-            {/* Move Up Button */}
-            <button
-              onClick={() => moveTag(index, 'up')}
-              disabled={index === 0}
-              className="px-2 py-1 text-xs font-medium text-zinc-600 bg-white border border-zinc-300 rounded hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
-              title="Move up"
-            >
-              ↑
-            </button>
-
-            {/* Move Down Button */}
-            <button
-              onClick={() => moveTag(index, 'down')}
-              disabled={index === tagsArray.length - 1}
-              className="px-2 py-1 text-xs font-medium text-zinc-600 bg-white border border-zinc-300 rounded hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
-              title="Move down"
-            >
-              ↓
-            </button>
 
             {/* Remove Button */}
             <button

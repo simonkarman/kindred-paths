@@ -1,5 +1,5 @@
 export type CardColor = 'white' | 'blue' | 'black' | 'red' | 'green';
-export type Mana = CardColor | 'colorless';
+export type Mana = CardColor | 'colorless' | 'x';
 export const cardColors = ['white', 'blue', 'black', 'red', 'green'] as const;
 export const wubrg = ['w', 'u', 'b', 'r', 'g'] as const;
 export type CardColorCharacter = typeof wubrg[number];
