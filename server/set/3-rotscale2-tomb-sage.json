@@ -1,0 +1,32 @@
+{
+  "name": "Rotscale2, Tomb Sage",
+  "rarity": "rare",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "zombie"
+  ],
+  "manaCost": {
+    "colorless": 2,
+    "black": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ enters, return target Zombie card from your graveyard to your hand."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 3,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-07",
+    "setting": "A decaying zombie sage hunched over ancient scrolls in a torch-lit tomb, skeletal hands reaching from open sarcophagi in the background as another zombie rises to join him.",
+    "deleted": true
+  }
+}
