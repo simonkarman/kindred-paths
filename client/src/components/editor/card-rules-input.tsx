@@ -106,7 +106,7 @@ export const CardRulesInput = (props: {
               />
             ) : (
               <textarea
-                rows={2}
+                rows={Math.max(2, Math.ceil(rule.content.length / 65))}
                 value={rule.content}
                 onChange={(e) => updateRule(index, 'content', e.target.value)}
                 placeholder={`Enter ${rule.variant} content...`}

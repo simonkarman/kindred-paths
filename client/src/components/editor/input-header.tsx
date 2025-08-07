@@ -6,15 +6,13 @@ export const InputHeader = (props: {
   propertyName: string,
   isChanged: boolean,
   revert: () => void,
-  onTap?: () => void,
   children?: React.ReactNode,
 }) => {
   const htmlId = `card${capitalize(props.propertyName).replace(/\s+\//g, '')}`;
   return <div className="flex items-baseline-last gap-3 border-t border-zinc-100 pt-2 mb-2">
     <label
       htmlFor={htmlId}
-      className={`flex items-center gap-3 font-medium text-zinc-700 ${props.onTap ? 'cursor-pointer' : ''}`}
-      onClick={props.onTap}
+      className="flex items-center gap-3 font-medium text-zinc-700"
     >
       <FontAwesomeIcon className={`${props.isChanged ? 'text-orange-400' : 'text-zinc-200'} text-sm`} icon={
         props.isChanged ? faPencilSquare : faSquare

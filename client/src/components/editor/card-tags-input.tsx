@@ -124,7 +124,7 @@ export const CardTagsInput = (props: {
 
   return (
     <div className="space-y-1">
-      <InputHeader propertyName="tags" isChanged={props.isChanged} revert={props.revert} onTap={() => setShowTags(!showTags)} />
+      <InputHeader propertyName="tags" isChanged={props.isChanged} revert={props.revert} />
 
       {!showTags && (
         <div className="flex items-center justify-between">
@@ -179,13 +179,24 @@ export const CardTagsInput = (props: {
           </div>
         ))}
 
-        {/* Add Tag Button */}
-        <button
-          onClick={addTag}
-          className="w-full px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          + Add Tag
-        </button>
+        <div className="flex gap-2">
+          {/* Add Tag Button */}
+          <button
+            onClick={addTag}
+            className="w-full px-4 py-1 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            + Add new Tag
+          </button>
+
+
+          {/* Hide Tags Button */}
+          <button
+            onClick={() => setShowTags(false)}
+            className="px-4 py-1 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Hide
+          </button>
+        </div>
       </div>
       )}
 

@@ -57,7 +57,6 @@ export const CardPTInput = (props: {
     { power: 4, toughness: 4 },
     { power: 5, toughness: 5 },
     { power: 6, toughness: 6 },
-    { power: 7, toughness: 7 },
   ];
 
   return (
@@ -101,7 +100,7 @@ export const CardPTInput = (props: {
               key={`${power}-${toughness}`}
               type="button"
               onClick={() => setPreset(power, toughness)}
-              className={`px-2 py-1 text-xs rounded border font-mono transition-colors ${
+              className={`px-2 py-0.5 text-xs rounded border font-mono transition-colors ${
                 props.pt.power === power && props.pt.toughness === toughness
                   ? 'bg-blue-100 border-blue-300 text-blue-800'
                   : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
