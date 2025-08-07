@@ -26,7 +26,7 @@
     },
     {
       "variant": "ability",
-      "content": "Whenever you gain life, create a 1/1 white Rabbit creature token. This ability triggers only once each{lns}turn."
+      "content": "Whenever you gain life, create a 1/1 white Rabbit creature token. This ability triggers only once each turn.{lns}"
     }
   ],
   "pt": {

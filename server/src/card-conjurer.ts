@@ -144,7 +144,8 @@ export class CardConjurer {
       // Set the power and toughness text
       if (card.pt !== undefined) {
         await page.click('#text-options h4:has-text("Power/Toughness")');
-        await page.fill('#text-editor', card.pt.power + '/' + card.pt.toughness);
+        const isArtifactVehicle = card.types.includes('artifact') && card.subtypes.includes('vehicle');
+        await page.fill('#text-editor', (isArtifactVehicle ? '{fontcolor#fff}' : '') + card.pt.power + '/' + card.pt.toughness);
         await page.waitForLoadState('networkidle');
       }
 

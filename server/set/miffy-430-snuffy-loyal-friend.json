@@ -23,7 +23,7 @@
     },
     {
       "variant": "ability",
-      "content": "Whenever ~ untaps, draw cards equal to the number of other creatures you control with power 4 or greater."
+      "content": "Whenever ~ untaps, draw cards equal to the number of other creatures you control with power 4 or greater.{lns}"
     }
   ],
   "pt": {

@@ -125,6 +125,10 @@ export class Card {
     if (this.rules.some(rule => rule.variant === 'keyword' && rule.content !== rule.content.toLowerCase())) {
       throw new Error('all keywords must be lowercase');
     }
+    // ensure roles don't have newlines
+    if (this.rules.some(rule => rule.variant === 'ability' && rule.content.includes('\n'))) {
+      throw new Error('abilities must not contain newlines');
+    }
 
     // Check toughness and power consistency
     if (this.pt) {
@@ -138,9 +142,17 @@ export class Card {
       }
     }
 
-    // Check that if a card is a creature, it has power and toughness
+    // Check that specific cards have power and toughness
     if (this.types.includes('creature') && !this.pt) {
       throw new Error('creature cards must have power and toughness');
+    }
+    if (this.types.includes('artifact') && this.subtypes.includes('vehicle') && !this.pt) {
+      throw new Error('vehicle artifacts must have power and toughness');
+    }
+
+    // Validate that land cards do not have a mana cost
+    if (this.types.includes('land') && Object.keys(this.manaCost).length > 0) {
+      throw new Error('land cards cannot have a mana cost');
     }
   }
 
@@ -152,7 +164,8 @@ export class Card {
 
   public renderManaCost(): string {
     if (this.manaValue() === 0) {
-      return '{0}';
+      const hiddenManaCost = this.types.includes('land') || this.supertype === 'token';
+      return hiddenManaCost ? '' : '{0}';
     }
     let result = '';
     if (this.manaCost['x'] !== undefined && this.manaCost['x'] > 0) {
@@ -228,7 +241,8 @@ export class Card {
           text += `{flavor}${rule.content}`;
       }
     }
-    return text;
+    const shortCardName = this.name.includes(',') ? this.name.split(',')[0].trim() : this.name;
+    return text.replace(/~/g, shortCardName).replace(/ +/g, ' ').trim();
   }
 
   public color(): CardColor[] {

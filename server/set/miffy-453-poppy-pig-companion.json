@@ -28,7 +28,7 @@
     },
     {
       "variant": "ability",
-      "content": "Creatures you control with +1/+1 counters on them have vigilance."
+      "content": "Creatures you control with +1/+1 counters on them have vigilance.{lns}"
     }
   ],
   "pt": {

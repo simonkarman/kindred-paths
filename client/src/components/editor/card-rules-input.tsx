@@ -108,7 +108,7 @@ export const CardRulesInput = (props: {
               <textarea
                 rows={Math.max(2, Math.ceil(rule.content.length / 65))}
                 value={rule.content}
-                onChange={(e) => updateRule(index, 'content', e.target.value)}
+                onChange={(e) => updateRule(index, 'content', e.target.value.replace(/\n/g, ''))}
                 placeholder={`Enter ${rule.variant} content...`}
                 className="text-sm px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
