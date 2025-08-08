@@ -328,10 +328,13 @@ export class Card {
     const keywordsAndAbilities = this.rules.filter(r => r.variant === 'ability' || r.variant === 'keyword');
     if (keywordsAndAbilities.length > 0) {
       readable += `, with: ${keywordsAndAbilities.map((r, i) => {
+        if (i === 0) {
+          return `"${r.content}"`;
+        }
         const isKeyword = r.variant === 'keyword';
-        const startingQuote = !isKeyword || keywordsAndAbilities[i - 1]?.variant !== 'keyword';
-        const hasAnd = (i > 0 && startingQuote) || (keywordsAndAbilities[i + 1]?.variant !== 'keyword');
-        return `${hasAnd ? " and " : ""}${(startingQuote || hasAnd) ? "" : ", "}"${r.content}"`;
+        const isPreviousKeyword = keywordsAndAbilities[i - 1].variant === 'keyword';
+        const hasAnd = !isKeyword || !isPreviousKeyword;
+        return `${hasAnd ? " and " : ", "}"${r.content}"`;
       }).join('')}`;
     } else {
       readable += '.';

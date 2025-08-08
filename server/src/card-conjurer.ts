@@ -139,6 +139,12 @@ export class CardConjurer {
           await page.click('#textbox-editor h2.textbox-editor-close');
           await page.waitForLoadState('networkidle');
         }
+
+        // Adjust the font size if specified
+        const rulesFontSize = typeof card.tags?.['fs/rules'] === 'number' ? card.tags['fs/rules'] : 0;
+        if (rulesFontSize !== 0) {
+          await page.fill('#text-editor-font-size', rulesFontSize.toString());
+        }
       }
 
       // Set the power and toughness text

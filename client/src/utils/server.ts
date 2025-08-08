@@ -84,6 +84,21 @@ export async function updateCard(serializedCard: SerializedCard): Promise<Serial
   return responseJson;
 }
 
+export async function previewCard(serializedCard: SerializedCard) {
+  const response = await fetch(`${serverUrl}/preview`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(serializedCard),
+  });
+  if (!response.ok) {
+    throw new Error(`Server error: ${response.status}`);
+  }
+
+  return await response.blob();
+}
+
 export interface NameSuggestion {
   name: string;
   reason: string;

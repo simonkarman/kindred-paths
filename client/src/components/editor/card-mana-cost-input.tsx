@@ -36,8 +36,12 @@ export const CardManaCostInput = (props: {
 
       <div className="space-y-4">
         {/* Mana type inputs */}
-        <div className="grid grid-cols-2 gap-1">
-          {(['colorless', 'x', ...cardColors] as const).map((manaType) => {
+        <div className="grid grid-cols-3 gap-1">
+          {(['colorless', 'x', undefined, ...cardColors] as const).map((manaType, i) => {
+            if (manaType === undefined) {
+              return <div key={i} />; // Leave empty space for undefined mana types
+            }
+
             const colors = manaTypeColors[manaType];
             const currentValue = props.manaCost[manaType] || 0;
 

@@ -78,7 +78,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
       setTags({
         ...tags,
         deck: deckName,
-        count: tags?.count ?? 2, // Default to 2 if not set
+        count: tags?.count ?? 1, // Default to 1 if not set
       });
     }
   }, [deckName]);
@@ -185,11 +185,8 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   return (<>
     <div className={`mx-auto space-y-6 border ${isChanged ? 'border-orange-200' : 'border-zinc-200'} bg-white rounded-lg px-3 pb-2 shadow-lg`}>
       <h2 className="text-lg font-bold mt-2 mb-1 text-center">{isCreate ? 'Create Card' : `Update ${serializedCard.name}`}</h2>
-      <div className="flex gap-3">
-        <div className="max-w-80 space-y-4 border-r border-zinc-100 pr-3">
-          <CardSupertypeInput supertype={supertype} setSupertype={setSupertype} types={types} getErrorMessage={() => getErrorMessage('supertype')}
-                              isChanged={!isCreate && JSON.stringify(start.supertype) !== JSON.stringify(supertype)} revert={() => setSupertype(start.supertype)}
-          />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-4 border-r border-zinc-100 pr-3">
           <CardTypesInput types={types} setTypes={setTypes} getErrorMessage={() => getErrorMessage('types')}
                           isChanged={!isCreate && JSON.stringify(start.types) !== JSON.stringify(types)} revert={() => setTypes(start.types)}
           />
@@ -211,11 +208,17 @@ export function CardEditor({ start }: { start: SerializedCard }) {
             && <CardTokenColorsInput tokenColors={tokenColors} setTokenColors={setTokenColors} getErrorMessage={() => getErrorMessage('tokenColors')}
                                      isChanged={!isCreate && start.tokenColors !== undefined && JSON.stringify(start.tokenColors) !== JSON.stringify(tokenColors)} revert={() => setTokenColors(start.tokenColors)}
             />}
-        </div>
-        <div className="max-w-110 space-y-4 border-r border-zinc-100 pr-3">
           <CardRulesInput rules={rules} setRules={setRules} getErrorMessage={() => getErrorMessage('rules')}
                           isChanged={!isCreate && JSON.stringify(start.rules) !== JSON.stringify(rules)} revert={() => setRules(start.rules)}
           />
+          <CardSupertypeInput supertype={supertype} setSupertype={setSupertype} types={types} getErrorMessage={() => getErrorMessage('supertype')}
+                              isChanged={!isCreate && JSON.stringify(start.supertype) !== JSON.stringify(supertype)} revert={() => setSupertype(start.supertype)}
+          />
+          <CardTagsInput tags={tags} setTags={setTags} getErrorMessage={() => getErrorMessage('tags')}
+                         isChanged={!isCreate && JSON.stringify(start.tags) !== JSON.stringify(tags)} revert={() => setTags(start.tags as { [key: string]: string | number | boolean } | undefined)}
+          />
+        </div>
+        <div className="space-y-4 border-r border-zinc-100 pr-3">
           <CardRarityInput rarity={rarity} setRarity={setRarity} getErrorMessage={() => getErrorMessage('rarity')}
                            isChanged={!isCreate && JSON.stringify(start.rarity) !== JSON.stringify(rarity)} revert={() => setRarity(start.rarity)}
           />
@@ -227,7 +230,15 @@ export function CardEditor({ start }: { start: SerializedCard }) {
               {card.explain()}
             </span>
           </p>}
-          {!card && <ul className="list-disc pl-5 text-red-600 text-sm">
+          <CardCollectorNumberInput collectorNumber={collectorNumber} setCollectorNumber={setCollectorNumber}
+                                    getErrorMessage={() => getErrorMessage('collectorNumber')}
+                                    isChanged={!isCreate && JSON.stringify(start.collectorNumber) !== JSON.stringify(collectorNumber)} revert={() => setCollectorNumber(start.collectorNumber)}
+          />
+          <CardArtInput artSetting={artSetting} setArtSetting={setArtSetting} art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card}
+                        isChanged={!isCreate && JSON.stringify(start.art) !== JSON.stringify(art)} revert={() => setArt(start.art)}
+                        artSettingIsChanged={!isCreate && JSON.stringify(start.tags?.setting) !== JSON.stringify(tags?.["setting"])} revertArtSetting={() => setArtSetting(start.tags?.setting)}
+          />
+          <ul className="list-disc pl-5 text-red-600 text-sm">
             {errors.map((err, index) => (
               <li key={index}>
                 <strong>{capitalize(err.path)}:</strong> {err.message}
@@ -238,21 +249,8 @@ export function CardEditor({ start }: { start: SerializedCard }) {
                 <strong>Validation Error:</strong> {validationError}
               </li>
             )}
-          </ul>}
-          <CardCollectorNumberInput collectorNumber={collectorNumber} setCollectorNumber={setCollectorNumber}
-                                    getErrorMessage={() => getErrorMessage('collectorNumber')}
-                                    isChanged={!isCreate && JSON.stringify(start.collectorNumber) !== JSON.stringify(collectorNumber)} revert={() => setCollectorNumber(start.collectorNumber)}
-          />
-          <CardTagsInput tags={tags} setTags={setTags} getErrorMessage={() => getErrorMessage('tags')}
-                         isChanged={!isCreate && JSON.stringify(start.tags) !== JSON.stringify(tags)} revert={() => setTags(start.tags as { [key: string]: string | number | boolean } | undefined)}
-          />
-        </div>
-        <div className="max-w-100 space-y-4">
-          <CardArtInput artSetting={artSetting} setArtSetting={setArtSetting} art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card}
-                        isChanged={!isCreate && JSON.stringify(start.art) !== JSON.stringify(art)} revert={() => setArt(start.art)}
-                        artSettingIsChanged={!isCreate && JSON.stringify(start.tags?.setting) !== JSON.stringify(tags?.["setting"])} revertArtSetting={() => setArtSetting(start.tags?.setting)}
-          />
-          <CardPreview card={card}/>
+          </ul>
+          {card && errors.length === 0 && !validationError && <CardPreview card={card}/>}
         </div>
       </div>
 

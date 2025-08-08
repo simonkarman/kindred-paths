@@ -9,7 +9,7 @@ export const InputHeader = (props: {
   children?: React.ReactNode,
 }) => {
   const htmlId = `card${capitalize(props.propertyName).replace(/\s+\//g, '')}`;
-  return <div className="flex items-baseline-last gap-3 border-t border-zinc-100 pt-2 mb-2">
+  return <div className="flex items-baseline-last gap-3 border-b border-zinc-100 pt-2 mb-2">
     <label
       htmlFor={htmlId}
       className="flex items-center gap-3 font-medium text-zinc-700"
