@@ -3,7 +3,8 @@
 # Check if .cardconjurer directory exists
 if [ ! -d ".cardconjurer" ]; then
   echo "Cloning Card Conjurer to .cardconjurer directory"
-  git clone https://github.com/Investigamer/cardconjurer/ .cardconjurer
+  # git clone https://github.com/Investigamer/cardconjurer/ .cardconjurer
+  git clone git@github.com:joshbirnholz/cardconjurer.git .cardconjurer
 else
   echo ".cardconjurer exists"
 fi

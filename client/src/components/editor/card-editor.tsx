@@ -250,7 +250,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
               </li>
             )}
           </ul>
-          {card && errors.length === 0 && !validationError && <CardPreview card={card}/>}
+          {card && errors.length === 0 && !validationError && <CardPreview card={card} />}
         </div>
       </div>
 

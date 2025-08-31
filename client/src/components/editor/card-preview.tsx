@@ -19,7 +19,7 @@ export function CardPreview({ card }: { card: Card }) {
   const latestRenderIndex = useRef(0);
 
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [latestRenderKey, setLatestRenderKey] = useState(getRenderKey(card));
+  const [latestRenderKey, setLatestRenderKey] = useState('');
   const [isRendering, setIsRendering] = useState(false);
   const [image, setImage] = useState<string>();
   const [error, setError] = useState<string>();

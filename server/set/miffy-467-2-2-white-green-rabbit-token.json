@@ -13,12 +13,7 @@
     "rabbit"
   ],
   "manaCost": {},
-  "rules": [
-    {
-      "variant": "reminder",
-      "content": "This creature token is green and white."
-    }
-  ],
+  "rules": [],
   "pt": {
     "power": 2,
     "toughness": 2
