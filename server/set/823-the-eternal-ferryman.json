@@ -16,6 +16,10 @@
   },
   "rules": [
     {
+      "variant": "keyword",
+      "content": "indestructible"
+    },
+    {
       "variant": "ability",
       "content": "As long as your devotion to blue and black is less then 5, ~ isn't a creature."
     },

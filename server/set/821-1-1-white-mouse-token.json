@@ -1,0 +1,27 @@
+{
+  "name": "Mouse",
+  "rarity": "common",
+  "supertype": "token",
+  "tokenColors": [
+    "white"
+  ],
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "mouse"
+  ],
+  "manaCost": {},
+  "rules": [],
+  "pt": {
+    "power": 1,
+    "toughness": 1
+  },
+  "collectorNumber": 821,
+  "art": "821-1-1-white-mouse-token-1495ce55-c5f9-4f25-bcf0-9957f4c3d0d6.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-09-01",
+    "setting": "A small gray mouse stands triumphantly atop a wheel of cheese in a moonlit pantry, crumbs scattered around its tiny paws."
+  }
+}

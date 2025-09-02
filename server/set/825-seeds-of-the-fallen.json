@@ -1,0 +1,25 @@
+{
+  "name": "Seeds of the Fallen",
+  "rarity": "rare",
+  "types": [
+    "instant"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 4,
+    "green": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "You may search your library for up to X land cards, where X is the number of creatures that died under your control this turn, put them onto the battlefield tapped, then shuffle."
+    }
+  ],
+  "collectorNumber": 825,
+  "art": "825-seeds-of-the-fallen-c4d372fb-df44-481a-b64e-2790ab36a36a.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-31",
+    "setting": "A mystical forest grove where fallen warriors dissolve into glowing green spores that burst into massive trees and flowering meadows, their armor and weapons becoming part of the emerging landscape."
+  }
+}

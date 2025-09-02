@@ -1,0 +1,138 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`loyalty - complex 1`] = `
+[
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "content": "adf",
+    "cost": 4,
+    "success": true,
+  },
+  {
+    "content": "adf",
+    "cost": -2,
+    "success": true,
+  },
+  {
+    "success": false,
+  },
+  {
+    "content": "adf",
+    "cost": 0,
+    "success": true,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "content": "adf",
+    "cost": 69,
+    "success": true,
+  },
+  {
+    "content": "adfasd",
+    "cost": -96,
+    "success": true,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "content": "yes",
+    "cost": 10,
+    "success": true,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "content": "adfasdf jh",
+    "cost": 13,
+    "success": true,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "content": "A text that is longer with multile spaces (weird characters)",
+    "cost": 15,
+    "success": true,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "content": "adfasdf",
+    "cost": "-X",
+    "success": true,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+  {
+    "success": false,
+  },
+]
+`;

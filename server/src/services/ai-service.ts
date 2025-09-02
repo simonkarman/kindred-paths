@@ -137,11 +137,13 @@ export class AIService {
     const card = new Card(cardData);
 
     const prompt = this.cardArtPromptCreator.createPrompt(card);
+    const isTallCard = card.types.includes('planeswalker') || card.supertype === 'token';
+    const dimensions = isTallCard
+      ? { width: 768, height: 1024 }
+      : { width: 1024, height: 768 };
     const result = await this.leonardo.image.createGeneration({
-      // wxh 1710x1250 - ratio 1.368 (see placeholder.png)
       modelId: 'de7d3faf-762f-48e0-b3b7-9d0ac3a3fcf3',
-      width: 1024,
-      height: 768,
+      ...dimensions,
       public: false,
       prompt,
       numImages: 4,

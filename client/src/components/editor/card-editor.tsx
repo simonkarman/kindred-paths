@@ -1,10 +1,20 @@
 "use client";
 
-import { Card, CardColor, CardRarity, CardSuperType, CardType, Mana, RuleVariant, SerializedCard, SerializedCardSchema } from 'kindred-paths';
+import {
+  Card,
+  CardColor,
+  CardRarity,
+  CardSuperType,
+  CardType,
+  Mana,
+  RuleVariant,
+  SerializedCard,
+  SerializedCardSchema,
+  tryParseLoyaltyAbility,
+} from 'kindred-paths';
 import { useEffect, useState } from 'react';
 import { createCard, updateCard } from '@/utils/server';
 import { capitalize } from '@/utils/typography';
-import { CardExplanation } from '@/components/card-explanation';
 import { CardNameInput } from '@/components/editor/card-name-input';
 import { CardTypesInput } from '@/components/editor/card-types-input';
 import { CardPTInput } from '@/components/editor/card-pt-input';
@@ -19,6 +29,7 @@ import { CardPreview } from '@/components/editor/card-preview';
 import { useDeckName } from '@/components/deck-name-setter';
 import { CardArtInput } from '@/components/editor/card-art-input';
 import { CardTokenColorsInput } from '@/components/editor/card-token-colors-input';
+import { CardLoyaltyInput } from '@/components/editor/card-loyalty-input';
 
 export function CardEditor({ start }: { start: SerializedCard }) {
   const deckName = useDeckName();
@@ -35,6 +46,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   const [manaCost, setManaCost] = useState<{ [type in Mana]?: number }>(start.manaCost);
   const [rules, setRules] = useState<{ variant: RuleVariant, content: string }[] | undefined>(start.rules);
   const [pt, setPt] = useState<{ power: number, toughness: number } | undefined>(start.pt);
+  const [loyalty, setLoyalty] = useState<number | undefined>(start.loyalty);
   const [collectorNumber, setCollectorNumber] = useState(start.collectorNumber);
   const [art, setArt] = useState<string | undefined>(start.art);
   const [tags, setTags] = useState<{ [key: string]: string | number | boolean } | undefined>(
@@ -64,13 +76,35 @@ export function CardEditor({ start }: { start: SerializedCard }) {
       setSupertype(undefined);
     }
 
+    // Update info on planeswalker
+    if (types.includes('planeswalker')) {
+      setSupertype('legendary');
+      setLoyalty(start.loyalty ?? 3);
+      if (!name.includes(',')) {
+        setName(name + ', Planeswalker');
+      }
+      if (!rules?.some(r => tryParseLoyaltyAbility(r).success)) {
+        setRules([...(rules ?? []), { variant: 'ability', content: '+1: Add one mana of any color.' }]);
+      }
+    } else if (loyalty !== undefined) {
+      setLoyalty(undefined);
+    }
+
+    // Remove subtypes on instant/sorcery/planeswalkers
+    if (types.some(t => ['instant', 'sorcery', 'planeswalker'].includes(t))) {
+      setSubtypes(undefined);
+    } else if (subtypes === undefined) {
+      // for any other type, if subtypes is undefined, set it to the start value
+      setSubtypes(start.subtypes);
+    }
+
     // reset pt if it no longer applies
     if (canHavePT && !pt) {
       setPt(start.pt ?? { power: 2, toughness: 2 });
     } else if (!canHavePT && pt) {
       setPt(undefined);
     }
-  }, [subtypes, types]);
+  }, [supertype, subtypes, types]);
 
   // If deckName changes, update tags
   useEffect(() => {
@@ -94,6 +128,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     manaCost,
     rules,
     pt,
+    loyalty,
     collectorNumber,
     art,
     tags,
@@ -198,6 +233,10 @@ export function CardEditor({ start }: { start: SerializedCard }) {
           {pt
             && <CardPTInput pt={pt} setPt={setPt} getErrorMessage={() => getErrorMessage('pt')}
                             isChanged={!isCreate && start.pt !== undefined && JSON.stringify(start.pt) !== JSON.stringify(pt)} revert={() => setPt(start.pt)}
+            />}
+          {loyalty
+            && <CardLoyaltyInput loyalty={loyalty} setLoyalty={setLoyalty} getErrorMessage={() => getErrorMessage('loyalty')}
+                                 isChanged={!isCreate && start.loyalty !== undefined && JSON.stringify(start.loyalty) !== JSON.stringify(loyalty)} revert={() => setLoyalty(start.loyalty)}
             />}
           {(supertype !== 'basic' && supertype !== 'token')
             && <CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}

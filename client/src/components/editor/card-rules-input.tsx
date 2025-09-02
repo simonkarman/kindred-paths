@@ -39,7 +39,12 @@ export const CardRulesInput = (props: {
     props.setRules(newRules);
   };
 
-  const addRule = () => {
+  const addRuleTop = () => {
+    const newRule = { variant: 'ability' as RuleVariant, content: '' };
+    props.setRules([newRule, ...rules]);
+  };
+
+  const addRuleBottom = () => {
     const newRule = { variant: 'ability' as RuleVariant, content: '' };
     props.setRules([...rules, newRule]);
   };
@@ -117,12 +122,20 @@ export const CardRulesInput = (props: {
         ))}
 
         {/* Add Rule Button */}
-        <button
-          onClick={addRule}
-          className="w-full px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          + Add Rule
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={addRuleTop}
+            className="w-full px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            + Add rule at the top
+          </button>
+          <button
+            onClick={addRuleBottom}
+            className="w-full px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            + Add rule at the bottom
+          </button>
+        </div>
       </div>
 
       {/* Error Message */}

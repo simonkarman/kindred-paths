@@ -9,6 +9,7 @@ export const CardSupertypeInput = (props: {
   isChanged: boolean,
   revert: () => void,
 }) => {
+  const isPlaneswalker = props.types.includes('planeswalker');
   return <div className="space-y-1">
     <InputHeader propertyName="supertype" isChanged={props.isChanged} revert={props.revert} />
     <div className="space-y-2 flex items-baseline gap-4">
@@ -25,6 +26,7 @@ export const CardSupertypeInput = (props: {
             }
           }}
           className="mr-2"
+          disabled={isPlaneswalker}
         />
         Legendary
       </label>
@@ -42,6 +44,7 @@ export const CardSupertypeInput = (props: {
             }
           }}
           className="mr-2"
+          disabled={isPlaneswalker}
         />
         Token
       </label>
@@ -50,7 +53,7 @@ export const CardSupertypeInput = (props: {
       <label className="flex items-center">
         <input
           type="checkbox"
-          disabled={props.types.length !== 1 || props.types[0] !== 'land'}
+          disabled={isPlaneswalker || props.types.length !== 1 || props.types[0] !== 'land'}
           checked={props.supertype === 'basic'}
           onChange={(e) => {
             if (e.target.checked) {

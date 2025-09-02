@@ -13,7 +13,7 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "When this enchantment enters, each player chooses up to two lands they control, then exile the rest until this enchantment leaves the battlefield."
+      "content": "When this enchantment enters, each player chooses up to two lands they control, then exiles the rest until this enchantment leaves the battlefield."
     },
     {
       "variant": "ability",

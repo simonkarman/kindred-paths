@@ -24,6 +24,7 @@ export class CardArtPromptCreator {
       'instant': ', focusing on an action being performed',
       'land': ', focusing on an empty landscape or environment',
       'enchantment': ', focusing on a magical effect that is visible in the environment',
+      'planeswalker': ', focusing on a dynamic moment that tells a clear story within a single frame',
     };
     if (card.tags["deck"] === "miffy") {
       const miffyStyle = `in the style of Miffy by Dick Bruna using simple colors and without shadows${focus[dominantCardType] ?? ''}.`;
@@ -150,6 +151,10 @@ export class CardArtPromptCreator {
   }
 
   private sorceryPrompt(card: Card): string {
+    return '';
+  }
+
+  private planeswalkerPrompt(card: Card): string {
     return '';
   }
 }
