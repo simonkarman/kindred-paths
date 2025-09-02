@@ -244,7 +244,7 @@ export class Card {
           const cost = loyaltyAbility.cost;
           loyaltyAbilityCosts.push(cost === '-X' ? -9999 : cost);
         }
-        if (!loyaltyAbility.success && loyaltyAbilityCosts.length > 0) {
+        if (rule.variant !== 'inline-reminder' && !loyaltyAbility.success && loyaltyAbilityCosts.length > 0) {
           throw new Error('planeswalker loyalty abilities should all be together at the end');
         }
       }
@@ -317,7 +317,7 @@ export class Card {
       const rule: Rule = this.rules[index];
       if (this.types.includes('planeswalker') && tryParseLoyaltyAbility(rule).success) {
         // Skip the loyalty abilities of planeswalkers, they are rendered separately in the loyalty box
-        continue;
+        break;
       }
 
       const peekNext = (n = 1) => {
@@ -362,8 +362,7 @@ export class Card {
         text += `{flavor}${rule.content}`;
       }
     }
-    const shortCardName = this.name.includes(',') ? this.name.split(',')[0].trim() : this.name;
-    return text.replace(/~/g, shortCardName).replace(/ +/g, ' ').trim();
+    return this.sanitize(text);
   }
 
   public loyaltyAbilities(): { cost: LoyaltyCost, content: string }[] {
@@ -371,13 +370,25 @@ export class Card {
       return [];
     }
     const abilities: { cost: LoyaltyCost, content: string }[] = [];
-    for (const rule of this.rules) {
+    for (let ruleIndex = 0; ruleIndex < this.rules.length; ruleIndex++) {
+      const rule = this.rules[ruleIndex];
       const ability = tryParseLoyaltyAbility(rule);
       if (ability.success) {
-        abilities.push({ cost: ability.cost, content: ability.content });
+        const nextRule = this.rules[ruleIndex + 1];
+        const postfix = nextRule?.variant === 'inline-reminder' ? ` {i}(${nextRule.content}){/i}` : '';
+        const content = this.sanitize(ability.content + postfix);
+        abilities.push({
+          cost: ability.cost,
+          content,
+        });
       }
     }
     return abilities;
+  }
+
+  private sanitize(text: string) {
+    const shortCardName = this.name.includes(',') ? this.name.split(',')[0].trim() : this.name;
+    return text.replace(/~/g, shortCardName).replace(/ +/g, ' ').trim();
   }
 
   public color(): CardColor[] {

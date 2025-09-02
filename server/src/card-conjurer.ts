@@ -147,7 +147,7 @@ export class CardConjurer {
           await page.click(`#${placement}`);
           await sleep(50);
         }
-        await addFrame(frameColorLeft)
+        await addFrame(frameColorLeft);
         if (frameColorRight) {
           await addFrame(frameColorRight, 'addToRightHalf');
         }

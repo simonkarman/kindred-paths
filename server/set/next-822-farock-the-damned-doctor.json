@@ -21,20 +21,22 @@
     },
     {
       "variant": "ability",
-      "content": "-4: Deal 1 damage to any target."
+      "content": "-4: ~ deals 1 damage to any target."
     },
     {
       "variant": "ability",
-      "content": "-X: Deal 1 damage to up to X targets, gain X life and creature a Treasure token. This ability can only be activated if X is 7 or greater."
+      "content": "-X: ~ deals 1 damage to up to X targets. This ability can only be activated if X is 6 or greater."
     }
   ],
   "loyalty": 3,
   "collectorNumber": 822,
-  "art": "1-farock-the-damned-f7cdfdf9-cfc6-43b4-b00a-b0639b49b25d.png",
+  "art": "next-822-farock-the-damned-doctor-afb2cee5-0c7f-438e-a57b-7620e070c0b2.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-09-01",
-    "setting": "A plague doctor figure stands in a field of wilted flowers, pointing a single finger as a beam of necrotic energy shoots toward distant victims.",
-    "fs/rules": 0
+    "setting": "A plague doctor figure stands in a field of wilted flowers, dark clouds above his head.",
+    "fs/rules": 0,
+    "deck": "next",
+    "count": 1
   }
 }

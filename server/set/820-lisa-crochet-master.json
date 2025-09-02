@@ -1,0 +1,43 @@
+{
+  "name": "Lisa, Crochet Master",
+  "rarity": "mythic",
+  "supertype": "legendary",
+  "types": [
+    "planeswalker"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 1,
+    "red": 1,
+    "blue": 1,
+    "green": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ enters, create a 1/1 Human creature token."
+    },
+    {
+      "variant": "ability",
+      "content": "+2: Gain 1 life."
+    },
+    {
+      "variant": "ability",
+      "content": "+1: Add one mana of any color."
+    },
+    {
+      "variant": "ability",
+      "content": "-6: Destroy target permanent."
+    }
+  ],
+  "loyalty": 2,
+  "collectorNumber": 820,
+  "art": "820-lisa-crochet-master-503b318d-6514-4356-aac6-e8e513b0dd79.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-09-02",
+    "setting": "A cozy crafting room filled with colorful yarn balls and magical crochet creations coming to life, while Lisa sits cross-legged with glowing needles weaving reality itself.",
+    "deck": "next",
+    "count": 1
+  }
+}

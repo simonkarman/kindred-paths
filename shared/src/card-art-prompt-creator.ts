@@ -1,10 +1,11 @@
+/* eslint-disable max-len */
 import { Card, landSubtypeToColor } from './card';
 
 const fixSpacing = (text: string): string => {
   return text
     .replace(/\s+/g, ' ') // Replace multiple instances of whitespace with a single space
     .trim(); // Trim leading and trailing spaces
-}
+};
 
 export class CardArtPromptCreator {
   constructor() {}
@@ -26,7 +27,7 @@ export class CardArtPromptCreator {
       'enchantment': ', focusing on a magical effect that is visible in the environment',
       'planeswalker': ', focusing on a dynamic moment that tells a clear story within a single frame',
     };
-    if (card.tags["deck"] === "miffy") {
+    if (card.tags['deck'] === 'miffy') {
       const miffyStyle = `in the style of Miffy by Dick Bruna using simple colors and without shadows${focus[dominantCardType] ?? ''}.`;
       sections.push(miffyStyle);
     } else {
@@ -35,7 +36,11 @@ export class CardArtPromptCreator {
     }
 
     // Add main subject section
-    sections.push(dominantCardType === 'land' ? '' : 'The main subject takes up about 60% of the composition.');
+    if (dominantCardType === 'planeswalker') {
+      sections.push('The main subject takes up about 60% of the composition and is almost at the top of the image. The bottom of the image should only depict backgrounds.');
+    } else if (dominantCardType !== 'land') {
+      sections.push('The main subject takes up about 60% of the composition.');
+    }
 
     // Add card type section
     sections.push(this[`${dominantCardType}Prompt`](card));
@@ -62,7 +67,7 @@ export class CardArtPromptCreator {
     }[power] ?? 'powerful';
 
     const creatureTypeDescription = {
-      0: `creature`,
+      0: 'creature',
       1: `${card.subtypes[0]} creature`,
       2: `${card.subtypes[0]} creature with ${card.subtypes[1]} features`,
     }[card.subtypes.length] || `${card.subtypes[0]} creature with features from ${card.subtypes.slice(1, -1).join(', ')} and ${card.subtypes[card.subtypes.length - 1]}`;
@@ -84,7 +89,7 @@ export class CardArtPromptCreator {
       'first strike': 'is ready to strike first in combat',
       'vigilance': 'is standing alert and ready for action',
       'reach': 'has a feature that allows it to reach (or strike targets) in the sky',
-    }
+    };
     const keywordDescriptions = card.rules
       .filter(r => r.variant === 'keyword' && r.content in singleKeywordDescriptions)
       .map(r => singleKeywordDescriptions[r.content]);
@@ -102,7 +107,7 @@ export class CardArtPromptCreator {
 
     return fixSpacing(
       `Depicting a ${card.supertype ?? ''} ${powerDescription} ${creatureTypeDescription} `
-      + `that is a ${toughnessDescription} ${keywordDescription} use a ${rarityDescription} and focus on ${colorDescription} colors.`
+      + `that is a ${toughnessDescription} ${keywordDescription} use a ${rarityDescription} and focus on ${colorDescription} colors.`,
     );
   }
 
@@ -146,7 +151,7 @@ export class CardArtPromptCreator {
     const landDescription = colors.map(c => landDescriptions[c]).join(' and ');
 
     return fixSpacing(
-      `${card.name} ${subtypeDescription} is a ${landDescription}.`
+      `${card.name} ${subtypeDescription} is a ${landDescription}.`,
     );
   }
 

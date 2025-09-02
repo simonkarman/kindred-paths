@@ -1,0 +1,47 @@
+{
+  "name": "Krogh, Plowshare Master",
+  "rarity": "common",
+  "supertype": "legendary",
+  "types": [
+    "planeswalker"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 1,
+    "green": 1,
+    "white": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "+2: Create a Food token."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "It’s an artifact with{lns}“{2}, {T}, Sacrifice this token: You gain 3 life.”"
+    },
+    {
+      "variant": "ability",
+      "content": "+1: Create a Treasure token."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "It's an artifact with{lns}\"{T}, Sacrifice this artifact: Add one mana of any color.\""
+    },
+    {
+      "variant": "ability",
+      "content": "-X: Sacrifice up to X artifacts. If you do, search you library for that many land cards and put them onto the battlefield tapped under your control."
+    }
+  ],
+  "loyalty": 1,
+  "collectorNumber": 827,
+  "art": "827-krogh-plowshare-master-e59c45ea-00eb-40ef-8042-e443a291d171.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-09-02",
+    "fs/rules": -7,
+    "setting": "In a bustling marketplace garden, a determined figure sorts through baskets of vegetables looking into the camera, while behind them fertile fields stretch toward a quaint village.",
+    "deck": "next",
+    "count": 1
+  }
+}
