@@ -30,7 +30,7 @@ export const loyaltyCostAsString = (loyalty: LoyaltyCost): string => {
   if (typeof loyalty === 'string') {
     return loyalty;
   }
-  if (loyalty >= 0) {
+  if (loyalty > 0) {
     return `+${loyalty}`;
   }
   return `${loyalty}`;
