@@ -53,7 +53,8 @@ export class RenderService {
       id: undefined,
       tags: undefined,
       collectorNumber: card.collectorNumber - (set.collectorNumberOffset || 0),
-      fontSize: Object.entries(card.tags).filter(([k]) => k.startsWith('fs/')),
+      fontSizeTags: Object.entries(card.tags).filter(([k]) => k.startsWith('fs/')),
+      artTags: Object.entries(card.tags).filter(([k]) => k.startsWith('art/')),
 
       // Include other properties that might affect the render
       set,

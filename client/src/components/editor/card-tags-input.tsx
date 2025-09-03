@@ -56,20 +56,6 @@ export const CardTagsInput = (props: {
     props.setTags(convertArrayToTags(newArray));
   };
 
-  const moveTag = (index: number, direction: 'up' | 'down') => {
-    if (
-      (direction === 'up' && index === 0) ||
-      (direction === 'down' && index === tagsArray.length - 1)
-    ) {
-      return;
-    }
-
-    const newArray = [...tagsArray];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    [newArray[index], newArray[targetIndex]] = [newArray[targetIndex], newArray[index]];
-    props.setTags(convertArrayToTags(newArray));
-  };
-
   const addTag = () => {
     const newTag = { key: 'key', value: '' as string };
     const newArray = [...tagsArray, newTag];
@@ -81,9 +67,13 @@ export const CardTagsInput = (props: {
     return typeof value;
   };
 
+  const isEditable = (tagKey: string) => {
+    return !['setting', 'createdAt'].includes(tagKey) && !tagKey.startsWith('fs/') && !tagKey.startsWith('art/');
+  };
+
   const renderValueInput = (tag: { key: string, value: string | number | boolean | undefined }, index: number) => {
     const valueType = getValueType(tag.value);
-    const disabled = ['setting'].includes(tag.key);
+    const disabled = !isEditable(tag.key);
 
     switch (valueType) {
       case 'boolean':
@@ -91,7 +81,7 @@ export const CardTagsInput = (props: {
           <select
             value={tag.value ? 'true' : 'false'}
             onChange={(e) => updateTag(index, 'value', e.target.value === 'true')}
-            className="px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-2 py-0 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={disabled}
           >
             <option value="true">true</option>
@@ -104,7 +94,7 @@ export const CardTagsInput = (props: {
             type="number"
             value={tag.value as number}
             onChange={(e) => updateTag(index, 'value', parseFloat(e.target.value) || 0)}
-            className="px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-2 py-0 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={disabled}
           />
         );
@@ -115,7 +105,7 @@ export const CardTagsInput = (props: {
             value={tag.value as string}
             onChange={(e) => updateTag(index, 'value', e.target.value)}
             placeholder="Enter value..."
-            className="px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-2 py-0 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={disabled}
           />
         );
@@ -129,7 +119,7 @@ export const CardTagsInput = (props: {
       {!showTags && (
         <div className="flex items-center justify-between">
           <span className="text-sm text-zinc-600">{
-            tagsArray.filter(({ key }) => !['setting', 'createdAt'].includes(key)).map(({ key, value}) => `${key}=${value}`).join(', ')
+            tagsArray.filter(({ key }) => isEditable(key)).map(({ key, value}) => `${key}=${value}`).join(', ')
           }</span>
           <button
             onClick={() => setShowTags(true)}
@@ -142,21 +132,21 @@ export const CardTagsInput = (props: {
       {showTags && (
       <div className="space-y-2">
         {tagsArray.map((tag, index) => (
-          <div key={index} className="flex items-center gap-2">
+          <div key={index} className="flex items-stretch gap-2">
             {/* Key Input */}
             <input
               type="text"
               value={tag.key}
               onChange={(e) => updateTag(index, 'key', e.target.value)}
               placeholder="Key..."
-              className="w-24 px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-24 px-2 py-0 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             {/* Type Selector */}
             <select
               value={getValueType(tag.value)}
               onChange={(e) => updateValueType(index, e.target.value as 'string' | 'number' | 'boolean')}
-              className="px-2 py-1 border border-zinc-300 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-2 py-0.5 border border-zinc-300 rounded text-sm text-zinc-500 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="string">String</option>
               <option value="number">Number</option>

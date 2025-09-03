@@ -10,6 +10,7 @@ const getRenderKey = (card: Card) => {
     id: undefined,
     tags: Object.entries(card.tags).filter(([k]) =>
       k.startsWith('fs/') // Include all font size tags
+      || k.startsWith('art/') // Include all art tags
       || k === 'deck' || k === 'set' // Include deck and set tags
     ),
   }))

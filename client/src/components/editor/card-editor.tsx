@@ -202,20 +202,21 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     }
   };
 
-  const artSetting: string = typeof tags?.["setting"] === 'string' ? tags["setting"] : '';
-  const setArtSetting = (setting: string | number | boolean | undefined) => {
+  const getStringTagOrEmptyString = (key: string) => typeof tags?.[key] === 'string' ? tags[key] : '';
+  const createSetterFor = (key: string) => (value: string | number | boolean | undefined) => {
     const _tags = { ...(tags ?? {}) };
-    if (setting === undefined || (typeof setting === 'string' && setting.trim() === '')) {
-      delete _tags["setting"];
+    if (value === undefined || (typeof value === 'string' && value.trim() === '')) {
+      delete _tags[key];
       setTags(_tags);
-      return;
     } else {
       setTags({
         ...tags,
-        "setting": setting,
+        [key]: value,
       });
     }
   };
+  const setArtSetting = createSetterFor("setting");
+  const setArtFocus = createSetterFor("art/focus");
 
   return (<>
     <div className={`mx-auto space-y-6 border ${isChanged ? 'border-orange-200' : 'border-zinc-200'} bg-white rounded-lg px-3 pb-2 shadow-lg`}>
@@ -273,9 +274,17 @@ export function CardEditor({ start }: { start: SerializedCard }) {
                                     getErrorMessage={() => getErrorMessage('collectorNumber')}
                                     isChanged={!isCreate && JSON.stringify(start.collectorNumber) !== JSON.stringify(collectorNumber)} revert={() => setCollectorNumber(start.collectorNumber)}
           />
-          <CardArtInput artSetting={artSetting} setArtSetting={setArtSetting} art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card}
+          <CardArtInput art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card}
                         isChanged={!isCreate && JSON.stringify(start.art) !== JSON.stringify(art)} revert={() => setArt(start.art)}
+
+                        artSetting={getStringTagOrEmptyString("setting")} setArtSetting={setArtSetting}
                         artSettingIsChanged={!isCreate && JSON.stringify(start.tags?.setting) !== JSON.stringify(tags?.["setting"])} revertArtSetting={() => setArtSetting(start.tags?.setting)}
+
+                        showArtFocus={types.includes('planeswalker') || supertype === 'token'}
+                        artFocus={getStringTagOrEmptyString("art/focus")} setArtFocus={setArtFocus}
+                        artFocusIsChanged={!isCreate && JSON.stringify(start.tags?.['art/focus']) !== JSON.stringify(tags?.["art/focus"])} revertArtFocus={() => setArtSetting(start.tags?.['art/focus'])}
+
+                        // TODO: add fs/rules too
           />
           <ul className="list-disc pl-5 text-red-600 text-sm">
             {errors.map((err, index) => (

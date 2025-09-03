@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { SerializedCardSchema } from 'kindred-paths';
+import { Card, SerializedCardSchema } from 'kindred-paths';
 import { aiService } from '../services/ai-service';
 import { cardService } from '../services/card-service';
 import fs from 'fs/promises';
+import { z } from 'zod';
 
 export const suggestionsRouter = Router();
 
@@ -12,7 +13,7 @@ suggestionsRouter.post('/name', async (req, res) => {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
     return;
   }
-  
+
   try {
     const suggestions = await aiService.getCardNameSuggestions(body.data);
     res.json(suggestions);
@@ -22,13 +23,38 @@ suggestionsRouter.post('/name', async (req, res) => {
   }
 });
 
+const SuggestCardSchema = z.object({
+  prompt: z.string(),
+  maxIterations: z.number().min(1).max(10).default(3),
+});
+suggestionsRouter.post('/card', async (req, res) => {
+  const body = SuggestCardSchema.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: 'Invalid request data', details: body.error });
+    return;
+  }
+
+  try {
+    const { prompt, maxIterations } = body.data;
+    const suggestedCard: Card | null = await aiService.suggestCard(prompt, maxIterations);
+    if (suggestedCard) {
+      res.json(suggestedCard.toJson());
+    } else {
+      res.status(500).json({ error: `Failed to suggest card within ${maxIterations} iterations` });
+    }
+  } catch (error) {
+    console.error('Error suggesting card:', error);
+    res.status(500).json({ error: 'Failed to suggest card' });
+  }
+})
+
 suggestionsRouter.post('/art-setting', async (req, res) => {
   const body = SerializedCardSchema.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
     return;
   }
-  
+
   try {
     const suggestions = await aiService.getCardArtSettingSuggestions(body.data);
     res.json(suggestions);
@@ -44,7 +70,7 @@ suggestionsRouter.post('/art', async (req, res) => {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
     return;
   }
-  
+
   try {
     const suggestions = await aiService.generateCardArt(body.data);
     res.json(suggestions);

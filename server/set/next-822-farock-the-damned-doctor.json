@@ -30,13 +30,14 @@
   ],
   "loyalty": 3,
   "collectorNumber": 822,
-  "art": "next-822-farock-the-damned-doctor-afb2cee5-0c7f-438e-a57b-7620e070c0b2.png",
+  "art": "next-822-farock-the-damned-doctor-05022416-cf5d-4fca-a284-f2e8c2e98662.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-09-01",
     "setting": "A plague doctor figure stands in a field of wilted flowers, dark clouds above his head.",
     "fs/rules": 0,
     "deck": "next",
-    "count": 1
+    "count": 1,
+    "art/focus": "zoom-0"
   }
 }

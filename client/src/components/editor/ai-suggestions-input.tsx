@@ -1,4 +1,4 @@
-import { useState, ReactNode } from 'react';
+import { useState, ReactNode, ChangeEventHandler, ChangeEvent } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWandMagicSparkles, faSpinner, faEye, faClose } from '@fortawesome/free-solid-svg-icons';
 import { Card } from 'kindred-paths';
@@ -16,6 +16,7 @@ export function AiSuggestionsInput<Suggestion>(props: {
   maxHeight: string,
   renderSuggestion: (suggestion: Suggestion) => ReactNode,
   suggestionsAsGrid?: boolean,
+  rows?: number,
   isChanged: boolean,
   revert: () => void,
 }) {
@@ -48,20 +49,34 @@ export function AiSuggestionsInput<Suggestion>(props: {
   };
 
   const htmlId = `card${capitalize(props.propertyName).replace(/\s+/g, '')}`;
+  const inputProps = {
+    id: htmlId,
+    value: props.propertyValue ?? '',
+    onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const value = e.target.value;
+      if (value.length === 0) {
+        props.setPropertyValue(undefined);
+      } else {
+        props.setPropertyValue(value);
+      }
+    },
+    placeholder: `Enter card ${props.propertyName.toLowerCase()}...`,
+    className: "w-full bg-white px-1 py-0.5 pr-10 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+  }
   return (
     <div className="space-y-1 relative">
       <InputHeader propertyName={props.propertyName} isChanged={props.isChanged} revert={props.revert} />
       <div className="relative">
-        <input
-          id={htmlId}
-          type="text"
-          value={props.propertyValue ?? ''}
-          onChange={(e) => e.target.value.length === 0
-            ? props.setPropertyValue(undefined)
-            : props.setPropertyValue(e.target.value)}
-          placeholder={`Enter card ${props.propertyName.toLowerCase()}...`}
-          className="w-full bg-white px-1 py-0.5 pr-10 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        {props.rows === undefined
+          ? <input
+              type="text"
+              {...inputProps}
+            />
+          : <textarea
+              rows={Math.max(1, props.rows ?? 1)}
+              {...inputProps}
+            />
+        }
         {props.card &&
           <button
             type="button"

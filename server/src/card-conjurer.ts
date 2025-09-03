@@ -90,6 +90,7 @@ export class CardConjurer {
 
       // Handle the frame section
       let forceTitleColorToBlack = false;
+      let isFullArt = false;
       if (card.supertype === "token") {
         // Gather token information
         const tokenType = card.rules.length > 0 ? 'Regular' : 'Textless';
@@ -102,6 +103,7 @@ export class CardConjurer {
         if (frameColor === 'W') {
           forceTitleColorToBlack = true;
         }
+        isFullArt = true;
 
         // Select frame pack
         await page.selectOption('#autoFrame', 'false');
@@ -151,6 +153,7 @@ export class CardConjurer {
         if (frameColorRight) {
           await addFrame(frameColorRight, 'addToRightHalf');
         }
+        isFullArt = true;
       } else {
         // Enable autoFrame
         await page.selectOption('#autoFrame', 'M15Regular-1');
@@ -286,6 +289,23 @@ export class CardConjurer {
         await page.fill('#creator-menu-art input[placeholder="Via URL"]', `local_art/${card.art}`);
         await page.fill('#creator-menu-art #art-artist', set.author);
         await page.waitForLoadState('networkidle');
+
+        // Set card x,y,zoom,rotate when full art
+        if (isFullArt) {
+          await sleep(100);
+          const focusAreas = {
+            'zoom-0': { x: -255, y: 80, zoom: 164 },
+            'zoom-1': { x: -280, y: -50, zoom: 170 },
+            'zoom-2': { x: -500, y: -250, zoom: 200 },
+          };
+          const _focus = card.getTagAsString("art/focus") ?? 'zoom-0';
+          const focusAreaName = _focus in focusAreas ? _focus as keyof typeof focusAreas : 'zoom-0';
+          const focusArea = focusAreas[focusAreaName];
+          await page.fill("#art-x", focusArea.x.toFixed());
+          await page.fill("#art-y", focusArea.y.toFixed());
+          await page.fill("#art-zoom", focusArea.zoom.toFixed(1));
+          await page.waitForLoadState('networkidle');
+        }
       }
 
       // Handle symbol section

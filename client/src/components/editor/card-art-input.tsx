@@ -1,10 +1,14 @@
 import { getArtSettingSuggestions, SettingSuggestion, getArtSuggestions, ArtSuggestion } from '@/utils/server';
 import { Card } from 'kindred-paths';
 import { AiSuggestionsInput } from '@/components/editor/ai-suggestions-input';
+import { InputHeader } from '@/components/editor/input-header';
 
 export const CardArtInput = (props: {
   artSetting: string | undefined,
   setArtSetting: (value: string | undefined) => void,
+  showArtFocus: boolean,
+  artFocus: string | undefined,
+  setArtFocus: (value: string | undefined) => void,
   art: string | undefined,
   setArt: (value: string | undefined) => void,
   getErrorMessage: () => string | undefined,
@@ -13,6 +17,8 @@ export const CardArtInput = (props: {
   revert: () => void,
   artSettingIsChanged: boolean,
   revertArtSetting: () => void,
+  artFocusIsChanged: boolean,
+  revertArtFocus: () => void,
 }) => {
   return <div className="space-y-2">
     <AiSuggestionsInput
@@ -32,6 +38,7 @@ export const CardArtInput = (props: {
           {suggestion.setting}
         </div>
       </>)}
+      rows={3}
       isChanged={props.artSettingIsChanged}
       revert={props.revertArtSetting}
     />
@@ -51,5 +58,24 @@ export const CardArtInput = (props: {
       isChanged={props.isChanged}
       revert={props.revert}
     />
+    {props.showArtFocus && <>
+      <InputHeader propertyName="Art Focus" isChanged={props.artFocusIsChanged} revert={props.revertArtFocus} />
+      <div className="flex flex-wrap gap-1">
+        {["zoom-0", "zoom-1", "zoom-2"].map((artFocus) => (
+          <button
+            key={`${artFocus}`}
+            type="button"
+            onClick={() => props.setArtFocus(artFocus)}
+            className={`px-2 py-0.5 text-xs rounded border font-mono transition-colors ${
+              props.artFocus === artFocus
+                ? 'bg-blue-100 border-blue-300 text-blue-800'
+                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            {artFocus}
+          </button>
+        ))}
+      </div>
+    </>}
   </div>
 }

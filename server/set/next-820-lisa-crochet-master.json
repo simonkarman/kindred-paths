@@ -8,36 +8,37 @@
   "subtypes": [],
   "manaCost": {
     "colorless": 1,
-    "red": 1,
-    "blue": 1,
-    "green": 1
+    "white": 1,
+    "red": 1
   },
   "rules": [
     {
       "variant": "ability",
-      "content": "When ~ enters, create a 1/1 Human creature token."
+      "content": "Creatures attacking ~ can only be blocked by Humans."
     },
     {
       "variant": "ability",
-      "content": "+2: Gain 1 life."
+      "content": "+2: Create Sam, a legendary 0/1 red and white Human creature token with indestructible."
     },
     {
       "variant": "ability",
-      "content": "+1: Add one mana of any color."
+      "content": "+1: Add {r} or {w}."
     },
     {
       "variant": "ability",
-      "content": "-6: Destroy target permanent."
+      "content": "-7: Exile target nonland permanent."
     }
   ],
-  "loyalty": 2,
+  "loyalty": 3,
   "collectorNumber": 820,
-  "art": "820-lisa-crochet-master-503b318d-6514-4356-aac6-e8e513b0dd79.png",
+  "art": "next-820-lisa-crochet-master-c2bc875a-9ca8-4440-8fb0-1bb5f0c58e73.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-09-02",
-    "setting": "A cozy crafting room filled with colorful yarn balls and magical crochet creations coming to life, while Lisa sits cross-legged with glowing needles weaving reality itself.",
+    "setting": "A cozy crafting room filled with colorful yarn balls and magical crochet creations coming to life, while Lisa with brown hair sits in the center of the frame cross-legged with needles weaving.",
     "deck": "next",
-    "count": 1
+    "count": 1,
+    "fs/rules": -9,
+    "art/focus": "zoom-1"
   }
 }

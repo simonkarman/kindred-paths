@@ -35,10 +35,8 @@ export class CardArtPromptCreator {
       sections.push(magicStyle);
     }
 
-    // Add main subject section
-    if (dominantCardType === 'planeswalker') {
-      sections.push('The main subject takes up about 60% of the composition and is almost at the top of the image. The bottom of the image should only depict backgrounds.');
-    } else if (dominantCardType !== 'land') {
+    // Add main subject section when the card is not a land
+    if (dominantCardType !== 'land') {
       sections.push('The main subject takes up about 60% of the composition.');
     }
 
