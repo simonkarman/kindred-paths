@@ -5,6 +5,7 @@ import { Leonardo } from "@leonardo-ai/sdk";
 import { z } from 'zod';
 import { GetGenerationByIdResponse } from '@leonardo-ai/sdk/sdk/models/operations';
 import { computeCardId } from '../utils/card-utils';
+import { AISampleGenerator } from './ai-sample-generator';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -204,184 +205,86 @@ export class AIService {
     return arts.filter((art): art is ArtSuggestion => art !== undefined);
   }
 
-  async suggestCard(prompt: string, maxIterations: number): Promise<Card | null> {
-    const messages: any[] = [];
-
-    // System prompt with schema and examples
+  async suggestCards(prompt: string): Promise<Card[]> {
     const systemPrompt = `You are tasked with generating valid JSON objects that conform to the SerializedCardSchema for Magic: The Gathering cards.
-    
-    Schema definition:
-    ${JSON.stringify(SerializedCardSchema.shape, null, 2)}
-    
-    Example valid JSON objects:
-    
+
+Schema definition:
+${JSON.stringify(SerializedCardSchema.shape, null, 2)}
+
+Example valid JSON objects:
+{
+  "id": "mtg_001",
+  "name": "Lightning Bolt",
+  "rarity": "common",
+  "types": ["instant"],
+  "manaCost": {"red": 1},
+  "rules": [
     {
-      "id": "mtg_001",
-      "name": "Lightning Bolt",
-      "rarity": "common",
-      "types": ["instant"],
-      "manaCost": {"red": 1},
-      "rules": [
-        {
-          "variant": "ability",
-          "content": "Lightning Bolt deals 3 damage to any target."
-        }
-      ],
-      "collectorNumber": 125,
-      "art": "lightning_bolt_art.jpg"
+      "variant": "ability",
+      "content": "~ deals 3 damage to any target."
     }
-    
+  ],
+  "collectorNumber": 125
+}
+
+{
+  "id": "mtg_002",
+  "name": "Serra Angel",
+  "rarity": "uncommon",
+  "types": ["creature"],
+  "subtypes": ["Angel"],
+  "manaCost": {"white": 3, "colorless": 2},
+  "rules": [
     {
-      "id": "mtg_002",
-      "name": "Serra Angel", 
-      "rarity": "uncommon",
-      "types": ["creature"],
-      "subtypes": ["Angel"],
-      "manaCost": {"white": 3, "colorless": 2},
-      "rules": [
-        {
-          "variant": "keyword",
-          "content": "Flying"
-        },
-        {
-          "variant": "keyword", 
-          "content": "Vigilance"
-        }
-      ],
-      "pt": {
-        "power": 4,
-        "toughness": 4
+      "variant": "keyword",
+      "content": "flying"
+    },
+    {
+      "variant": "keyword",
+      "content": "vigilance"
+    }
+  ],
+  "pt": {
+    "power": 4,
+    "toughness": 4
+  },
+  "collectorNumber": 42
+}
+
+{
+  "id": "mtg_003",
+  "name": "Jace, the Mind Sculptor",
+  "rarity": "mythic",
+  "supertype": "legendary",
+  "types": ["planeswalker"],
+  "manaCost": {"blue": 2, "colorless": 2},
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "+2: Look at the top card of target player's library. You may put that card on the bottom of that player's library."
+    },
+    {
+      "variant": "ability",
+      "content": "0: Draw three cards, then put two cards from your hand on top of your library in any order."
+    }
+  ],
+  "loyalty": 3,
+  "collectorNumber": 81
+}`;
+
+    const generator = new AISampleGenerator<Card>({
+      anthropic: this.anthropic,
+      systemPrompt,
+      userPrompt: prompt,
+      transformer: (text: string) => {
+        const jsonObject = JSON.parse(text);
+        const validatedData = SerializedCardSchema.parse(jsonObject);
+        return new Card(validatedData);
       },
-      "collectorNumber": 42,
-      "art": "serra_angel_art.png"
-    }
-    
-    {
-      "id": "mtg_003",
-      "name": "Jace, the Mind Sculptor",
-      "rarity": "mythic",
-      "supertype": "legendary",
-      "types": ["planeswalker"],
-      "subtypes": ["Jace"],
-      "manaCost": {"blue": 2, "colorless": 2},
-      "rules": [
-        {
-          "variant": "ability",
-          "content": "+2: Look at the top card of target player's library. You may put that card on the bottom of that player's library."
-        },
-        {
-          "variant": "ability", 
-          "content": "0: Draw three cards, then put two cards from your hand on top of your library in any order."
-        }
-      ],
-      "loyalty": 3,
-      "collectorNumber": 81
-    }
-    
-    CRITICAL INSTRUCTIONS:
-    - Only output valid JSON that conforms to the schema
-    - Do NOT use markdown formatting or code blocks
-    - Do NOT include any explanatory text
-    - Output ONLY the raw JSON object`;
-
-    // Add initial user message
-    messages.push({
-      role: 'user',
-      content: prompt
+      summarizer: (card: Card) => card.explain(),
     });
-
-    for (let iteration = 0; iteration < maxIterations; iteration++) {
-      try {
-        // Call Claude Opus 4
-        const msg = await this.anthropic.messages.create({
-          model: "claude-opus-4-20250514",
-          max_tokens: 1000,
-          temperature: 1,
-          system: systemPrompt,
-          messages: messages
-        });
-
-        const contentElement = msg.content[0];
-        const response = contentElement.type === 'text' ? contentElement.text : undefined;
-        if (!response) {
-          throw new Error('No response received from Claude');
-        }
-
-        // Parse JSON response
-        let jsonObject: any;
-        try {
-          jsonObject = JSON.parse(response.trim());
-        } catch (parseError) {
-          // Feed JSON parsing error back to the conversation
-          messages.push({
-            role: 'assistant',
-            content: response
-          });
-          messages.push({
-            role: 'user',
-            // @ts-ignore
-            content: `JSON parsing failed with error: ${parseError.message}. Please provide valid JSON that conforms to the schema.`
-          });
-          continue;
-        }
-
-        // Validate against schema
-        let validatedData: any;
-        try {
-          validatedData = SerializedCardSchema.parse(jsonObject);
-        } catch (schemaError) {
-          // Feed schema validation error back to the conversation
-          messages.push({
-            role: 'assistant',
-            content: response
-          });
-
-          const errorMessage = schemaError instanceof z.ZodError
-            ? `Schema validation failed: ${schemaError.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`
-            // @ts-ignore
-            : `Schema validation failed: ${schemaError.message}`;
-
-          messages.push({
-            role: 'user',
-            content: `${errorMessage}. Please provide a valid JSON object that conforms to the SerializedCardSchema.`
-          });
-          continue;
-        }
-
-        // Try to create Card instance
-        try {
-          const card = new Card(validatedData);
-          return card;
-        } catch (cardError) {
-          // Feed Card creation error back to the conversation
-          messages.push({
-            role: 'assistant',
-            content: response
-          });
-          messages.push({
-            role: 'user',
-            // @ts-ignore
-            content: `Card creation failed with error: ${cardError.message}. Please adjust the JSON object to fix this issue.`
-          });
-        }
-
-      } catch (apiError) {
-        console.error(`API call failed on iteration ${iteration + 1}:`, apiError);
-
-        // If it's the last iteration, break
-        if (iteration === maxIterations - 1) {
-          break;
-        }
-
-        // Otherwise, try again (after a short delay)
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-
-    // If we've exhausted all iterations without success
-    console.warn(`Failed to generate valid card after ${maxIterations} iterations`);
-    return null;
-  }
+    return await generator.sampleMany(10);
+  };
 }
 
 export const aiService = new AIService();

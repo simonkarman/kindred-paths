@@ -25,7 +25,6 @@ suggestionsRouter.post('/name', async (req, res) => {
 
 const SuggestCardSchema = z.object({
   prompt: z.string(),
-  maxIterations: z.number().min(1).max(10).default(3),
 });
 suggestionsRouter.post('/card', async (req, res) => {
   const body = SuggestCardSchema.safeParse(req.body);
@@ -35,16 +34,12 @@ suggestionsRouter.post('/card', async (req, res) => {
   }
 
   try {
-    const { prompt, maxIterations } = body.data;
-    const suggestedCard: Card | null = await aiService.suggestCard(prompt, maxIterations);
-    if (suggestedCard) {
-      res.json(suggestedCard.toJson());
-    } else {
-      res.status(500).json({ error: `Failed to suggest card within ${maxIterations} iterations` });
-    }
+    const { prompt } = body.data;
+    const suggestedCards: Card[] = await aiService.suggestCards(prompt);
+    res.json(suggestedCards.map(c => c.toJson()));
   } catch (error) {
     console.error('Error suggesting card:', error);
-    res.status(500).json({ error: 'Failed to suggest card' });
+    res.status(500).json({ error: 'An error occurred while trying to suggest card a card' });
   }
 })
 
