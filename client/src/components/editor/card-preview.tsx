@@ -42,7 +42,7 @@ export function CardPreview({ card }: { card: Card }) {
       if (thisRenderIndex === latestRenderIndex.current) {
         const blob = await previewCard(card.toJson());
         if (thisRenderIndex === latestRenderIndex.current) {
-          cleanupImage();
+          cleanupImage();;
           setImage(URL.createObjectURL(blob));
         }
       }

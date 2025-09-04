@@ -36,7 +36,9 @@ suggestionsRouter.post('/card', async (req, res) => {
   try {
     const { prompt } = body.data;
     const suggestedCards: Card[] = await aiService.suggestCards(prompt);
-    res.json(suggestedCards.map(c => c.toJson()));
+    res.json(suggestedCards.map(c => ({
+      ...c.toJson(), id: '<new>',
+    })));
   } catch (error) {
     console.error('Error suggesting card:', error);
     res.status(500).json({ error: 'An error occurred while trying to suggest card a card' });

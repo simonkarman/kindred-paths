@@ -21,11 +21,11 @@
     },
     {
       "variant": "ability",
-      "content": "-4: ~ deals 1 damage to any target."
+      "content": "-2: ~ deals 1 damage to any target."
     },
     {
       "variant": "ability",
-      "content": "-X: ~ deals 1 damage to up to X targets. This ability can only be activated if X is 6 or greater."
+      "content": "-X: ~ deals 1 damage to up to X targets. This ability can only be activated if X is 5 or greater."
     }
   ],
   "loyalty": 3,

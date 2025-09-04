@@ -2,6 +2,8 @@ import { getCards } from '@/utils/server';
 import { CardTable } from '@/components/card-table';
 import Link from 'next/link';
 import SearchBar from '@/components/search-bar';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEye, faSpinner, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 
 export default async function Home() {
   const cards = await getCards();
@@ -16,6 +18,16 @@ export default async function Home() {
         href="/create?t=/"
       >
         Create New Card
+      </Link>
+      <Link
+        className="grow-0 shrink-0 inline-block text-sm bg-blue-600 text-white px-3 py-1 border border-gray-300 rounded hover:bg-blue-800 active:bg-blue-900"
+        href="/generate"
+      >
+        <FontAwesomeIcon
+          icon={faWandMagicSparkles}
+          className="mr-1"
+        />
+        Generate Cards
       </Link>
     </div>
     <CardTable cards={cards} />

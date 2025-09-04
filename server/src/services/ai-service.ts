@@ -257,6 +257,7 @@ Example valid JSON objects:
   "rarity": "mythic",
   "supertype": "legendary",
   "types": ["planeswalker"],
+  "subtypes" [], // Subtypes for planeswalkers must be empty
   "manaCost": {"blue": 2, "colorless": 2},
   "rules": [
     {
@@ -283,7 +284,7 @@ Example valid JSON objects:
       },
       summarizer: (card: Card) => card.explain(),
     });
-    return await generator.sampleMany(10);
+    return await generator.sampleMany(6);
   };
 }
 
