@@ -7,9 +7,8 @@
   ],
   "subtypes": [],
   "manaCost": {
-    "colorless": 1,
-    "white": 1,
-    "red": 1
+    "colorless": 2,
+    "white": 1
   },
   "rules": [
     {
@@ -18,11 +17,11 @@
     },
     {
       "variant": "ability",
-      "content": "+2: Create Sam, a legendary 0/1 red and white Human creature token with indestructible."
+      "content": "+2: Create Sam, a legendary 0/1 white Human creature token with indestructible."
     },
     {
       "variant": "ability",
-      "content": "+1: Add {r} or {w}."
+      "content": "+1: Add {w}."
     },
     {
       "variant": "ability",
@@ -31,11 +30,11 @@
   ],
   "loyalty": 3,
   "collectorNumber": 820,
-  "art": "next-820-lisa-crochet-master-c2bc875a-9ca8-4440-8fb0-1bb5f0c58e73.png",
+  "art": "next-820-lisa-crochet-master-df35bc91-fad8-43e1-9f61-f678f0786f61.png",
   "tags": {
     "status": "concept",
     "createdAt": "2025-09-02",
-    "setting": "A cozy crafting room filled with colorful yarn balls and magical crochet creations coming to life, while Lisa with brown hair sits in the center of the frame cross-legged with needles weaving.",
+    "setting": "A cozy crafting store filled with colorful yarn balls and magical crochet creations coming to life, while Lisa, the store owner, stands in the entrance with confidence. She has brown hair and wears a grannysquare vest",
     "deck": "next",
     "count": 1,
     "fs/rules": -9,
