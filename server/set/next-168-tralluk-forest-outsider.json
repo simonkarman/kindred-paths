@@ -1,11 +1,13 @@
 {
-  "name": "Tralki, Lonesome Sprout",
-  "rarity": "rare",
+  "name": "Tralluk, Forest Outsider",
+  "rarity": "mythic",
+  "supertype": "legendary",
   "types": [
     "creature"
   ],
   "subtypes": [
-    "Plant"
+    "Plant",
+    "rogue"
   ],
   "manaCost": {
     "green": 1
