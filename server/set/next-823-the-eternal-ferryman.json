@@ -39,6 +39,7 @@
     "createdAt": "2025-08-31",
     "setting": "A ferryman carrying a soul over the river",
     "deck": "next",
-    "count": 0
+    "count": 0,
+    "deleted": true
   }
 }

@@ -59,7 +59,7 @@ export const CardArtInput = (props: {
       revert={props.revert}
     />
     {props.showArtFocus && <>
-      <InputHeader propertyName="Art Focus" isChanged={props.artFocusIsChanged} revert={props.revertArtFocus} />
+      <InputHeader propertyName="Full Art Focus" isChanged={props.artFocusIsChanged} revert={props.revertArtFocus} />
       <div className="flex flex-wrap gap-1">
         {["zoom-0", "zoom-1", "zoom-2"].map((artFocus) => (
           <button
@@ -67,7 +67,7 @@ export const CardArtInput = (props: {
             type="button"
             onClick={() => props.setArtFocus(artFocus)}
             className={`px-2 py-0.5 text-xs rounded border font-mono transition-colors ${
-              props.artFocus === artFocus
+              (props.artFocus === artFocus || (!props.artFocus && artFocus === 'zoom-0'))
                 ? 'bg-blue-100 border-blue-300 text-blue-800'
                 : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
             }`}

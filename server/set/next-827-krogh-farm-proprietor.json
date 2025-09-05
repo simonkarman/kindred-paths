@@ -7,14 +7,13 @@
   ],
   "subtypes": [],
   "manaCost": {
-    "colorless": 1,
     "green": 1,
     "white": 1
   },
   "rules": [
     {
       "variant": "ability",
-      "content": "+2: Create a Food token."
+      "content": "+1: Create a Food token."
     },
     {
       "variant": "inline-reminder",
@@ -33,7 +32,7 @@
       "content": "-X: Sacrifice up to X artifacts. If you do,{lns}search your library for up to that many basic land cards and put them onto the battlefield tapped under your control. Then shuffle."
     }
   ],
-  "loyalty": 1,
+  "loyalty": 2,
   "collectorNumber": 827,
   "art": "next-827-krogh-farm-proprietor-b021983f-1d82-4b9b-84be-43042a3ed55c.png",
   "tags": {

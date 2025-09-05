@@ -38,6 +38,7 @@
     "deck": "next",
     "count": 1,
     "fs/rules": -9,
-    "art/focus": "zoom-1"
+    "art/focus": "zoom-1",
+    "deleted": true
   }
 }

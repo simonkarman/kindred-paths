@@ -18,7 +18,7 @@
     },
     {
       "variant": "ability",
-      "content": "Whenever you gain life, you may pay{lns}{2}. If you do, exile target creature card from a graveyard. Create a token that’s a copy of that card, except it’s a 1/1 white Cat creature in addition to its other types."
+      "content": "Whenever you gain life, you may pay{lns}{2}. If you do, exile target creature card from a graveyard. Create a token that’s a copy of it, except it’s a 1/1 white Cat creature in addition to its other types."
     }
   ],
   "pt": {
