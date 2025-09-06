@@ -2,7 +2,7 @@
 
 import { Metadata } from 'next';
 import { CardEditor } from '@/components/editor/card-editor';
-import { getCardSuggestions, previewCard } from '@/utils/server';
+import { getCardSamples, previewCard } from '@/utils/server';
 import { useCallback, useEffect, useState } from 'react';
 import { SerializedCard } from 'kindred-paths';
 
@@ -15,13 +15,14 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export function CardGenerator() {
   const [prompt, setPrompt] = useState('');
+  const [generatorId, setGeneratorId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<SerializedCard[]>([]);
   const [cardImages, setCardImages] = useState<string[]>([]);
   const [selectedCard, setSelectedCard] = useState<SerializedCard | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleGenerateCards = useCallback(async () => {
+  const handleGenerateCards = useCallback(async (continuation: boolean = false) => {
     if (!prompt.trim()) {
       setError('Please enter a prompt');
       return;
@@ -29,24 +30,31 @@ export function CardGenerator() {
 
     setLoading(true);
     setError(null);
-    setSuggestions([]);
-    setCardImages([]);
+    if (!continuation) {
+      setGeneratorId(null);
+      setSuggestions([]);
+      setCardImages([]);
+    }
 
     try {
-      const cardSuggestions = await getCardSuggestions(prompt);
-      setSuggestions(cardSuggestions);
+      const { generatorId: nextGeneratorId, samples } = await getCardSamples(continuation
+        ? { generatorId: generatorId! }
+        : { prompt });
+      setGeneratorId(nextGeneratorId);
+      setSuggestions(s => [...s, ...samples]);
 
       // Generate previews for each card
-      setCardImages(await Promise.all(cardSuggestions.map(async (suggestion) => {
+      const nextCardImages = await Promise.all(samples.map(async (suggestion) => {
         const blob = await previewCard(suggestion);
         return URL.createObjectURL(blob);
-      })));
+      }));
+      setCardImages((i) => [...i, ...nextCardImages]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate card suggestions');
     } finally {
       setLoading(false);
     }
-  }, [prompt]);
+  }, [prompt, generatorId]);
 
   const handleCardClick = useCallback((card: SerializedCard) => {
     setSelectedCard(card);
@@ -97,28 +105,13 @@ export function CardGenerator() {
         </div>
 
         <button
-          onClick={handleGenerateCards}
+          onClick={() => handleGenerateCards(false)}
           disabled={loading || !prompt.trim()}
           className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? 'Generating Cards...' : 'Generate Cards'}
         </button>
       </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-700">{error}</p>
-        </div>
-      )}
-
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-600">Generating card suggestions...</p>
-        </div>
-      )}
 
       {/* Card Suggestions Grid */}
       {suggestions.length > 0 && (
@@ -164,6 +157,33 @@ export function CardGenerator() {
       {!loading && suggestions.length === 0 && prompt && (
         <div className="text-center py-8 text-gray-500">
           No card suggestions generated. Try a different prompt.
+        </div>
+      )}
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <p className="text-red-700">{error}</p>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600">Generating card suggestions...</p>
+        </div>
+      )}
+
+      {/* Continuation Button */}
+      {!loading && generatorId && (
+        <div className="text-center">
+          <button
+            onClick={() => handleGenerateCards(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+          >
+            Generate More Cards
+          </button>
         </div>
       )}
     </div>

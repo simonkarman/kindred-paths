@@ -17,14 +17,14 @@ interface AISampleGeneratorConfiguration<T> {
  */
 export class AISampleGenerator<T> {
   private readonly anthropic: Anthropic;
-  private readonly systemPrompt: string;
-  private readonly userPrompt: string;
   private readonly transformer: (input: string) => T;
   private readonly summarizer: (result: T) => string;
-  private readonly maxTokens: number;
+  private readonly summaries: string[] = [];
 
-  private samples: T[] = [];
-  private summaries: string[] = [];
+  protected readonly systemPrompt: string;
+  protected readonly userPrompt: string;
+  protected readonly maxTokens: number;
+  protected readonly samples: T[] = [];
 
   constructor(configuration: AISampleGeneratorConfiguration<T>) {
     this.anthropic = configuration.anthropic ?? new Anthropic();
@@ -42,26 +42,19 @@ CRITICAL INSTRUCTIONS:
   }
 
   /**
-   * Get current samples
+   * Add existing samples. When sampling, the AI will try to make the newly generated samples different from these.
    */
-  get generatedSamples(): T[] {
-    return [...this.samples];
+  prepopulateSamples(existingSamples: T[]): void {
+    console.info(`Prepopulating ${existingSamples.length} existing sample(s)`);
+    this.samples.push(...existingSamples);
+    existingSamples.forEach(sample => this.summaries.push(this.summarizer(sample)));
   }
 
   /**
-   * Add existing samples. This will ensure samples that are generated are different from these.
+   * Get all samples (includes prepopulated and newly generated)
    */
-  addExistingSamples(existingSamples: T[]): void {
-    if (existingSamples.length === 0) {
-      return;
-    }
-
-    console.log(`Adding ${existingSamples.length} existing sample(s) to generator`);
-    this.samples.push(...existingSamples);
-    for (const existingSample of existingSamples) {
-      const summary = this.summarizer(existingSample);
-      this.summaries.push(summary);
-    }
+  public getSamples(): T[] {
+    return [...this.samples];
   }
 
   /**
@@ -152,7 +145,7 @@ ${basePrompt}`;
         // Apply transformer
         try {
           const sample = this.transformer(response.trim());
-          this.samples.push(sample);
+          // TODO: add a immediatelyAfterGenerateHook, so we can start a preview for the generated sample immediately
 
           // Generate the summary for this sample
           const summary = this.summarizer(sample);
@@ -160,7 +153,7 @@ ${basePrompt}`;
 
           // Log success with first line of summary
           const firstLineOfSummary = summary.split('\n')[0] || 'No summary available';
-          console.log(`Iteration ${iteration + 1}: Generated: ${firstLineOfSummary}`);
+          console.info(`Iteration ${iteration + 1}: Generated: ${firstLineOfSummary}`);
 
           // Return the successfully generated sample
           return { sample, iterationsUsed: iteration + 1 };
@@ -168,7 +161,7 @@ ${basePrompt}`;
         } catch (transformerError: unknown) {
           // Log failure with error message
           const errorMessage = this.getErrorMessage(transformerError);
-          console.log(`Iteration ${iteration + 1}: ${errorMessage}`);
+          console.info(`Iteration ${iteration + 1}: ${errorMessage}`);
 
           // Update context for next iteration with specific transformation error
           previousAttempt = response;
@@ -179,7 +172,7 @@ ${basePrompt}`;
         }
       } catch (apiError: unknown) {
         const errorMessage = this.getErrorMessage(apiError);
-        console.log(`Iteration ${iteration + 1}: API error - ${errorMessage}`);
+        console.info(`Iteration ${iteration + 1}: API error - ${errorMessage}`);
 
         // If it's the last iteration, break
         if (iteration + 1 >= iterationBudget) {
@@ -194,23 +187,15 @@ ${basePrompt}`;
     }
 
     // Failed to generate within iteration limit
-    console.log(`Failed to generate sample after ${iterationBudget} iterations`);
+    console.info(`Failed to generate sample after ${iterationBudget} iterations`);
     return { sample: null, iterationsUsed: iterationBudget };
-  }
-
-  /**
-   * Attempt to generate exactly one sample within the given iteration budget.
-   */
-  async sample(iterationBudget: number = 10): Promise<T | null> {
-    const result = await this.generate(iterationBudget);
-    return result.sample;
   }
 
   /**
    * Generate as many samples as possible within the given iteration budget.
    */
-  async sampleMany(iterationBudget: number = 25): Promise<T[]> {
-    console.log(`Attempting to generate multiple samples with ${iterationBudget} total iterations`);
+  async sample(iterationBudget: number = 25): Promise<T[]> {
+    console.info(`Attempting to generate multiple samples with ${iterationBudget} total iterations`);
     const newSamples: T[] = [];
     let remainingIterations = iterationBudget;
     while (remainingIterations > 0) {
@@ -221,7 +206,7 @@ ${basePrompt}`;
         newSamples.push(result.sample);
       }
     }
-    console.log(`Generated ${newSamples.length} new sample(s) (total: ${this.samples.length})`);
+    console.info(`Generated ${newSamples.length} new sample(s)`);
     return newSamples;
   }
 }

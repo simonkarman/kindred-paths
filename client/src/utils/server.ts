@@ -162,13 +162,16 @@ export async function getArtSuggestions(card: Card): Promise<ArtSuggestion[]> {
   return await response.json();
 }
 
-export async function getCardSuggestions(prompt: string): Promise<SerializedCard[]> {
+export async function getCardSamples(data: { prompt: string } | { generatorId: string }): Promise<{
+  generatorId: string,
+  samples: SerializedCard[],
+}> {
   const response = await fetch(`${serverUrl}/suggest/card`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify(data),
   });
 
   if (!response.ok) {

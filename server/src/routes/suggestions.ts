@@ -25,7 +25,9 @@ suggestionsRouter.post('/name', async (req, res) => {
 
 const SuggestCardSchema = z.object({
   prompt: z.string(),
-});
+}).or(z.object({
+  generatorId: z.string(),
+}));
 suggestionsRouter.post('/card', async (req, res) => {
   const body = SuggestCardSchema.safeParse(req.body);
   if (!body.success) {
@@ -34,11 +36,7 @@ suggestionsRouter.post('/card', async (req, res) => {
   }
 
   try {
-    const { prompt } = body.data;
-    const suggestedCards: Card[] = await aiService.suggestCards(prompt);
-    res.json(suggestedCards.map(c => ({
-      ...c.toJson(), id: '<new>',
-    })));
+    res.send(await aiService.getCardSamples(body.data));
   } catch (error) {
     console.error('Error suggesting card:', error);
     res.status(500).json({ error: 'An error occurred while trying to suggest card a card' });

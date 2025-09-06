@@ -5,7 +5,8 @@ import { Leonardo } from "@leonardo-ai/sdk";
 import { z } from 'zod';
 import { GetGenerationByIdResponse } from '@leonardo-ai/sdk/sdk/models/operations';
 import { computeCardId } from '../utils/card-utils';
-import { AISampleGenerator } from './ai-sample-generator';
+import { AISampleGenerator } from './generator/ai-sample-generator';
+import { CardGenerator } from './generator/card-generator';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -205,87 +206,47 @@ export class AIService {
     return arts.filter((art): art is ArtSuggestion => art !== undefined);
   }
 
-  async suggestCards(prompt: string): Promise<Card[]> {
-    const systemPrompt = `You are tasked with generating valid JSON objects that conform to the SerializedCardSchema for Magic: The Gathering cards.
-
-Schema definition:
-${JSON.stringify(SerializedCardSchema.shape, null, 2)}
-
-Example valid JSON objects:
-{
-  "id": "mtg_001",
-  "name": "Lightning Bolt",
-  "rarity": "common",
-  "types": ["instant"],
-  "manaCost": {"red": 1},
-  "rules": [
-    {
-      "variant": "ability",
-      "content": "~ deals 3 damage to any target."
+  async getCardSamples(props: { prompt: string } | { generatorId: string }): Promise<{
+    generatorId: string,
+    samples: SerializedCard[],
+  }> {
+    let prompt;
+    let preexistingSamples: Card[] = [];
+    let iterationBudget = 3;
+    let generatorId;
+    const getFilePath = (generatorId: string) => {
+      return `./generators/${generatorId}.json`;
     }
-  ],
-  "collectorNumber": 125
-}
-
-{
-  "id": "mtg_002",
-  "name": "Serra Angel",
-  "rarity": "uncommon",
-  "types": ["creature"],
-  "subtypes": ["Angel"],
-  "manaCost": {"white": 3, "colorless": 2},
-  "rules": [
-    {
-      "variant": "keyword",
-      "content": "flying"
-    },
-    {
-      "variant": "keyword",
-      "content": "vigilance"
+    if ('prompt' in props) {
+       generatorId = crypto.randomUUID();
+       prompt = props.prompt;
+       iterationBudget = 6; // Generate more when using a new prompt
+    } else {
+      generatorId = props.generatorId;
+      const content = JSON.parse(await fs.readFile(getFilePath(generatorId), 'utf-8'));
+      prompt = content.prompt;
+      preexistingSamples = content.samples.map((s: SerializedCard) => {
+        try {
+          return new Card(SerializedCardSchema.parse(s));
+        } catch (e) {
+          console.error('Failed to parse existing sample, skipping.', e);
+          return null;
+        }
+      }).filter((s: Card | null): s is Card => s !== null);
     }
-  ],
-  "pt": {
-    "power": 4,
-    "toughness": 4
-  },
-  "collectorNumber": 42
-}
-
-{
-  "id": "mtg_003",
-  "name": "Jace, the Mind Sculptor",
-  "rarity": "mythic",
-  "supertype": "legendary",
-  "types": ["planeswalker"],
-  "subtypes" [], // Subtypes for planeswalkers must be empty
-  "manaCost": {"blue": 2, "colorless": 2},
-  "rules": [
-    {
-      "variant": "ability",
-      "content": "+2: Look at the top card of target player's library. You may put that card on the bottom of that player's library."
-    },
-    {
-      "variant": "ability",
-      "content": "0: Draw three cards, then put two cards from your hand on top of your library in any order."
+    const generator = new CardGenerator(this.anthropic, prompt);
+    generator.prepopulateSamples(preexistingSamples);
+    const samples = await generator.sample(iterationBudget);
+    const serializedSamples = samples.map(s => s.toJson());
+    await fs.writeFile(getFilePath(generatorId), JSON.stringify({
+      prompt,
+      samples: [...preexistingSamples.map(s => s.toJson()), ...serializedSamples],
+    }, null, 2), 'utf-8');
+    return {
+      generatorId,
+      samples: serializedSamples,
     }
-  ],
-  "loyalty": 3,
-  "collectorNumber": 81
-}`;
-
-    const generator = new AISampleGenerator<Card>({
-      anthropic: this.anthropic,
-      systemPrompt,
-      userPrompt: prompt,
-      transformer: (text: string) => {
-        const jsonObject = JSON.parse(text);
-        const validatedData = SerializedCardSchema.parse(jsonObject);
-        return new Card(validatedData);
-      },
-      summarizer: (card: Card) => card.explain(),
-    });
-    return await generator.sampleMany(6);
-  };
+  }
 }
 
 export const aiService = new AIService();
