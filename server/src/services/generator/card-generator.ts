@@ -1,5 +1,5 @@
 import { AISampleGenerator } from './ai-sample-generator';
-import { Card } from 'kindred-paths';
+import { Card, getStatistics } from 'kindred-paths';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { GenerateCardSchema } from './generate-card-schema';
 import { renderService } from '../render-service';
@@ -89,10 +89,24 @@ Example valid JSON objects:
         return new Card({ ...validatedData, id: '<ai>', collectorNumber: 1 });
       },
       summarizer: (card: Card) => card.explain(),
+      statistics: (samples: Card[]) => {
+        const {
+          totalCount, nonlandCount, landCount,
+          cardColorDistribution, cardTypeDistribution,
+          manaValueDistribution, rarityDistribution,
+          manaValueRarityDistribution, subtypeDistribution
+        } = getStatistics(samples);
+        return JSON.stringify({
+          totalCount, nonlandCount, landCount,
+          cardColorDistribution, cardTypeDistribution,
+          manaValueDistribution, rarityDistribution,
+          manaValueRarityDistribution, subtypeDistribution
+        }, undefined, 2);
+      },
       immediatelyAfterGenerateHook: sample => {
         // Create a preview render in parallel, to ensure the card can be shown quickly
         // noinspection JSIgnoredPromiseFromCall
-        renderService.generatePreview(sample.toJson());
+        renderService.generatePreview(sample.toJson()).catch(e => console.error('Skip render of ai generated card, because of error:', e));
       }
     });
   };

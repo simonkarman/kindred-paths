@@ -76,13 +76,13 @@ export class Group<T extends { id: string }> {
       // Find the requirement with the least matches
       const requirement = Object.entries(matchesPerRequirement)
         .reduce((acc, [name, { length: numberOfMatches }]) => {
-        if (numberOfMatches < acc.numberOfMatches) {
-          return { name, numberOfMatches };
-        }
-        return acc;
-      }, { name: undefined as (string | undefined), numberOfMatches: Infinity }).name;
+          if (numberOfMatches < acc.numberOfMatches) {
+            return { name, numberOfMatches };
+          }
+          return acc;
+        }, { name: undefined as (string | undefined), numberOfMatches: Infinity }).name;
       if (requirement === undefined) {
-        throw new Error(`this should never happen`);
+        throw new Error('this should never happen');
       }
 
       // Remove the matched requirement from the open set

@@ -10,7 +10,5 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CardGenerate() {
   const cardGenerators = await getCardSampleGenerators();
-  return (<>
-    <CardGenerator previousCardGenerators={cardGenerators} />
-  </>);
+  return <CardGenerator previousCardGenerators={cardGenerators} />;
 }

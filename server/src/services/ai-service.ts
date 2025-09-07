@@ -220,7 +220,7 @@ export class AIService {
     if ('prompt' in props) {
        generatorId = crypto.randomUUID();
        prompt = props.prompt;
-       iterationBudget = 6; // Generate more when using a new prompt
+       iterationBudget = 9; // Generate more when using a new prompt
     } else {
       generatorId = props.generatorId;
       const content = JSON.parse(await fs.readFile(getFilePath(generatorId), 'utf-8'));

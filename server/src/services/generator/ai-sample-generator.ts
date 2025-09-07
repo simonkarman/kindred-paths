@@ -9,6 +9,7 @@ interface AISampleGeneratorConfiguration<T> {
   userPrompt: string;
   transformer: (input: string) => T;
   summarizer: (result: T) => string;
+  statistics?: (samples: T[]) => string;
   immediatelyAfterGenerateHook?: (sample: T) => void;
   maxTokens?: number;
 }
@@ -19,7 +20,8 @@ interface AISampleGeneratorConfiguration<T> {
 export class AISampleGenerator<T> {
   private readonly anthropic: Anthropic;
   private readonly transformer: (input: string) => T;
-  private readonly summarizer: (result: T) => string;
+  private readonly summarizer: (sample: T) => string;
+  private readonly statistics: (samples: T[]) => string;
   private readonly immediatelyAfterGenerateHook: (sample: T) => void;
   private readonly summaries: string[] = [];
 
@@ -40,8 +42,9 @@ CRITICAL INSTRUCTIONS:
     this.userPrompt = configuration.userPrompt;
     this.transformer = configuration.transformer;
     this.summarizer = configuration.summarizer;
+    this.statistics = configuration.statistics || (() => '');
     this.immediatelyAfterGenerateHook = configuration.immediatelyAfterGenerateHook || (() => {});
-    this.maxTokens = configuration.maxTokens || 1500;
+    this.maxTokens = Math.max(2048, configuration.maxTokens || 3000);
   }
 
   /**
@@ -77,9 +80,11 @@ CRITICAL INSTRUCTIONS:
   }
 
   /**
-   * Helper function to build differentiation context from summaries
+   * Helper function to build the prompt, including:
+   * - differentiation context from summaries
+   * - statistics context if available
    */
-  private buildPromptWithSummaries(basePrompt: string): string {
+  private buildPrompt(basePrompt: string): string {
     // If no summaries, return base prompt
     if (this.summaries.length === 0) {
       return basePrompt;
@@ -89,17 +94,20 @@ CRITICAL INSTRUCTIONS:
     const previousResultsSummary = this.summaries
       .map((summary, index) => `${index + 1}. ${summary}`)
       .join('\n');
+    const statistics = this.statistics(this.samples);
     return `IMPORTANT: You have already generated ${this.summaries.length} result(s). Here are the details of what was already created:
     
 ${previousResultsSummary}
 
+When generating the next sample, ensure it is meaningfully different from all previous samples.
+${statistics.length > 0 ? '\nStatistics of previous samples:\n' + statistics + '\n' : ''}
 Please generate something DIFFERENT and UNIQUE from the above. Avoid duplicating concepts, themes, or characteristics that have already been used.
 
 ${basePrompt}`;
   }
 
   /**
-   * Generates one sample and tracks iterations used
+   * Generates one sample and track iterations used
    */
   private async generate(iterationBudget: number): Promise<{
     sample: T | null,
@@ -124,7 +132,7 @@ ${basePrompt}`;
           });
         } else {
           // First iteration or new generation - include differentiation context
-          const promptWithContext = this.buildPromptWithSummaries(currentPrompt);
+          const promptWithContext = this.buildPrompt(currentPrompt);
           messages.push({
             role: 'user',
             content: promptWithContext
@@ -137,13 +145,18 @@ ${basePrompt}`;
           max_tokens: this.maxTokens,
           temperature: 1,
           system: this.systemPrompt,
-          messages: messages
+          messages: messages,
+          thinking: {
+            type: "enabled",
+            budget_tokens: this.maxTokens / 2,
+          }
         });
 
-        const response = msg.content[0]?.type === 'text' ? msg.content[0].text : undefined;
-        if (!response) {
+        const textBlock = msg.content.filter(c => c.type === 'text').pop();
+        if (!textBlock) {
           throw new Error('No response received from Claude');
         }
+        const response = textBlock.text;
 
         // Apply transformer
         try {
@@ -157,7 +170,7 @@ ${basePrompt}`;
 
           // Log success with first line of summary
           const firstLineOfSummary = summary.split('\n')[0] || 'No summary available';
-          console.info(`Iteration ${iteration + 1}: Generated: ${firstLineOfSummary}`);
+          console.info(`----\nGenerated: ${firstLineOfSummary}\n----`);
 
           // Return the successfully generated sample
           return { sample, iterationsUsed: iteration + 1 };
@@ -165,7 +178,7 @@ ${basePrompt}`;
         } catch (transformerError: unknown) {
           // Log failure with error message
           const errorMessage = this.getErrorMessage(transformerError);
-          console.info(`Iteration ${iteration + 1}: ${errorMessage}`);
+          console.info(`Needs retry #${iteration + 1}: ${errorMessage}`);
 
           // Update context for next iteration with specific transformation error
           previousAttempt = response;
@@ -176,7 +189,7 @@ ${basePrompt}`;
         }
       } catch (apiError: unknown) {
         const errorMessage = this.getErrorMessage(apiError);
-        console.info(`Iteration ${iteration + 1}: API error - ${errorMessage}`);
+        console.info(`Needs retry #${iteration + 1}: API error - ${errorMessage}`);
 
         // If it's the last iteration, break
         if (iteration + 1 >= iterationBudget) {
@@ -204,6 +217,7 @@ ${basePrompt}`;
     let remainingIterations = iterationBudget;
     while (remainingIterations > 0) {
       // Try to generate one sample with remaining iterations
+      console.info(`Starting generation of sample #${newSamples.length + 1} with ${remainingIterations}/${iterationBudget} iteration(s) remaining`);
       const result = await this.generate(remainingIterations);
       remainingIterations -= result.iterationsUsed;
       if (result.sample) {

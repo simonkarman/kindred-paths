@@ -27,16 +27,16 @@ export function createCardDistribution(cards: Card[], getKeys: (item: Card) => s
 }
 
 export function getStatistics(_cards: SerializedCard[]) {
-  const cards = _cards.map(c => new Card(c)).filter(c => ![undefined, 0].includes(c.getTagAsNumber("count")));
+  const cards = _cards.map(c => new Card(c)).filter(c => ![undefined, 0].includes(c.getTagAsNumber('count')));
 
-  const cardsWithoutTokens = cards.filter(c => c.supertype !== "token");
-  const cardsWithoutTokensAndBasicLands = cardsWithoutTokens.filter(c => c.supertype !== "basic");
+  const cardsWithoutTokens = cards.filter(c => c.supertype !== 'token');
+  const cardsWithoutTokensAndBasicLands = cardsWithoutTokens.filter(c => c.supertype !== 'basic');
 
-  const basicLands = cardsWithoutTokens.filter(c => c.supertype === "basic");
-  const tokens = cards.filter(c => c.supertype === "token");
+  const basicLands = cardsWithoutTokens.filter(c => c.supertype === 'basic');
+  const tokens = cards.filter(c => c.supertype === 'token');
   const availableTokenNames = tokens.flatMap(token => [token.getReferenceName(), `${token.name} token`]);
 
-  const countSum = (cards: Card[]) => cards.reduce((acc, card) => acc + (card.getTagAsNumber("count") ?? 0), 0);
+  const countSum = (cards: Card[]) => cards.reduce((acc, card) => acc + (card.getTagAsNumber('count') ?? 0), 0);
   return {
     totalCount: countSum(cardsWithoutTokens),
     nonlandCount: countSum(cardsWithoutTokens.filter(c => !c.types.includes('land'))),
@@ -49,16 +49,22 @@ export function getStatistics(_cards: SerializedCard[]) {
     tokens,
     availableTokenNames,
 
-    cardsWithZeroCount: cards.filter(c => [undefined, 0].includes(c.getTagAsNumber("count"))),
+    cardsWithZeroCount: cards.filter(c => [undefined, 0].includes(c.getTagAsNumber('count'))),
 
     // Distributions
+    cardColorDistribution: createCardDistribution(cardsWithoutTokensAndBasicLands, c => c.color()),
+    rarityDistribution: createCardDistribution(cardsWithoutTokens, c => c.rarity),
     manaValueDistribution: createCardDistribution(
-      cardsWithoutTokens.filter(c => c.types.length !== 1 || c.types[0] !== "land"),
+      cardsWithoutTokens.filter(c => c.types.length !== 1 || c.types[0] !== 'land'),
       c => c.manaValue() + ' mana',
+    ),
+    manaValueRarityDistribution: createCardDistribution(
+      cardsWithoutTokens.filter(c => c.types.length !== 1 || c.types[0] !== 'land'),
+      c => `${c.manaValue()}/${c.rarity[0]}`,
     ),
     cardTypeDistribution: createCardDistribution(
       cardsWithoutTokens,
-      c => (c.supertype === 'basic' ? `${c.supertype} ` : '') + (c.types.length === 1 ? c.types[0] : c.types.map(t => t.slice(0, 2) + '.').join(' ')),
+      c => c.types,
     ),
     subtypeDistribution: createCardDistribution(
       cardsWithoutTokensAndBasicLands,
@@ -68,5 +74,5 @@ export function getStatistics(_cards: SerializedCard[]) {
       cards,
       c => c.getCreatableTokenNames(),
     ),
-  }
+  };
 }

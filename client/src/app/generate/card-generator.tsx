@@ -5,6 +5,7 @@ import { CardEditor } from '@/components/editor/card-editor';
 import { getCardSampleGeneratorById, getCardSamples, previewCard } from '@/utils/server';
 import { useCallback, useEffect, useState } from 'react';
 import { SerializedCard } from 'kindred-paths';
+import { CardsStatistics } from '@/components/cards-statistics';
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -162,7 +163,7 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
                     <button
                       disabled={loading}
                       onClick={() => viewGenerator(generator.generatorId)}
-                      className="ml-3 px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      className="ml-3 px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       View
                     </button>
@@ -218,7 +219,7 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
 
       {/* Card Suggestions Grid */}
       {suggestions.length > 0 && (
-        <div>
+        <div className="max-h-screen overflow-y-scroll border shadow-lg p-4">
           <h2 className="text-xl font-semibold mb-4">
             Card Suggestions ({suggestions.length})
           </h2>
@@ -289,6 +290,8 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
           </button>
         </div>
       )}
+
+      {suggestions.length > 0 && <CardsStatistics cards={suggestions.map(c => ({ ...c, tags: { ...c.tags, count: 1}}))} />}
     </div>
   );
 }

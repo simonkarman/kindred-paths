@@ -73,7 +73,7 @@ test('creature card', () => {
     subtypes: ['human', 'warrior'],
     manaCost: { x: 2, colorless: 2, white: 1, blue: 0 },
     rules: [
-      { variant: 'reminder', content: 'A creature can’t attack unless it has been under its controller’s control continuously since their most recent turn began.' },
+      { variant: 'card-type-reminder', content: 'A creature can’t attack unless it has been under its controller’s control continuously since their most recent turn began.' },
       { variant: 'keyword', content: 'vigilance' },
       { variant: 'keyword', content: 'first strike' },
       { variant: 'keyword', content: 'lifelink' },
