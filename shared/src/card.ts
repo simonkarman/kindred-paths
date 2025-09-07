@@ -22,8 +22,8 @@ export const landSubtypeToColor = (type: typeof landSubtypes[number] | string): 
   forest: 'green',
 }[type] as CardColor | undefined);
 
-export const ruleVariants = ['reminder', 'keyword', 'ability', 'inline-reminder', 'flavor'] as const;
-export type RuleVariant = 'reminder' | 'keyword' | 'ability' | 'inline-reminder' | 'flavor';
+export const ruleVariants = ['card-type-reminder', 'keyword', 'ability', 'inline-reminder', 'flavor'] as const;
+export type RuleVariant = 'card-type-reminder' | 'keyword' | 'ability' | 'inline-reminder' | 'flavor';
 export type Rule = { variant: RuleVariant, content: string };
 export type LoyaltyCost = number | '-X';
 export const loyaltyCostAsString = (loyalty: LoyaltyCost): string => {
@@ -154,8 +154,8 @@ export class Card {
 
     // Validate rules
     // if there is reminder text, it must always be first
-    if (this.rules.some((rule, index) => index !== 0 && rule.variant === 'reminder')) {
-      throw new Error('if there is reminder text, it must always be first in the rules');
+    if (this.rules.some((rule, index) => index !== 0 && rule.variant === 'card-type-reminder')) {
+      throw new Error('if there is card-type-reminder text, it must always be first in the rules');
     }
     // if there is inline-reminder text, it must always be after an ability or keyword
     if (this.rules.some((rule, index) =>
@@ -163,6 +163,13 @@ export class Card {
         && (index === 0 || !['ability', 'keyword'].includes(this.rules[index - 1].variant)))
     ) {
       throw new Error('if there is inline-reminder text, it must always be after an ability or keyword in the rules');
+    }
+    // card-type-reminders and inline-reminders should not start with ( or end with )
+    if (this.rules.some(rule =>
+      (rule.variant === 'card-type-reminder' || rule.variant === 'inline-reminder')
+        && (rule.content.startsWith('(') || rule.content.endsWith(')')))
+    ) {
+      throw new Error('reminder text should not start with ( or end with )');
     }
     // if there is flavor text, it must always be at the end
     if (this.rules.some((rule, index) => rule.variant === 'flavor' && index !== this.rules.length - 1)) {
@@ -337,7 +344,7 @@ export class Card {
       };
       let nextRule: Rule | undefined, nextRule2: Rule | undefined;
       switch (rule.variant) {
-      case 'reminder':
+      case 'card-type-reminder':
       case 'inline-reminder':
         text += `{i}(${rule.content}){/i}`;
         checkLineEnding();

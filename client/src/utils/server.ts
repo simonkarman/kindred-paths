@@ -179,3 +179,29 @@ export async function getCardSamples(data: { prompt: string } | { generatorId: s
   }
   return await response.json();
 }
+
+export async function getCardSampleGenerators(): Promise<{
+  generatorId: string;
+  prompt: string;
+  sampleCount: number;
+}[]> {
+  const response = await fetch(`${serverUrl}/suggest/card-generator`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch card generators');
+  }
+  return await response.json();
+}
+
+export async function getCardSampleGeneratorById(generatorId: string): Promise<{
+  generatorId: string;
+  samples: SerializedCard[];
+} | null> {
+  const response = await fetch(`${serverUrl}/suggest/card-generator/${generatorId}`);
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error('Failed to fetch card generator');
+  }
+  return await response.json();
+}

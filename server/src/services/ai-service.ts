@@ -247,6 +247,47 @@ export class AIService {
       samples: serializedSamples,
     }
   }
+
+  async getCardSampleGenerators(): Promise<{ generatorId: string, prompt: string, sampleCount: number }[]> {
+    try {
+      const files = await fs.readdir('./generators');
+      return await Promise.all(
+        files
+          .filter(file => file.endsWith('.json'))
+          .map(file => file.replace('.json', ''))
+          .map(async (generatorId) => {
+            const content = JSON.parse(await fs.readFile(`./generators/${generatorId}.json`, 'utf-8'));
+            return {
+              generatorId,
+              prompt: content.prompt,
+              sampleCount: Array.isArray(content.samples) ? content.samples.length : 0,
+            };
+          })
+      );
+    } catch (error) {
+      console.error('Error reading generators directory:', error);
+      return [];
+    }
+  }
+
+  async getCardSampleGeneratorById(generatorId: string): Promise<{
+    generatorId: string,
+    samples: SerializedCard[],
+  } | undefined> {
+    const content = JSON.parse(await fs.readFile(`./generators/${generatorId}.json`, 'utf-8'));
+    const samples: Card[] = content.samples.map((s: SerializedCard) => {
+      try {
+        return new Card(SerializedCardSchema.parse(s));
+      } catch (e) {
+        console.error('Failed to parse existing sample, skipping.', e);
+        return null;
+      }
+    }).filter((s: Card | null): s is Card => s !== null);
+    return {
+      generatorId,
+      samples: samples.map(s => s.toJson()),
+    };
+  }
 }
 
 export const aiService = new AIService();

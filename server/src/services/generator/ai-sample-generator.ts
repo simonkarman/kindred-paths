@@ -9,6 +9,7 @@ interface AISampleGeneratorConfiguration<T> {
   userPrompt: string;
   transformer: (input: string) => T;
   summarizer: (result: T) => string;
+  immediatelyAfterGenerateHook?: (sample: T) => void;
   maxTokens?: number;
 }
 
@@ -19,6 +20,7 @@ export class AISampleGenerator<T> {
   private readonly anthropic: Anthropic;
   private readonly transformer: (input: string) => T;
   private readonly summarizer: (result: T) => string;
+  private readonly immediatelyAfterGenerateHook: (sample: T) => void;
   private readonly summaries: string[] = [];
 
   protected readonly systemPrompt: string;
@@ -38,6 +40,7 @@ CRITICAL INSTRUCTIONS:
     this.userPrompt = configuration.userPrompt;
     this.transformer = configuration.transformer;
     this.summarizer = configuration.summarizer;
+    this.immediatelyAfterGenerateHook = configuration.immediatelyAfterGenerateHook || (() => {});
     this.maxTokens = configuration.maxTokens || 1500;
   }
 
@@ -145,7 +148,8 @@ ${basePrompt}`;
         // Apply transformer
         try {
           const sample = this.transformer(response.trim());
-          // TODO: add a immediatelyAfterGenerateHook, so we can start a preview for the generated sample immediately
+          this.samples.push(sample);
+          try { this.immediatelyAfterGenerateHook(sample); } catch {}
 
           // Generate the summary for this sample
           const summary = this.summarizer(sample);

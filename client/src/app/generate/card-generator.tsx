@@ -2,7 +2,7 @@
 
 import { Metadata } from 'next';
 import { CardEditor } from '@/components/editor/card-editor';
-import { getCardSamples, previewCard } from '@/utils/server';
+import { getCardSampleGeneratorById, getCardSamples, previewCard } from '@/utils/server';
 import { useCallback, useEffect, useState } from 'react';
 import { SerializedCard } from 'kindred-paths';
 
@@ -13,7 +13,9 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export function CardGenerator() {
+export function CardGenerator(props: { previousCardGenerators: { generatorId: string, prompt: string, sampleCount: number }[] }) {
+  const [showPreviousGenerators, setShowPreviousGenerators] = useState(false);
+  const [previousCardGenerators, setPreviousCardGenerators] = useState(props.previousCardGenerators);
   const [prompt, setPrompt] = useState('');
   const [generatorId, setGeneratorId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<SerializedCard[]>([]);
@@ -21,6 +23,28 @@ export function CardGenerator() {
   const [selectedCard, setSelectedCard] = useState<SerializedCard | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const viewGenerator = async (generatorId: string) => {
+    const generator = await getCardSampleGeneratorById(generatorId);
+    if (!generator) {
+      return;
+    }
+    setShowPreviousGenerators(false);
+    setLoading(true);
+    setError(null);
+    setGeneratorId(generator.generatorId);
+    setSuggestions(generator.samples);
+    setCardImages([]);
+    setPrompt(previousCardGenerators.find(g => g.generatorId === generatorId)?.prompt || 'unknown prompt');
+
+    // Generate previews for each card
+    const nextCardImages = await Promise.all(generator.samples.map(async (suggestion) => {
+      const blob = await previewCard(suggestion);
+      return URL.createObjectURL(blob);
+    }));
+    setCardImages(nextCardImages);
+    setLoading(false);
+  }
 
   const handleGenerateCards = useCallback(async (continuation: boolean = false) => {
     if (!prompt.trim()) {
@@ -42,6 +66,20 @@ export function CardGenerator() {
         : { prompt });
       setGeneratorId(nextGeneratorId);
       setSuggestions(s => [...s, ...samples]);
+      setPreviousCardGenerators(pcgs => {
+        let found = false;
+        let nextPcgs = pcgs.map(pcg => {
+          if (pcg.generatorId === nextGeneratorId) {
+            found = true;
+            return { ...pcg, sampleCount: pcg.sampleCount + samples.length };
+          }
+          return pcg;
+        });
+        if (!found) {
+          nextPcgs = [{ generatorId: nextGeneratorId, prompt, sampleCount: samples.length }, ...nextPcgs];
+        }
+        return nextPcgs;
+      });
 
       // Generate previews for each card
       const nextCardImages = await Promise.all(samples.map(async (suggestion) => {
@@ -88,7 +126,72 @@ export function CardGenerator() {
 
   return (
     <div className="space-y-6">
+
+      {/* Previous Generations Section */}
+      <div className="border-t border-gray-200 pt-6">
+        <h2 className="text-xl font-semibold mb-4">Previous Generations</h2>
+
+        {showPreviousGenerators && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {previousCardGenerators.map(generator => (
+                <div
+                  key={generator.generatorId}
+                  className={`p-3 rounded-lg border transition-colors ${
+                    generator.generatorId === generatorId
+                      ? 'bg-green-50 border-green-200 text-green-800'
+                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {generator.sampleCount} cards
+                        </span>
+                        {generator.generatorId === generatorId && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Current
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-700 line-clamp-2">
+                        {generator.prompt}
+                      </p>
+                    </div>
+                    <button
+                      disabled={loading}
+                      onClick={() => viewGenerator(generator.generatorId)}
+                      className="ml-3 px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      View
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowPreviousGenerators(false)}
+              className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+            >
+              Hide Previous Generations
+            </button>
+          </div>
+        )}
+
+        {!showPreviousGenerators && previousCardGenerators.length > 0 && (
+          <button
+            onClick={() => setShowPreviousGenerators(true)}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Show Previous Generations ({previousCardGenerators.length})
+          </button>
+        )}
+      </div>
+
       {/* Input Section */}
+      <h2 className="text-3xl font-bold text-center mb-8">Generate Cards</h2>
       <div className="space-y-4">
         <div>
           <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">

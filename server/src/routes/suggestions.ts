@@ -41,7 +41,32 @@ suggestionsRouter.post('/card', async (req, res) => {
     console.error('Error suggesting card:', error);
     res.status(500).json({ error: 'An error occurred while trying to suggest card a card' });
   }
-})
+});
+
+suggestionsRouter.get('/card-generator', async (req, res) => {
+  try {
+    const generators = await aiService.getCardSampleGenerators();
+    res.json(generators);
+  } catch (error) {
+    console.error('Error fetching card generators:', error);
+    res.status(500).json({ error: 'Failed to fetch card generators' });
+  }
+});
+
+suggestionsRouter.get('/card-generator/:generatorId', async (req, res) => {
+  const generatorId = req.params.generatorId;
+  try {
+    const generator = await aiService.getCardSampleGeneratorById(generatorId);
+    if (!generator) {
+      res.status(404).json({ error: `Generator with ID ${generatorId} not found` });
+      return;
+    }
+    res.json(generator);
+  } catch (error) {
+    console.error(`Error fetching card generator ${generatorId}:`, error);
+    res.status(500).json({ error: 'Failed to fetch card generator' });
+  }
+});
 
 suggestionsRouter.post('/art-setting', async (req, res) => {
   const body = SerializedCardSchema.safeParse(req.body);

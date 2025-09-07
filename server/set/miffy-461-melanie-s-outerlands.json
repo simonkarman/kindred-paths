@@ -11,7 +11,7 @@
   "manaCost": {},
   "rules": [
     {
-      "variant": "reminder",
+      "variant": "card-type-reminder",
       "content": "{t}: Add {g} or {w}."
     },
     {

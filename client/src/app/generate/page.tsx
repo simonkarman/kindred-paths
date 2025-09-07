@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { CardGenerator } from './card-generator';
+import { getCardSampleGenerators } from '@/utils/server';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -8,8 +9,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CardGenerate() {
+  const cardGenerators = await getCardSampleGenerators();
   return (<>
-    <h1 className="text-3xl font-bold text-center mb-8">Generate Cards</h1>
-    <CardGenerator />
+    <CardGenerator previousCardGenerators={cardGenerators} />
   </>);
 }

@@ -1,6 +1,8 @@
 import { AISampleGenerator } from './ai-sample-generator';
-import { Card, SerializedCardSchema } from 'kindred-paths';
+import { Card } from 'kindred-paths';
 import { Anthropic } from '@anthropic-ai/sdk';
+import { GenerateCardSchema } from './generate-card-schema';
+import { renderService } from '../render-service';
 
 export class CardGenerator extends AISampleGenerator<Card> {
   constructor(
@@ -10,7 +12,14 @@ export class CardGenerator extends AISampleGenerator<Card> {
     const systemPrompt = `You are tasked with generating valid JSON objects that conform to the SerializedCardSchema for Magic: The Gathering cards.
 
 Schema definition:
-${JSON.stringify(SerializedCardSchema.shape, null, 2)}
+${JSON.stringify(GenerateCardSchema.shape, null, 2)}
+
+Additional information:
+- Do NOT add reminder text to cards.
+- Ensure that planeswalkers have an empty subtypes array.
+- Use "~" to represent the card's name in rules text.
+- Power and toughness should be included for creatures and vehicle artifacts only.
+- Loyalty should be included for planeswalkers only.
 
 Example valid JSON objects:
 {
@@ -24,8 +33,7 @@ Example valid JSON objects:
       "variant": "ability",
       "content": "~ deals 3 damage to any target."
     }
-  ],
-  "collectorNumber": 125
+  ]
 }
 
 {
@@ -48,17 +56,15 @@ Example valid JSON objects:
   "pt": {
     "power": 4,
     "toughness": 4
-  },
-  "collectorNumber": 42
+  }
 }
 
 {
-  "id": "mtg_003",
   "name": "Jace, the Mind Sculptor",
   "rarity": "mythic",
   "supertype": "legendary",
   "types": ["planeswalker"],
-  "subtypes" [], // Subtypes for planeswalkers must be empty
+  "subtypes" [],
   "manaCost": {"blue": 2, "colorless": 2},
   "rules": [
     {
@@ -70,8 +76,7 @@ Example valid JSON objects:
       "content": "0: Draw three cards, then put two cards from your hand on top of your library in any order."
     }
   ],
-  "loyalty": 3,
-  "collectorNumber": 81
+  "loyalty": 3
 }`;
 
     super({
@@ -80,10 +85,15 @@ Example valid JSON objects:
       userPrompt: prompt,
       transformer: (text: string) => {
         const jsonObject = JSON.parse(text);
-        const validatedData = SerializedCardSchema.parse(jsonObject);
-        return new Card(validatedData);
+        const validatedData = GenerateCardSchema.parse(jsonObject);
+        return new Card({ ...validatedData, id: '<ai>', collectorNumber: 1 });
       },
       summarizer: (card: Card) => card.explain(),
+      immediatelyAfterGenerateHook: sample => {
+        // Create a preview render in parallel, to ensure the card can be shown quickly
+        // noinspection JSIgnoredPromiseFromCall
+        renderService.generatePreview(sample.toJson());
+      }
     });
   };
 }
