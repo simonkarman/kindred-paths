@@ -210,17 +210,18 @@ export class AIService {
     generatorId: string,
     samples: SerializedCard[],
   }> {
-    let prompt;
+    let generatorId, prompt, createdAt, updatedAt;
     let preexistingSamples: Card[] = [];
     let iterationBudget = 3;
-    let generatorId;
     const getFilePath = (generatorId: string) => {
       return `./generators/${generatorId}.json`;
     }
     if ('prompt' in props) {
-       generatorId = crypto.randomUUID();
-       prompt = props.prompt;
-       iterationBudget = 9; // Generate more when using a new prompt
+      generatorId = crypto.randomUUID();
+      prompt = props.prompt;
+      iterationBudget = 6; // Generate more when using a new prompt
+      createdAt = new Date().toISOString();
+      updatedAt = createdAt;
     } else {
       generatorId = props.generatorId;
       const content = JSON.parse(await fs.readFile(getFilePath(generatorId), 'utf-8'));
@@ -233,12 +234,16 @@ export class AIService {
           return null;
         }
       }).filter((s: Card | null): s is Card => s !== null);
+      createdAt = content.createdAt;
+      updatedAt = new Date().toISOString();
     }
     const generator = new CardGenerator(this.anthropic, prompt);
     generator.prepopulateSamples(preexistingSamples);
     const samples = await generator.sample(iterationBudget);
     const serializedSamples = samples.map(s => s.toJson());
     await fs.writeFile(getFilePath(generatorId), JSON.stringify({
+      createdAt,
+      updatedAt,
       prompt,
       samples: [...preexistingSamples.map(s => s.toJson()), ...serializedSamples],
     }, null, 2), 'utf-8');
@@ -248,10 +253,16 @@ export class AIService {
     }
   }
 
-  async getCardSampleGenerators(): Promise<{ generatorId: string, prompt: string, sampleCount: number }[]> {
+  async getCardSampleGenerators(): Promise<{
+    generatorId: string,
+    createdAt: string,
+    updatedAt: string,
+    prompt: string,
+    sampleCount: number,
+  }[]> {
     try {
       const files = await fs.readdir('./generators');
-      return await Promise.all(
+      return (await Promise.all(
         files
           .filter(file => file.endsWith('.json'))
           .map(file => file.replace('.json', ''))
@@ -259,11 +270,14 @@ export class AIService {
             const content = JSON.parse(await fs.readFile(`./generators/${generatorId}.json`, 'utf-8'));
             return {
               generatorId,
+              createdAt: content.createdAt,
+              updatedAt: content.updatedAt,
               prompt: content.prompt,
               sampleCount: Array.isArray(content.samples) ? content.samples.length : 0,
             };
           })
-      );
+
+      )).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     } catch (error) {
       console.error('Error reading generators directory:', error);
       return [];
@@ -272,6 +286,9 @@ export class AIService {
 
   async getCardSampleGeneratorById(generatorId: string): Promise<{
     generatorId: string,
+    createdAt: string,
+    updatedAt: string,
+    prompt: string,
     samples: SerializedCard[],
   } | undefined> {
     const content = JSON.parse(await fs.readFile(`./generators/${generatorId}.json`, 'utf-8'));
@@ -285,6 +302,9 @@ export class AIService {
     }).filter((s: Card | null): s is Card => s !== null);
     return {
       generatorId,
+      createdAt: content.createdAt,
+      updatedAt: content.updatedAt,
+      prompt: content.prompt,
       samples: samples.map(s => s.toJson()),
     };
   }

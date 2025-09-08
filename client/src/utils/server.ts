@@ -182,6 +182,8 @@ export async function getCardSamples(data: { prompt: string } | { generatorId: s
 
 export async function getCardSampleGenerators(): Promise<{
   generatorId: string;
+  createdAt: string;
+  updatedAt: string;
   prompt: string;
   sampleCount: number;
 }[]> {
@@ -194,6 +196,9 @@ export async function getCardSampleGenerators(): Promise<{
 
 export async function getCardSampleGeneratorById(generatorId: string): Promise<{
   generatorId: string;
+  createdAt: string;
+  updatedAt: string;
+  prompt: string;
   samples: SerializedCard[];
 } | null> {
   const response = await fetch(`${serverUrl}/suggest/card-generator/${generatorId}`);

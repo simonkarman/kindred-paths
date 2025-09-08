@@ -6,6 +6,9 @@ import { getCardSampleGeneratorById, getCardSamples, previewCard } from '@/utils
 import { useCallback, useEffect, useState } from 'react';
 import { SerializedCard } from 'kindred-paths';
 import { CardsStatistics } from '@/components/cards-statistics';
+import { CardTable } from '@/components/card-table';
+import SearchBar from '@/components/search-bar';
+import { filterCardsBasedOnSearch, useSearch } from '@/utils/use-search';
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -14,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export function CardGenerator(props: { previousCardGenerators: { generatorId: string, prompt: string, sampleCount: number }[] }) {
+export function CardGenerator(props: { previousCardGenerators: { generatorId: string, createdAt: string, updatedAt: string, prompt: string, sampleCount: number }[] }) {
   const [showPreviousGenerators, setShowPreviousGenerators] = useState(false);
   const [previousCardGenerators, setPreviousCardGenerators] = useState(props.previousCardGenerators);
   const [prompt, setPrompt] = useState('');
@@ -24,6 +27,7 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
   const [selectedCard, setSelectedCard] = useState<SerializedCard | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchText] = useSearch();
 
   const viewGenerator = async (generatorId: string) => {
     const generator = await getCardSampleGeneratorById(generatorId);
@@ -47,7 +51,7 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
     setLoading(false);
   }
 
-  const handleGenerateCards = useCallback(async (continuation: boolean = false) => {
+  const handleGenerateCards = useCallback(async (continuation: boolean) => {
     if (!prompt.trim()) {
       setError('Please enter a prompt');
       return;
@@ -68,16 +72,27 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
       setGeneratorId(nextGeneratorId);
       setSuggestions(s => [...s, ...samples]);
       setPreviousCardGenerators(pcgs => {
+        const now = new Date().toISOString();
         let found = false;
         let nextPcgs = pcgs.map(pcg => {
           if (pcg.generatorId === nextGeneratorId) {
             found = true;
-            return { ...pcg, sampleCount: pcg.sampleCount + samples.length };
+            return {
+              ...pcg,
+              updatedAt: now,
+              sampleCount: pcg.sampleCount + samples.length
+            };
           }
           return pcg;
         });
         if (!found) {
-          nextPcgs = [{ generatorId: nextGeneratorId, prompt, sampleCount: samples.length }, ...nextPcgs];
+          nextPcgs = [{
+            generatorId: nextGeneratorId,
+            createdAt: now,
+            updatedAt: now,
+            prompt,
+            sampleCount: samples.length
+          }, ...nextPcgs];
         }
         return nextPcgs;
       });
@@ -147,14 +162,17 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {generator.sampleCount} cards
-                        </span>
                         {generator.generatorId === generatorId && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             Current
                           </span>
                         )}
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {generator.sampleCount} cards
+                        </span>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {generator.createdAt.substring(0, 16).replace('T', ' at ')}
+                        </span>
                       </div>
                       <p className="text-sm text-gray-700 line-clamp-2">
                         {generator.prompt}
@@ -217,18 +235,25 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
         </button>
       </div>
 
-      {/* Card Suggestions Grid */}
-      {suggestions.length > 0 && (
-        <div className="max-h-screen overflow-y-scroll border shadow-lg p-4">
-          <h2 className="text-xl font-semibold mb-4">
-            Card Suggestions ({suggestions.length})
-          </h2>
+      <div className="border rounded-xl border-zinc-300 shadow-lg p-4 bg-zinc-50 space-y-4">
+        {/* Card Suggestions Grid */}
+        {suggestions.length > 0 && (<>
+          <div className="flex gap-4 items-start">
+            <h2 className="shrink-0 text-xl font-semibold">
+              Card Suggestions ({suggestions.length})
+            </h2>
+            <SearchBar />
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {suggestions.map((card, index) => {
-              const imageUrl = cardImages[index];
+            {filterCardsBasedOnSearch(
+              suggestions.map((s, i) => ({ ...s, tags: { ...s.tags, imageIndex: i } })),
+              searchText
+            ).map((card) => {
+              const imageIndex = card.tags?.imageIndex as unknown as number;
+              const imageUrl = cardImages[imageIndex];
               return (
                 <div
-                  key={index}
+                  key={card.id}
                   onClick={() => handleCardClick(card)}
                   className="border border-gray-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow bg-white"
                 >
@@ -245,53 +270,58 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
                       </div>
                     )}
                   </div>
-                  <div className="p-3">
-                    <p className="text-sm text-gray-600 truncate">
-                      Click to edit this card
-                    </p>
-                  </div>
                 </div>
               );
             })}
           </div>
-        </div>
-      )}
+        </>)}
 
-      {/* No results message */}
-      {!loading && suggestions.length === 0 && prompt && (
-        <div className="text-center py-8 text-gray-500">
-          No card suggestions generated. Try a different prompt.
-        </div>
-      )}
+        {/* No results message */}
+        {!loading && suggestions.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            No card suggestions generated. Please enter a prompt or select a previous generation.
+          </div>
+        )}
 
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-700">{error}</p>
-        </div>
-      )}
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-red-700">{error}</p>
+          </div>
+        )}
 
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-600">Generating card suggestions...</p>
-        </div>
-      )}
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-2 text-gray-600">Generating card suggestions...</p>
+          </div>
+        )}
 
-      {/* Continuation Button */}
-      {!loading && generatorId && (
-        <div className="text-center">
-          <button
-            onClick={() => handleGenerateCards(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-          >
-            Generate More Cards
-          </button>
-        </div>
-      )}
+        {/* Continuation Button */}
+        {!loading && generatorId && (
+          <div className="text-center">
+            <button
+              onClick={() => handleGenerateCards(true)}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              Generate More Cards
+            </button>
+          </div>
+        )}
+      </div>
 
-      {suggestions.length > 0 && <CardsStatistics cards={suggestions.map(c => ({ ...c, tags: { ...c.tags, count: 1}}))} />}
+      {suggestions.length > 0 && <>
+        <h2 className="text-xl font-semibold">An Overview and Statistics</h2>
+        <CardTable
+          skipDeckFilter={true}
+          onSelect={handleCardClick}
+          cards={suggestions}
+        />
+        <CardsStatistics
+          cards={suggestions}
+        />
+      </>}
     </div>
   );
 }

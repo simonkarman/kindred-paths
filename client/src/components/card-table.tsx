@@ -16,14 +16,20 @@ type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' |
 const tagsAsString = (tags: Card["tags"]) => {
   return tags
     ? Object.entries(tags)
-      .filter(([tagName, tagValue]) => tagName !== "createdAt")
+      .filter(([tagName]) => tagName !== "createdAt")
       .toSorted(([a], [b]) => a.localeCompare(b))
       .map(([tagName, tagValue]) => tagValue === true ? tagName : `${tagName}=${tagValue}`)
       .join(', ')
     : '';
 }
 
-export const CardTable = (props: { cards: SerializedCard[] }) => {
+export const CardTable = (props: {
+  cards: SerializedCard[],
+  onSelect?: (card: SerializedCard) => void,
+  skipDeckFilter?: boolean,
+}) => {
+  const { onSelect, skipDeckFilter = false } = props;
+
   const deckName = useDeckName();
   const hasDeckName = deckName.length !== 0;
 
@@ -46,7 +52,7 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
 
   const cards = filterCardsBasedOnSearch(props.cards, searchText)
     .filter(c => !deletedCardIds.includes(c.id))
-    .filter(c => !hasDeckName || c.tags?.['deck'] === deckName)
+    .filter(c => skipDeckFilter || !hasDeckName || c.tags?.['deck'] === deckName)
     .map(serializedCard => new Card(serializedCard))
     .sort((a, b) => {
       if (sortKey.d === 'desc') {
@@ -142,26 +148,36 @@ export const CardTable = (props: { cards: SerializedCard[] }) => {
         <span className="inline-block w-12 text-xs text-right pr-1.5 text-zinc-500">{card.tags?.["count"] ?? 1}x</span>
         <span className="inline-block w-10 text-xs text-right pr-1.5 text-zinc-500">{card.collectorNumber}</span>
         <span className="inline-flex gap-2 justify-between pr-2 w-74 font-bold border-r border-zinc-200 mr-4">
-          <Link
-            className="hover:text-orange-700 active:text-orange-500"
-            href={`/card/${card.id}`}
-          >
-            {card.name}
-          </Link>
-          <span className="flex gap-1">
-            <Link
-              className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
-              href={`/edit/${card.id}?t=/`}
-            ><FontAwesomeIcon icon={faPenToSquare} /></Link>
-            <Link
-              className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
-              href={`/clone/${card.id}?t=/`}
-            ><FontAwesomeIcon icon={faClone} /></Link>
-            <button
-              className="text-zinc-600 hover:text-red-700 active:text-red-500"
-              onClick={() => del(card.id)}
-            ><FontAwesomeIcon icon={faTrashCan} /></button>
-            </span>
+          {(onSelect !== undefined)
+            ? <button
+                className="hover:text-orange-700 active:text-orange-500"
+                onClick={() => onSelect(card.toJson())}
+              >
+                {card.name}
+              </button>
+            : <>
+              <Link
+                className="hover:text-orange-700 active:text-orange-500"
+                href={`/card/${card.id}`}
+              >
+                {card.name}
+              </Link>
+              <span className="flex gap-1">
+                <Link
+                  className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
+                  href={`/edit/${card.id}?t=/`}
+                ><FontAwesomeIcon icon={faPenToSquare} /></Link>
+                <Link
+                  className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
+                  href={`/clone/${card.id}?t=/`}
+                ><FontAwesomeIcon icon={faClone} /></Link>
+                <button
+                  className="text-zinc-600 hover:text-red-700 active:text-red-500"
+                  onClick={() => del(card.id)}
+                ><FontAwesomeIcon icon={faTrashCan} /></button>
+                </span>
+              </>
+          }
         </span>
         <span className="w-24 border-zinc-200"><RarityText rarity={card.rarity} /></span>
         <span className="inline-block w-80">{card.renderTypeLine()}</span>

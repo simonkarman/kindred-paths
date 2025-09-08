@@ -86,7 +86,7 @@ Example valid JSON objects:
       transformer: (text: string) => {
         const jsonObject = JSON.parse(text);
         const validatedData = GenerateCardSchema.parse(jsonObject);
-        return new Card({ ...validatedData, id: '<ai>', collectorNumber: 1 });
+        return new Card({ ...validatedData, id: `ai-${crypto.randomUUID()}`, collectorNumber: 1, tags: { count: 1 } });
       },
       summarizer: (card: Card) => card.explain(),
       statistics: (samples: Card[]) => {
