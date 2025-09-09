@@ -9,9 +9,9 @@ export class CardGenerator extends AISampleGenerator<Card> {
     anthropic: Anthropic,
     prompt: string,
   ) {
-    const systemPrompt = `You are tasked with generating valid JSON objects that conform to the SerializedCardSchema for Magic: The Gathering cards.
+    const systemPrompt = `You are tasked with generating valid JSON objects that conform to the CardSchema for Magic: The Gathering cards.
 
-Schema definition:
+Card Schema definition:
 ${JSON.stringify(GenerateCardSchema.shape, null, 2)}
 
 Additional information:
@@ -77,7 +77,16 @@ Example valid JSON objects:
     }
   ],
   "loyalty": 3
-}`;
+}
+
+When generating the samples, ensure that at least the RULES are meaningfully different from all previous samples.
+Other properties can be similar or changed too. But keep in mind the stick the the prompt of the user.
+Please generate cards with rules that are DIFFERENT and UNIQUE from the above.
+Avoid duplicating concepts, themes, or characteristics in the rules that have already been used.
+These samples are variants of the same prompt so it is okay if some of the properties are similar, but the rules must be different.
+You can use different mechanics, themes, or abilities to achieve this.
+
+Make sure to align the mana cost and name with the rules you choose.`;
 
     super({
       anthropic,

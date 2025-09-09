@@ -91,19 +91,16 @@ CRITICAL INSTRUCTIONS:
     }
 
     // Build differentiation context
-    const previousResultsSummary = this.summaries
+    const samplesSummary = this.summaries
       .map((summary, index) => `${index + 1}. ${summary}`)
       .join('\n');
-    const statistics = this.statistics(this.samples);
-    return `IMPORTANT: You have already generated ${this.summaries.length} result(s). Here are the details of what was already created:
-    
-${previousResultsSummary}
+    return `IMPORTANT: You have already generated ${this.summaries.length} sample(s). Here are the details of what was already created:
+${samplesSummary}
 
-When generating the next sample, ensure it is meaningfully different from all previous samples.
-${statistics.length > 0 ? '\nStatistics of previous samples:\n' + statistics + '\n' : ''}
-Please generate something DIFFERENT and UNIQUE from the above. Avoid duplicating concepts, themes, or characteristics that have already been used.
+Statistics of the samples:
+${this.statistics(this.samples)}
 
-${basePrompt}`;
+Prompt: ${basePrompt}`;
   }
 
   /**
@@ -146,10 +143,10 @@ ${basePrompt}`;
           temperature: 1,
           system: this.systemPrompt,
           messages: messages,
-          thinking: {
-            type: "enabled",
-            budget_tokens: this.maxTokens / 2,
-          }
+          // thinking: {
+          //   type: "enabled",
+          //   budget_tokens: this.maxTokens / 2,
+          // },
         });
 
         const textBlock = msg.content.filter(c => c.type === 'text').pop();
