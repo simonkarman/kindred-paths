@@ -6,24 +6,23 @@ export type CardColorCharacter = typeof wubrg[number];
 
 export const colorToShort = (color: CardColor): CardColorCharacter => {
   switch (color) {
-    case 'white': return 'w';
-    case 'blue': return 'u';
-    case 'black': return 'b';
-    case 'red': return 'r';
-    case 'green': return 'g';
+  case 'white': return 'w';
+  case 'blue': return 'u';
+  case 'black': return 'b';
+  case 'red': return 'r';
+  case 'green': return 'g';
   }
-}
+};
 
 export const colorToLong = (color: CardColorCharacter): CardColor => {
   switch (color) {
-    case 'w': return 'white';
-    case 'u': return 'blue';
-    case 'b': return 'black';
-    case 'r': return 'red';
-    case 'g': return 'green';
-    default: throw new Error(`Unknown color: ${color}`);
+  case 'w': return 'white';
+  case 'u': return 'blue';
+  case 'b': return 'black';
+  case 'r': return 'red';
+  case 'g': return 'green';
   }
-}
+};
 
 export const toOrderedColors = (_colors: CardColor[]): CardColor[] => {
   // Break early for empty or single color arrays
@@ -93,8 +92,8 @@ export const toOrderedColors = (_colors: CardColor[]): CardColor[] => {
     return [
       cardColors[(enemyColorIndex + 3) % cardColors.length],
       cardColors[enemyColorIndex],
-      cardColors[(enemyColorIndex + 2) % cardColors.length]
-    ]
+      cardColors[(enemyColorIndex + 2) % cardColors.length],
+    ];
   }
 
   // If four colors are present, return them in WUBRG order starting the loop after the missing color
@@ -104,7 +103,7 @@ export const toOrderedColors = (_colors: CardColor[]): CardColor[] => {
     const startIndex = (cardColors.indexOf(missingColor) + 1) % cardColors.length;
     return [
       ...cardColors.slice(startIndex, startIndex + 4),
-      ...cardColors.slice(0, Math.max(0, startIndex - 1))
+      ...cardColors.slice(0, Math.max(0, startIndex - 1)),
     ];
   }
 
@@ -115,4 +114,4 @@ export const toOrderedColors = (_colors: CardColor[]): CardColor[] => {
 
   // This should never happen
   throw new Error(`unhandled case in toOrderedColors for [${_colors.join(', ')}]`);
-}
+};

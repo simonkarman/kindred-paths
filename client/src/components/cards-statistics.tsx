@@ -1,5 +1,6 @@
 import { getStatistics, SerializedCard } from 'kindred-paths';
-import { BarDistribution } from '@/components/bar-distribution';
+import { BarDistribution } from '@/components/distribution/bar-distribution';
+import { GridDistribution } from '@/components/distribution/grid-distribution';
 
 export function CardsStatistics(props: { cards: SerializedCard[] }) {
   const {
@@ -23,8 +24,16 @@ export function CardsStatistics(props: { cards: SerializedCard[] }) {
     <div className="flex gap-5 justify-between items-start py-2 break-inside-avoid">
       <BarDistribution title="Card Type" data={cardTypeDistribution} sortOnValue />
       <BarDistribution title="Subtype" data={subtypeDistribution} />
-      <BarDistribution title="Mana Value by Rarity" data={manaValueRarityDistribution} />
-      {/* TODO: create a 2 axis distribution that shows the missing 'mana value / rarity' combinations */}
+      <GridDistribution
+        title="Mana Value by Rarity"
+        yAxis={{ type: 'number', stepSize: 1 }}
+        xAxis={{ type: 'enum', values: ['c', 'u', 'r', 'm'] }}
+        data={Object.entries(manaValueRarityDistribution).map(([key, count]) => {
+          const [manaValueStr, rarity] = key.split('/');
+          const manaValue = Number(manaValueStr);
+          return { y: manaValue, x: rarity, count };
+        })}
+      />
     </div>
     <BarDistribution title="Creatable Token Name" data={tokenDistribution} check={availableTokenNames} fullWidth />
   </>;
