@@ -6,7 +6,7 @@ import { getCardSampleGeneratorById, getCardSamples, previewCard } from '@/utils
 import { useCallback, useEffect, useState } from 'react';
 import { SerializedCard } from 'kindred-paths';
 import { CardsStatistics } from '@/components/cards-statistics';
-import { CardTable } from '@/components/card-table';
+import { CardTable } from '@/components/overview/card-table';
 import SearchBar from '@/components/search-bar';
 import { filterCardsBasedOnSearch, useSearch } from '@/utils/use-search';
 

@@ -8,8 +8,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClone, faImage, faPenToSquare, faShieldCat, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import { deleteCard } from '@/utils/server';
-import { useDeckName } from '@/components/deck-name-setter';
-import { filterCardsBasedOnSearch, useSearch } from '@/utils/use-search';
 
 type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' | 'power' | 'toughness' | 'art' | 'tags' | 'tag:count';
 
@@ -26,14 +24,8 @@ const tagsAsString = (tags: Card["tags"]) => {
 export const CardTable = (props: {
   cards: SerializedCard[],
   onSelect?: (card: SerializedCard) => void,
-  skipDeckFilter?: boolean,
 }) => {
-  const { onSelect, skipDeckFilter = false } = props;
-
-  const deckName = useDeckName();
-  const hasDeckName = deckName.length !== 0;
-
-  const [searchText] = useSearch();
+  const { onSelect } = props;
 
   const [sortKey, setSortKey] = useState<{ k: SortKey, d: 'asc' | 'desc' }>({ k: 'collector-number', d: 'asc' });
   const sortOn = (key: SortKey) => {
@@ -50,9 +42,8 @@ export const CardTable = (props: {
     deleteCard(id).catch(() => setDeletedCardIds(p => p.filter(cardId => cardId !== id)));
   };
 
-  const cards = filterCardsBasedOnSearch(props.cards, searchText)
+  const cards = props.cards
     .filter(c => !deletedCardIds.includes(c.id))
-    .filter(c => skipDeckFilter || !hasDeckName || c.tags?.['deck'] === deckName)
     .map(serializedCard => new Card(serializedCard))
     .sort((a, b) => {
       if (sortKey.d === 'desc') {
