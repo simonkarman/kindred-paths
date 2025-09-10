@@ -21,7 +21,7 @@ const tagsAsString = (tags: Card["tags"]) => {
     : '';
 }
 
-export const CardTable = (props: {
+export const TableTab = (props: {
   cards: SerializedCard[],
   onSelect?: (card: SerializedCard) => void,
 }) => {

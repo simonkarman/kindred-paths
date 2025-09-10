@@ -59,6 +59,13 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchText: st
         return `${card.pt.power}/${card.pt.toughness}` === pt;
       }
 
+      // If search terms starts with "deck:", filter by deck tag
+      if (searchTerm.startsWith('deck:')) {
+        const deckName = searchTerm.slice(searchTerm.indexOf(':') + 1);
+        const deckTag = card.getTagAsString('deck');
+        return deckTag !== undefined && deckTag.toLowerCase() === deckName.toLowerCase();
+      }
+
       // Default scenario: check if card name includes the search term
       return card.name.toLowerCase().includes(searchTerm)
     });

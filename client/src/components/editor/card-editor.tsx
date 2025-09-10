@@ -26,14 +26,15 @@ import { CardRarityInput } from '@/components/editor/card-rarity-input';
 import { CardCollectorNumberInput } from '@/components/editor/card-collector-number-input';
 import { CardTagsInput } from '@/components/editor/card-tags-input';
 import { CardPreview } from '@/components/editor/card-preview';
-import { useDeckName } from '@/components/deck-name-setter';
 import { CardArtInput } from '@/components/editor/card-art-input';
 import { CardTokenColorsInput } from '@/components/editor/card-token-colors-input';
 import { CardLoyaltyInput } from '@/components/editor/card-loyalty-input';
+import { useSearch } from '@/utils/use-search';
 
 export function CardEditor({ start }: { start: SerializedCard }) {
-  const deckName = useDeckName();
   const isCreate = start.id === "<new>";
+  const [searchText] = useSearch();
+  const deckName = (searchText.match(/(?:^|\s)deck:([^\s]+)/i)?.[1] ?? '').trim();
   const hasActiveDeck = deckName.length !== 0;
 
   // Properties State
@@ -57,7 +58,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   useEffect(() => {
     // Update tokenColors
     if (supertype === 'token') {
-      setTokenColors(tokenColors ?? []);
+      setTokenColors(tokenColors => tokenColors ?? []);
     } else {
       setTokenColors(undefined);
     }
@@ -109,13 +110,13 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   // If deckName changes, update tags
   useEffect(() => {
     if (isCreate && hasActiveDeck) {
-      setTags({
+      setTags(tags => ({
         ...tags,
         deck: deckName,
         count: tags?.count ?? 1, // Default to 1 if not set
-      });
+      }));
     }
-  }, [deckName]);
+  }, [isCreate, hasActiveDeck, deckName]);
 
   const serializedCard: SerializedCard = {
     id: start.id,

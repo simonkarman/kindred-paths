@@ -2,7 +2,7 @@ import { getStatistics, SerializedCard } from 'kindred-paths';
 import { BarDistribution } from '@/components/distribution/bar-distribution';
 import { GridDistribution } from '@/components/distribution/grid-distribution';
 
-export function CardsStatistics(props: { cards: SerializedCard[] }) {
+export function StatisticsTab(props: { cards: SerializedCard[] }) {
   const {
     totalCount, nonlandCount, landCount, availableTokenNames,
     cardsWithZeroCount,

@@ -1,16 +1,15 @@
 "use client";
 
-import { CardTable } from '@/components/overview/card-table';
+import { TableTab } from '@/components/overview/table-tab';
 import Link from 'next/link';
 import SearchBar from '@/components/search-bar';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
-import { CardsStatistics } from '@/components/overview/cards-statistics';
+import { StatisticsTab } from '@/components/overview/statistics-tab';
 import { filterCardsBasedOnSearch, useSearch } from '@/utils/use-search';
 import { SerializedCard } from 'kindred-paths';
-import { CardTextOverview } from '@/components/overview/card-text-overview';
-import { useDeckName } from '@/components/deck-name-setter';
-import { CardRenderOverview } from '@/components/overview/card-render-overview';
+import { TextTab } from '@/components/overview/text-tab';
+import { VisualTab } from '@/components/overview/visual-tab';
 import { useState } from 'react';
 
 type TabType = 'table' | 'statistics' | 'text' | 'render';
@@ -23,15 +22,13 @@ export function CardOverview(props: {
   const [activeTab, setActiveTab] = useState<TabType>('table');
 
   const [searchText] = useSearch()
-  const deckName = useDeckName();
-  const cards = filterCardsBasedOnSearch(props.cards, searchText)
-    .filter(c => deckName.trim() === '' || c.tags?.['deck'] === deckName);
+  const cards = filterCardsBasedOnSearch(props.cards, searchText);
 
   const tabs = [
-    { id: 'table' as TabType, label: 'Table', component: <CardTable cards={cards} /> },
-    { id: 'visual' as TabType, label: 'Visual', component: <CardRenderOverview cards={cards} /> },
-    { id: 'text' as TabType, label: 'Text', component: <CardTextOverview cards={cards} /> },
-    { id: 'statistics' as TabType, label: 'Statistics', component: <CardsStatistics cards={cards} /> },
+    { id: 'table' as TabType, label: 'Table', component: <TableTab cards={cards} /> },
+    { id: 'visual' as TabType, label: 'Visual', component: <VisualTab cards={cards} /> },
+    { id: 'text' as TabType, label: 'Text', component: <TextTab cards={cards} /> },
+    { id: 'statistics' as TabType, label: 'Statistics', component: <StatisticsTab cards={cards} /> },
   ];
 
   return (

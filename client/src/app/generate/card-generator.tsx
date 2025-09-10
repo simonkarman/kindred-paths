@@ -5,8 +5,8 @@ import { CardEditor } from '@/components/editor/card-editor';
 import { getCardSampleGeneratorById, getCardSamples, previewCard } from '@/utils/server';
 import { useCallback, useEffect, useState } from 'react';
 import { SerializedCard } from 'kindred-paths';
-import { CardsStatistics } from '@/components/overview/cards-statistics';
-import { CardTable } from '@/components/overview/card-table';
+import { StatisticsTab } from '@/components/overview/statistics-tab';
+import { TableTab } from '@/components/overview/table-tab';
 import SearchBar from '@/components/search-bar';
 import { filterCardsBasedOnSearch, useSearch } from '@/utils/use-search';
 
@@ -313,12 +313,12 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
 
       {suggestions.length > 0 && <>
         <h2 className="text-xl font-semibold">An Overview and Statistics</h2>
-        <CardTable
+        <TableTab
           skipDeckFilter={true}
           onSelect={handleCardClick}
           cards={suggestions}
         />
-        <CardsStatistics
+        <StatisticsTab
           cards={suggestions}
         />
       </>}

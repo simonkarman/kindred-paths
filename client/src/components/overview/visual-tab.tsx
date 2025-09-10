@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 const n = (count: number) => Array.from({ length: count }, (_, i) => i + 1);
 
-export function CardRenderOverview(props: {
+export function VisualTab(props: {
   cards: SerializedCard[],
   dynamicLink?: (card: SerializedCard) => string,
 }) {

@@ -3,10 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import '@fortawesome/fontawesome-svg-core/styles.css';
 import { config } from '@fortawesome/fontawesome-svg-core';
-import { DeckNameSetter } from '@/components/deck-name-setter';
 import Link from 'next/link';
-import { getCards } from '@/utils/server';
-config.autoAddCss = false; /* eslint-disable import/first */
+config.autoAddCss = false;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,8 +26,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const deckNames = Array.from(new Set((await getCards()).flatMap(c => typeof c.tags?.deck === "string" ? [c.tags.deck] : [])));
-
   return (
     <html lang="en">
       <body
@@ -50,9 +46,6 @@ export default async function RootLayout({
                 Simon Karman
               </a>.
             </p>
-          </div>
-          <div>
-            <DeckNameSetter deckNames={deckNames} />
           </div>
         </header>
         <main className="p-2 space-y-2">

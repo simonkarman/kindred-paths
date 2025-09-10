@@ -11,7 +11,7 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "{t}: Add {w}. Activate only if you control a creature token."
+      "content": "{t}: Add one mana of any color among creature tokens you control."
     },
     {
       "variant": "ability",

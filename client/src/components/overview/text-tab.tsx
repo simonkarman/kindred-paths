@@ -1,7 +1,7 @@
 import { Card, SerializedCard } from 'kindred-paths';
 import Link from 'next/link';
 
-export function CardTextOverview(props: { cards: SerializedCard[] }) {
+export function TextTab(props: { cards: SerializedCard[] }) {
   return <ul className="grid grid-cols-2 py-2 gap-y-1 gap-x-4">
     {props.cards.map(c => {
       const card = new Card(c);
