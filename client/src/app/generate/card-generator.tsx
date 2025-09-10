@@ -5,7 +5,7 @@ import { CardEditor } from '@/components/editor/card-editor';
 import { getCardSampleGeneratorById, getCardSamples, previewCard } from '@/utils/server';
 import { useCallback, useEffect, useState } from 'react';
 import { SerializedCard } from 'kindred-paths';
-import { CardsStatistics } from '@/components/cards-statistics';
+import { CardsStatistics } from '@/components/overview/cards-statistics';
 import { CardTable } from '@/components/overview/card-table';
 import SearchBar from '@/components/search-bar';
 import { filterCardsBasedOnSearch, useSearch } from '@/utils/use-search';

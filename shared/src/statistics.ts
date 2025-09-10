@@ -49,7 +49,7 @@ export function getStatistics(_cards: SerializedCard[]) {
     tokens,
     availableTokenNames,
 
-    cardsWithZeroCount: cards.filter(c => [undefined, 0].includes(c.getTagAsNumber('count'))),
+    cardsWithZeroCount: _cards.map(c => new Card(c)).filter(c => [undefined, 0].includes(c.getTagAsNumber('count'))),
 
     // Distributions
     cardColorDistribution: createCardDistribution(cardsWithoutTokensAndBasicLands, c => c.color()),

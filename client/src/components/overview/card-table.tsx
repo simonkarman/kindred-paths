@@ -114,20 +114,21 @@ export const CardTable = (props: {
       return 0;
     });
 
+  const className = 'data-[is-active=true]:font-bold inline-block text-xs font-medium transition-colors text-gray-500 hover:text-gray-700';
   return <ul className='flex flex-col items-start'>
     <li className="flex items-center px-2 border-b border-zinc-300 text-xs text-zinc-600">
-      <span onClick={() => sortOn('mana-value')} data-is-active={sortKey.k === "mana-value"} className="data-[is-active=true]:font-bold inline-block text-right pr-2 w-24">Cost</span>
-      <span onClick={() => sortOn('tag:count')} data-is-active={sortKey.k === "tag:count"} className="data-[is-active=true]:font-bold inline-block w-12 text-right pr-1.5">Count</span>
-      <span onClick={() => sortOn('collector-number')} data-is-active={sortKey.k === "collector-number"} className="data-[is-active=true]:font-bold inline-block w-10 text-right pr-1.5">#</span>
-      <span onClick={() => sortOn('name')} data-is-active={sortKey.k === "name"} className="data-[is-active=true]:font-bold inline-block w-74 border-r border-transparent mr-4">Name</span>
-      <span onClick={() => sortOn('rarity')} data-is-active={sortKey.k === "rarity"} className="data-[is-active=true]:font-bold inline-block w-24">Rarity</span>
-      <span onClick={() => sortOn('types')} data-is-active={sortKey.k === "types"} className="data-[is-active=true]:font-bold inline-block w-80">Types</span>
+      <span onClick={() => sortOn('mana-value')} data-is-active={sortKey.k === "mana-value"} className={`${className} text-right pr-2 w-24`}>Cost</span>
+      <span onClick={() => sortOn('tag:count')} data-is-active={sortKey.k === "tag:count"} className={`${className} w-12 text-right pr-1.5`}>Count</span>
+      <span onClick={() => sortOn('collector-number')} data-is-active={sortKey.k === "collector-number"} className={`${className} w-10 text-right pr-1.5`}>#</span>
+      <span onClick={() => sortOn('name')} data-is-active={sortKey.k === "name"} className={`${className} w-74 border-r border-transparent mr-4`}>Name</span>
+      <span onClick={() => sortOn('rarity')} data-is-active={sortKey.k === "rarity"} className={`${className} w-24`}>Rarity</span>
+      <span onClick={() => sortOn('types')} data-is-active={sortKey.k === "types"} className={`${className} w-80`}>Types</span>
       <span className="inline-block w-8 text-center">
-        <span onClick={() => sortOn('power')} data-is-active={sortKey.k === "power"} className="data-[is-active=true]:font-bold">P</span>
+        <span onClick={() => sortOn('power')} data-is-active={sortKey.k === "power"} className={className}>P</span>
         /
-        <span onClick={() => sortOn('toughness')} data-is-active={sortKey.k === "toughness"} className="data-[is-active=true]:font-bold">T</span>
+        <span onClick={() => sortOn('toughness')} data-is-active={sortKey.k === "toughness"} className={className}>T</span>
       </span>
-      <span onClick={() => sortOn('art')} data-is-active={sortKey.k === "art"} className="data-[is-active=true]:font-bold inline-block w-12 text-center">Art</span>
+      <span onClick={() => sortOn('art')} data-is-active={sortKey.k === "art"} className={`${className} w-12 text-center`}>Art</span>
       <span className="inline-block w-8 text-center">Token</span>
     </li>
     {cards.map((card) => {

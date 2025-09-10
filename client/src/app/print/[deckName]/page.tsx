@@ -5,7 +5,7 @@ import { CardRender } from '@/components/card-render';
 import { capitalize } from '@/utils/typography';
 import { getCards } from '@/utils/server';
 import { PageProps } from '@/utils/page-props';
-import { CardsStatistics } from '@/components/cards-statistics';
+import { CardsStatistics } from '@/components/overview/cards-statistics';
 import { CardTextOverview } from '@/components/overview/card-text-overview';
 import { CardRenderOverview } from '@/components/overview/card-render-overview';
 
@@ -23,8 +23,6 @@ export default async function Print({ params: _params }: Readonly<{ params: Prom
   const cardsIncludingTokens = _cards
     .filter(c => deckName === "" || c.tags?.["deck"] === deckName)
     .toSorted((a, b) => a.collectorNumber - b.collectorNumber);
-
-  const { cardsWithoutTokensAndBasicLands, basicLands, tokens } = getStatistics(cardsIncludingTokens);
 
   return <>
     <div className="space-y-3">
@@ -44,7 +42,7 @@ export default async function Print({ params: _params }: Readonly<{ params: Prom
 
     {/* Card Renders */}
     <CardRenderOverview
-      cardGroups={[cardsWithoutTokensAndBasicLands, basicLands, tokens]}
+      cards={cardsIncludingTokens}
       dynamicLink={(c) => `/edit/${c.id}?t=/print/${deckName}`}
     />
   </>;

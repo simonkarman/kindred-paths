@@ -1,24 +1,87 @@
-import { Card, SerializedCard } from 'kindred-paths';
+"use client";
+
+import { Card, getStatistics, SerializedCard } from 'kindred-paths';
 import Link from 'next/link';
 import { CardRender } from '@/components/card-render';
+import { useState } from 'react';
 
 const n = (count: number) => Array.from({ length: count }, (_, i) => i + 1);
 
 export function CardRenderOverview(props: {
-  cardGroups: SerializedCard[][],
+  cards: SerializedCard[],
   dynamicLink?: (card: SerializedCard) => string,
 }) {
-  return <div className="grid grid-cols-3">
-    {props.cardGroups.map((group, groupIndex) => group
-      .map(card => n(new Card(card).getTagAsNumber("count") ?? 0)
-        .map(i => <Link
-            key={groupIndex + card.id + i}
-            className="border-3 bg-zinc-500"
-            href={props.dynamicLink ? props.dynamicLink(card) : `/card/${card.id}`}
-          >
-            <CardRender serializedCard={card} scale={0.6} quality={80} />
-          </Link>
-        )
-      ))}
-  </div>
+  const {
+    cardsWithoutTokensAndBasicLands,
+    basicLands,
+    tokens,
+    cardsWithZeroCount,
+  } = getStatistics(props.cards);
+  const [renderTokens, setRenderTokens] = useState(true);
+  const [renderBasicLands, setRenderBasicLands] = useState(true);
+
+  const cardGroups = [cardsWithoutTokensAndBasicLands];
+  if (renderBasicLands) {
+    cardGroups.push(basicLands);
+  }
+  if (renderTokens) {
+    cardGroups.push(tokens);
+  }
+
+  return <>
+    <div className="mb-4 flex gap-4">
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={renderTokens}
+          onChange={() => setRenderTokens(p => !p)}
+          className="h-4 w-4"
+        />
+        Render Tokens ({tokens.length} unique designs, {tokens.reduce((a, c) => a + (new Card(c).getTagAsNumber("count") ?? 0), 0)} cards total)
+      </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={renderBasicLands}
+          onChange={() => setRenderBasicLands(p => !p)}
+          className="h-4 w-4"
+        />
+        Render Basic Lands ({basicLands.length} unique designs, {basicLands.reduce((a, c) => a + (new Card(c).getTagAsNumber("count") ?? 0), 0)} cards total)
+      </label>
+    </div>
+    {/* Show warning box with links to cards with a count of 0 */}
+    {cardsWithZeroCount.length > 0 && <div
+      className="mb-4 rounded border border-yellow-400 bg-yellow-50 p-4 text-yellow-800"
+    >
+      <strong>Warning:</strong>{' '}
+      The following cards are not rendered as they have a count of 0.
+      <ul>
+        {cardsWithZeroCount.map(card => (
+          <li key={card.id}>
+            <Link
+              key={card.id}
+              href={props.dynamicLink ? props.dynamicLink(card) : `/card/${card.id}`}
+              className="text-yellow-800 underline"
+            >
+              {card.name}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>}
+    <hr className="break-after-page border-gray-200" />
+    <div className="grid grid-cols-3">
+      {cardGroups.map((group) => group
+        .map(card => n(new Card(card).getTagAsNumber("count") ?? 0)
+          .map(i => <Link
+              key={card.id + i}
+              className="border-3 bg-zinc-500"
+              href={props.dynamicLink ? props.dynamicLink(card) : `/card/${card.id}`}
+            >
+              <CardRender serializedCard={card} scale={0.6} quality={80} />
+            </Link>
+          )
+        ))}
+    </div>
+  </>
 }

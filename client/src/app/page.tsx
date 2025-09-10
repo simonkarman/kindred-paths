@@ -3,5 +3,5 @@ import { CardOverview } from '@/components/overview/card-overview';
 
 export default async function Home() {
   const cards = await getCards();
-  return <CardOverview title="All Cards" cards={cards} />;
+  return <CardOverview cards={cards} />;
 }
