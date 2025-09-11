@@ -54,7 +54,7 @@ export function VisualTab(props: {
       className="mb-4 rounded border border-yellow-400 bg-yellow-50 p-4 text-yellow-800"
     >
       <strong>Warning:</strong>{' '}
-      The following cards are not rendered as they have a count of 0.
+      The following cards are not rendered as they don&#39;t have a count (or have a count of 0).
       <ul>
         {cardsWithZeroCount.map(card => (
           <li key={card.id}>

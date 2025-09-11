@@ -69,7 +69,7 @@ export function CardOverview(props: {
                   icon={faWandMagicSparkles}
                   className="mr-2"
                 />
-                Generate Cards
+                Inspire Me!
               </Link>
             </>
           )}

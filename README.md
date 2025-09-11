@@ -1,5 +1,5 @@
 # Kindred Paths
-A tool for managing a collection of custom Magic the Gathering cards by [Simon Karman](https://simonkarman.nl).
+A tool for managing a collection of custom Magic the Gathering cards. Created by [Simon Karman](https://simonkarman.nl).
 
 ## Features
 - **Card Management**: Add, edit, and delete Magic the Gathering cards from your collection.

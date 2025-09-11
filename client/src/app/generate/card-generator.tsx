@@ -5,10 +5,10 @@ import { CardEditor } from '@/components/editor/card-editor';
 import { getCardSampleGeneratorById, getCardSamples, previewCard } from '@/utils/server';
 import { useCallback, useEffect, useState } from 'react';
 import { SerializedCard } from 'kindred-paths';
-import { StatisticsTab } from '@/components/overview/statistics-tab';
-import { TableTab } from '@/components/overview/table-tab';
 import SearchBar from '@/components/search-bar';
 import { filterCardsBasedOnSearch, useSearch } from '@/utils/use-search';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faAngleDown, faAngleUp } from '@fortawesome/free-solid-svg-icons';
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -142,77 +142,10 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
 
   return (
     <div className="space-y-6">
-
-      {/* Previous Generations Section */}
-      <div className="border-t border-gray-200 pt-6">
-        <h2 className="text-xl font-semibold mb-4">Previous Generations</h2>
-
-        {showPreviousGenerators && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              {previousCardGenerators.map(generator => (
-                <div
-                  key={generator.generatorId}
-                  className={`p-3 rounded-lg border transition-colors ${
-                    generator.generatorId === generatorId
-                      ? 'bg-green-50 border-green-200 text-green-800'
-                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        {generator.generatorId === generatorId && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Current
-                          </span>
-                        )}
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {generator.sampleCount} cards
-                        </span>
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {generator.createdAt.substring(0, 16).replace('T', ' at ')}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 line-clamp-2">
-                        {generator.prompt}
-                      </p>
-                    </div>
-                    <button
-                      disabled={loading}
-                      onClick={() => viewGenerator(generator.generatorId)}
-                      className="ml-3 px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      View
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setShowPreviousGenerators(false)}
-              className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-            >
-              Hide Previous Generations
-            </button>
-          </div>
-        )}
-
-        {!showPreviousGenerators && previousCardGenerators.length > 0 && (
-          <button
-            onClick={() => setShowPreviousGenerators(true)}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Show Previous Generations ({previousCardGenerators.length})
-          </button>
-        )}
-      </div>
-
       {/* Input Section */}
-      <h2 className="text-3xl font-bold text-center mb-8">Generate Cards</h2>
       <div className="space-y-4">
         <div>
+          <h2 className="text-xl font-bold mb-2">Get inspired!</h2>
           <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">
             Enter your card prompt:
           </label>
@@ -235,8 +168,8 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
         </button>
       </div>
 
+      {/* Card Suggestions Grid */}
       <div className="border rounded-xl border-zinc-300 shadow-lg p-4 bg-zinc-50 space-y-4">
-        {/* Card Suggestions Grid */}
         {suggestions.length > 0 && (<>
           <div className="flex gap-4 items-start">
             <h2 className="shrink-0 text-xl font-semibold">
@@ -311,17 +244,71 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
         )}
       </div>
 
-      {suggestions.length > 0 && <>
-        <h2 className="text-xl font-semibold">An Overview and Statistics</h2>
-        <TableTab
-          skipDeckFilter={true}
-          onSelect={handleCardClick}
-          cards={suggestions}
-        />
-        <StatisticsTab
-          cards={suggestions}
-        />
-      </>}
+      {/* Previous Generations Section */}
+      <div className="pb-8">
+        {showPreviousGenerators && (
+          <div className="space-y-4">
+            <button
+              onClick={() => setShowPreviousGenerators(false)}
+              className="float-right px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 transition-colors"
+            >
+              <FontAwesomeIcon icon={faAngleUp} className="mr-2" />
+              Hide Previous Generations
+            </button>
+            <h2 className="text-xl font-semibold mb-4">Previous Generations</h2>
+            <div className="space-y-2">
+              {previousCardGenerators.map(generator => (
+                <div
+                  key={generator.generatorId}
+                  className={`p-3 rounded-lg border transition-colors ${
+                    generator.generatorId === generatorId
+                      ? 'bg-green-50 border-green-200 text-green-800'
+                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {generator.generatorId === generatorId && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Current
+                          </span>
+                        )}
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {generator.sampleCount} cards
+                        </span>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {generator.createdAt.substring(0, 16).replace('T', ' at ')}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 line-clamp-2">
+                        {generator.prompt}
+                      </p>
+                    </div>
+                    <button
+                      disabled={loading}
+                      onClick={() => viewGenerator(generator.generatorId)}
+                      className="ml-3 px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      View
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!showPreviousGenerators && previousCardGenerators.length > 0 && (
+          <button
+            onClick={() => setShowPreviousGenerators(true)}
+            className="float-right px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+          >
+            <FontAwesomeIcon icon={faAngleDown} className="mr-2" />
+            Show Previous Generations ({previousCardGenerators.length})
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { useSearch } from '@/utils/use-search';
+import ColorCodedSearchInput from '@/components/color-coded-search-input';
 
 export default function SearchBar() {
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLDivElement>(null);
   const [searchText, setSearchText] = useSearch();
   const [open, setOpen] = useState(searchText.length > 0);
 
@@ -48,7 +49,7 @@ export default function SearchBar() {
       const current = searchInputRef.current;
       if (current) {
         current.focus();
-        current.select(); // Select the text in the input
+        // current.select(); // Select the text in the input
       }
     }
   }, [open]);
@@ -64,15 +65,13 @@ export default function SearchBar() {
 
   return (
     <>
-      <input
+      <ColorCodedSearchInput
         ref={searchInputRef}
-        id="search"
-        type="text"
-        placeholder="Search..."
-        value={searchText}
+        searchText={searchText}
+        setSearchText={setSearchText}
         onBlur={handleBlur}
-        onChange={(e) => setSearchText(e.target.value)}
-        className={`inline-block w-full ${isOpen ? 'border' : 'text-white'} px-3 py-1 text-sm border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+        isOpen={isOpen}
+        placeholder="Search... (e.g., deck:miffy type:artifact home)"
       />
       <button
         onClick={() => setOpen(true)}

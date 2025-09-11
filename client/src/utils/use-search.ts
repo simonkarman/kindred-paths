@@ -14,56 +14,67 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchText: st
     return searchTerms.every(searchTerm => {
       // If search term starts with "type:", filter by type
       if (searchTerm.startsWith('type:') || searchTerm.startsWith('t:')) {
-        const type = searchTerm.slice(searchTerm.indexOf(':') + 1);
+        const typeNeedle = searchTerm.slice(searchTerm.indexOf(':') + 1).toLowerCase();
         return [
           ...card.types,
           ...(card.subtypes ?? []),
           ...(card.supertype ? [card.supertype] : []),
-        ].some(t => t.toLowerCase() === type);
+        ].some(t => t.startsWith(typeNeedle));
       }
 
       // If search term starts with "rarity:", filter by rarity
       if (searchTerm.startsWith('rarity:') || searchTerm.startsWith('r:')) {
-        const rarity = searchTerm.slice(searchTerm.indexOf(':') + 1);
-        return card.rarity.toLowerCase() === rarity;
+        const rarityNeedle = searchTerm.slice(searchTerm.indexOf(':') + 1).toLowerCase();
+        return rarityNeedle.length === 1
+          ? card.rarity[0] === rarityNeedle[0]
+          : card.rarity === rarityNeedle;
       }
 
       // If search term starts with "color:", filter by color
       if (searchTerm.startsWith('color:') || searchTerm.startsWith('c:')) {
-        const color = searchTerm.slice(searchTerm.indexOf(':') + 1);
-        if (color === 'colorless' || color === 'c') {
+        const colorNeedle = searchTerm.slice(searchTerm.indexOf(':') + 1).toLowerCase();
+        if (colorNeedle === 'colorless' || colorNeedle === 'c') {
           return card.color().length === 0;
         }
-        if (color === 'multicolor' || color === 'm') {
+        if (colorNeedle === 'multicolor' || colorNeedle === 'm') {
           return card.color().length > 1;
         }
         // Convert single character to full color name
-        const c = wubrg.includes(color as CardColorCharacter)
-          ? colorToLong(color as CardColorCharacter)
-          : color;
+        const c = wubrg.includes(colorNeedle as CardColorCharacter)
+          ? colorToLong(colorNeedle as CardColorCharacter)
+          : colorNeedle;
         return card.color().includes(c as CardColor);
       }
 
       // If search term starts wiht "manavalue:", filter by mana value
       if (searchTerm.startsWith('manavalue:') || searchTerm.startsWith('mv:')) {
-        const mvStr = searchTerm.slice(searchTerm.indexOf(':') + 1);
-        const mv = Number(mvStr);
-        if (isNaN(mv)) return false;
-        return card.manaValue() === mv;
+        const manaValueNeedle = Number(searchTerm.slice(searchTerm.indexOf(':') + 1));
+        if (isNaN(manaValueNeedle)) return false;
+        return card.manaValue() === manaValueNeedle;
       }
 
       // If search term starts with "pt:", filter by power/toughness
       if (searchTerm.startsWith('pt:')) {
-        const pt = searchTerm.slice(searchTerm.indexOf(':') + 1);
+        const ptNeedle = searchTerm.slice(searchTerm.indexOf(':') + 1);
         if (!card.pt) return false;
-        return `${card.pt.power}/${card.pt.toughness}` === pt;
+        if (ptNeedle.startsWith('/')) {
+          // If only toughness is specified (e.g. "/3"), match any power with that toughness
+          const toughness = ptNeedle.slice(1);
+          return card.pt.toughness.toString() === toughness;
+        }
+        if (ptNeedle.endsWith('/')) {
+          // If only power is specified (e.g. "3/"), match that power with any toughness
+          const power = ptNeedle.slice(0, -1);
+          return card.pt.power.toString() === power;
+        }
+        return `${card.pt.power}/${card.pt.toughness}` === ptNeedle;
       }
 
       // If search terms starts with "deck:", filter by deck tag
-      if (searchTerm.startsWith('deck:')) {
-        const deckName = searchTerm.slice(searchTerm.indexOf(':') + 1);
+      if (searchTerm.startsWith('deck:') || searchTerm.startsWith('d:')) {
+        const deckNameNeedle = searchTerm.slice(searchTerm.indexOf(':') + 1).toLowerCase();
         const deckTag = card.getTagAsString('deck');
-        return deckTag !== undefined && deckTag.toLowerCase() === deckName.toLowerCase();
+        return deckTag !== undefined && deckTag.toLowerCase().startsWith(deckNameNeedle);
       }
 
       // Default scenario: check if card name includes the search term
