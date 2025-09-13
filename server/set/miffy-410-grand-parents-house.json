@@ -1,6 +1,6 @@
 {
   "name": "Grand Parents House",
-  "rarity": "rare",
+  "rarity": "uncommon",
   "types": [
     "land"
   ],
@@ -21,10 +21,11 @@
     }
   ],
   "collectorNumber": 410,
+  "art": "mfy/grand-parents-house.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-02",
     "deck": "miffy",
-    "count": 1
+    "count": 2
   }
 }

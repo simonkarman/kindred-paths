@@ -17,10 +17,12 @@
     }
   ],
   "collectorNumber": 468,
+  "art": "mfy/treasure.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-03",
     "deck": "miffy",
-    "count": 1
+    "count": 1,
+    "art/focus": "zoom-1"
   }
 }

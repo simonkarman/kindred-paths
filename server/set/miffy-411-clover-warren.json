@@ -1,6 +1,6 @@
 {
-  "name": "Birds Nest",
-  "rarity": "uncommon",
+  "name": "Clover Warren",
+  "rarity": "rare",
   "types": [
     "land"
   ],
@@ -15,14 +15,19 @@
     },
     {
       "variant": "ability",
-      "content": "{3}{w}, {t}, Sacrifice ~: Create a 1/1 white Rabbit creature token."
+      "content": "~ enters tapped unless you control a creature token."
+    },
+    {
+      "variant": "ability",
+      "content": "{w}{w}, {t}, Sacrifice ~: Create three 1/1 white Rabbit creature tokens."
     }
   ],
   "collectorNumber": 411,
+  "art": "mfy/clover-warren.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-02",
     "deck": "miffy",
-    "count": 2
+    "count": 1
   }
 }

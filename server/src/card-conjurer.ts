@@ -1,6 +1,6 @@
 import { chromium, Browser, Page } from 'playwright';
 import { setTimeout as sleep } from 'timers/promises';
-import { Card, TokenCardType, colorToShort, CardColor, loyaltyCostAsString } from 'kindred-paths';
+import { Card, TokenCardType, colorToShort, CardColor, loyaltyCostAsString, landSubtypeToColor, landSubtypes } from 'kindred-paths';
 import { capitalize } from './utils/typography';
 
 type PlaneswalkerAbility = { cost: string, content: string, height: number, startHeight: number };
@@ -282,6 +282,24 @@ export class CardConjurer {
         }
       }
 
+      // If basic land, add the icon for the land type to the frame
+      if (card.supertype === 'basic' && card.types.includes('land')) {
+        await page.click('#creator-menu-tabs h3:has-text("Frame")');
+        await page.waitForLoadState('networkidle');
+
+        // Select frame pack
+        await page.selectOption('#selectFrameGroup', 'Regular');
+        await page.selectOption('#selectFramePack', 'Lands');
+        await sleep(500);
+
+        const landColor = colorToShort(landSubtypeToColor(card.subtypes[0]) ?? 'white');
+        const landIconImage = `/img/frames/m15/basics/${landColor}Thumb.png`;
+        await page.click(`div.frame-option:has(img[src="${landIconImage}"])`);
+        await page.click('#addToFull');
+        await sleep(500);
+        await page.waitForLoadState('networkidle');
+      }
+
       // Handle art section
       if (card.art !== undefined) {
         await page.click('#creator-menu-tabs h3:has-text("Art")');
@@ -293,10 +311,16 @@ export class CardConjurer {
         // Set card x,y,zoom,rotate when full art
         if (isFullArt) {
           await sleep(100);
-          const focusAreas = {
+          const focusAreas = planeswalkerData ? {
+            // for planeswalkers
             'zoom-0': { x: -255, y: 80, zoom: 164 },
             'zoom-1': { x: -280, y: -50, zoom: 170 },
             'zoom-2': { x: -500, y: -250, zoom: 200 },
+          } : {
+            // for non-planeswalkers
+            'zoom-0': { x: -254, y: 80, zoom: 164 },
+            'zoom-1': { x: -300, y: 60, zoom: 170 },
+            'zoom-2': { x: -503, y: -50, zoom: 200 },
           };
           const _focus = card.getTagAsString("art/focus") ?? 'zoom-0';
           const focusAreaName = _focus in focusAreas ? _focus as keyof typeof focusAreas : 'zoom-0';
