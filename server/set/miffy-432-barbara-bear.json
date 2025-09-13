@@ -23,11 +23,11 @@
     },
     {
       "variant": "ability",
-      "content": "When ~ enters, if you control six or more lands, create a 4/4 green Rabbit creature token."
+      "content": "When ~ enters, if you control eight or more lands, create a 4/4 green Rabbit creature token."
     },
     {
       "variant": "ability",
-      "content": "{i}Landfall{/i} {-} Whenever a land you control enters, if you control six or more lands, create a 4/4 green Rabbit creature token."
+      "content": "{i}Landfall{/i} {-} Whenever a land you control enters, you may tap any number creatures you control with total power 8 or greater. If you do create a 4/4 green Rabbit creature token."
     }
   ],
   "pt": {

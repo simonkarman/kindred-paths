@@ -5,8 +5,8 @@
     "land"
   ],
   "subtypes": [
-    "plains",
-    "forest"
+    "forest",
+    "plains"
   ],
   "manaCost": {},
   "rules": [
@@ -20,6 +20,7 @@
     }
   ],
   "collectorNumber": 461,
+  "art": "mfy/melanies-outerlands.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-02",

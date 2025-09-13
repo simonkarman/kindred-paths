@@ -16,7 +16,7 @@
     },
     {
       "variant": "ability",
-      "content": "• Target token creature you control deals damage equal to twice its power to target creature you don't control."
+      "content": "• Target creature token you control deals damage equal to twice its power to target creature you don't control."
     },
     {
       "variant": "ability",
@@ -24,6 +24,7 @@
     }
   ],
   "collectorNumber": 438,
+  "art": "mfy/snuffys-sharp-teeth.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-02",

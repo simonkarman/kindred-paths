@@ -12,14 +12,11 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "Destroy target artifact, enchantment, or creature with flying."
-    },
-    {
-      "variant": "ability",
-      "content": "If you control four creatures with power 4 or greater, you may destroy up to two target artifacts, enchantments, and/or creatures with flying instead."
+      "content": "Destroy target artifact, enchantment, or creature with flying. If you control four creatures with power 4 or greater, you may destroy up to two target artifacts, enchantments, and/or creatures with flying instead."
     }
   ],
   "collectorNumber": 439,
+  "art": "mfy/pop-goes-the-balloon.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-02",

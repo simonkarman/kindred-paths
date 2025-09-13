@@ -44,11 +44,7 @@ export const CardSubtypesInput = (props: {
     return [];
   };
   const allSuggestions = getRelevantSubtypes().filter(subtype => !subtypes.includes(subtype));
-
-  const filteredSuggestions = allSuggestions.filter(suggestion =>
-    suggestion.toLowerCase().includes(newSubtype.toLowerCase()) &&
-    !subtypes.some(existing => existing.toLowerCase() === suggestion.toLowerCase())
-  );
+  const filteredSuggestions = allSuggestions.filter(suggestion => suggestion.toLowerCase().includes(newSubtype.toLowerCase()));
 
   const addSubtype = (subtypeToAdd?: string) => {
     const subtype = (subtypeToAdd || newSubtype.trim()).toLowerCase();
@@ -201,7 +197,7 @@ export const CardSubtypesInput = (props: {
         </div>
 
         {/* Quick add relevant subtypes */}
-        {allSuggestions.length > 0 && allSuggestions.length < 5 && (
+        {allSuggestions.length > 0 && allSuggestions.length <= 7 && (
           <div className="flex flex-wrap gap-1">
             {allSuggestions.map((subtype) => (
               <button

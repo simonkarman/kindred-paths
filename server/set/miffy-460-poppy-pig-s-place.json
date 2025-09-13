@@ -1,5 +1,5 @@
 {
-  "name": "Poppy Pig's Woodfields",
+  "name": "Poppy Pig's Place",
   "rarity": "rare",
   "types": [
     "land"
@@ -24,6 +24,7 @@
     }
   ],
   "collectorNumber": 460,
+  "art": "mfy/poppy-pigs-place.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-02",

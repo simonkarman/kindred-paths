@@ -15,7 +15,7 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "{1}{g}, {t}, Exert ~: Create two 4/4 green Rabbit creature tokens."
+      "content": "{1}{g}, {t}, Exert ~: Create a 4/4 green Rabbit creature token."
     },
     {
       "variant": "inline-reminder",

@@ -19,7 +19,7 @@
     },
     {
       "variant": "ability",
-      "content": "{w}{w}, {t}, Sacrifice ~: Create three 1/1 white Rabbit creature tokens."
+      "content": "{4}{w}{w}, Discard ~: Create four 1/1 white Rabbit creature tokens. Activate only as a sorcery."
     }
   ],
   "collectorNumber": 411,
