@@ -10,7 +10,7 @@ import { filterCardsBasedOnSearch, useSearch } from '@/utils/use-search';
 import { SerializedCard } from 'kindred-paths';
 import { TextTab } from '@/components/overview/text-tab';
 import { VisualTab } from '@/components/overview/visual-tab';
-import { useState } from 'react';
+import { useLocalStorageState } from '@/utils/use-local-storage-state';
 
 type TabType = 'table' | 'statistics' | 'text' | 'render';
 
@@ -19,14 +19,17 @@ export function CardOverview(props: {
   showCreate?: boolean,
 }) {
   const { showCreate = true } = props;
-  const [activeTab, setActiveTab] = useState<TabType>('table');
+  const [activeTab, setActiveTab] = useLocalStorageState<TabType>('home/tab', 'table');
 
   const [searchText] = useSearch()
   const cards = filterCardsBasedOnSearch(props.cards, searchText);
 
   const tabs = [
     { id: 'table' as TabType, label: 'Table', component: <TableTab cards={cards} /> },
-    { id: 'visual' as TabType, label: 'Visual', component: <VisualTab cards={cards} /> },
+    { id: 'visual' as TabType, label: 'Visual', component: <VisualTab
+        cards={cards}
+        dynamicLink={c => `/edit/${c.id}?t=/`} />
+    },
     { id: 'text' as TabType, label: 'Text', component: <TextTab cards={cards} /> },
     { id: 'statistics' as TabType, label: 'Statistics', component: <StatisticsTab cards={cards} /> },
   ];

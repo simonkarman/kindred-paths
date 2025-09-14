@@ -1,5 +1,5 @@
 {
-  "name": "The Family Tree",
+  "name": "Family Tree",
   "rarity": "uncommon",
   "types": [
     "instant"
@@ -13,7 +13,7 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "Create two 2/2 green and white Rabbit creature tokens, then you may exile target creature card from a graveyard, if you do, populate."
+      "content": "Create two 2/2 green and white Rabbit creature tokens. Then you may exile target creature card from a graveyard. If you do, populate."
     },
     {
       "variant": "inline-reminder",
@@ -21,6 +21,7 @@
     }
   ],
   "collectorNumber": 463,
+  "art": "mfy/family-tree.jpg",
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-02",

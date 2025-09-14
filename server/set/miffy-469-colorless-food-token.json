@@ -22,6 +22,7 @@
     "status": "concept",
     "createdAt": "2025-08-04",
     "deck": "miffy",
-    "count": 1
+    "count": 1,
+    "fs/rules": 10
   }
 }

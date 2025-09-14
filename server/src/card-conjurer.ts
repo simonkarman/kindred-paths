@@ -283,7 +283,7 @@ export class CardConjurer {
       }
 
       // If basic land, add the icon for the land type to the frame
-      if (card.supertype === 'basic' && card.types.includes('land')) {
+      if (card.supertype === 'basic' && card.types.includes('land') && card.rules.length === 0) {
         await page.click('#creator-menu-tabs h3:has-text("Frame")');
         await page.waitForLoadState('networkidle');
 
