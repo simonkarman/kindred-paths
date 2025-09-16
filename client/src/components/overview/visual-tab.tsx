@@ -19,6 +19,7 @@ export function VisualTab(props: {
   } = getStatistics(props.cards);
   const [renderTokens, setRenderTokens] = useState(true);
   const [renderBasicLands, setRenderBasicLands] = useState(true);
+  const [respectCardCount, setRespectCardCount] = useState(true);
 
   const cardGroups = [cardsWithoutTokensAndBasicLands];
   if (renderBasicLands) {
@@ -48,9 +49,18 @@ export function VisualTab(props: {
         />
         Render Basic Lands ({basicLands.length} unique designs, {basicLands.reduce((a, c) => a + (new Card(c).getTagAsNumber("count") ?? 0), 0)} cards total)
       </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={respectCardCount}
+          onChange={() => setRespectCardCount(p => !p)}
+          className="h-4 w-4"
+        />
+        Respect Card Count
+      </label>
     </div>
-    {/* Show warning box with links to cards with a count of 0 */}
-    {cardsWithZeroCount.length > 0 && <div
+    {/* Show warning box with links to cards with a count of 0, when respect card count is enabled */}
+    {respectCardCount && cardsWithZeroCount.length > 0 && <div
       className="mb-4 rounded border border-yellow-400 bg-yellow-50 p-4 text-yellow-800"
     >
       <strong>Warning:</strong>{' '}
@@ -72,7 +82,7 @@ export function VisualTab(props: {
     <hr className="break-after-page border-gray-200" />
     <div className="grid grid-cols-3">
       {cardGroups.map((group) => group
-        .map(card => n(new Card(card).getTagAsNumber("count") ?? 0)
+        .map(card => n(respectCardCount ? (new Card(card).getTagAsNumber("count") ?? 0) : 1)
           .map(i => <Link
               key={card.id + i}
               className="border-3 bg-zinc-500"
