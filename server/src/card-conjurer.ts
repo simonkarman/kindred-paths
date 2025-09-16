@@ -346,9 +346,11 @@ export class CardConjurer {
       await page.fill('#creator-menu-bottomInfo #info-number', ("0000" + collectorNumber.toString()).slice(-4));
       await page.fill('#creator-menu-bottomInfo #info-rarity', card.rarity[0].toUpperCase());
       await page.fill('#creator-menu-bottomInfo #info-set', set.shortName);
+      await page.fill('#creator-menu-bottomInfo #info-note', new Date().toISOString().split('T')[0]);
       await page.fill('#creator-menu-bottomInfo #info-language', 'EN');
       await page.fill('#creator-menu-bottomInfo #info-artist', set.author);
       await page.fill('#creator-menu-bottomInfo #info-year', new Date().getFullYear().toString());
+      await page.click('label:has(#enableNewCollectorStyle)');
       await page.waitForLoadState('networkidle');
 
       // Download the card
