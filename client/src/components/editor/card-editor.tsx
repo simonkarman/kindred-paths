@@ -283,7 +283,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
 
                         showArtFocus={types.includes('planeswalker') || supertype === 'token'}
                         artFocus={getStringTagOrEmptyString("art/focus")} setArtFocus={setArtFocus}
-                        artFocusIsChanged={!isCreate && JSON.stringify(start.tags?.['art/focus']) !== JSON.stringify(tags?.["art/focus"])} revertArtFocus={() => setArtSetting(start.tags?.['art/focus'])}
+                        artFocusIsChanged={!isCreate && JSON.stringify(start.tags?.['art/focus']) !== JSON.stringify(tags?.["art/focus"])} revertArtFocus={() => setArtFocus(start.tags?.['art/focus'])}
 
                         // TODO: add fs/rules too
           />
