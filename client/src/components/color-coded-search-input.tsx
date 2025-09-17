@@ -29,25 +29,25 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
     if (!text) return '';
 
     // Define keys and their corresponding values
-    const validations: { keys: string[], value?: readonly string[] | RegExp }[] = [
+    const validations: { keys: string[], value?: readonly string[] | RegExp | RegExp[] }[] = [
       { keys: ['type', 't'] },
       { keys: ['rarity', 'r'], value: [...cardRarities, ...cardRarities.map(r => r[0])] },
       { keys: ['color', 'c'], value: [...cardColors, ...wubrg, 'colorless', 'c', 'multicolor', 'm'] },
-      { keys: ['manavalue', 'mv'], value: /^\d+$/ },
-      { keys: ['pt'], value: /^\d*\/\d*$/ },
+      { keys: ['manavalue', 'mv'], value: /^\d+$|^\d+[+-]$/ },
+      { keys: ['pt'], value: /^yes$|^no$|^n\/n(?:[+-]\d*)?$|^(?:\d+[+-]?)?\/(?:\d+[+-]?)?$/ },
       { keys: ['deck', 'd'] },
       { keys: ['tag'] },
     ];
 
     // Color key-value pairs
-    let colorizedText = text.replace(/([^\s]+:)([^\s]+)/g, (_, key, _value) => {
-      const value = _value.toLowerCase();
+    let colorizedText = text.replace(/([^\s!]+?)(!?[:=])([^\s]*)/g, (_, key, op, _value) => {
+      const value = _value?.toLowerCase();
       let keyColor = 'text-zinc-400';
       let valueColor = 'text-blue-600';
 
       // Get key value validation
-      const validation = validations.find(kv => kv.keys.includes(key.slice(0, -1).toLowerCase()));
-      if (!validation) {
+      const validation = validations.find(val => val.keys.includes(key.toLowerCase()));
+      if (!validation || value === undefined || value === '') {
         keyColor = 'text-red-600';
         valueColor = 'text-zinc-400';
       }
@@ -65,6 +65,7 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
 
       return `<span class="px-1.5 py-0.5 rounded-lg border border-zinc-100 border-b-zinc-200 bg-zinc-50">` +
           `<span class="${keyColor}">${key}</span>` +
+          op +
           `<span class="${valueColor}">${_value}</span>` +
         `</span>`;
     });
