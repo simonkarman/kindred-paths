@@ -36,7 +36,15 @@ const check = (
   }
 };
 
-
+/**
+ * Validate a number requirement string against an actual number.
+ * Supports exact match (e.g. "3"), greater than or equal (e.g. "3+"), and less than or equal (e.g. "3-").
+ *
+ * @param requirement The requirement string to validate against.
+ * @param actual The actual number to validate.
+ *
+ * @returns True if the actual number satisfies the requirement, false otherwise.
+ */
 const validateNumberRequirement = (requirement: string, actual: number) => {
   let operator = (a: number, b: number) => a === b;
   let sliceEnd = 0;
@@ -90,22 +98,7 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchText: st
       }),
 
       check(['manavalue', 'mv'], manaValueNeedle => {
-        let operator = (a: number, b: number) => a === b;
-        let sliceEnd = 0;
-
-        // Check if ends with + or - for greater than or less than comparisons
-        if (manaValueNeedle.endsWith('+')) {
-          operator = (a, b) => a >= b;
-          sliceEnd = 1;
-        } else if (manaValueNeedle.endsWith('-')) {
-          operator = (a, b) => a <= b;
-          sliceEnd = 1;
-        }
-
-        // Otherwise, check for exact match
-        const mv = Number(manaValueNeedle.slice(0, -sliceEnd));
-        if (isNaN(mv)) return false;
-        return operator(card.manaValue(), mv);
+        return validateNumberRequirement(manaValueNeedle, card.manaValue());
       }),
 
       check(['pt'], ptNeedle => {
