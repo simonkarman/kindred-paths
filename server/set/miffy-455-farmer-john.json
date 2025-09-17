@@ -19,7 +19,7 @@
     },
     {
       "variant": "ability",
-      "content": "{t}, Tap two other creatures you control: Gain 2 life, then populate twice. Activate only as a sorcery."
+      "content": "{t}, Tap two other untapped creatures you control: Gain 2 life, then populate twice. Activate only as a sorcery."
     },
     {
       "variant": "inline-reminder",
@@ -36,6 +36,7 @@
     "status": "concept",
     "createdAt": "2025-07-30",
     "deck": "miffy",
-    "count": 2
+    "count": 2,
+    "print": true
   }
 }

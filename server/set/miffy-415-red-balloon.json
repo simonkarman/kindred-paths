@@ -26,19 +26,15 @@
     },
     {
       "variant": "ability",
-      "content": "Equipped creature gets +1/+1 and has reach."
+      "content": "Equipped creature gets +1/+1 and has reach and \"Whenever this creature attacks, you may have target creature block it this turn if able.\""
     },
     {
       "variant": "ability",
-      "content": "When equipped creature attacks, up to one target creature an opponent controls must block it this turn if able."
-    },
-    {
-      "variant": "ability",
-      "content": "Equip {1}"
+      "content": "Equip {2}"
     },
     {
       "variant": "inline-reminder",
-      "content": "{1}: Attach to target creature you control. Equip only as a sorcery."
+      "content": "{2}: Attach to target creature you control. Equip only as a sorcery."
     }
   ],
   "collectorNumber": 415,
@@ -47,6 +43,7 @@
     "status": "concept",
     "createdAt": "2025-08-02",
     "deck": "miffy",
-    "count": 1
+    "count": 1,
+    "print": true
   }
 }

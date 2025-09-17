@@ -19,7 +19,7 @@
     },
     {
       "variant": "ability",
-      "content": "Whenever a land enters under you control, if you control seven or more lands, create a 2/2 green and white Rabbit creature token."
+      "content": "{i}Landfall{/i} {-} Whenever a land you control enters, if you control ten or more permanents, create a 2/2 green and white Rabbit creature token."
     }
   ],
   "pt": {
@@ -32,6 +32,7 @@
     "status": "concept",
     "createdAt": "2025-07-30",
     "deck": "miffy",
-    "count": 2
+    "count": 2,
+    "print": true
   }
 }

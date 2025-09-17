@@ -27,7 +27,7 @@
     },
     {
       "variant": "ability",
-      "content": "{i}Landfall{/i} {-} Whenever a land you control enters, you may tap any number creatures you control with total power 8 or greater. If you do create a 4/4 green Rabbit creature token."
+      "content": "{i}Landfall{/i} {-} Whenever a land you control enters, you may tap any number of untapped creatures you control with total power 8 or greater. If you do, create a 4/4 green Rabbit creature token."
     }
   ],
   "pt": {
@@ -40,6 +40,7 @@
     "status": "concept",
     "createdAt": "2025-07-30",
     "deck": "miffy",
-    "count": 2
+    "count": 2,
+    "print": true
   }
 }

@@ -77,6 +77,23 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchText: st
         return deckTag !== undefined && deckTag.toLowerCase().startsWith(deckNameNeedle);
       }
 
+      // If search term starts with "tag:", filter by any tag
+      if (searchTerm.startsWith('tag:')) {
+        const tagNeedle = searchTerm.slice(searchTerm.indexOf(':') + 1).toLowerCase();
+        const [key, value] = tagNeedle.split('=').map(s => s.trim());
+        if (value) {
+          // If both key and value are specified (e.g. "tag:foo=bar"), match exact key-value pair
+          return card.tags !== undefined && Object.entries(card.tags).some(([k, v]) =>
+            k.toLowerCase() === key && v !== undefined && v.toString().toLowerCase() === value
+          );
+        } else {
+          // If only key is specified (e.g. "tag:foo"), match any tag with that key
+          return card.tags !== undefined && Object.keys(card.tags).some(k =>
+            k.toLowerCase() === key
+          );
+        }
+      }
+
       // Default scenario: check if card name includes the search term
       return card.name.toLowerCase().includes(searchTerm)
     });

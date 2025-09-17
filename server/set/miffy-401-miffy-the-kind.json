@@ -24,7 +24,7 @@
     },
     {
       "variant": "ability",
-      "content": "When ~ leaves the battlefield, create a 1/1 white Rabbit creature token for each card exiled with it. Then return those cards to the battlefield under their owners' control."
+      "content": "When ~ leaves the battlefield, return the exiled cards to their owners' hands and create that many 1/1 white Rabbit creature tokens.{lns}"
     }
   ],
   "pt": {
@@ -38,6 +38,7 @@
     "createdAt": "2025-07-29",
     "deck": "miffy",
     "count": 1,
-    "setting": "Miffy on a yellow background holding a red balloon her hand."
+    "setting": "Miffy on a yellow background holding a red balloon her hand.",
+    "print": true
   }
 }

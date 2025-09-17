@@ -23,7 +23,7 @@
     },
     {
       "variant": "ability",
-      "content": "When ~ enters, you may search your library for a creature card with mana value X or less, where X is the highest power among creatures you control, put that card into your hand, then shuffle.{lns}"
+      "content": "When ~ enters, search your library for a creature card with mana value X or less, where X is the highest power among creatures you control, reveal it, put it into your hand, then shuffle."
     }
   ],
   "pt": {
@@ -36,6 +36,7 @@
     "status": "concept",
     "createdAt": "2025-07-30",
     "deck": "miffy",
-    "count": 2
+    "count": 2,
+    "print": true
   }
 }
