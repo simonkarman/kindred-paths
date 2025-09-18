@@ -59,7 +59,7 @@ const validateNumberRequirement = (requirement: string, actual: number) => {
   }
 
   // Otherwise, check for exact match
-  const num = Number(requirement.slice(0, -sliceEnd));
+  const num = Number(requirement.slice(0, requirement.length - sliceEnd));
   if (isNaN(num)) return false;
   return operator(actual, num);
 };
@@ -111,25 +111,40 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchText: st
           || !ptNeedle.includes('/')
           || ptNeedle.indexOf('/') !== ptNeedle.lastIndexOf('/')
         ) return false;
-        if (ptNeedle.startsWith('n/n')) {
+        if (ptNeedle.includes('n')) {
           // Match "n/n" for cards with equal power/toughness
           if (ptNeedle === 'n/n') {
             return card.pt.power === card.pt.toughness;
           // Match "n/n+" for cards with greater toughness than power
           } else if (ptNeedle === 'n/n+') {
             return card.pt.toughness > card.pt.power;
+          // Match "n+/n" for cards with greater power than toughness
+          } else if (ptNeedle === 'n+/n') {
+            return card.pt.power > card.pt.toughness;
           // Match "n/n-" for cards with less toughness than power
           } else if (ptNeedle === 'n/n-') {
             return card.pt.toughness < card.pt.power;
+          // Match "n-/n" for cards with less power than toughness
+          } else if (ptNeedle === 'n-/n') {
+            return card.pt.power < card.pt.toughness;
           // Match "n/n+2" for cards with toughness exactly equal to its than power by 2
           } else if (ptNeedle.startsWith('n/n+')) {
             const diff = Number(ptNeedle.slice(4));
             return !isNaN(diff) && (card.pt.toughness - card.pt.power) === diff;
-          // Match "n/n-3" for cards with toughness exactly equal to its than power mines 3
+          // Match "n+3/n" for cards with power exactly equal to its than toughness by 3
+          } else if (ptNeedle.startsWith('n+') && ptNeedle.endsWith('/n')) {
+            const diff = Number(ptNeedle.slice(2, -2));
+            return !isNaN(diff) && (card.pt.power - card.pt.toughness) === diff;
+          // Match "n/n-3" for cards with toughness exactly equal to its than power minus 3
           } else if (ptNeedle.startsWith('n/n-')) {
             const diff = Number(ptNeedle.slice(4));
             return !isNaN(diff) && (card.pt.power - card.pt.toughness) === diff;
+          // Match "n-3/n" for cards with power exactly equal to its than toughness minus 3
+          } else if (ptNeedle.startsWith('n-') && ptNeedle.endsWith('/n')) {
+            const diff = Number(ptNeedle.slice(2, -2));
+            return !isNaN(diff) && (card.pt.toughness - card.pt.power) === diff;
           }
+          // Invalid format
           return false;
         }
         let toughnessRequirement = '0+', powerRequirement = '0+';
