@@ -1,0 +1,39 @@
+{
+  "name": "Bat of Variance",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "bat"
+  ],
+  "manaCost": {
+    "black": 1
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "flying"
+    },
+    {
+      "variant": "ability",
+      "content": "As ~ enters, for each creature you control, choose a creature type of that creature other than Bat."
+    },
+    {
+      "variant": "ability",
+      "content": "~ enters with a +1/+1 counter on it for each unique creature type among the chosen creature{lns}types."
+    }
+  ],
+  "pt": {
+    "power": 0,
+    "toughness": 0
+  },
+  "collectorNumber": 305,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "set": "KPA",
+    "deck": "diversity",
+    "count": 2
+  }
+}

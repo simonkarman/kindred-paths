@@ -1,0 +1,38 @@
+{
+  "name": "Nethys, Soulcaller",
+  "rarity": "common",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "whale",
+    "demon"
+  ],
+  "manaCost": {
+    "black": 1,
+    "blue": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "{t}: Choose a creature type of target creature card in your graveyard. Until end of turn you may cast that card and when it enters, you sacrifice a creature of the chosen type."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever you sacrifice a nontoken creature, you lose 2 life and draw a card."
+    }
+  ],
+  "pt": {
+    "power": 1,
+    "toughness": 2
+  },
+  "collectorNumber": 309,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "set": "KPA",
+    "deck": "diversity",
+    "count": 2
+  }
+}

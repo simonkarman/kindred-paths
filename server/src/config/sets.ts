@@ -7,13 +7,18 @@ export type Set = {
   collectorNumberOffset?: number;
 };
 
-export const sets: { [name: string]: Set } = {
+export const sets: { [name: string]: Set} = {
   default: {
+    author: 'Simon Karman',
+    shortName: 'SET',
+    symbol: 'ELD',
+  },
+  KPA: {
     author: 'Simon Karman',
     shortName: 'KPA',
     symbol: 'ELD',
   },
-  miffy: {
+  MFY: {
     author: 'Simon Karman',
     shortName: 'MFY',
     symbol: 'custom/mfy',
@@ -22,11 +27,19 @@ export const sets: { [name: string]: Set } = {
 };
 
 export const getSetForCard = (card: Card): Set => {
+  // If the set tag is a 3-letter string, use that as the set for the card in uppercase
+  const setFromTag = typeof card.tags.set === 'string' && card.tags.set.length === 3
+    ? card.tags.set.toUpperCase()
+    : undefined
+
   // If the card has a string value for the set in the tags, use that as the set
-  if (typeof card.tags.set === 'string' && card.tags.set in sets) {
-    return sets[card.tags.set];
+  if (setFromTag && setFromTag in sets) {
+    return sets[setFromTag];
   }
 
   // Otherwise, use the default set
-  return sets.default;
+  return {
+    ...sets.default,
+    shortName: setFromTag ?? sets.default.shortName,
+  };
 };

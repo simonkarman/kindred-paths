@@ -1,0 +1,24 @@
+{
+  "name": "Plains",
+  "rarity": "common",
+  "supertype": "basic",
+  "types": [
+    "land"
+  ],
+  "subtypes": [
+    "plains"
+  ],
+  "manaCost": {},
+  "rules": [
+    {
+      "variant": "card-type-reminder",
+      "content": "{t}: Add {w}."
+    }
+  ],
+  "collectorNumber": 215,
+  "tags": {
+    "set": "KPA",
+    "deck": "courage",
+    "count": 14
+  }
+}

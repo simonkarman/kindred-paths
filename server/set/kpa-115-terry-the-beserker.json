@@ -1,0 +1,38 @@
+{
+  "name": "Terry the Beserker",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "goat",
+    "beserker"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "haste"
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever a creature enters under your control, if it was cast from anywhere other than your hand, ~ deals 1 damage to target creature an opponent controls."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 1
+  },
+  "collectorNumber": 115,
+  "art": "terry-the-beserker-e915d722-c887-4e0c-83f7-b2d67975ceb5.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "set": "KPA",
+    "deck": "company",
+    "count": 1
+  }
+}

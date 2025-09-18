@@ -1,0 +1,28 @@
+{
+  "name": "Enticing Blow",
+  "rarity": "common",
+  "types": [
+    "sorcery"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 2,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Deal X damage to target creature an opponent controls, where X is the number of red cards you own in exile."
+    }
+  ],
+  "collectorNumber": 111,
+  "art": "enticing-blow-c1151ba9-004a-4675-b1db-f3cc123152b2.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "set": "KPA",
+    "deck": "company",
+    "count": 1,
+    "setting": "Heavy wind blowing a human creature away with great force into a dark pit in the background."
+  }
+}

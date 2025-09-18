@@ -1,0 +1,23 @@
+{
+  "name": "Treasure",
+  "rarity": "common",
+  "supertype": "token",
+  "tokenColors": [],
+  "types": [
+    "artifact"
+  ],
+  "subtypes": [
+    "treasure"
+  ],
+  "manaCost": {},
+  "rules": [],
+  "collectorNumber": 599,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "set": "MFY",
+    "deck": "gw-tokens",
+    "count": 0,
+    "deleted": true
+  }
+}

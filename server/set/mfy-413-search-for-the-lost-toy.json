@@ -1,0 +1,43 @@
+{
+  "name": "Search for the Lost Toy",
+  "rarity": "uncommon",
+  "types": [
+    "instant"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 4,
+    "white": 2
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "convoke"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature’s color."
+    },
+    {
+      "variant": "ability",
+      "content": "Choose one {-}"
+    },
+    {
+      "variant": "ability",
+      "content": "• Exile target creature."
+    },
+    {
+      "variant": "ability",
+      "content": "• Exile up to two target artifacts and/or enchantments."
+    }
+  ],
+  "collectorNumber": 413,
+  "art": "mfy/search-for-the-lost-toy.jpg",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "set": "MFY",
+    "deck": "gw-tokens",
+    "count": 1
+  }
+}

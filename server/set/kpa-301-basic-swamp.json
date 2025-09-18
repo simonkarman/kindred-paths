@@ -1,0 +1,26 @@
+{
+  "name": "Swamp",
+  "rarity": "common",
+  "supertype": "basic",
+  "types": [
+    "land"
+  ],
+  "subtypes": [
+    "swamp"
+  ],
+  "manaCost": {},
+  "rules": [
+    {
+      "variant": "card-type-reminder",
+      "content": "{t}: Add {b}."
+    }
+  ],
+  "collectorNumber": 301,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "set": "KPA",
+    "deck": "diversity",
+    "count": 7
+  }
+}

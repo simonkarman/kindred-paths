@@ -1,0 +1,46 @@
+{
+  "name": "Miffy, The Brave",
+  "rarity": "mythic",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "rabbit",
+    "druid"
+  ],
+  "manaCost": {
+    "green": 3
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "ward {2}"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}."
+    },
+    {
+      "variant": "ability",
+      "content": "Each creature you control enters with an additional +1/+1 counter on it."
+    },
+    {
+      "variant": "ability",
+      "content": "When a creature with power 4 or greater enters under your control, you may search your library for a Forest card, reveal it, put it into your hand, then shuffle."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 426,
+  "art": "mfy/miffy-the-brave.jpg",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-29",
+    "set": "MFY",
+    "deck": "gw-tokens",
+    "count": 1
+  }
+}

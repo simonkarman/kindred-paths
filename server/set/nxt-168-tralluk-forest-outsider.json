@@ -1,0 +1,36 @@
+{
+  "name": "Tralluk, Forest Outsider",
+  "rarity": "mythic",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "Plant",
+    "rogue"
+  ],
+  "manaCost": {
+    "green": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "~ enters with a +1/+1 counter on it if you control no other creatures."
+    },
+    {
+      "variant": "ability",
+      "content": "At the beginning of your upkeep, if you control no other creatures, double the number of +1/+1 counters on ~."
+    }
+  ],
+  "pt": {
+    "power": 0,
+    "toughness": 0
+  },
+  "collectorNumber": 168,
+  "art": "next-168-tralki-lonesome-sprout-a5cfa90e-86d3-461b-8280-6194ab42d93e.png",
+  "tags": {
+    "set": "NXT",
+    "count": 1,
+    "setting": "A lone plant creature emerges from cracked earth in a desolate clearing, its vines reaching upward while empty forest shadows loom in the background."
+  }
+}

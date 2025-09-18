@@ -1,0 +1,44 @@
+{
+  "name": "Pluck",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "cat"
+  ],
+  "manaCost": {
+    "colorless": 2,
+    "white": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Courageous 2"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Whenever this creature becomes tapped and it isn't attacking, blocking, or courageous, put a courage counter on it. As long as this creature has 2 or more courage counters on it, it is courageous."
+    },
+    {
+      "variant": "ability",
+      "content": "{t}: Create a 1/1 white Cat creature token."
+    },
+    {
+      "variant": "ability",
+      "content": "As long as ~ is courageous, other Cats you control have lifelink."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 3
+  },
+  "collectorNumber": 210,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "set": "KPA",
+    "deck": "courage",
+    "count": 2
+  }
+}

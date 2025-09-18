@@ -1,0 +1,37 @@
+{
+  "name": "Friendly Bear",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "bear"
+  ],
+  "manaCost": {
+    "colorless": 2,
+    "green": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ enters, put a +1/+1 counter on target creature you control."
+    },
+    {
+      "variant": "flavor",
+      "content": "The friendliest bear you have ever met. He is friends with grizzly bears, bear cubs and forest bears."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 433,
+  "art": "mfy/friendly-bear.jpg",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-30",
+    "set": "MFY",
+    "deck": "gw-tokens",
+    "count": 1
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "Family Picnic",
+  "rarity": "rare",
+  "types": [
+    "enchantment"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 1,
+    "white": 1,
+    "green": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "Creature tokens you control get +1/+1."
+    },
+    {
+      "variant": "ability",
+      "content": "At the beginning of your upkeep, if creatures you control have total power 10 or more, populate."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Create a token that’s a copy of a creature token you control."
+    }
+  ],
+  "collectorNumber": 465,
+  "art": "mfy/family-picnic.jpg",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "set": "MFY",
+    "deck": "gw-tokens",
+    "count": 1
+  }
+}

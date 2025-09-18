@@ -1,0 +1,45 @@
+{
+  "name": "The Eternal Ferryman",
+  "rarity": "uncommon",
+  "types": [
+    "enchantment",
+    "creature"
+  ],
+  "subtypes": [
+    "zombie",
+    "god"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "blue": 1,
+    "black": 1
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "indestructible"
+    },
+    {
+      "variant": "ability",
+      "content": "As long as your devotion to blue and black is less then 5, ~ isn't a creature."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever a Zombie you control dies, scry 1. If this is the second time this ability has resolved this turn, you lose 1 life and draw a card."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 3
+  },
+  "collectorNumber": 823,
+  "art": "823-the-eternal-ferryman-6cb58ff1-f62c-4d3a-801d-aafd2d83a4cb.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-31",
+    "setting": "A ferryman carrying a soul over the river",
+    "set": "NXT",
+    "count": 0,
+    "deleted": true
+  }
+}

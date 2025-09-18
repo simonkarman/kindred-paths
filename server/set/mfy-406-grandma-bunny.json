@@ -1,0 +1,51 @@
+{
+  "name": "Grandma Bunny",
+  "rarity": "uncommon",
+  "types": [
+    "enchantment",
+    "creature"
+  ],
+  "subtypes": [
+    "rabbit",
+    "cleric"
+  ],
+  "manaCost": {
+    "colorless": 3,
+    "white": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "At the beginning of combat on your turn, choose one {-}"
+    },
+    {
+      "variant": "ability",
+      "content": "• Another target creature you control gains protection from the color of you choice until end of turn."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Until end of turn that creature can't be blocked, targeted, dealt damage, enchanted, or equipped by anything of that color."
+    },
+    {
+      "variant": "ability",
+      "content": "• Create a 1/1 white Rabbit creature token."
+    },
+    {
+      "variant": "ability",
+      "content": "• Gain 2 life."
+    }
+  ],
+  "pt": {
+    "power": 3,
+    "toughness": 3
+  },
+  "collectorNumber": 406,
+  "art": "mfy/grandma-bunny.jpg",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-30",
+    "set": "MFY",
+    "deck": "gw-tokens",
+    "count": 1
+  }
+}

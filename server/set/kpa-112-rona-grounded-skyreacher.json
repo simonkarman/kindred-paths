@@ -1,0 +1,42 @@
+{
+  "name": "Rona, Grounded Skyreacher",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "goat",
+    "dragon"
+  ],
+  "manaCost": {
+    "colorless": 4,
+    "red": 2
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "accompany {r}"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Whenever this creature enters or attacks, you may pay {r} to exile a red nonland card from your hand. You may cast that card for as long as it remains exiled, and it costs {r} (or {1}) less to cast."
+    },
+    {
+      "variant": "ability",
+      "content": "As long as ~ is accompanied by a creature card with flying, it gets +1/+1 and has flying. The same is true for haste, menace, and first strike.{lns}"
+    }
+  ],
+  "pt": {
+    "power": 4,
+    "toughness": 4
+  },
+  "collectorNumber": 112,
+  "art": "rona-grounded-skyreacher-4ca75d85-dada-44ac-b3e1-36c656ecf027.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "set": "KPA",
+    "deck": "company",
+    "count": 1
+  }
+}

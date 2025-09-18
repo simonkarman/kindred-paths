@@ -1,0 +1,43 @@
+{
+  "name": "Boris Bear",
+  "rarity": "uncommon",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "bear",
+    "ranger"
+  ],
+  "manaCost": {
+    "colorless": 3,
+    "green": 1
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "ward {1}"
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {1}."
+    },
+    {
+      "variant": "ability",
+      "content": "When ~ enters, search your library for a creature card with mana value X or less, where X is the highest power among creatures you control, reveal it, put it into your hand, then shuffle."
+    }
+  ],
+  "pt": {
+    "power": 3,
+    "toughness": 3
+  },
+  "collectorNumber": 431,
+  "art": "mfy/boris-bear.jpg",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-30",
+    "set": "MFY",
+    "deck": "gw-tokens",
+    "count": 2,
+    "print": true
+  }
+}

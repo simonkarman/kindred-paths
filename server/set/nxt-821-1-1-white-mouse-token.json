@@ -1,0 +1,30 @@
+{
+  "name": "Mouse",
+  "rarity": "common",
+  "supertype": "token",
+  "tokenColors": [
+    "white"
+  ],
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "mouse"
+  ],
+  "manaCost": {},
+  "rules": [],
+  "pt": {
+    "power": 1,
+    "toughness": 1
+  },
+  "collectorNumber": 821,
+  "art": "next-821-1-1-white-mouse-token-25535645-590b-47d9-bd8a-295b9a323763.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-09-01",
+    "setting": "A small gray mouse stands triumphantly atop a wheel of cheese in a moonlit pantry, crumbs scattered around its tiny paws.",
+    "set": "NXT",
+    "count": 1,
+    "deleted": true
+  }
+}

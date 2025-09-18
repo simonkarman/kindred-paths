@@ -1,0 +1,22 @@
+{
+  "name": "Plains",
+  "rarity": "common",
+  "supertype": "basic",
+  "types": [
+    "land"
+  ],
+  "subtypes": [
+    "plains"
+  ],
+  "manaCost": {},
+  "rules": [],
+  "collectorNumber": 417,
+  "art": "mfy/plains.jpg",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-08-02",
+    "set": "MFY",
+    "deck": "gw-tokens",
+    "count": 7
+  }
+}

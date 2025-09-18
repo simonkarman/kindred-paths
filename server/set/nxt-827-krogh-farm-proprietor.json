@@ -1,0 +1,46 @@
+{
+  "name": "Krogh, Farm Proprietor",
+  "rarity": "rare",
+  "supertype": "legendary",
+  "types": [
+    "planeswalker"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "green": 1,
+    "white": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "+1: Create a Food token."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "It has “{2}, {T}, Sacrifice this token: You gain 3 life.”"
+    },
+    {
+      "variant": "ability",
+      "content": "0: Create a Treasure token."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "It has \"{T}, Sacrifice this token: Add one mana of any color.\""
+    },
+    {
+      "variant": "ability",
+      "content": "-X: Sacrifice up to X artifacts. If you do,{lns}search your library for up to that many basic land cards and put them onto the battlefield tapped under your control. Then shuffle."
+    }
+  ],
+  "loyalty": 2,
+  "collectorNumber": 827,
+  "art": "next-827-krogh-farm-proprietor-b021983f-1d82-4b9b-84be-43042a3ed55c.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-09-02",
+    "fs/rules": -6,
+    "setting": "In a bustling marketplace garden, a determined figure sorts through baskets of vegetables looking into the camera, while behind them fertile fields stretch toward a quaint village.",
+    "set": "NXT",
+    "count": 1
+  }
+}

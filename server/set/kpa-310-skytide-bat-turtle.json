@@ -1,0 +1,42 @@
+{
+  "name": "Skytide Bat Turtle",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "turtle",
+    "bat"
+  ],
+  "manaCost": {
+    "colorless": 2,
+    "blue": 1,
+    "black": 1
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "flying"
+    },
+    {
+      "variant": "keyword",
+      "content": "deathtouch"
+    },
+    {
+      "variant": "ability",
+      "content": "{i}Renew{/i} {-} {1}{u}{b}, Exile this card from your graveyard: Put your choice of a deathtouch or flying counter on target creature you control. Activate only as a sorcery."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 310,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "set": "KPA",
+    "deck": "diversity",
+    "count": 2
+  }
+}

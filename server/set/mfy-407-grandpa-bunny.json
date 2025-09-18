@@ -1,0 +1,38 @@
+{
+  "name": "Grandpa Bunny",
+  "rarity": "uncommon",
+  "types": [
+    "enchantment",
+    "creature"
+  ],
+  "subtypes": [
+    "rabbit"
+  ],
+  "manaCost": {
+    "colorless": 2,
+    "white": 1
+  },
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "lifelink"
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever ~ enters, exile target nonland permanent an opponent controls until ~ leaves the battlefield."
+    }
+  ],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 407,
+  "art": "mfy/grandpa-bunny.jpg",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-30",
+    "set": "MFY",
+    "deck": "gw-tokens",
+    "count": 1
+  }
+}

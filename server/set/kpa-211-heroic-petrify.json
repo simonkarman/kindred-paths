@@ -1,0 +1,35 @@
+{
+  "name": "Heroic Petrify",
+  "rarity": "common",
+  "types": [
+    "enchantment"
+  ],
+  "subtypes": [
+    "aura"
+  ],
+  "manaCost": {
+    "white": 2
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "~ can be cast as though it had flash as long as you control a courageous creature."
+    },
+    {
+      "variant": "ability",
+      "content": "Enchant creature"
+    },
+    {
+      "variant": "ability",
+      "content": "Enchanted creature can't attack or block, and its activated abilities can't be activated."
+    }
+  ],
+  "collectorNumber": 211,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "set": "KPA",
+    "deck": "courage",
+    "count": 1
+  }
+}

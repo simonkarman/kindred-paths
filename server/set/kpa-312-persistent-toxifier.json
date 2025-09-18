@@ -1,0 +1,41 @@
+{
+  "name": "Persistent Toxifier",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "scorpion",
+    "demon"
+  ],
+  "manaCost": {
+    "colorless": 5,
+    "black": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ enters the battlefield, surveil 3."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "Look at the top three cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order."
+    },
+    {
+      "variant": "ability",
+      "content": "{i}Renew{/i} {-} {2}{b}, Exile this card from your graveyard: Put X -1/-1 counters on target creature, where X is the number of noncreature cards in your graveyard. Activate only as a sorcery."
+    }
+  ],
+  "pt": {
+    "power": 5,
+    "toughness": 5
+  },
+  "collectorNumber": 312,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "set": "KPA",
+    "deck": "diversity",
+    "count": 1
+  }
+}

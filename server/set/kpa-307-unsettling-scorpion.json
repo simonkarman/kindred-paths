@@ -1,0 +1,40 @@
+{
+  "name": "Unsettling Scorpion",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "scorpion"
+  ],
+  "manaCost": {
+    "colorless": 2,
+    "black": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ enters, choose a creature type, you may behold a creature of the chosen type. If you do, choose a creature card of the chosen type in your graveyard. You may cast that creature this turn."
+    },
+    {
+      "variant": "inline-reminder",
+      "content": "To behold a creature, choose a creature you control of the chosen type or reveal a creature card from your hand with the chosen type."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever a creature card leaves your graveyard, you gain 1 life and each opponent loses{lns}1 life."
+    }
+  ],
+  "pt": {
+    "power": 3,
+    "toughness": 3
+  },
+  "collectorNumber": 307,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-24",
+    "set": "KPA",
+    "deck": "diversity",
+    "count": 2
+  }
+}

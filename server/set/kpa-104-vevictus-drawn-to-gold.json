@@ -1,0 +1,43 @@
+{
+  "name": "Vevictus, Drawn to Gold",
+  "rarity": "common",
+  "supertype": "legendary",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "dragon"
+  ],
+  "manaCost": {
+    "colorless": 3,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "When ~ enters, if it was cast from exile, create a Treasure token."
+    },
+    {
+      "variant": "keyword",
+      "content": "flying"
+    },
+    {
+      "variant": "flavor",
+      "content": "\"~ prefers treasure over company.\" - Karl, Curious{lns}Observer"
+    }
+  ],
+  "pt": {
+    "power": 3,
+    "toughness": 3
+  },
+  "collectorNumber": 104,
+  "art": "vevictus-drawn-to-gold-8bad71ed-8ac4-4384-b6b2-82f8782c7234.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-07-23",
+    "set": "KPA",
+    "deck": "company",
+    "count": 2,
+    "setting": "Guarding a pile of silver and golden treasure."
+  }
+}
