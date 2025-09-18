@@ -6,7 +6,7 @@ A tool for managing a collection of custom Magic the Gathering cards. Created by
 - **View Rendered Cards**: View rendered Magic the Gathering cards in your collection with details like name, type, mana cost, artwork, and more.
 - **Card AI Suggestions**: Get AI-generated text suggestions for things such as card names (via Anthropic).
 - **Card AI Artwork**: Get AI-generated suggestions for card artwork (via LeonardoAI).
-- **Deck Management**: Create and manage decks using the cards in your collection.
+- **Set and Deck Management**: Create and manage sets and decks using the cards in your collection.
 - **Printing**: Create a printable PDF of cards on A4 format suitable for easy cut out for play testing purposes.
 
 ![Kindred Paths](./kindred-paths.png)

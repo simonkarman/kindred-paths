@@ -16,7 +16,7 @@ export function TextTab(props: { cards: SerializedCard[] }) {
       )
     })}
     {props.cards.length === 0 && (
-      <li className="text-zinc-500">No cards in this deck.</li>
+      <li className="text-zinc-500">No cards found.</li>
     )}
   </ul>
 }

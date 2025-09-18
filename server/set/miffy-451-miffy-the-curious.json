@@ -45,7 +45,8 @@
   "tags": {
     "status": "concept",
     "createdAt": "2025-07-29",
-    "deck": "miffy",
+    "set": "miffy",
+    "deck": "gw-tokens",
     "count": 1
   }
 }

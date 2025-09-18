@@ -1,6 +1,6 @@
 import { Card } from 'kindred-paths';
 
-export type Set = { 
+export type Set = {
   author: string;
   shortName: string;
   symbol: string;
@@ -22,11 +22,6 @@ export const sets: { [name: string]: Set } = {
 };
 
 export const getSetForCard = (card: Card): Set => {
-  // If the card has a string value for deck in the tags, use that as the set
-  if (typeof card.tags.deck === 'string' && card.tags.deck in sets) {
-    return sets[card.tags.deck];
-  }
-
   // If the card has a string value for the set in the tags, use that as the set
   if (typeof card.tags.set === 'string' && card.tags.set in sets) {
     return sets[card.tags.set];

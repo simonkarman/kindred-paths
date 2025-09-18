@@ -71,7 +71,7 @@ export default function SearchBar() {
         setSearchText={setSearchText}
         onBlur={handleBlur}
         isOpen={isOpen}
-        placeholder="Search... (e.g., deck:miffy type:artifact home)"
+        placeholder="Search... (e.g., set:miffy type:artifact home)"
       />
       <button
         onClick={() => setOpen(true)}

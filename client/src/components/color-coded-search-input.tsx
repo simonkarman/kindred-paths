@@ -36,6 +36,7 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
       { keys: ['manavalue', 'mv'], value: /^\d+$|^\d+[+-]$/ },
       { keys: ['pt'], value: /^yes$|^no$|^n\/n(?:[+-]\d*)?$|^n(?:[+-]\d*)?\/n$|^(?:\d+[+-]?)?\/(?:\d+[+-]?)?$/ },
       { keys: ['deck', 'd'] },
+      { keys: ['set', 's'] },
       { keys: ['tag'] },
     ];
 

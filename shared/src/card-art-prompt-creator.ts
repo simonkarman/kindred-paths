@@ -27,7 +27,7 @@ export class CardArtPromptCreator {
       'enchantment': ', focusing on a magical effect that is visible in the environment',
       'planeswalker': ', focusing on a dynamic moment that tells a clear story within a single frame',
     };
-    if (card.tags['deck'] === 'miffy') {
+    if (card.tags['set'] === 'miffy') {
       const miffyStyle = `in the style of Miffy by Dick Bruna using simple colors and without shadows${focus[dominantCardType] ?? ''}.`;
       sections.push(miffyStyle);
     } else {

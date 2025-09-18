@@ -21,7 +21,8 @@
   "tags": {
     "status": "concept",
     "createdAt": "2025-08-03",
-    "deck": "miffy",
+    "set": "miffy",
+    "deck": "gw-tokens",
     "count": 1,
     "art/focus": "zoom-1",
     "fs/rules": 10

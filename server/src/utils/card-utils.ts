@@ -1,8 +1,8 @@
 import { SerializedCard } from 'kindred-paths';
 
 export const computeCardId = (card: SerializedCard) => {
-  const deck = typeof card.tags?.deck === 'string' ? `${card.tags.deck}-` : '';
-  const prefix = deck + `${card.collectorNumber}-`;
+  const set = typeof card.tags?.set === 'string' ? `${card.tags.set}-` : '';
+  const prefix = set + `${card.collectorNumber}-`;
   const sanitize = (str: string) => (prefix + str).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-');
 
   if (card.supertype === 'token') {

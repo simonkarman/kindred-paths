@@ -34,8 +34,8 @@ import { useSearch } from '@/utils/use-search';
 export function CardEditor({ start }: { start: SerializedCard }) {
   const isCreate = start.id === "<new>";
   const [searchText] = useSearch();
-  const deckName = (searchText.match(/(?:^|\s)deck:([^\s]+)/i)?.[1] ?? '').trim();
-  const hasActiveDeck = deckName.length !== 0;
+  const set = (searchText.match(/(?:^|\s)s(?:et)?[:=]([^\s]+)/i)?.[1] ?? '').trim();
+  const hasActiveSet = set.length !== 0;
 
   // Properties State
   const [name, setName] = useState(start.name);
@@ -107,16 +107,16 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     }
   }, [supertype, subtypes, types]);
 
-  // If deckName changes, update tags
+  // If setName changes, update tags
   useEffect(() => {
-    if (isCreate && hasActiveDeck) {
+    if (isCreate && hasActiveSet) {
       setTags(tags => ({
         ...tags,
-        deck: deckName,
+        set,
         count: tags?.count ?? 1, // Default to 1 if not set
       }));
     }
-  }, [isCreate, hasActiveDeck, deckName]);
+  }, [isCreate, hasActiveSet, set]);
 
   const serializedCard: SerializedCard = {
     id: start.id,

@@ -167,6 +167,11 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchText: st
         return deckTag !== undefined && deckTag.toLowerCase().startsWith(deckNameNeedle);
       }),
 
+      check(['set', 's'], setNameNeedle => {
+        const setTag = card.getTagAsString('set');
+        return setTag !== undefined && setTag.toLowerCase().startsWith(setNameNeedle);
+      }),
+
       check(['tag'], tagNeedle => {
         const [key, value] = tagNeedle.split('=').map(s => s.trim());
         if (value) {
