@@ -35,8 +35,7 @@
     "status": "concept",
     "createdAt": "2025-07-24",
     "set": "KPA",
-    "deck": "diversity",
-    "count": 2,
-    "setting": "A sturdy turtle pushes through thick kelp forests in murky depths, its powerful flippers churning up clouds of sand and debris that reveal glimpses of buried treasures and lost scrolls."
+    "setting": "A sturdy turtle pushes through thick kelp forests in murky depths, its powerful flippers churning up clouds of sand and debris that reveal glimpses of buried treasures and lost scrolls.",
+    "deck/diversity": 2
   }
 }

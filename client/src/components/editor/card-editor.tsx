@@ -29,13 +29,12 @@ import { CardPreview } from '@/components/editor/card-preview';
 import { CardArtInput } from '@/components/editor/card-art-input';
 import { CardTokenColorsInput } from '@/components/editor/card-token-colors-input';
 import { CardLoyaltyInput } from '@/components/editor/card-loyalty-input';
-import { useSearch } from '@/utils/use-search';
+import { useDeckNameFromSearch, useSetNameFromSearch } from '@/utils/use-search';
 
 export function CardEditor({ start }: { start: SerializedCard }) {
   const isCreate = start.id === "<new>";
-  const [searchText] = useSearch();
-  const set = (searchText.match(/(?:^|\s)s(?:et)?[:=]([^\s]+)/i)?.[1] ?? '').trim();
-  const hasActiveSet = set.length !== 0;
+  const set = useSetNameFromSearch();
+  const deck = useDeckNameFromSearch();
 
   // Properties State
   const [name, setName] = useState(start.name);
@@ -109,14 +108,14 @@ export function CardEditor({ start }: { start: SerializedCard }) {
 
   // If setName changes, update tags
   useEffect(() => {
-    if (isCreate && hasActiveSet) {
+    if (isCreate && (set || deck)) {
       setTags(tags => ({
         ...tags,
-        set,
-        count: tags?.count ?? 1, // Default to 1 if not set
+        ...(set ? { set } : {}),
+        ...(deck ? { [`deck/${deck}`]: 1 } : {}),
       }));
     }
-  }, [isCreate, hasActiveSet, set]);
+  }, [isCreate, deck, set]);
 
   const serializedCard: SerializedCard = {
     id: start.id,

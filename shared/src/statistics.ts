@@ -22,12 +22,24 @@ export function createDistribution<T>(items: T[], getCount: (item: T) => number,
   }, {} as Record<string, number>);
 }
 
-export function createCardDistribution(cards: Card[], getKeys: (item: Card) => string | string[]): Record<string, number> {
-  return createDistribution(cards, c => c.getTagAsNumber('count') ?? 0, getKeys);
-}
+export function getStatistics(_cards: SerializedCard[], deckName?: string) {
+  const getCount = (card: Card) => {
+    if (!deckName) {
+      // When no deck name is provided, each card is counted once
+      return 1;
+    }
+    // When a deck name is provided, return the count for that deck, or 0 if not present
+    return card.getTagAsNumber(`deck/${deckName}`) ?? 0;
+  };
 
-export function getStatistics(_cards: SerializedCard[]) {
-  const cards = _cards.map(c => new Card(c)).filter(c => ![undefined, 0].includes(c.getTagAsNumber('count')));
+  const createCardDistribution = (
+    cards: Card[],
+    getKeys: (item: Card) => string | string[],
+  ): Record<string, number> => {
+    return createDistribution(cards, getCount, getKeys);
+  };
+
+  const cards = _cards.map(c => new Card(c));
 
   const cardsWithoutTokens = cards.filter(c => c.supertype !== 'token');
   const cardsWithoutTokensAndBasicLands = cardsWithoutTokens.filter(c => c.supertype !== 'basic');
@@ -36,7 +48,7 @@ export function getStatistics(_cards: SerializedCard[]) {
   const tokens = cards.filter(c => c.supertype === 'token');
   const availableTokenNames = tokens.flatMap(token => [token.getReferenceName(), `${token.name} token`]);
 
-  const countSum = (cards: Card[]) => cards.reduce((acc, card) => acc + (card.getTagAsNumber('count') ?? 0), 0);
+  const countSum = (cards: Card[]) => cards.reduce((acc, card) => acc + getCount(card), 0);
   return {
     totalCount: countSum(cardsWithoutTokens),
     nonlandCount: countSum(cardsWithoutTokens.filter(c => !c.types.includes('land'))),
@@ -49,7 +61,9 @@ export function getStatistics(_cards: SerializedCard[]) {
     tokens,
     availableTokenNames,
 
-    cardsWithZeroCount: _cards.map(c => new Card(c)).filter(c => [undefined, 0].includes(c.getTagAsNumber('count'))),
+    cardsWithZeroCount: deckName
+      ? _cards.map(c => new Card(c)).filter(c => c.getTagAsNumber(`deck/${deckName}`) === 0)
+      : [],
 
     // Distributions
     cardColorDistribution: createCardDistribution(cardsWithoutTokensAndBasicLands, c => c.color()),
@@ -64,7 +78,7 @@ export function getStatistics(_cards: SerializedCard[]) {
     ),
     cardTypeDistribution: createCardDistribution(
       cardsWithoutTokens,
-      c => c.types,
+      c => c.types.map(t => c.supertype === 'basic' ? `${c.supertype} ${t}` : t),
     ),
     subtypeDistribution: createCardDistribution(
       cardsWithoutTokensAndBasicLands,

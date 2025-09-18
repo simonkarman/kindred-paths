@@ -43,7 +43,6 @@
     "status": "concept",
     "createdAt": "2025-08-02",
     "set": "MFY",
-    "deck": "gw-tokens",
-    "count": 1
+    "deck/gw-tokens": 1
   }
 }

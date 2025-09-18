@@ -40,7 +40,6 @@
     "status": "concept",
     "createdAt": "2025-07-23",
     "set": "KPA",
-    "deck": "company",
-    "count": 2
+    "deck/company": 2
   }
 }

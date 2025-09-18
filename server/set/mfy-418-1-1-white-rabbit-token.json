@@ -23,8 +23,7 @@
     "status": "concept",
     "createdAt": "2025-08-02",
     "set": "MFY",
-    "deck": "gw-tokens",
-    "count": 7,
-    "art/focus": "zoom-0"
+    "art/focus": "zoom-0",
+    "deck/gw-tokens": 7
   }
 }

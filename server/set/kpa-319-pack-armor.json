@@ -30,8 +30,7 @@
     "status": "concept",
     "createdAt": "2025-07-24",
     "set": "KPA",
-    "deck": "diversity",
-    "count": 2,
-    "setting": "Two exact same body armors on display next to each other."
+    "setting": "Two exact same body armors on display next to each other.",
+    "deck/diversity": 2
   }
 }

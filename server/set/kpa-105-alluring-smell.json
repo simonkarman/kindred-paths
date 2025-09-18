@@ -29,8 +29,7 @@
     "status": "concept",
     "createdAt": "2025-07-23",
     "set": "KPA",
-    "deck": "company",
-    "count": 2,
-    "setting": "Smell coming from a pit in the ground flowing towards a group of creatures making them hasty."
+    "setting": "Smell coming from a pit in the ground flowing towards a group of creatures making them hasty.",
+    "deck/company": 2
   }
 }

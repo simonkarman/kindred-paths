@@ -34,7 +34,6 @@
     "status": "concept",
     "createdAt": "2025-07-26",
     "set": "KPA",
-    "deck": "courage",
-    "count": 2
+    "deck/courage": 2
   }
 }

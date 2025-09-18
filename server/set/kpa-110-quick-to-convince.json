@@ -37,8 +37,7 @@
     "status": "concept",
     "createdAt": "2025-07-23",
     "set": "KPA",
-    "deck": "company",
-    "count": 2,
-    "setting": "A fiery tornado destroying a forest."
+    "setting": "A fiery tornado destroying a forest.",
+    "deck/company": 2
   }
 }

@@ -3,6 +3,25 @@ import { Card, CardColor, CardColorCharacter, colorToLong, SerializedCard, wubrg
 
 export const useSearch = () => useLocalStorageState('search', '');
 
+const useValueFromSearch = (keys: string[]): string | undefined => {
+  // TODO: this could result in multiple values if the user specifies the same key multiple times
+  //       e.g. "deck:foo deck:bar" would return "foo" currently, but maybe should return undefined or an array of both values
+  const [searchText] = useSearch();
+  const searchTerms = searchText.trim().toLowerCase().split(/\s+/);
+  for (const term of searchTerms) {
+    if (keys.some(key => term.startsWith(`${key}:`))) {
+      const deckName = term.slice(term.indexOf(':') + 1).trim();
+      if (deckName.length > 0) {
+        return deckName;
+      }
+    }
+  }
+  return undefined;
+};
+
+export const useDeckNameFromSearch = () => useValueFromSearch(['deck', 'd']);
+export const useSetNameFromSearch = () => useValueFromSearch(['set', 's']);
+
 const check = (
   keys: string[],
   predicate: (needle: string) => boolean
@@ -163,8 +182,8 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchText: st
       }),
 
       check(['deck', 'd'], deckNameNeedle => {
-        const deckTag = card.getTagAsString('deck');
-        return deckTag !== undefined && deckTag.toLowerCase().startsWith(deckNameNeedle);
+        const deckTag = card.getTagAsNumber(`deck/${deckNameNeedle}`);
+        return deckTag !== undefined && deckTag >= 0;
       }),
 
       check(['set', 's'], setNameNeedle => {

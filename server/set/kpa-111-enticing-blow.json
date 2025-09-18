@@ -21,8 +21,7 @@
     "status": "concept",
     "createdAt": "2025-07-23",
     "set": "KPA",
-    "deck": "company",
-    "count": 1,
-    "setting": "Heavy wind blowing a human creature away with great force into a dark pit in the background."
+    "setting": "Heavy wind blowing a human creature away with great force into a dark pit in the background.",
+    "deck/company": 1
   }
 }

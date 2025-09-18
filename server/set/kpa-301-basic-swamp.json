@@ -20,7 +20,6 @@
     "status": "concept",
     "createdAt": "2025-07-24",
     "set": "KPA",
-    "deck": "diversity",
-    "count": 7
+    "deck/diversity": 7
   }
 }

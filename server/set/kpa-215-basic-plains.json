@@ -18,7 +18,6 @@
   "collectorNumber": 215,
   "tags": {
     "set": "KPA",
-    "deck": "courage",
-    "count": 14
+    "deck/courage": 14
   }
 }

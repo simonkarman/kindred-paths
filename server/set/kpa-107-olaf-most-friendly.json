@@ -36,8 +36,7 @@
     "status": "concept",
     "createdAt": "2025-07-23",
     "set": "KPA",
-    "deck": "company",
-    "count": 3,
-    "setting": "With a group of goats standing behind him ready to rush forward on his command."
+    "setting": "With a group of goats standing behind him ready to rush forward on his command.",
+    "deck/company": 3
   }
 }

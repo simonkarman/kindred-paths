@@ -1,20 +1,20 @@
 import { getStatistics, SerializedCard } from 'kindred-paths';
 import { BarDistribution } from '@/components/distribution/bar-distribution';
 import { GridDistribution } from '@/components/distribution/grid-distribution';
+import { useDeckNameFromSearch } from '@/utils/use-search';
 
 export function StatisticsTab(props: { cards: SerializedCard[] }) {
+  const deckName = useDeckNameFromSearch();
   const {
     totalCount, nonlandCount, landCount, availableTokenNames,
-    cardsWithZeroCount,
     cardColorDistribution, rarityDistribution,
     manaValueRarityDistribution,
     manaValueDistribution, cardTypeDistribution,
     subtypeDistribution, tokenDistribution,
-  } = getStatistics(props.cards);
+  } = getStatistics(props.cards, deckName);
   return <>
     <p className="text-zinc-500 text-sm italic">
       Overview of <span className="font-bold">{totalCount}</span> cards ({nonlandCount} nonlands and {landCount} lands).
-      {cardsWithZeroCount.length > 0 && <>The following cards have a count of zero: {cardsWithZeroCount.map(c => c.name).join(', ')}</>}
     </p>
     <div className="flex gap-5 justify-between items-start py-2 break-inside-avoid">
       <BarDistribution title="Card Color" data={cardColorDistribution} />

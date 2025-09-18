@@ -37,8 +37,7 @@
     "status": "concept",
     "createdAt": "2025-07-29",
     "set": "MFY",
-    "deck": "gw-tokens",
-    "count": 1,
-    "setting": "Miffy on a yellow background holding a red balloon her hand."
+    "setting": "Miffy on a yellow background holding a red balloon her hand.",
+    "deck/gw-tokens": 1
   }
 }

@@ -22,9 +22,8 @@
     "status": "concept",
     "createdAt": "2025-08-03",
     "set": "MFY",
-    "deck": "gw-tokens",
-    "count": 1,
     "art/focus": "zoom-1",
-    "fs/rules": 10
+    "fs/rules": 10,
+    "deck/gw-tokens": 1
   }
 }

@@ -505,8 +505,8 @@ export class Card {
     return this.rules
       .filter(r => r.variant === 'ability' && r.content.toLowerCase().includes('create'))
       .flatMap(r => {
-        const tokenRegex = /create (?:a|X|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen) ([a-zA-Z0-9/\s]+? token)s?/gi;
-        const match = r.content.matchAll(tokenRegex);
+        const regex = /create (?:a|that many|X|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen) ([a-zA-Z0-9/\s]+? token)s?/gi;
+        const match = r.content.matchAll(regex);
         return Array.from(match).map(m => m[1].trim());
       })
       .filter(token => token.length > 0);

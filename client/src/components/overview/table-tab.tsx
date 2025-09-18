@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClone, faImage, faPenToSquare, faShieldCat, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import { deleteCard } from '@/utils/server';
+import { useDeckNameFromSearch } from '@/utils/use-search';
 
 type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' | 'power' | 'toughness' | 'art' | 'tags' | 'tag:count';
 
@@ -25,6 +26,7 @@ export const TableTab = (props: {
   cards: SerializedCard[],
   onSelect?: (card: SerializedCard) => void,
 }) => {
+  const deckName = useDeckNameFromSearch();
   const { onSelect } = props;
 
   const [sortKey, setSortKey] = useState<{ k: SortKey, d: 'asc' | 'desc' }>({ k: 'collector-number', d: 'asc' });
@@ -109,7 +111,7 @@ export const TableTab = (props: {
           }
           return 99; // Default value for non-numeric tags
         }
-        return tagAsNumber(a, 'count') - tagAsNumber(b, 'count');
+        return tagAsNumber(a, `deck/${deckName}`) - tagAsNumber(b, `deck/${deckName}`);
       }
       return 0;
     });
@@ -117,9 +119,9 @@ export const TableTab = (props: {
   const className = 'data-[is-active=true]:font-bold inline-block text-xs font-medium transition-colors text-gray-500 hover:text-gray-700';
   return <ul className='flex flex-col items-start'>
     <li className="flex items-center px-2 border-b border-zinc-300 text-xs text-zinc-600">
-      <span onClick={() => sortOn('mana-value')} data-is-active={sortKey.k === "mana-value"} className={`${className} text-right pr-2 w-24`}>Cost</span>
-      <span onClick={() => sortOn('tag:count')} data-is-active={sortKey.k === "tag:count"} className={`${className} w-12 text-right pr-1.5`}>Count</span>
-      <span onClick={() => sortOn('collector-number')} data-is-active={sortKey.k === "collector-number"} className={`${className} w-10 text-right pr-1.5`}>#</span>
+      <span onClick={() => sortOn('mana-value')} data-is-active={sortKey.k === "mana-value"} className={`${className} text-right pr-2 w-22`}>Cost</span>
+      <span onClick={() => sortOn('tag:count')} data-is-active={sortKey.k === "tag:count"} className={`${className} w-9 text-center px-0.5`}>Deck</span>
+      <span onClick={() => sortOn('collector-number')} data-is-active={sortKey.k === "collector-number"} className={`${className} w-16 text-right pr-1.5`}>#</span>
       <span onClick={() => sortOn('name')} data-is-active={sortKey.k === "name"} className={`${className} w-74 border-r border-transparent mr-4`}>Name</span>
       <span onClick={() => sortOn('rarity')} data-is-active={sortKey.k === "rarity"} className={`${className} w-24`}>Rarity</span>
       <span onClick={() => sortOn('types')} data-is-active={sortKey.k === "types"} className={`${className} w-80`}>Types</span>
@@ -128,17 +130,21 @@ export const TableTab = (props: {
         /
         <span onClick={() => sortOn('toughness')} data-is-active={sortKey.k === "toughness"} className={className}>T</span>
       </span>
-      <span onClick={() => sortOn('art')} data-is-active={sortKey.k === "art"} className={`${className} w-12 text-center`}>Art</span>
-      <span className="inline-block w-8 text-center">Token</span>
+      <span onClick={() => sortOn('art')} data-is-active={sortKey.k === "art"} className={`${className} w-6 text-center`}>Art</span>
+      <span className="inline-block w-10 text-center">Token</span>
     </li>
     {cards.map((card) => {
       return <li
         key={card.id}
         className="flex items-center px-2 py-0.5 border-t border-zinc-200 hover:bg-zinc-100"
       >
-        <span className="inline-block w-24 pr-2 text-right"><ManaCost cost={card.renderManaCost()} /></span>
-        <span className="inline-block w-12 text-xs text-right pr-1.5 text-zinc-500">{card.tags?.["count"] ?? 1}x</span>
-        <span className="inline-block w-10 text-xs text-right pr-1.5 text-zinc-500">{card.collectorNumber}</span>
+        <span className="inline-block w-22 pr-2 text-right"><ManaCost cost={card.renderManaCost()} /></span>
+        <span className="inline-block w-9 text-xs text-center px-0.5 text-zinc-500">
+          {card.tags?.[`deck/${deckName}`] ? card.tags?.[`deck/${deckName}`] + 'x' : '-'}
+        </span>
+        <span className="inline-block w-16 text-xs text-right pr-1.5 text-zinc-500">
+          {(card.tags?.['set'] ? card.tags?.['set'] + '/' : '') + card.collectorNumber.toString()}
+        </span>
         <span className="inline-flex gap-2 justify-between pr-2 w-74 font-bold border-r border-zinc-200 mr-4">
           {(onSelect !== undefined)
             ? <button
@@ -174,11 +180,11 @@ export const TableTab = (props: {
         <span className="w-24 border-zinc-200"><RarityText rarity={card.rarity} /></span>
         <span className="inline-block w-80">{card.renderTypeLine()}</span>
         <span className="inline-block w-8 text-center">{card.pt ? `${card.pt.power}/${card.pt.toughness}` : ''}</span>
-        <span className="inline-block w-12 text-center">{card.art
+        <span className="inline-block w-6 text-center">{card.art
           ? <FontAwesomeIcon className="ml-2 text-zinc-400" icon={faImage} />
-          : '-'
+          : ''
         }</span>
-        <span className="inline-block w-8 text-center">{card.getCreatableTokenNames().length > 0 ? <FontAwesomeIcon className="ml-2 text-zinc-400" icon={faShieldCat} /> : ''}</span>
+        <span className="inline-block w-10 text-center">{card.getCreatableTokenNames().length > 0 ? <FontAwesomeIcon className="ml-2 text-zinc-400" icon={faShieldCat} /> : ''}</span>
       </li>
     })}
   </ul>;

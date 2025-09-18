@@ -36,8 +36,7 @@
     "status": "concept",
     "createdAt": "2025-07-23",
     "set": "KPA",
-    "deck": "company",
-    "count": 2,
-    "setting": "Dark clouds with fireballs forming and falling from the sky above."
+    "setting": "Dark clouds with fireballs forming and falling from the sky above.",
+    "deck/company": 2
   }
 }
