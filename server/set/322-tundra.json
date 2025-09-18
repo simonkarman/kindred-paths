@@ -16,5 +16,7 @@
     }
   ],
   "collectorNumber": 322,
-  "tags": { "reference": true }
+  "tags": {
+    "reference": true
+  }
 }

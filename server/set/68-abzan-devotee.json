@@ -31,5 +31,7 @@
     "toughness": 1
   },
   "collectorNumber": 68,
-  "tags": { "reference": true }
+  "tags": {
+    "reference": true
+  }
 }

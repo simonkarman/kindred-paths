@@ -28,5 +28,7 @@
     }
   ],
   "collectorNumber": 9,
-  "tags": { "reference": true }
+  "tags": {
+    "reference": true
+  }
 }

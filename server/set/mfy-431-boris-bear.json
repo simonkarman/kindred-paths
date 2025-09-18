@@ -37,7 +37,6 @@
     "createdAt": "2025-07-30",
     "set": "MFY",
     "deck": "gw-tokens",
-    "count": 2,
-    "print": true
+    "count": 2
   }
 }

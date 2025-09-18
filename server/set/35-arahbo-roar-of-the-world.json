@@ -29,5 +29,7 @@
     "toughness": 5
   },
   "collectorNumber": 35,
-  "tags": { "reference": true }
+  "tags": {
+    "reference": true
+  }
 }
