@@ -1,8 +1,9 @@
 import { capitalize } from '@/utils/typography';
-import { SerializedCard, Card as _Card, CardArtPromptCreator } from 'kindred-paths';
+import { SerializedCard, Card as _Card } from 'kindred-paths';
 
 export function CardExplanation({ serializedCard }: { serializedCard: SerializedCard }) {
   const card = new _Card(serializedCard);
+  const creatableTokenNames = card.getCreatableTokenNames();
   return <div className="max-w-160 space-y-6">
     <h1 className="font-bold text-xl mb-0">{card.name}</h1>
     <p className="text-zinc-600 italic">
@@ -10,7 +11,10 @@ export function CardExplanation({ serializedCard }: { serializedCard: Serialized
     </p>
     <p>
       {card.supertype === "token"
-        ? <><span className="font-bold">Token Colors:</span> {(card.tokenColors ?? []).map(capitalize).join(', ')}</>
+        ? <>
+          <span className="font-bold">Token Colors:</span> {(card.tokenColors ?? []).map(capitalize).join(', ')}<br/>
+          <span className="font-bold">Token Reference Name:</span> {card.getTokenReferenceName()}
+        </>
         : <><span className="font-bold">Mana Cost:</span> {card.renderManaCost() || 'None'}</>
       }<br />
       <span className="font-bold">Type Line:</span> {card.renderTypeLine()} <br />
@@ -30,6 +34,12 @@ export function CardExplanation({ serializedCard }: { serializedCard: Serialized
         {rule.variant === "keyword" ? capitalize(rule.content) : rule.content}<br/>
       </span>)}
     </p>
+    {creatableTokenNames.length > 0 && <div>
+      <p className="font-bold">Creatable Tokens:</p>
+      <ul>
+        {creatableTokenNames.map((name, i) => <li key={i} className="italic text-purple-600">{name}</li>)}
+      </ul>
+    </div>}
     <p>
       <span className="font-bold">Collector Number:</span> {card.collectorNumber} <br />
       <span className="font-bold">Art:</span> {card.art ?? <span className="italic text-gray-600">not set</span>}<br/>

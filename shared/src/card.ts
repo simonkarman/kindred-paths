@@ -1,5 +1,6 @@
 import { SerializedCard } from './serialized-card';
 import { CardColor, cardColors, Mana, toOrderedColors, wubrg } from './colors';
+import { TokenExtractor } from './token-extracter';
 
 export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
@@ -12,6 +13,7 @@ export const cardTypes = ['enchantment', 'artifact', 'creature', 'land', 'instan
 
 export type TokenCardType = Exclude<CardType, 'instant' | 'sorcery' | 'planeswalker'>;
 export const tokenCardTypes = ['enchantment', 'artifact', 'creature', 'land'] as const;
+export const predefinedTokenNames = ['Blood', 'Clue', 'Food', 'Gold', 'Incubator', 'Junk', 'Map', 'Powerstone', 'Treasure'];
 
 export const landSubtypes = ['plains', 'island', 'swamp', 'mountain', 'forest'] as const;
 export const landSubtypeToColor = (type: typeof landSubtypes[number] | string): CardColor | undefined => ({
@@ -59,6 +61,7 @@ export const tryParseLoyaltyAbility = (rule: Rule): { success: false } | { succe
 };
 
 const capitalize = (str: string) => str.length === 0 ? '' : str.charAt(0).toUpperCase() + str.slice(1);
+const tokenExtractor = new TokenExtractor();
 
 export class Card {
   public readonly id: string;
@@ -116,6 +119,9 @@ export class Card {
       if (Object.keys(this.manaCost).length > 0) {
         throw new Error('token cards cannot have a mana cost');
       }
+      if (this.rules.some(rule => rule.content.includes('~'))) {
+        throw new Error('a token cannot reference itself, please use this creature/this artifact/etc. instead of ~ in the rules');
+      }
     }
     if (this.tokenColors && this.supertype !== 'token') {
       throw new Error('token colors can only be defined for token cards');
@@ -153,6 +159,10 @@ export class Card {
     }
 
     // Validate rules
+    // Check that only normal single quotes and double quotes are used
+    if (this.rules.some(rule => /[“”‘’]/.test(rule.content))) {
+      throw new Error('only normal single quotes (\') and double quotes (") are allowed in rules');
+    }
     // if there is reminder text, it must always be first
     if (this.rules.some((rule, index) => index !== 0 && rule.variant === 'card-type-reminder')) {
       throw new Error('if there is card-type-reminder text, it must always be first in the rules');
@@ -475,6 +485,26 @@ export class Card {
     return referenceName;
   }
 
+  getTokenReferenceName(): string {
+    if (this.supertype !== 'token') {
+      throw new Error('can only get token reference name for token cards');
+    }
+
+    if (predefinedTokenNames.some(predefinedTokenName => predefinedTokenName === this.name)) {
+      return `${this.name} token`;
+    }
+    const referenceName = this.getReferenceName();
+    if (this.rules.length === 0) {
+      return referenceName;
+    }
+    return referenceName + ' with ' + this.rules.filter(r => ['keyword', 'ability'].includes(r.variant)).map(r => {
+      if (r.variant === 'ability') {
+        return `"${r.content}"`;
+      }
+      return r.content;
+    }).join(' and ');
+  }
+
   public explain(props?: { withoutName?: boolean }): string {
     let readable = props?.withoutName ? '' : `"${this.name}" (#${this.collectorNumber}) is `;
     readable += `a ${this.rarity} `;
@@ -502,14 +532,16 @@ export class Card {
   }
 
   getCreatableTokenNames(): string[] {
-    return this.rules
+    const tokens = new Set<string>();
+
+    this.rules
       .filter(r => r.variant === 'ability' && r.content.toLowerCase().includes('create'))
-      .flatMap(r => {
-        const regex = /create (?:a|that many|X|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen) ([a-zA-Z0-9/\s]+? token)s?/gi;
-        const match = r.content.matchAll(regex);
-        return Array.from(match).map(m => m[1].trim());
-      })
-      .filter(token => token.length > 0);
+      .forEach(r => {
+        const extractedTokens = tokenExtractor.extractTokensFromAbility(r.content);
+        extractedTokens.forEach(token => tokens.add(token));
+      });
+
+    return Array.from(tokens);
   }
 
   /**

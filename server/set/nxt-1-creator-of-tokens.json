@@ -1,0 +1,82 @@
+{
+  "name": "Creator of Tokens",
+  "rarity": "mythic",
+  "supertype": "legendary",
+  "types": [
+    "enchantment"
+  ],
+  "subtypes": [],
+  "manaCost": {
+    "colorless": 1,
+    "white": 1,
+    "blue": 1,
+    "black": 1,
+    "green": 1,
+    "red": 1
+  },
+  "rules": [
+    {
+      "variant": "ability",
+      "content": "At the beginning of your upkeep, create a 1/1 white Ally creature token for each experience counter you have."
+    },
+    {
+      "variant": "ability",
+      "content": "When this creature enters, create a number of 1/1 black Harpy creature tokens with flying equal to your devotion to black."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever a nontoken creature you control dies, create a 1/1 white Spirit creature token with flying."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever you attack with this creature and/or your commander, for each opponent, create a 1/1 red Goblin creature token that's tapped and attacking that player."
+    },
+    {
+      "variant": "ability",
+      "content": "You get an emblem with \"At the beginning of your end step, create three 1/1 white Cat creature tokens with lifelink.\""
+    },
+    {
+      "variant": "ability",
+      "content": "Heroic — Whenever you cast a spell that targets this creature, create a 1/1 red Soldier creature token with haste."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever this creature deals combat damage to a player, roll a d20. You create a number of 1/1 blue Faerie Dragon creature tokens with flying equal to the result."
+    },
+    {
+      "variant": "ability",
+      "content": "For each creature card you own in exile with a memory counter on it, create a tapped and attacking token that's a copy of it. Exile those tokens at end of combat."
+    },
+    {
+      "variant": "ability",
+      "content": "When this creature enters, sacrifice any number of creatures each with base power or toughness 1 or less. Create that many 4/4 colorless Eldrazi Angel creature tokens with flying and vigilance."
+    },
+    {
+      "variant": "ability",
+      "content": "Create X 1/1 colorless Gnome artifact creature tokens that are tapped and attacking, where X is the number of +1/+1 counters on this creature."
+    },
+    {
+      "variant": "ability",
+      "content": "Create a 1/1 red Mercenary creature token with \"{T}: Target creature you control gets +1/+0 until end of turn. Activate only as a sorcery.\". Then, if you control three or more creatures, draw a card."
+    },
+    {
+      "variant": "ability",
+      "content": "Create X 1/2 green Spider creature tokens with reach, where X is the number of creatures attacking you."
+    },
+    {
+      "variant": "ability",
+      "content": "Target player draws a card, then exiles a card from their hand. If a creature card is exiled this way, that player creates a token that's a copy of that card."
+    },
+    {
+      "variant": "ability",
+      "content": "Whenever you commit a crime, create a 1/1 red Mercenary creature token with \"{T}: Target creature you control gets +1/+0 until end of turn. Activate only as a sorcery.\" This ability triggers only once each turn."
+    }
+  ],
+  "collectorNumber": 1,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-09-18",
+    "set": "nxt",
+    "deleted": true
+  }
+}

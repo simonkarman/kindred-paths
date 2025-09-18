@@ -17,7 +17,7 @@
     },
     {
       "variant": "inline-reminder",
-      "content": "It has “{2}, {T}, Sacrifice this token: You gain 3 life.”"
+      "content": "It has \"{2}, {T}, Sacrifice this token: You gain 3 life.\""
     },
     {
       "variant": "ability",

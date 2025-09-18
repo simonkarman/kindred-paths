@@ -6,16 +6,21 @@ import { useDeckNameFromSearch } from '@/utils/use-search';
 export function StatisticsTab(props: { cards: SerializedCard[] }) {
   const deckName = useDeckNameFromSearch();
   const {
-    totalCount, nonlandCount, landCount, availableTokenNames,
+    totalCount, nonlandCount, landCount,
+    tokens,
     cardColorDistribution, rarityDistribution,
     manaValueRarityDistribution,
     manaValueDistribution, cardTypeDistribution,
     subtypeDistribution, tokenDistribution,
   } = getStatistics(props.cards, deckName);
   return <>
-    <p className="text-zinc-500 text-sm italic">
-      Overview of <span className="font-bold">{totalCount}</span> cards ({nonlandCount} nonlands and {landCount} lands).
+    <p className="text-zinc-800 text-sm italic">
+      Overview of <span className="font-bold">{totalCount}</span> cards ({nonlandCount} nonlands and {landCount} lands).<br/>
     </p>
+    <ul className="text-sm italic text-zinc-500 pb-3">
+      {tokens.length > 0 && <li>The counts and distributions exclude <span className="font-bold">{tokens.length}</span> unique {tokens.length === 1 ? 'token that is' : `tokens that are`} that is part of this search query.<br/></li>}
+      {deckName && <li> Statistics are based on the counts in the deck <span className="font-bold">{deckName}</span>.</li>}
+    </ul>
     <div className="flex gap-5 justify-between items-start py-2 break-inside-avoid">
       <BarDistribution title="Card Color" data={cardColorDistribution} />
       <BarDistribution title="Rarity" data={rarityDistribution} />
@@ -35,6 +40,6 @@ export function StatisticsTab(props: { cards: SerializedCard[] }) {
         })}
       />
     </div>
-    <BarDistribution title="Creatable Token Name" data={tokenDistribution} check={availableTokenNames} fullWidth />
+    <BarDistribution title="Creatable Token Name" data={tokenDistribution} check={tokens.map(t => t.getTokenReferenceName())} sortOnValue fullWidth />
   </>;
 }

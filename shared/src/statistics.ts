@@ -46,7 +46,6 @@ export function getStatistics(_cards: SerializedCard[], deckName?: string) {
 
   const basicLands = cardsWithoutTokens.filter(c => c.supertype === 'basic');
   const tokens = cards.filter(c => c.supertype === 'token');
-  const availableTokenNames = tokens.flatMap(token => [token.getReferenceName(), `${token.name} token`]);
 
   const countSum = (cards: Card[]) => cards.reduce((acc, card) => acc + getCount(card), 0);
   return {
@@ -59,7 +58,6 @@ export function getStatistics(_cards: SerializedCard[], deckName?: string) {
 
     basicLands,
     tokens,
-    availableTokenNames,
 
     cardsWithZeroCount: deckName
       ? _cards.map(c => new Card(c)).filter(c => c.getTagAsNumber(`deck/${deckName}`) === 0)

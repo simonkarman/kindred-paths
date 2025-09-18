@@ -1,0 +1,38 @@
+{
+  "name": "Cat",
+  "rarity": "common",
+  "supertype": "token",
+  "tokenColors": [
+    "white"
+  ],
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "cat"
+  ],
+  "manaCost": {},
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "lifelink"
+    },
+    {
+      "variant": "ability",
+      "content": "When this creature dies, you gain 2 life."
+    }
+  ],
+  "pt": {
+    "power": 1,
+    "toughness": 1
+  },
+  "collectorNumber": 500,
+  "art": "nxt-500-1-1-white-cat-token-4506928c-a992-46cb-b6ed-330db29b0f89.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-09-18",
+    "set": "nxt",
+    "deck/verify": 1,
+    "setting": "A pristine white cat with glowing eyes sits alert on ancient marble steps, golden sunlight streaming through temple columns behind it."
+  }
+}

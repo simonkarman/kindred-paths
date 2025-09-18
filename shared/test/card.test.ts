@@ -73,7 +73,7 @@ test('creature card', () => {
     subtypes: ['human', 'warrior'],
     manaCost: { x: 2, colorless: 2, white: 1, blue: 0 },
     rules: [
-      { variant: 'card-type-reminder', content: 'A creature can’t attack unless it has been under its controller’s control continuously since their most recent turn began.' },
+      { variant: 'card-type-reminder', content: 'A creature can\'t attack unless it has been under its controller\'s control continuously since their most recent turn began.' },
       { variant: 'keyword', content: 'vigilance' },
       { variant: 'keyword', content: 'first strike' },
       { variant: 'keyword', content: 'lifelink' },
@@ -95,7 +95,7 @@ test('creature card', () => {
   expect(creatureCard.manaValue()).toBe(3);
   expect(creatureCard.renderManaCost()).toBe('{x}{x}{2}{w}');
   expect(creatureCard.renderTypeLine()).toBe('Creature — Human Warrior');
-  expect(creatureCard.renderRules()).toBe('{i}(A creature can’t attack unless it has been under its controller’s control continuously since their most recent turn began.){/i}\n' +
+  expect(creatureCard.renderRules()).toBe('{i}(A creature can\'t attack unless it has been under its controller\'s control continuously since their most recent turn began.){/i}\n' +
     'Vigilance, first strike\n' +
     'Lifelink {i}(Damage dealt by this creature also causes you to gain that much life.){/i}\n' +
     'Double strike, flying\n' +
@@ -217,5 +217,5 @@ test('planeswalker card', () => {
   expect(planeswalkerCard.toJson()).toStrictEqual({ ...serializedPlaneswalkerCard, art: undefined, pt: undefined, tags: {}, tokenColors: undefined });
   expect(planeswalkerCard.getReferenceName()).toBe('legendary black planeswalker');
   expect(planeswalkerCard.explain()).toBe('"Farock, The Damned Doctor" (#822) is a rare legendary black planeswalker for {1}{b}{b} mana with 3 starting loyalty, with: "deathtouch", "lifelink" and "When ~ enters, you gain 2 life." and "+1: Create a 1/1 black Zombie creature token with menace." and "-4: Deal 1 damage to any target. Create a Treasure token." and "-X: Deal 1 damage to up to X targets.".');
-  expect(planeswalkerCard.getCreatableTokenNames()).toStrictEqual(['1/1 black Zombie creature token', 'Treasure token']);
+  expect(planeswalkerCard.getCreatableTokenNames()).toStrictEqual(['1/1 black Zombie creature token with menace', 'Treasure token']);
 });
