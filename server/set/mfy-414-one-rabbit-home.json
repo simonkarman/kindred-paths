@@ -28,6 +28,7 @@
     "status": "concept",
     "createdAt": "2025-08-02",
     "set": "MFY",
-    "deck/gw-tokens": 1
+    "deck/gw-tokens": 1,
+    "cycle": "home"
   }
 }

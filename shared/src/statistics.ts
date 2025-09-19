@@ -41,11 +41,11 @@ export function getStatistics(_cards: SerializedCard[], deckName?: string) {
 
   const cards = _cards.map(c => new Card(c));
 
-  const cardsWithoutTokens = cards.filter(c => c.supertype !== 'token');
+  const cardsWithoutTokens = cards.filter(c => !c.isToken);
   const cardsWithoutTokensAndBasicLands = cardsWithoutTokens.filter(c => c.supertype !== 'basic');
 
   const basicLands = cardsWithoutTokens.filter(c => c.supertype === 'basic');
-  const tokens = cards.filter(c => c.supertype === 'token');
+  const tokens = cards.filter(c => c.isToken);
 
   const countSum = (cards: Card[]) => cards.reduce((acc, card) => acc + getCount(card), 0);
   return {

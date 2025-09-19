@@ -12,7 +12,7 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "At the beginning of each upkeep, you may create Boo, a legendary 1/1 red Hamster creature token with haste and trample."
+      "content": "At the beginning of each upkeep, you may create Boo, a legendary 1/1 red Hamster creature token with trample and haste."
     }
   ],
   "collectorNumber": 503,
