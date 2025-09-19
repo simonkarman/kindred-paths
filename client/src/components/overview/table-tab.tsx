@@ -154,25 +154,25 @@ export const TableTab = (props: {
                 {card.name}
               </button>
             : <>
-              <Link
-                className="hover:text-orange-700 active:text-orange-500"
-                href={`/card/${card.id}`}
-              >
-                {card.name}
-              </Link>
-              <span className="flex gap-1">
                 <Link
-                  className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
-                  href={`/edit/${card.id}?t=/`}
-                ><FontAwesomeIcon icon={faPenToSquare} /></Link>
-                <Link
-                  className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
-                  href={`/clone/${card.id}?t=/`}
-                ><FontAwesomeIcon icon={faClone} /></Link>
-                <button
-                  className="text-zinc-600 hover:text-red-700 active:text-red-500"
-                  onClick={() => del(card.id)}
-                ><FontAwesomeIcon icon={faTrashCan} /></button>
+                  className="hover:text-orange-700 active:text-orange-500"
+                  href={`/card/${card.id}`}
+                >
+                  {card.name}
+                </Link>
+                <span className="flex gap-1">
+                  <Link
+                    className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
+                    href={`/edit/${card.id}?t=/`}
+                  ><FontAwesomeIcon icon={faPenToSquare} /></Link>
+                  <Link
+                    className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
+                    href={`/clone/${card.id}?t=/`}
+                  ><FontAwesomeIcon icon={faClone} /></Link>
+                  <button
+                    className="text-zinc-600 hover:text-red-700 active:text-red-500"
+                    onClick={() => del(card.id)}
+                  ><FontAwesomeIcon icon={faTrashCan} /></button>
                 </span>
               </>
           }

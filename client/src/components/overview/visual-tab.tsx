@@ -90,18 +90,17 @@ export function VisualTab(props: {
             ? card.tags[`deck/${deckName}`] as number
             : 1
           )
-          .map(i => <Link
+          .map(i => <div
               key={card.id + i}
               className="border-3 bg-zinc-500"
-              href={props.dynamicLink ? props.dynamicLink(card) : `/card/${card.id}`}
             >
               <div className="hidden print:block">
                 <CardRender serializedCard={card} scale={0.6} quality={80} />
               </div>
               <div className="block print:hidden">
-                <CardRender serializedCard={card} />
+                <CardRender serializedCard={card} hoverControls />
               </div>
-            </Link>
+            </div>
           )
         ))}
     </div>
