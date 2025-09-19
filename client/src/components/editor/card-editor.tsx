@@ -124,7 +124,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     supertype,
     tokenColors,
     types,
-    subtypes,
+    subtypes: subtypes ?? [],
     manaCost,
     rules,
     pt,

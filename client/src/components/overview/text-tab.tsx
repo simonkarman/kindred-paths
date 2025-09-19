@@ -11,7 +11,7 @@ export function TextTab(props: { cards: SerializedCard[] }) {
         <li key={card.id} className="border-b border-zinc-100 py-2">
           {deckName && `${card.getTagAsNumber(`deck/${deckName}`)}x `}
           <Link href={`/card/${card.id}`} className="text-blue-600 hover:underline">
-            #{card.collectorNumber} {card.name}
+            {card.tags?.set ?? ''}#{card.collectorNumber} {card.name}
           </Link><br/>
           <span className="text-xs text-zinc-600">is {card.explain({ withoutName: true })}</span>
         </li>
