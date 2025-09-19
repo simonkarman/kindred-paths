@@ -10,10 +10,11 @@ export function CardExplanation({ serializedCard }: { serializedCard: Serialized
       {card.explain()}
     </p>
     <p>
-      {card.supertype === "token"
+      {card.isToken
         ? <>
-          <span className="font-bold">Token Colors:</span> {(card.tokenColors ?? []).map(capitalize).join(', ')}<br/>
-          <span className="font-bold">Token Reference Name:</span> {card.getTokenReferenceName()}
+          <span className="font-bold underline">Token</span><br/>
+          <span className="font-bold">Color:</span> {(card.tokenColors?.length ? card.tokenColors : ['colorless']).map(capitalize).join(' and ')}<br/>
+          <span className="font-bold">Reference Name:</span> {card.getTokenReferenceName()}
         </>
         : <><span className="font-bold">Mana Cost:</span> {card.renderManaCost() || 'None'}</>
       }<br />

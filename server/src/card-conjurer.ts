@@ -91,7 +91,7 @@ export class CardConjurer {
       // Handle the frame section
       let forceTitleColorToBlack = false;
       let isFullArt = false;
-      if (card.supertype === "token") {
+      if (card.isToken) {
         // Gather token information
         const tokenType = card.rules.length > 0 ? 'Regular' : 'Textless';
         const numberOfColors = (card.tokenColors ?? []).length;
@@ -255,7 +255,7 @@ export class CardConjurer {
           await page.waitForLoadState('networkidle');
 
           // Adjust the rules text box size
-          if (card.supertype !== "token") {
+          if (!card.isToken) {
             await page.click('#text-options h4:has-text("Rules Text")');
             await page.click('#creator-menu-text button:has-text("Edit Bounds")');
             await sleep(20);
@@ -277,7 +277,7 @@ export class CardConjurer {
         if (card.pt !== undefined) {
           await page.click('#text-options h4:has-text("Power/Toughness")');
           const isArtifactVehicle = card.types.includes('artifact') && card.subtypes.includes('vehicle');
-          await page.fill('#text-editor', (isArtifactVehicle ? '{fontcolor#fff}' : '') + card.pt.power + '/' + card.pt.toughness);
+          await page.fill('#text-editor', (!card.isToken && isArtifactVehicle ? '{fontcolor#fff}' : '') + card.pt.power + '/' + card.pt.toughness);
           await page.waitForLoadState('networkidle');
         }
       }

@@ -31,24 +31,6 @@ export const CardSupertypeInput = (props: {
         Legendary
       </label>
 
-      {/* Token checkbox */}
-      <label className="flex items-center">
-        <input
-          type="checkbox"
-          checked={props.supertype === 'token'}
-          onChange={(e) => {
-            if (e.target.checked) {
-              props.setSupertype('token');
-            } else {
-              props.setSupertype(undefined);
-            }
-          }}
-          className="mr-2"
-          disabled={isPlaneswalker}
-        />
-        Token
-      </label>
-
       {/* Basic checkbox - only show if types.length === 1 && types[0] === 'land' */}
       <label className="flex items-center">
         <input

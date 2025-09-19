@@ -139,7 +139,7 @@ export class AIService {
     const card = new Card(cardData);
 
     const prompt = this.cardArtPromptCreator.createPrompt(card);
-    const isTallCard = card.types.includes('planeswalker') || card.supertype === 'token';
+    const isTallCard = card.types.includes('planeswalker') || card.isToken;
     const dimensions = isTallCard
       ? { width: 1024, height: 1024 }
       : { width: 1024, height: 768 };

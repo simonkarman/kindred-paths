@@ -1,7 +1,8 @@
 {
   "name": "Boo",
   "rarity": "common",
-  "supertype": "token",
+  "isToken": true,
+  "supertype": "legendary",
   "tokenColors": [
     "red"
   ],
@@ -15,11 +16,11 @@
   "rules": [
     {
       "variant": "keyword",
-      "content": "haste"
+      "content": "trample"
     },
     {
       "variant": "keyword",
-      "content": "trample"
+      "content": "haste"
     }
   ],
   "pt": {

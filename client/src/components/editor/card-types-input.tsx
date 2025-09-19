@@ -1,4 +1,4 @@
-import { CardType, cardTypes } from 'kindred-paths';
+import { CardType, cardTypes, TokenCardType, tokenCardTypes } from 'kindred-paths';
 import { capitalize } from '@/utils/typography';
 import { InputHeader } from '@/components/editor/input-header';
 import { useState } from 'react';
@@ -6,6 +6,8 @@ import { useState } from 'react';
 export const CardTypesInput = (props: {
   types: [CardType, ...CardType[]],
   setTypes: (value: [CardType, ...CardType[]]) => void,
+  isToken: true | undefined,
+  setIsToken: (value: true | undefined) => void,
   getErrorMessage: () => string | undefined,
   isChanged: boolean,
   revert: () => void,
@@ -44,10 +46,25 @@ export const CardTypesInput = (props: {
     }
   };
 
+  const handleIsTokenToggle = () => {
+    const nextValue = props.isToken ? undefined : true;
+    props.setIsToken(nextValue);
+    if (nextValue) {
+      // if card types include types not in tokenCardTypes, remove them
+      const newTypes = props.types.filter(t => tokenCardTypes.includes(t as TokenCardType));
+      if (newTypes.length === 0) {
+        // if no types left, set to ['creature']
+        props.setTypes(['creature']);
+      } else {
+        props.setTypes(newTypes as [CardType, ...CardType[]]);
+      }
+    }
+  }
+
   return (
     <div className="space-y-1">
       <InputHeader propertyName="type" isChanged={props.isChanged} revert={props.revert}>
-        <div className="flex items-center space-x-2">
+        <div className="w-full flex items-center justify-between gap-2">
           <button
             type="button"
             onClick={toggleMultipleMode}
@@ -60,10 +77,31 @@ export const CardTypesInput = (props: {
             ({props.types.length} selected)
           </span>
           )}
+          <button
+            type="button"
+            onClick={handleIsTokenToggle}
+            className={`
+                flex items-center space-x-2 px-2 py-0.5 rounded border text-left transition-colors
+                ${props.isToken
+                  ? 'bg-blue-50 border-blue-300 text-blue-900'
+                  : 'bg-white border-zinc-300 text-zinc-800 hover:bg-zinc-50'
+                }
+              `}
+          >
+            <input
+              type="checkbox"
+              checked={props.isToken === true}
+              readOnly
+              className="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 focus:ring-2 pointer-events-none"
+            />
+            <span className="text-sm">
+              Token
+            </span>
+          </button>
         </div>
       </InputHeader>
       <div className="grid grid-cols-2 gap-2">
-        {cardTypes.map(type => {
+        {(props.isToken ? tokenCardTypes : cardTypes).map(type => {
           const isSelected = props.types.includes(type);
           const isDisabled = multipleMode && isSelected && props.types.length === 1;
 

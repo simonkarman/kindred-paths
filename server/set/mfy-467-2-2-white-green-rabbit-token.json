@@ -1,7 +1,7 @@
 {
   "name": "Rabbit",
   "rarity": "common",
-  "supertype": "token",
+  "isToken": true,
   "tokenColors": [
     "white",
     "green"

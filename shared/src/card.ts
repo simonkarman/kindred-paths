@@ -5,8 +5,8 @@ import { TokenExtractor } from './token-extracter';
 export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
 
-export type CardSuperType = undefined | 'basic' | 'token' | 'legendary';
-export const cardSuperTypes = [undefined, 'basic', 'token', 'legendary'] as const;
+export type CardSuperType = undefined | 'basic' | 'legendary';
+export const cardSuperTypes = [undefined, 'basic', 'legendary'] as const;
 
 export type CardType = 'enchantment' | 'artifact' | 'instant' | 'sorcery' | 'creature' | 'land' | 'planeswalker';
 export const cardTypes = ['enchantment', 'artifact', 'creature', 'land', 'instant', 'sorcery', 'planeswalker'] as const;
@@ -67,6 +67,7 @@ export class Card {
   public readonly id: string;
   public readonly name: string;
   public readonly rarity: CardRarity;
+  public readonly isToken?: true;
   public readonly supertype: CardSuperType;
   public readonly tokenColors?: CardColor[];
   public readonly types: [CardType, ...CardType[]];
@@ -83,6 +84,7 @@ export class Card {
     this.id = props.id;
     this.name = props.name;
     this.rarity = props.rarity;
+    this.isToken = props.isToken;
     this.supertype = props.supertype;
     this.tokenColors = props.tokenColors;
     this.types = props.types;
@@ -103,15 +105,18 @@ export class Card {
       if (this.rarity !== 'common') {
         throw new Error('super type basic must have common rarity');
       }
+      if (this.isToken) {
+        throw new Error('super type basic cannot be a token');
+      }
     }
 
     // Check token superType consistency
-    if (this.supertype === 'token') {
+    if (this.isToken) {
       if (this.rarity !== 'common') {
         throw new Error('super type token must have common rarity');
       }
       if (!tokenCardTypes.some(pct => this.types.includes(pct))) {
-        throw new Error('super type token must be associated with a permanent type (enchantment, artifact, creature, land, planeswalker)');
+        throw new Error(`super type token must be associated with a tokenable type (${tokenCardTypes.join(', ')})`);
       }
       if (this.tokenColors === undefined) {
         throw new Error('super type token must have token colors defined');
@@ -122,8 +127,7 @@ export class Card {
       if (this.rules.some(rule => rule.content.includes('~'))) {
         throw new Error('a token cannot reference itself, please use this creature/this artifact/etc. instead of ~ in the rules');
       }
-    }
-    if (this.tokenColors && this.supertype !== 'token') {
+    } else if (this.tokenColors) {
       throw new Error('token colors can only be defined for token cards');
     }
 
@@ -293,7 +297,7 @@ export class Card {
 
   public renderManaCost(): string {
     if (this.manaValue() === 0) {
-      const hiddenManaCost = this.types.includes('land') || this.supertype === 'token';
+      const hiddenManaCost = this.types.includes('land') || this.isToken;
       return hiddenManaCost ? '' : '{0}';
     }
     let result = '';
@@ -315,6 +319,9 @@ export class Card {
 
   public renderTypeLine(): string {
     let typeLine = '';
+    if (this.isToken) {
+      typeLine += 'Token ';
+    }
     if (this.supertype) {
       typeLine += capitalize(this.supertype) + ' ';
     }
@@ -409,14 +416,14 @@ export class Card {
   }
 
   public color(): CardColor[] {
-    if (this.supertype === 'token') {
+    if (this.isToken) {
       return toOrderedColors(this.tokenColors ?? []);
     }
     return Card.colorOf(this.renderManaCost());
   }
 
   public colorIdentity(): CardColor[] {
-    if (this.supertype === 'token') {
+    if (this.isToken) {
       return toOrderedColors(this.tokenColors ?? []);
     }
     const context = this.renderManaCost() + ' ' + this.rules
@@ -447,6 +454,7 @@ export class Card {
       id: this.id,
       name: this.name,
       rarity: this.rarity,
+      isToken: this.isToken,
       supertype: this.supertype,
       tokenColors: this.tokenColors,
       types: this.types,
@@ -463,7 +471,7 @@ export class Card {
 
   getReferenceName(): string {
     let referenceName = '';
-    if (this.supertype === 'basic' || this.supertype === 'legendary') {
+    if (this.supertype) {
       referenceName += `${this.supertype} `;
     }
     if (this.pt) {
@@ -479,14 +487,14 @@ export class Card {
       referenceName += `${this.subtypes.map(capitalize).join(' ')} `;
     }
     referenceName += this.types.join(' ');
-    if (this.supertype === 'token') {
+    if (this.isToken) {
       referenceName += ' token';
     }
     return referenceName;
   }
 
   getTokenReferenceName(): string {
-    if (this.supertype !== 'token') {
+    if (!this.isToken) {
       throw new Error('can only get token reference name for token cards');
     }
 

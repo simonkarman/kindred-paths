@@ -39,6 +39,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   // Properties State
   const [name, setName] = useState(start.name);
   const [rarity, setRarity] = useState<CardRarity>(start.rarity);
+  const [isToken, setIsToken] = useState(start.isToken);
   const [supertype, setSupertype] = useState<CardSuperType>(start.supertype);
   const [tokenColors, setTokenColors] = useState<CardColor[] | undefined>(start.tokenColors);
   const [subtypes, setSubtypes] = useState<string[] | undefined>(start.subtypes);
@@ -53,20 +54,22 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     start.tags as { [key: string]: string | number | boolean } | undefined
   );
 
-  // If supertype changes
+  // If isToken changes
   useEffect(() => {
     // Update tokenColors
-    if (supertype === 'token') {
+    if (isToken) {
       setTokenColors(tokenColors => tokenColors ?? []);
     } else {
       setTokenColors(undefined);
     }
+  }, [isToken]);
 
-    // And update mana cost
-    if (supertype === 'basic' || supertype === 'token') {
+  // If card has basic supertype or is a token, reset mana cost
+  useEffect(() => {
+    if (supertype === 'basic' || isToken) {
       setManaCost({});
     }
-  }, [supertype]);
+  }, [supertype, isToken]);
 
   // If types changes
   const canHavePT = types.includes('creature') || (types.includes('artifact') && subtypes?.includes('vehicle'));
@@ -121,6 +124,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     id: start.id,
     name,
     rarity,
+    isToken,
     supertype,
     tokenColors,
     types,
@@ -224,7 +228,12 @@ export function CardEditor({ start }: { start: SerializedCard }) {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-4 border-r border-zinc-100 pr-3">
           <CardTypesInput types={types} setTypes={setTypes} getErrorMessage={() => getErrorMessage('types')}
-                          isChanged={!isCreate && JSON.stringify(start.types) !== JSON.stringify(types)} revert={() => setTypes(start.types)}
+                          isToken={isToken} setIsToken={setIsToken}
+                          isChanged={!isCreate && JSON.stringify({ isToken: start.isToken, types: start.types }) !== JSON.stringify({ isToken, types })}
+                          revert={() => {
+                            setTypes(start.types);
+                            setIsToken(start.isToken);
+                          }}
           />
           {types.some(s => ['land', 'creature', 'artifact', 'enchantment'].includes(s))
             && <CardSubtypesInput subtypes={subtypes} setSubtypes={setSubtypes} getErrorMessage={() => getErrorMessage('subtypes')}
@@ -239,7 +248,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
             && <CardLoyaltyInput loyalty={loyalty} setLoyalty={setLoyalty} getErrorMessage={() => getErrorMessage('loyalty')}
                                  isChanged={!isCreate && start.loyalty !== undefined && JSON.stringify(start.loyalty) !== JSON.stringify(loyalty)} revert={() => setLoyalty(start.loyalty)}
             />}
-          {(supertype !== 'basic' && supertype !== 'token')
+          {(supertype !== 'basic' && !isToken)
             && <CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}
                                   getErrorMessage={(color: Mana) => getErrorMessage(`manaCost.${color}`)}
                                   isChanged={!isCreate && JSON.stringify(start.manaCost) !== JSON.stringify(manaCost)} revert={() => setManaCost(start.manaCost)}
@@ -280,7 +289,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
                         artSetting={getStringTagOrEmptyString("setting")} setArtSetting={setArtSetting}
                         artSettingIsChanged={!isCreate && JSON.stringify(start.tags?.setting) !== JSON.stringify(tags?.["setting"])} revertArtSetting={() => setArtSetting(start.tags?.setting)}
 
-                        showArtFocus={types.includes('planeswalker') || supertype === 'token'}
+                        showArtFocus={isToken || types.includes('planeswalker')}
                         artFocus={getStringTagOrEmptyString("art/focus")} setArtFocus={setArtFocus}
                         artFocusIsChanged={!isCreate && JSON.stringify(start.tags?.['art/focus']) !== JSON.stringify(tags?.["art/focus"])} revertArtFocus={() => setArtFocus(start.tags?.['art/focus'])}
 

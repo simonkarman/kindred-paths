@@ -93,6 +93,7 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchText: st
     const card = new Card(_card);
     const checks = [
       check(['type', 't'], typeNeedle => [
+          ...(card.isToken ? ['token'] : []),
           ...card.types,
           ...(card.subtypes ?? []),
           ...(card.supertype ? [card.supertype] : []),

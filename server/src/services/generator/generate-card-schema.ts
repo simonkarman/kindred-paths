@@ -3,7 +3,8 @@ import { z } from 'zod';
 export const GenerateCardSchema = z.object({
   name: z.string().min(1),
   rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']),
-  supertype: z.enum(['basic', 'token', 'legendary']).optional(),
+  isToken: z.literal(true).optional(),
+  supertype: z.enum(['basic', 'legendary']).optional(),
   tokenColors: z.array(z.enum(['white', 'blue', 'black', 'red', 'green'])).optional(),
   types: z.array(z.enum(['creature', 'enchantment', 'artifact', 'instant', 'sorcery', 'land', 'planeswalker'])).nonempty(),
   subtypes: z.array(z.string().min(1)).optional(),
