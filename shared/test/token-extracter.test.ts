@@ -25,7 +25,7 @@ test('token extracter', () => {
       expectedTokens: ['1/1 white Spirit creature token with flying'],
     },
     {
-      abilities: ['Whenever you attack with this creature and/or your commander, for each opponent, create two 1/2 red Goblin creature token with first strike that\'s tapped and attacking that player.'],
+      abilities: ['Whenever you attack with this creature and/or your commander, for each opponent, create two 1/2 red Goblin creature tokens with first strike that\'s tapped and attacking that player.'],
       expectedTokens: ['1/2 red Goblin creature token with first strike'],
     },
     {
@@ -61,7 +61,9 @@ test('token extracter', () => {
       expectedTokens: ['1/1 red Mercenary creature token with "{t}: Target creature you control gets +1/+0 until end of turn. Activate only as a sorcery."'],
     },
     {
-      abilities: ['Create X 1/2 green Spider creature tokens with reach, where X is the number of creatures attacking you.', 'Create a tapped 1/2 green Spider creature token with reach, where X is the number of creatures attacking you.'],
+      abilities: [
+        'Create X 1/2 green Spider creature tokens with reach, where X is the number of creatures attacking you.',
+        'Create a tapped 1/2 green Spider creature token with reach.'],
       expectedTokens: ['1/2 green Spider creature token with reach'],
     },
     {

@@ -493,16 +493,28 @@ export class Card {
     if (predefinedTokenNames.some(predefinedTokenName => predefinedTokenName === this.name)) {
       return `${this.name} token`;
     }
-    const referenceName = this.getReferenceName();
-    if (this.rules.length === 0) {
-      return referenceName;
+    let referenceName = '';
+
+    // If the name of the card is not the same as the subtypes joined, add it at the start
+    const subtypesJoined = this.subtypes.join(' ');
+    if (this.name.toLowerCase() !== subtypesJoined) {
+      referenceName += `${this.name}, `;
     }
-    return referenceName + ' with ' + this.rules.filter(r => ['keyword', 'ability'].includes(r.variant)).map(r => {
-      if (r.variant === 'ability') {
-        return `"${r.content}"`;
-      }
-      return r.content;
-    }).join(' and ');
+
+    // At the reference name
+    referenceName += this.getReferenceName();
+
+    // Add keywords and abilities in a way they're displayed on cards for token creation
+    if (this.rules.length !== 0) {
+      referenceName += ' with ' + this.rules.filter(r => ['keyword', 'ability'].includes(r.variant)).map(r => {
+        if (r.variant === 'ability') {
+          return `"${r.content}"`;
+        }
+        return r.content;
+      }).join(' and ');
+    }
+
+    return referenceName;
   }
 
   public explain(props?: { withoutName?: boolean }): string {

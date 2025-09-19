@@ -20,7 +20,7 @@ const useValueFromSearch = (keys: string[]): string | undefined => {
 };
 
 export const useDeckNameFromSearch = () => useValueFromSearch(['deck', 'd']);
-export const useSetNameFromSearch = () => useValueFromSearch(['set', 's']);
+export const useSetNameFromSearch = () => useValueFromSearch(['set', 's'])?.toUpperCase();
 
 const check = (
   keys: string[],

@@ -1,0 +1,37 @@
+{
+  "name": "Boo",
+  "rarity": "common",
+  "supertype": "token",
+  "tokenColors": [
+    "red"
+  ],
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "hamster"
+  ],
+  "manaCost": {},
+  "rules": [
+    {
+      "variant": "keyword",
+      "content": "haste"
+    },
+    {
+      "variant": "keyword",
+      "content": "trample"
+    }
+  ],
+  "pt": {
+    "power": 1,
+    "toughness": 1
+  },
+  "collectorNumber": 502,
+  "art": "nxt-502-1-1-red-boo-token-4da3b812-6815-4983-a47c-811a20aed2ff.png",
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-09-19",
+    "set": "NXT",
+    "setting": "A fluffy crimson hamster bursts through a wooden fence, splinters flying everywhere, its cheeks puffed with determination and tiny claws extended."
+  }
+}
