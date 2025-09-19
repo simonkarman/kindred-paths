@@ -14,7 +14,7 @@
   "rules": [
     {
       "variant": "ability",
-      "content": "When ~ enters and when you sacrifice it, you may put a +1/+1 counter on target creature you control."
+      "content": "When ~ enters and when you sacrifice it, you may put a +1/+1 counter on target creature you control. If you don't, create a 0/1 green Plant creature token."
     },
     {
       "variant": "ability",
