@@ -11,7 +11,7 @@ export const computeCardId = (card: SerializedCard) => {
     const colors = card.tokenColors
       ? (card.tokenColors.length === 0 ? 'colorless-' : card.tokenColors.map(tc => `${tc}-`).join(''))
       : 'colorless-';
-    return sanitize(`${supertype}${pt}${colors}${card.name}-token`);
+    return sanitize(`${supertype}${pt}${colors}${card.name}-${card.types.join('-')}-token`);
   }
   if (card.supertype === 'basic') {
     return sanitize(`basic-${card.name}`);

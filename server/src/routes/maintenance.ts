@@ -11,6 +11,26 @@ maintenanceRouter.post('/cleanup', async (req, res) => {
   const messages: string[] = [];
   console.info("Cleanup requested...");
 
+  // Rename cards that have an ID different from the computed ID based on their name
+  for (const card of await cardService.getAllCards()) {
+    const cardId = computeCardId(card);
+    if (card.id !== cardId) {
+      // check that the new cardId does not already exist
+      const existingCard = await cardService.getCardById(cardId);
+      if (existingCard) {
+        const message = `skipped renaming card ${card.id} to ${cardId} because it already exists`;
+        messages.push(message);
+        console.warn(message);
+        continue;
+      }
+
+      const message = `renamed card ${card.id} to ${cardId}`;
+      messages.push(message);
+      await fs.rename(`./set/${card.id}.json`, `./set/${cardId}.json`);
+      console.log(message);
+    }
+  }
+
   // Ensure all keywords are lowercase
   for (const card of await cardService.getAllCards()) {
     if (!card.rules) continue;
