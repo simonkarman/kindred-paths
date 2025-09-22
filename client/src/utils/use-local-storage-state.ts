@@ -24,7 +24,6 @@ export const useLocalStorageState = <T>(
   useEffect(() => {
     const t = setInterval(() => {
       const currentValue = localStorage.getItem(key);
-      console.info(`currentValue of ${key}`, currentValue);
       setState((prevState) => {
         if (currentValue !== JSON.stringify(prevState)) {
           return currentValue === null ? initialState : JSON.parse(currentValue);
