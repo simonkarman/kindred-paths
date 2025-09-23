@@ -2,10 +2,10 @@
 
 import { SetTable } from '@/app/set/set-table';
 import { SerializableSet } from '@/app/set/types';
-import { useLocalStorageState } from '@/utils/use-local-storage-state';
+import { useState } from 'react';
 
 export default function Page() {
-  const [set, setSet] = useLocalStorageState<SerializableSet>('example-set3', {
+  const [set, setSet] = useState<SerializableSet>({
     "name": "MFY",
     "metadataKeys": [
       "mainCharacter",
@@ -17,16 +17,40 @@ export default function Page() {
       "mechanicC",
       "mechanicD"
     ],
-    "cycleKeys": [
-      "mythic",
-      "friend",
-      "second friend",
-      "book_1",
-      "book_2",
-      "book_3",
-      "book_4",
-      "removal",
-      "mana rock"
+    "cycles": [
+      {
+        "key": "mythic",
+        "blueprint": {
+          "id": "example-a"
+        }
+      },
+      {
+        "key": "friend",
+        "blueprint": {
+          "id": "example-b"
+        }
+      },
+      {
+        "key": "second friend"
+      },
+      {
+        "key": "book_1"
+      },
+      {
+        "key": "book_2"
+      },
+      {
+        "key": "book_3"
+      },
+      {
+        "key": "removal"
+      },
+      {
+        "key": "mana rock"
+      },
+      {
+        "key": "land"
+      }
     ],
     "archetypes": [
       {
@@ -41,7 +65,13 @@ export default function Page() {
           "creatureTypeA": "Cat",
           "creatureTypeB": "Bird"
         },
-        "cycles": {}
+        "cycles": {
+          "mythic": {
+            "cardRef": {
+              "id": "example-card-e"
+            }
+          }
+        }
       },
       {
         "name": "Green",
@@ -55,7 +85,18 @@ export default function Page() {
           "creatureTypeA": "Dog",
           "creatureTypeB": "Bear"
         },
-        "cycles": {}
+        "cycles": {
+          "mythic": {
+            "cardRef": {
+              "id": "example-card-b"
+            }
+          },
+          "friend": {
+            "cardRef": {
+              "id": "example-card-d"
+            }
+          }
+        }
       },
       {
         "name": "Green/White",
@@ -69,7 +110,18 @@ export default function Page() {
           "creatureTypeA": "Rabbit",
           "creatureTypeB": "Human"
         },
-        "cycles": {}
+        "cycles": {
+          "mythic": {
+            "cardRef": {
+              "id": "example-card-a"
+            }
+          },
+          "friend": {
+            "cardRef": {
+              "id": "example-card-c"
+            }
+          }
+        }
       }
     ]
   });

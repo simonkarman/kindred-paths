@@ -3,17 +3,26 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
+  faCancel,
   faCheck,
   faCircle,
-  faEdit,
   faExclamationTriangle,
-  faGripVertical,
+  faPenToSquare,
   faPlus,
   faTimes,
-  faTrashCan,
+  faTrashCan, faWarning,
 } from '@fortawesome/free-solid-svg-icons';
-import { CycleSlot, SerializableArchetype, SerializableSet, SlotStatus, validateBlueprintWithCardReference } from '@/app/set/types';
+import {
+  CycleSlot,
+  SerializableArchetype,
+  SerializableSet,
+  CycleSlotStatus,
+  validateBlueprintWithCardReference,
+  SerializableBlueprint,
+} from '@/app/set/types';
 import { StatusTableCell } from '@/app/set/status-table-cell';
+import { IconButton } from '@/app/set/icon-button';
+import { DragHandle } from '@/app/set/drag-handle';
 
 export interface SetTableProps {
   set: SerializableSet;
@@ -24,36 +33,38 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
   const [dragOverIndex, setDragOverIndex] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
   const [draggedItem, setDraggedItem] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
 
-  const getSlotStatus = (slot: CycleSlot | undefined, archetypeMetadata: SerializableArchetype['metadata']): SlotStatus => {
+  const getSlotStatus = (
+    blueprint: SerializableBlueprint,
+    archetypeMetadata: SerializableArchetype['metadata'],
+    slot: CycleSlot | undefined,
+  ): CycleSlotStatus => {
     if (!slot) return 'missing';
     if (slot === 'skip') return 'skip';
-    if (!slot.ref) return 'blueprint';
 
-    const isValid = validateBlueprintWithCardReference(archetypeMetadata, slot.blueprint, slot.ref);
+    const isValid = validateBlueprintWithCardReference({
+      archetypeMetadata,
+      blueprint,
+      cardRef: slot.cardRef,
+    });
     return isValid ? 'valid' : 'invalid';
   };
 
   // Calculate status counts for legend
-  const statusCounts = { missing: 0, blueprint: 0, skip: 0, invalid: 0, valid: 0 };
+  const statusCounts = { missing: 0, skip: 0, invalid: 0, valid: 0 };
 
-  set.cycleKeys.forEach(cycleKey => {
+  set.cycles.forEach(({ key, blueprint }) => {
+    if (!blueprint) {
+      // count all archetypes as missing
+      statusCounts.missing += set.archetypes.length;
+      return;
+    }
+
     set.archetypes.forEach(archetype => {
-      const slot = archetype.cycles[cycleKey];
-      const status = getSlotStatus(slot, archetype['metadata']);
+      const slot = archetype.cycles[key];
+      const status = getSlotStatus(blueprint, archetype['metadata'], slot);
       statusCounts[status]++;
     });
   });
-
-  const getStatusDisplay = (status: SlotStatus) => {
-    const displays = {
-      missing: { icon: faExclamationTriangle, bgClass: 'bg-yellow-100', iconClass: 'text-yellow-600' },
-      blueprint: { icon: faEdit, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' },
-      skip: { icon: faCircle, bgClass: 'bg-zinc-100', iconClass: 'text-zinc-400' },
-      invalid: { icon: faTimes, bgClass: 'bg-red-100', iconClass: 'text-red-600' },
-      valid: { icon: faCheck, bgClass: 'bg-green-100', iconClass: 'text-green-600' }
-    };
-    return displays[status] || displays.missing;
-  };
 
   const updateSet = (updates: Partial<SerializableSet>) => {
     onSave({ ...set, ...updates });
@@ -73,29 +84,20 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
     updateSet({ archetypes: newArchetypes });
   };
 
-  const reorderKeys = (keyType: 'metadataKeys' | 'cycleKeys', fromIndex: number, toIndex: number) => {
-    const newKeys = [...set[keyType]];
+  const reorderMetadataKeys = (fromIndex: number, toIndex: number) => {
+    const newKeys = [...set.metadataKeys];
     const [removed] = newKeys.splice(fromIndex, 1);
     newKeys.splice(toIndex, 0, removed);
-    updateSet({ [keyType]: newKeys });
+    updateSet({ metadataKeys: newKeys });
   };
 
-  const addKey = (keyType: 'metadataKeys' | 'cycleKeys', atIndex: number) => {
-    const newKey = prompt(`Enter ${keyType === 'metadataKeys' ? 'metadata' : 'cycle'} key name:`);
-    if (newKey && !set[keyType].includes(newKey)) {
-      const newKeys = [...set[keyType]];
+  const addMetadataKey = (atIndex: number) => {
+    const newKey = prompt(`Enter metadata key name:`);
+    if (newKey && !set.metadataKeys.includes(newKey)) {
+      const newKeys = [...set.metadataKeys];
       newKeys.splice(atIndex, 0, newKey);
-      updateSet({ [keyType]: newKeys });
+      updateSet({ metadataKeys: newKeys });
     }
-  };
-
-  const updateCycleSlot = (archetypeIndex: number, cycleKey: string, newSlot: CycleSlot) => {
-    const newArchetypes = [...set.archetypes];
-    newArchetypes[archetypeIndex] = {
-      ...newArchetypes[archetypeIndex],
-      cycles: { ...newArchetypes[archetypeIndex].cycles, [cycleKey]: newSlot }
-    };
-    updateSet({ archetypes: newArchetypes });
   };
 
   const updateArchetypeName = (archetypeIndex: number, newName: string) => {
@@ -177,17 +179,17 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
   const updateCycleKey = (rowIndex: number, _newKey: string) => {
     let index = 2;
     let newKey = _newKey;
-    while (set.cycleKeys.includes(newKey)) {
+    while (set.cycles.map(c => c.key).includes(newKey)) {
       newKey = `${_newKey}_${index}`;
       index++;
       if (index > 100) return; // Prevent infinite loop
     }
 
-    const oldKey = set.cycleKeys[rowIndex];
+    const oldKey = set.cycles[rowIndex].key;
     if (newKey === oldKey) return; // No change
 
-    const newCycleKeys = [...set.cycleKeys];
-    newCycleKeys[rowIndex] = newKey;
+    const newCycles = [...set.cycles];
+    newCycles[rowIndex] = { key: newKey, blueprint: set.cycles[rowIndex].blueprint };
 
     // Update archetypes to rename the cycle key
     const newArchetypes = set.archetypes.map(archetype => {
@@ -199,14 +201,14 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
       return { ...archetype, cycles: newCycles };
     });
 
-    updateSet({ cycleKeys: newCycleKeys, archetypes: newArchetypes });
+    updateSet({ cycles: newCycles, archetypes: newArchetypes });
   };
 
   const deleteCycleKey = (rowIndex: number) => {
-    const keyToDelete = set.cycleKeys[rowIndex];
+    const keyToDelete = set.cycles[rowIndex].key;
     if (confirm(`Are you sure you want to delete cycle key "${keyToDelete}"? This will also remove associated cycle slots from all archetypes. This action cannot be undone.`)) {
-      const newCycleKeys = [...set.cycleKeys];
-      newCycleKeys.splice(rowIndex, 1);
+      const newCycles = [...set.cycles];
+      newCycles.splice(rowIndex, 1);
 
       // Update archetypes to remove the cycle key
       const newArchetypes = set.archetypes.map(archetype => {
@@ -217,7 +219,7 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
         return { ...archetype, cycles: newCycles };
       });
 
-      updateSet({ cycleKeys: newCycleKeys, archetypes: newArchetypes });
+      updateSet({ cycles: newCycles, archetypes: newArchetypes });
     }
   };
 
@@ -240,7 +242,7 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
           <tr>
             <th className="sticky text-left p-2 font-medium min-w-[200px]">Archetypes</th>
             {set.archetypes.map((archetype, index) => (
-              <th key={index} className="border border-zinc-300 p-1 bg-zinc-50 text-center font-medium">
+              <th key={index} className="group border border-zinc-300 p-1 bg-zinc-50 text-center font-medium">
                 <div className="flex gap-1 px-1">
                   <input
                     type="text"
@@ -249,12 +251,14 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
                     className="w-full border-none text-xs text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
                     placeholder="..."
                   />
-                  <button
-                    className="active:text-red-400 hover:text-red-600"
-                    onClick={() => deleteArchetype(index)}
-                  >
-                    <FontAwesomeIcon icon={faTrashCan} />
-                  </button>
+                  <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
+                    <IconButton
+                      onClick={() => deleteArchetype(index)}
+                      icon={faTrashCan}
+                      title="Delete Archetype"
+                      variant="danger"
+                    />
+                  </div>
                 </div>
               </th>
             ))}
@@ -285,7 +289,7 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
                   onDrop={(e: React.DragEvent) => {
                     e.preventDefault();
                     if (draggedItem && draggedItem.type === 'metadataKeys' && draggedItem.index !== rowIndex) {
-                      reorderKeys('metadataKeys', draggedItem.index, rowIndex);
+                      reorderMetadataKeys(draggedItem.index, rowIndex);
                     }
                     setDraggedItem(null);
                     setDragOverIndex(null);
@@ -304,11 +308,21 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
                   <div
                     className="flex items-center gap-1"
                   >
-                    <div className="hidden absolute -translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
-                      <AddButton onAdd={() => addKey('metadataKeys', rowIndex)} />
+                    <div className="hidden rounded-lg border border-green-200 bg-green-50 starting:opacity-0 opacity-80 transition-opacity absolute -translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
+                      <IconButton
+                        onClick={() => addMetadataKey(rowIndex)}
+                        icon={faPlus}
+                        title="Add Metadata Key"
+                        variant="success"
+                      />
                     </div>
-                    <div className="hidden absolute translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
-                      <AddButton onAdd={() => addKey('metadataKeys', rowIndex + 1)} />
+                    <div className="hidden rounded-lg border border-green-200 bg-green-50 starting:opacity-0 opacity-80 transition-opacity absolute translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
+                      <IconButton
+                        onClick={() => addMetadataKey(rowIndex + 1)}
+                        icon={faPlus}
+                        title="Add Metadata Key"
+                        variant="success"
+                      />
                     </div>
                     <DragHandle
                       type="metadataKeys"
@@ -316,7 +330,15 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
                       draggedItem={draggedItem}
                       setDraggedItem={setDraggedItem}
                     />
-                    <div className="flex w-full gap-2 pr-1">
+                    <div className="flex w-full gap-2 pl-1">
+                      <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
+                        <IconButton
+                          onClick={() => deleteMetadataKey(rowIndex)}
+                          icon={faTrashCan}
+                          title="Delete Metadata"
+                          variant="danger"
+                        />
+                      </div>
                       <input
                         type="text"
                         value={metadataKey}
@@ -324,12 +346,6 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
                         className="w-full border-none text-xs text-left bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
                         placeholder="..."
                       />
-                      <button
-                        className="active:text-red-400 hover:text-red-600"
-                        onClick={() => deleteMetadataKey(rowIndex)}
-                      >
-                        <FontAwesomeIcon icon={faTrashCan} />
-                      </button>
                     </div>
                   </div>
                 </td>
@@ -358,7 +374,7 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
           </tbody>
           {/* Cycle Rows */}
           <tbody>
-          {set.cycleKeys.map((cycleKey, rowIndex) => (
+          {set.cycles.map(({ key: cycleKey, blueprint }, rowIndex) => (
             <React.Fragment key={rowIndex}>
               <tr>
                 <td
@@ -368,7 +384,7 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
                   onDrop={(e: React.DragEvent) => {
                     e.preventDefault();
                     if (draggedItem && draggedItem.type === 'cycleKeys' && draggedItem.index !== rowIndex) {
-                      reorderKeys('cycleKeys', draggedItem.index, rowIndex);
+                      reorderCycleKeys(draggedItem.index, rowIndex);
                     }
                     setDraggedItem(null);
                     setDragOverIndex(null);
@@ -387,11 +403,21 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
                   <div
                     className="flex items-center gap-1"
                   >
-                    <div className="hidden absolute -translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
-                      <AddButton onAdd={() => addKey('cycleKeys', rowIndex)} />
+                    <div className="hidden rounded-lg border border-green-200 bg-green-50 starting:opacity-0 opacity-80 transition-opacity absolute -translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
+                      <IconButton
+                        onClick={() => addCycleKey(rowIndex)}
+                        icon={faPlus}
+                        title="Add Cycle Key"
+                        variant="success"
+                      />
                     </div>
-                    <div className="hidden absolute translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
-                      <AddButton onAdd={() => addKey('cycleKeys', rowIndex + 1)} />
+                    <div className="hidden rounded-lg border border-green-200 bg-green-50 starting:opacity-0 opacity-80 transition-opacity absolute translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
+                      <IconButton
+                        onClick={() => addCycleKey(rowIndex + 1)}
+                        icon={faPlus}
+                        title="Add Cycle Key"
+                        variant="success"
+                      />
                     </div>
                     <DragHandle
                       type="cycleKeys"
@@ -399,7 +425,15 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
                       draggedItem={draggedItem}
                       setDraggedItem={setDraggedItem}
                     />
-                    <div className="flex w-full gap-2 pr-1">
+                    <div className="flex w-full gap-2 pl-1">
+                      <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
+                        <IconButton
+                          onClick={() => deleteCycleKey(rowIndex)}
+                          icon={faTrashCan}
+                          title="Delete Cycle"
+                          variant="danger"
+                        />
+                      </div>
                       <input
                         type="text"
                         value={cycleKey}
@@ -407,45 +441,41 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
                         className="w-full border-none text-xs text-left bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
                         placeholder="..."
                       />
-                      <button
-                        className="active:text-red-400 hover:text-red-600"
-                        onClick={() => deleteCycleKey(rowIndex)}
-                      >
-                        <FontAwesomeIcon icon={faTrashCan} />
-                      </button>
+                      {blueprint && <IconButton
+                        onClick={() => onRemoveBlueprint(rowIndex)}
+                        icon={faCancel}
+                        title="Clear Blueprint"
+                        variant="default"
+                      />}
+                      <IconButton
+                        onClick={() => onEditBlueprint(rowIndex)}
+                        icon={faPenToSquare}
+                        title="Add/Edit Blueprint"
+                        variant="primary"
+                      />
                     </div>
                   </div>
                 </td>
-                {set.archetypes.map((archetype) => {
+                {!blueprint && (<td
+                    colSpan={set.archetypes.length}
+                    className="border border-zinc-300 p-1 text-center bg-purple-50 text-purple-600"
+                  >
+                    <div className="flex gap-2 items-center justify-center">
+                      <FontAwesomeIcon icon={faWarning} />
+                      <span className={`text-sm font-medium text-purple-800`}>
+                        Missing blueprint
+                      </span>
+                    </div>
+                </td>)}
+                {blueprint && set.archetypes.map((archetype) => {
                   const slot = archetype.cycles[cycleKey];
-                  const status = getSlotStatus(slot, archetype.metadata);
-                  const display = getStatusDisplay(status);
-
-// Options:
-// - missing => display as warning/yellow + button to set as skip + button to open blueprint editor
-// - skip => display as neutral/gray + button to mark as not skip
-// - blueprint-only => display as info/blue + button to remove blueprint + button to edit blueprint + button to apply blueprint to full row + button to link a card
-// - invalid => display as error/red + button to remove blueprint + button to edit blueprint + button to apply blueprint to full row + img icon for hover to see card render + button to edit card ref + button to edit card
-// - valid => display as success/green + button to remove blueprint + button to edit blueprint + button to apply blueprint to full row + img icon for hover to see card render + button to edit card ref + button to edit card
+                  const status = getSlotStatus(blueprint, archetype.metadata, slot);
 
                   return <StatusTableCell
                     key={archetype.name}
                     status={status}
+                    cardPreviewUrl={"http://localhost:4101/render/mfy-401-miffy-the-kind"}
                   />
-                  // return (
-                  //   <td className={`border border-zinc-300 p-1 text-center ${display.bgClass}`}>
-                  //     <div className="flex items-center justify-center gap-1">
-                  //       <FontAwesomeIcon icon={display.icon} className={`text-sm ${display.iconClass}`} />
-                  //       <BlueprintEditor
-                  //         slot={slot}
-                  //         onUpdate={(newSlot) => updateCycleSlot(archetypeIndex, cycleKey, newSlot)}
-                  //       />
-                  //       {slot && slot !== 'skip' && slot.ref && (
-                  //         <CardImageLink cardRef={slot.ref} />
-                  //       )}
-                  //     </div>
-                  //   </td>
-                  // );
                 })}
               </tr>
             </React.Fragment>
@@ -459,19 +489,15 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
                   <FontAwesomeIcon icon={faExclamationTriangle} className="text-yellow-600" />
                   <span>Missing: {statusCounts.missing}</span>
                 </span>
-                      <span className="flex items-center gap-1">
-                  <FontAwesomeIcon icon={faEdit} className="text-blue-600" />
-                  <span>Blueprint: {statusCounts['blueprint']}</span>
-                </span>
-                      <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1">
                   <FontAwesomeIcon icon={faCircle} className="text-zinc-400" />
                   <span>Skip: {statusCounts.skip}</span>
                 </span>
-                      <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1">
                   <FontAwesomeIcon icon={faTimes} className="text-red-600" />
                   <span>Invalid: {statusCounts.invalid}</span>
                 </span>
-                      <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1">
                   <FontAwesomeIcon icon={faCheck} className="text-green-600" />
                   <span>Valid: {statusCounts.valid}</span>
                 </span>
@@ -480,55 +506,6 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
           </tr>
           </tbody>
         </table>
-
-
       </div>
     </div>);
-};
-
-const DragHandle: React.FC<{
-  type: 'metadataKeys' | 'cycleKeys';
-  index: number;
-  draggedItem: {type: 'metadataKeys' | 'cycleKeys', index: number} | null;
-  setDraggedItem: (item: {type: 'metadataKeys' | 'cycleKeys', index: number} | null) => void;
-}> = ({ type, index, draggedItem, setDraggedItem }) => {
-
-  const handleDragStart = (e: React.DragEvent) => {
-    setDraggedItem({ type, index });
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragEnd = () => {
-    setDraggedItem(null);
-  };
-
-  const isDragging = draggedItem?.type === type && draggedItem?.index === index;
-  const isDropTarget = draggedItem?.type === type && draggedItem?.index !== index;
-
-  return (
-    <button
-      draggable
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      className={`
-        cursor-grab active:cursor-grabbing
-        ${isDragging ? 'text-blue-500' : ''}
-        ${isDropTarget ? 'text-zinc-200' : 'text-zinc-100 group-hover:text-blue-500'}
-      `}
-      title="Drag to reorder"
-    >
-      <FontAwesomeIcon icon={faGripVertical} className="text-xs" />
-    </button>
-  );
-};
-
-const AddButton: React.FC<{ onAdd: () => void }> = ({ onAdd }) => {
-  return (
-      <button
-        onClick={onAdd}
-        className="border px-[1px] border-gray-200 rounded bg-zinc-50 text-gray-600 hover:text-green-600 hover:bg-green-200 text-xs transition-colors"
-      >
-        <FontAwesomeIcon icon={faPlus} className={`text-sm mx-auto`} />
-      </button>
-  );
 };
