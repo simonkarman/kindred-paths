@@ -21,7 +21,7 @@ export function CardOverview(props: {
   const { showCreate = true } = props;
   const [activeTab, setActiveTab] = useLocalStorageState<TabType>('home/tab', 'table');
 
-  const [searchText] = useSearch()
+  const [searchText] = useSearch('home');
   const cards = filterCardsBasedOnSearch(props.cards, searchText);
 
   const tabs = [
@@ -55,7 +55,7 @@ export function CardOverview(props: {
           ))}
         </nav>
         <div className="grow flex justify-end items-end gap-2">
-          <SearchBar />
+          <SearchBar scope="home" />
           {showCreate && (
             <>
               <Link

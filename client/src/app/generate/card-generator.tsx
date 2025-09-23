@@ -27,7 +27,9 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
   const [selectedCard, setSelectedCard] = useState<SerializedCard | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchText] = useSearch();
+
+  const searchScope = `card-generator/${generatorId}`;
+  const [searchText] = useSearch(searchScope);
 
   const viewGenerator = async (generatorId: string) => {
     const generator = await getCardSampleGeneratorById(generatorId);
@@ -175,7 +177,7 @@ export function CardGenerator(props: { previousCardGenerators: { generatorId: st
             <h2 className="shrink-0 text-xl font-semibold">
               Card Suggestions ({suggestions.length})
             </h2>
-            <SearchBar />
+            <SearchBar scope={searchScope} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filterCardsBasedOnSearch(
