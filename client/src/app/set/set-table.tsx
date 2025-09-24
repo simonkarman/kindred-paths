@@ -13,55 +13,33 @@ import {
   faTrashCan, faWarning,
 } from '@fortawesome/free-solid-svg-icons';
 import {
-  CycleSlot,
+  getCycleSlotStatus,
   SerializableArchetype,
   SerializableSet,
-  CycleSlotStatus,
-  validateBlueprintWithCardReference,
-  SerializableBlueprint,
 } from '@/app/set/types';
 import { StatusTableCell } from '@/app/set/status-table-cell';
 import { IconButton } from '@/app/set/icon-button';
 import { DragHandle } from '@/app/set/drag-handle';
+import { Card, SerializedCard } from 'kindred-paths';
 
 export interface SetTableProps {
+  cards: SerializedCard[],
   set: SerializableSet;
-  onSave: (set: SerializableSet) => void;
 }
 
-export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
+export function SetTable({ cards: _cards, set }: SetTableProps) {
+  const cards = _cards.map(c => new Card(c))
+  const onSave: (v: unknown) => void = () => {};
+
   const [dragOverIndex, setDragOverIndex] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
   const [draggedItem, setDraggedItem] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
 
-  const getSlotStatus = (
-    blueprint: SerializableBlueprint,
-    archetypeMetadata: SerializableArchetype['metadata'],
-    slot: CycleSlot | undefined,
-  ): CycleSlotStatus => {
-    if (!slot) return 'missing';
-    if (slot === 'skip') return 'skip';
-
-    const isValid = validateBlueprintWithCardReference({
-      archetypeMetadata,
-      blueprint,
-      cardRef: slot.cardRef,
-    });
-    return isValid ? 'valid' : 'invalid';
-  };
 
   // Calculate status counts for legend
   const statusCounts = { missing: 0, skip: 0, invalid: 0, valid: 0 };
-
-  set.cycles.forEach(({ key, blueprint }) => {
-    if (!blueprint) {
-      // count all archetypes as missing
-      statusCounts.missing += set.archetypes.length;
-      return;
-    }
-
-    set.archetypes.forEach(archetype => {
-      const slot = archetype.cycles[key];
-      const status = getSlotStatus(blueprint, archetype['metadata'], slot);
+  set.cycles.forEach(({ key: cycleKey }) => {
+    set.archetypes.forEach((_, archetypeIndex) => {
+      const status = getCycleSlotStatus(cards, set, archetypeIndex, cycleKey);
       statusCounts[status]++;
     });
   });
@@ -467,14 +445,14 @@ export const SetTable: React.FC<SetTableProps> = ({ set, onSave }) => {
                       </span>
                     </div>
                 </td>)}
-                {blueprint && set.archetypes.map((archetype) => {
-                  const slot = archetype.cycles[cycleKey];
-                  const status = getSlotStatus(blueprint, archetype.metadata, slot);
-
+                {blueprint && set.archetypes.map((archetype, archetypeIndex) => {
+                  const status = getCycleSlotStatus(cards, set, archetypeIndex, cycleKey);
+                  const slot = set.archetypes[archetypeIndex].cycles[cycleKey];
+                  const image = slot && typeof slot !== 'string' && "cardRef" in slot ? slot.cardRef.cardId : undefined;
                   return <StatusTableCell
                     key={archetype.name}
                     status={status}
-                    cardPreviewUrl={"http://localhost:4101/render/mfy-401-miffy-the-kind"}
+                    cardPreviewUrl={`http://localhost:4101/render/${image}`}
                   />
                 })}
               </tr>

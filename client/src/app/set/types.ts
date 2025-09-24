@@ -1,20 +1,10 @@
-import { Random } from 'kindred-paths';
 import { faCancel, faCircleCheck, faCircleXmark, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
-
-export type SerializableBlueprint = { id: string }; // Simplified for this example
-export type SerializableCardReference = { id: string }; // Simplified for this example
-
-export const validateBlueprintWithCardReference = (props: {
-  archetypeMetadata: SerializableArchetype['metadata'],
-  blueprint: SerializableBlueprint,
-  cardRef: SerializableCardReference,
-}): boolean => {
-  // 80% chance of being valid, for demo purposes
-  return Random.fromSeed(props.blueprint.id + props.cardRef.id).next() < 0.8;
-};
+import { BlueprintValidator, SerializableBlueprint, SerializableCardReference } from '@/app/set/blueprint-validator';
+import { Card } from 'kindred-paths';
 
 export interface SerializableSet {
   name: string,
+  blueprint?: SerializableBlueprint,
   metadataKeys: string[],
   cycles: { key: string, blueprint?: SerializableBlueprint }[],
   archetypes: SerializableArchetype[],
@@ -22,11 +12,13 @@ export interface SerializableSet {
 
 export interface SerializableArchetype {
   name: string,
-  metadata: { [metadataKey: string]: string | undefined }, // for example for a key "mainToken", the value can be "1/1 red Warrior creature token"
-  cycles: { [cycleKey: string]: CycleSlot | undefined },
+  blueprint?: SerializableBlueprint,
+  metadata: { [metadataKey: string]: string | undefined },
+  cycles: { [cycleKey: string]: CycleSlot },
 }
 
-export type CycleSlot = 'skip' | { cardRef: SerializableCardReference }
+export type CycleSlot = /*(missing)*/ undefined | 'skip' | CycleSlotCard
+export type CycleSlotCard = { blueprint?: SerializableBlueprint, cardRef: SerializableCardReference, count: number };
 
 export type CycleSlotStatus = 'missing' | 'skip' | 'invalid' | 'valid';
 
@@ -69,4 +61,35 @@ export const getStatusConfig = (status: CycleSlotStatus) => {
         iconColor: 'text-green-600'
       };
   }
+};
+
+const blueprintValidator = new BlueprintValidator();
+export const getCycleSlotStatus = (
+  cards: Card[],
+  set: SerializableSet,
+  archetypeIndex: number,
+  cycleKey: string,
+): CycleSlotStatus => {
+  const archetype = set.archetypes[archetypeIndex];
+  const slot = archetype?.cycles[cycleKey];
+
+  if (!slot) return 'missing';
+  if (slot === 'skip') return 'skip';
+  const card = cards.find(c => c.id === slot.cardRef.cardId);
+  if (!card) return 'missing';
+
+  const metadata = archetype.metadata;
+  const blueprints = [
+    set.blueprint,
+    set.cycles.find(c => c.key === cycleKey)?.blueprint,
+    archetype.blueprint,
+    slot.blueprint,
+  ].filter(b => !!b);
+
+  const result = blueprintValidator.validate({
+    metadata,
+    blueprints,
+    card,
+  });
+  return result.success ? 'valid' : 'invalid';
 };
