@@ -64,7 +64,7 @@ export default async function Page() {
         blueprint: {
           color: [
             { key: 'string-array/must-include-all-of', value: ['white'] },
-            { key: 'string-array/must-have-length', value: { key: 'number/must-be-one-of', value: [1] }},
+            { key: 'string-array/must-have-length', value: { key: 'number/must-be-at-most', value: 1 }},
           ],
         },
         "metadata": {
@@ -88,6 +88,12 @@ export default async function Page() {
       },
       {
         "name": "Green",
+        blueprint: {
+          color: [
+            { key: 'string-array/must-include-all-of', value: ['green'] },
+            { key: 'string-array/must-have-length', value: { key: 'number/must-be-at-most', value: 1 }},
+          ],
+        },
         "metadata": {
           "mainToken": "4/4 green Rabbit creature token",
           "mainCharacter": "Miffy, The Brave",
@@ -109,6 +115,12 @@ export default async function Page() {
       },
       {
         "name": "Green/White",
+        blueprint: {
+          color: [
+            { key: 'string-array/must-include-all-of', value: ['white', 'green'] },
+            { key: 'string-array/must-have-length', value: { key: 'number/must-be-one-of', value: [0, 2] }},
+          ],
+        },
         "metadata": {
           "mainToken": "2/2 green and white Rabbit creature token",
           "mainCharacter": "Miffy, The Curious",
@@ -134,7 +146,7 @@ export default async function Page() {
 
   return (<>
     <SetTable cards={cards} set={set} />
-    <pre className='mt-4 p-2 bg-gray-100 text-xs rounded border border-gray-300 overflow-x-auto'>
+    <pre className='hidden mt-4 p-2 bg-gray-100 text-xs rounded border border-gray-300 overflow-x-auto'>
       {JSON.stringify(set, null, 2)}
     </pre>
   </>);

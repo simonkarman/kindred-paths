@@ -1,5 +1,11 @@
 import { faCancel, faCircleCheck, faCircleXmark, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
-import { BlueprintValidator, SerializableBlueprint, SerializableCardReference } from '@/app/set/blueprint-validator';
+import {
+  BlueprintValidator,
+  CriteriaFailureReason,
+  SerializableBlueprint,
+  SerializableBlueprintWithSource,
+  SerializableCardReference,
+} from '@/app/set/blueprint-validator';
 import { Card } from 'kindred-paths';
 
 export interface SerializableSet {
@@ -63,33 +69,47 @@ export const getStatusConfig = (status: CycleSlotStatus) => {
   }
 };
 
+export const getBlueprintsForCycleSlot = (
+  set: SerializableSet,
+  archetypeIndex: number,
+  cycleKey: string,
+): SerializableBlueprintWithSource[] => {
+  const archetype = set.archetypes[archetypeIndex];
+  const slot = archetype?.cycles[cycleKey];
+  if (!slot || slot === 'skip') return [];
+
+  return [
+    { source: 'set', blueprint: set.blueprint },
+    { source: 'archetype', blueprint: archetype.blueprint },
+    { source: 'cycle', blueprint: set.cycles.find(c => c.key === cycleKey)?.blueprint },
+    { source: 'slot', blueprint: slot.blueprint },
+  ].filter(b => b.blueprint !== undefined) as SerializableBlueprintWithSource[];
+};
+
 const blueprintValidator = new BlueprintValidator();
 export const getCycleSlotStatus = (
   cards: Card[],
   set: SerializableSet,
   archetypeIndex: number,
   cycleKey: string,
-): CycleSlotStatus => {
+): { status: CycleSlotStatus, reasons?: CriteriaFailureReason[] } => {
   const archetype = set.archetypes[archetypeIndex];
   const slot = archetype?.cycles[cycleKey];
 
-  if (!slot) return 'missing';
-  if (slot === 'skip') return 'skip';
+  if (!slot) return { status: 'missing' };
+  if (slot === 'skip') return { status: 'skip' };
   const card = cards.find(c => c.id === slot.cardRef.cardId);
-  if (!card) return 'missing';
+  if (!card) return { status: 'missing' };
 
   const metadata = archetype.metadata;
-  const blueprints = [
-    set.blueprint,
-    set.cycles.find(c => c.key === cycleKey)?.blueprint,
-    archetype.blueprint,
-    slot.blueprint,
-  ].filter(b => !!b);
+  const blueprints = getBlueprintsForCycleSlot(set, archetypeIndex, cycleKey);
 
   const result = blueprintValidator.validate({
     metadata,
     blueprints,
     card,
   });
-  return result.success ? 'valid' : 'invalid';
+  return result.success
+    ? { status: 'valid' }
+    : { status: 'invalid', reasons: result.reasons };
 };

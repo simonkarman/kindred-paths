@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
+  faArrowLeft,
   faCancel,
   faCheck,
   faCircle,
@@ -21,25 +22,26 @@ import { StatusTableCell } from '@/app/set/status-table-cell';
 import { IconButton } from '@/app/set/icon-button';
 import { DragHandle } from '@/app/set/drag-handle';
 import { Card, SerializedCard } from 'kindred-paths';
+import { SerializableBlueprint } from '@/app/set/blueprint-validator';
+import { serverUrl } from '@/utils/server';
 
 export interface SetTableProps {
   cards: SerializedCard[],
   set: SerializableSet;
 }
 
-export function SetTable({ cards: _cards, set }: SetTableProps) {
-  const cards = _cards.map(c => new Card(c))
-  const onSave: (v: unknown) => void = () => {};
+export function SetTable(props: SetTableProps) {
+  const cards = props.cards.map(c => new Card(c));
+  const [set, onSave] = useState(props.set);
 
   const [dragOverIndex, setDragOverIndex] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
   const [draggedItem, setDraggedItem] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
-
 
   // Calculate status counts for legend
   const statusCounts = { missing: 0, skip: 0, invalid: 0, valid: 0 };
   set.cycles.forEach(({ key: cycleKey }) => {
     set.archetypes.forEach((_, archetypeIndex) => {
-      const status = getCycleSlotStatus(cards, set, archetypeIndex, cycleKey);
+      const { status } = getCycleSlotStatus(cards, set, archetypeIndex, cycleKey);
       statusCounts[status]++;
     });
   });
@@ -50,32 +52,6 @@ export function SetTable({ cards: _cards, set }: SetTableProps) {
 
   const updateSetName = (newName: string) => {
     updateSet({ name: newName });
-  };
-
-  const updateMetadata = (archetypeIndex: number, metadataKey: string, _value: string) => {;
-    const value = _value.trim() === '' ? undefined : _value;
-    const newArchetypes = [...set.archetypes];
-    newArchetypes[archetypeIndex] = {
-      ...newArchetypes[archetypeIndex],
-      metadata: { ...newArchetypes[archetypeIndex].metadata, [metadataKey]: value }
-    };
-    updateSet({ archetypes: newArchetypes });
-  };
-
-  const reorderMetadataKeys = (fromIndex: number, toIndex: number) => {
-    const newKeys = [...set.metadataKeys];
-    const [removed] = newKeys.splice(fromIndex, 1);
-    newKeys.splice(toIndex, 0, removed);
-    updateSet({ metadataKeys: newKeys });
-  };
-
-  const addMetadataKey = (atIndex: number) => {
-    const newKey = prompt(`Enter metadata key name:`);
-    if (newKey && !set.metadataKeys.includes(newKey)) {
-      const newKeys = [...set.metadataKeys];
-      newKeys.splice(atIndex, 0, newKey);
-      updateSet({ metadataKeys: newKeys });
-    }
   };
 
   const updateArchetypeName = (archetypeIndex: number, newName: string) => {
@@ -104,6 +80,56 @@ export function SetTable({ cards: _cards, set }: SetTableProps) {
       const newArchetypes = [...set.archetypes];
       newArchetypes.splice(archetypeIndex, 1);
       updateSet({ archetypes: newArchetypes });
+    }
+  };
+
+  const updateMetadata = (archetypeIndex: number, metadataKey: string, _value: string) => {;
+    const value = _value.trim() === '' ? undefined : _value;
+    const newArchetypes = [...set.archetypes];
+    newArchetypes[archetypeIndex] = {
+      ...newArchetypes[archetypeIndex],
+      metadata: { ...newArchetypes[archetypeIndex].metadata, [metadataKey]: value }
+    };
+    updateSet({ archetypes: newArchetypes });
+  };
+
+  const reorderMetadataKeys = (fromIndex: number, toIndex: number) => {
+    const newKeys = [...set.metadataKeys];
+    const [removed] = newKeys.splice(fromIndex, 1);
+    newKeys.splice(toIndex, 0, removed);
+    updateSet({ metadataKeys: newKeys });
+  };
+
+  const reorderCycleKeys = (fromIndex: number, toIndex: number) => {
+    const newCycles = [...set.cycles];
+    const [removed] = newCycles.splice(fromIndex, 1);
+    newCycles.splice(toIndex, 0, removed);
+    updateSet({ cycles: newCycles });
+  };
+
+  const addMetadataKey = (atIndex: number) => {
+    const newKey = prompt(`Enter metadata key name:`);
+    if (newKey && !set.metadataKeys.includes(newKey)) {
+      const newKeys = [...set.metadataKeys];
+      newKeys.splice(atIndex, 0, newKey);
+      updateSet({ metadataKeys: newKeys });
+    }
+  };
+
+  const addCycleKey = (atIndex: number) => {
+    const newKey = prompt(`Enter cycle key name:`);
+    if (newKey && !set.cycles.map(c => c.key).includes(newKey)) {
+      const newCycles = [...set.cycles];
+      newCycles.splice(atIndex, 0, { key: newKey, blueprint: undefined });
+      updateSet({ cycles: newCycles });
+    }
+  };
+
+  const onRemoveCycleBlueprint = (cycleIndex: number) => {
+    if (confirm('Are you sure you want to remove the blueprint?')) {
+      const newCycles = [...set.cycles];
+      newCycles[cycleIndex] = { ...newCycles[cycleIndex], blueprint: undefined };
+      updateSet({ cycles: newCycles });
     }
   };
 
@@ -201,45 +227,78 @@ export function SetTable({ cards: _cards, set }: SetTableProps) {
     }
   };
 
+  const onEditCycleBlueprint = (cycleIndex: number) => {
+    const newBlueprint: SerializableBlueprint = {};
+    const newCycles = [...set.cycles];
+    newCycles[cycleIndex] = { ...newCycles[cycleIndex], blueprint: newBlueprint };
+    updateSet({ cycles: newCycles });
+  };
+
   return (
     <div>
-      <h2 className='mb-2 text-xl font-bold'>
+      <h2 className='mb-2'>
         <input
           type="text"
           value={set.name}
           onChange={(e) => updateSetName(e.target.value)}
-          className="border-none bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
+          className="text-xl font-bold border-none bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
           placeholder="..."
         />
+        <span className="font-medium text-sm inline-flex gap-2">
+          {set.blueprint && <IconButton
+            onClick={() => onRemoveSetBlueprint()}
+            icon={faCancel}
+            title="Clear Blueprint"
+            variant="default"
+          />}
+          <IconButton
+            onClick={() => onEditSetBlueprint()}
+            icon={faPenToSquare}
+            title="Add/Edit Blueprint"
+            variant="primary"
+          />
+        </span>
       </h2>
 
       {/* Main Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-scroll overflow-y-visible pb-[260px] border-b">
         <table className="border-collapse text-xs">
           <thead>
           <tr>
-            <th className="sticky text-left p-2 font-medium min-w-[200px]">Archetypes</th>
-            {set.archetypes.map((archetype, index) => (
-              <th key={index} className="group border border-zinc-300 p-1 bg-zinc-50 text-center font-medium">
+            <th className="sticky text-left p-2 font-medium min-w-[250px]">Archetypes</th>
+            {set.archetypes.map((archetype, archetypeIndex) => {
+              return <th key={archetypeIndex} className="group border border-zinc-300 p-1 bg-zinc-50 text-center font-medium">
                 <div className="flex gap-1 px-1">
-                  <input
-                    type="text"
-                    value={archetype.name}
-                    onChange={(e) => updateArchetypeName(index, e.target.value)}
-                    className="w-full border-none text-xs text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
-                    placeholder="..."
-                  />
-                  <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                     <IconButton
-                      onClick={() => deleteArchetype(index)}
+                      onClick={() => deleteArchetype(archetypeIndex)}
                       icon={faTrashCan}
                       title="Delete Archetype"
                       variant="danger"
                     />
                   </div>
+                  <input
+                    type="text"
+                    value={archetype.name}
+                    onChange={(e) => updateArchetypeName(archetypeIndex, e.target.value)}
+                    className="w-full border-none text-xs text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
+                    placeholder="..."
+                  />
+                  {archetype.blueprint && <IconButton
+                    onClick={() => onRemoveArchetypeBlueprint(archetypeIndex)}
+                    icon={faCancel}
+                    title="Clear Blueprint"
+                    variant="default"
+                  />}
+                  <IconButton
+                    onClick={() => onEditArchetypeBlueprint(archetypeIndex)}
+                    icon={faPenToSquare}
+                    title="Add/Edit Blueprint"
+                    variant="primary"
+                  />
                 </div>
-              </th>
-            ))}
+              </th>;
+            })}
             <th className="border border-zinc-300 p-1 bg-zinc-50 text-center font-medium">
               <button
                 onClick={() => addArchetype()}
@@ -420,13 +479,13 @@ export function SetTable({ cards: _cards, set }: SetTableProps) {
                         placeholder="..."
                       />
                       {blueprint && <IconButton
-                        onClick={() => onRemoveBlueprint(rowIndex)}
+                        onClick={() => onRemoveCycleBlueprint(rowIndex)}
                         icon={faCancel}
                         title="Clear Blueprint"
                         variant="default"
                       />}
                       <IconButton
-                        onClick={() => onEditBlueprint(rowIndex)}
+                        onClick={() => onEditCycleBlueprint(rowIndex)}
                         icon={faPenToSquare}
                         title="Add/Edit Blueprint"
                         variant="primary"
@@ -438,21 +497,33 @@ export function SetTable({ cards: _cards, set }: SetTableProps) {
                     colSpan={set.archetypes.length}
                     className="border border-zinc-300 p-1 text-center bg-purple-50 text-purple-600"
                   >
-                    <div className="flex gap-2 items-center justify-center">
+                    <div className="flex gap-2 items-center justify-center px-1">
+                      <FontAwesomeIcon icon={faArrowLeft} />
                       <FontAwesomeIcon icon={faWarning} />
                       <span className={`text-sm font-medium text-purple-800`}>
-                        Missing blueprint
+                        Cycle &ldquo;{cycleKey}&rdquo; is missing a blueprint.
                       </span>
                     </div>
                 </td>)}
                 {blueprint && set.archetypes.map((archetype, archetypeIndex) => {
-                  const status = getCycleSlotStatus(cards, set, archetypeIndex, cycleKey);
+                  const { status, reasons } = getCycleSlotStatus(cards, set, archetypeIndex, cycleKey);
                   const slot = set.archetypes[archetypeIndex].cycles[cycleKey];
-                  const image = slot && typeof slot !== 'string' && "cardRef" in slot ? slot.cardRef.cardId : undefined;
+                  const cardRef = slot && typeof slot !== 'string' && "cardRef" in slot ? slot.cardRef : undefined;
+                  const hasSlotBlueprint = (slot && typeof slot !== 'string' && "blueprint" in slot ? slot.blueprint : undefined) !== undefined;
                   return <StatusTableCell
                     key={archetype.name}
                     status={status}
-                    cardPreviewUrl={`http://localhost:4101/render/${image}`}
+                    statusReasons={reasons ?? []}
+                    onMarkSkip={() => markSkip(archetypeIndex, cycleKey)}
+                    onMarkNotSkip={() => markNotSkip(archetypeIndex, cycleKey)}
+                    onCreateCard={() => createCard(archetypeIndex, cycleKey)}
+                    onLinkCard={() => linkCard(archetypeIndex, cycleKey)}
+                    onEditCard={() => editCard(slot)}
+                    onUnlinkCard={() => unlinkCard(archetypeIndex, cycleKey)}
+                    hasBlueprint={hasSlotBlueprint}
+                    onEditBlueprint={() => onEditSlotBlueprint(archetypeIndex, cycleKey)}
+                    onRemoveBlueprint={() => onRemoveSlotBlueprint(archetypeIndex, cycleKey)}
+                    cardPreviewUrl={cardRef === undefined ? undefined : `${serverUrl}/render/${cardRef.cardId}`}
                   />
                 })}
               </tr>

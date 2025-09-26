@@ -6,14 +6,14 @@ type Criteria<Key extends string, V = void> = { key: Key, value: V };
 // Optional Criteria
 //   must be present <void>
 //   must be absent <void>
-type PresentOptionalCriteria = Criteria<'present'>;
-type AbsentOptionalCriteria = Criteria<'absent'>;
+type PresentOptionalCriteria = Criteria<'is-present'>;
+type AbsentOptionalCriteria = Criteria<'is-absent'>;
 type OptionalCriteria = PresentOptionalCriteria | AbsentOptionalCriteria;
 const checkOptionalCriteria = (criteria: OptionalCriteria, value: unknown): boolean => {
   switch (criteria.key) {
-    case 'present':
+    case 'is-present':
       return value !== undefined && value !== null;
-    case 'absent':
+    case 'is-absent':
       return value === undefined || value === null;
   }
 };
@@ -169,19 +169,18 @@ export type SerializableBlueprint = {
   creatableTokens?: StringArrayCriteria[],
 }
 
+export type SerializableBlueprintWithSource = { source: string, blueprint: SerializableBlueprint };
 export type SerializableCardReference = { cardId: string };
-
-export type CriteriaFailureReason = { location: string, criteria: Criteria<string, unknown>, value: unknown };
-
+export type CriteriaFailureReason = { source: string, location: string, criteria: Criteria<string, unknown>, value: unknown };
 export class BlueprintValidator {
 
   validate(props: {
     metadata: { [metadataKey: string]: string | undefined },
-    blueprints: SerializableBlueprint[],
+    blueprints: SerializableBlueprintWithSource[],
     card: Card,
   }): ({ success: true } | { success: false, reasons: CriteriaFailureReason[] }) {
     const reasons: CriteriaFailureReason[] = [];
-    props.blueprints.forEach(blueprint => {
+    props.blueprints.forEach(({ source, blueprint }) => {
       const blueprintWithMetadata = {
         ...Object.entries(blueprint).map(([key, criteria]) => [key, criteria.map(c => {
           const regex = /^\$\[(.+?)]$/;
@@ -210,7 +209,7 @@ export class BlueprintValidator {
           return c;
         })] as const).reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {} as SerializableBlueprint),
       };
-      reasons.push(...this.validateCard(blueprintWithMetadata, props.card));
+      reasons.push(...this.validateCard(source, blueprintWithMetadata, props.card));
     });
     if (reasons.length === 0) {
       return { success: true };
@@ -219,10 +218,11 @@ export class BlueprintValidator {
   }
 
   private validateCard(
+    source: string,
     blueprint: SerializableBlueprint,
     card: Card
   ): CriteriaFailureReason[] {
-    const reasons: CriteriaFailureReason[] = [];
+    const reasons: Omit<CriteriaFailureReason, 'source'>[] = [];
     if (blueprint.name) {
       blueprint.name.forEach(c => {
         if (!checkStringCriteria(c, card.name)) {
@@ -246,7 +246,7 @@ export class BlueprintValidator {
     }
     if (blueprint.supertype) {
       blueprint.supertype.forEach(c => {
-        if (c.key === 'present' || c.key === 'absent') {
+        if (c.key === 'is-present' || c.key === 'is-absent') {
           if (!checkOptionalCriteria(c, card.supertype)) {
             reasons.push({ location: 'supertype', criteria: c, value: card.supertype });
           }
@@ -361,7 +361,7 @@ export class BlueprintValidator {
         }
       });
     }
-    return reasons;
+    return reasons.map(r => ({ ...r, source }));
   }
 }
 
@@ -384,24 +384,33 @@ export class BlueprintValidator {
     'creatureTypeB': 'Bird'
   }
 
-  const exampleSetBlueprint: SerializableBlueprint = {
-    subtypes: [{ key: 'string-array/must-only-use-from', value: ['rabbit', 'bird', 'cat', 'dog', 'pig', 'human', 'advisor'] }],
+  const exampleSetBlueprint: SerializableBlueprintWithSource = {
+    source: 'set',
+    blueprint: {
+      subtypes: [{ key: 'string-array/must-only-use-from', value: ['rabbit', 'bird', 'cat', 'dog', 'pig', 'human', 'advisor'] }],
+    }
   };
 
-  const exampleArchetypeBlueprint: SerializableBlueprint = {
-    color: [
-      { key: 'string-array/must-include-all-of', value: ['white'] },
-      { key: 'string-array/must-have-length', value: { key: 'number/must-be-one-of', value: [1] }},
-    ],
+  const exampleArchetypeBlueprint: SerializableBlueprintWithSource = {
+    source: 'archetype',
+    blueprint: {
+      color: [
+        { key: 'string-array/must-include-all-of', value: ['white'] },
+        { key: 'string-array/must-have-length', value: { key: 'number/must-be-one-of', value: [1] } },
+      ],
+    }
   };
 
-  const exampleCycleBlueprint: SerializableBlueprint = {
-    name: [{ key: 'string/must-include-one-of', value: ['$[mainCharacter]'] }],
-    rarity: [{ key: 'string/must-include-one-of', value: ['mythic'] }],
-    supertype: [{ key: 'string/must-include-one-of', value: ['legendary'] }],
-    types: [{ key: 'string-array/must-include-all-of', value: ['creature'] }],
-    subtypes: [{ key: 'string-array/must-include-all-of', value: ['rabbit'] }],
-    rules: [{ key: 'string/must-include-all-of', value: ['$[mechanicB]', '$[mechanicC]'] }]
+  const exampleCycleBlueprint: SerializableBlueprintWithSource = {
+    source: 'cycle',
+    blueprint: {
+      name: [{ key: 'string/must-include-one-of', value: ['$[mainCharacter]'] }],
+      rarity: [{ key: 'string/must-include-one-of', value: ['mythic'] }],
+      supertype: [{ key: 'string/must-include-one-of', value: ['legendary'] }],
+      types: [{ key: 'string-array/must-include-all-of', value: ['creature'] }],
+      subtypes: [{ key: 'string-array/must-include-all-of', value: ['rabbit'] }],
+      rules: [{ key: 'string/must-include-all-of', value: ['$[mechanicB]', '$[mechanicC]'] }]
+    }
   }
 
   const validator = new BlueprintValidator();

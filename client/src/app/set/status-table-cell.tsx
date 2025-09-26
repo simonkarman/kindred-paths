@@ -2,50 +2,70 @@
 
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLink, faImage, faPlay, faCancel, faPlus, faUnlink } from '@fortawesome/free-solid-svg-icons';
+import { faLink, faImage, faPlay, faCancel, faPlus, faUnlink, faEdit, faCross, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { CycleSlotStatus, getStatusConfig } from '@/app/set/types';
 import { IconButton } from '@/app/set/icon-button';
+import { CriteriaFailureReason } from '@/app/set/blueprint-validator';
 
 interface StatusTableCellProps {
   status: CycleSlotStatus;
-  onSetSkip?: () => void;
-  onOpenBlueprintEditor?: () => void;
-  onMarkNotSkip?: () => void;
-  onRemoveBlueprint?: () => void;
-  onEditBlueprint?: () => void;
-  onApplyBlueprintToRow?: () => void;
-  onCreateCard?: () => void;
-  onLinkCard?: () => void;
-  onEditCard?: () => void;
+  statusReasons: CriteriaFailureReason[];
+  onMarkSkip: () => void;
+  onMarkNotSkip: () => void;
+  onCreateCard: () => void;
+  onLinkCard: () => void;
+  onEditCard: () => void;
+  onUnlinkCard: () => void;
+  hasBlueprint: boolean;
+  onEditBlueprint: () => void;
+  onRemoveBlueprint: () => void;
   cardPreviewUrl?: string;
-  onUnlinkCard?: () => void;
 }
 
 export const StatusTableCell: React.FC<StatusTableCellProps> = ({
   status,
-  onSetSkip,
+  statusReasons,
+  onMarkSkip,
   onMarkNotSkip,
   onCreateCard,
   onLinkCard,
   onEditCard,
-  cardPreviewUrl,
   onUnlinkCard,
+  hasBlueprint,
+  onEditBlueprint,
+  onRemoveBlueprint,
+  cardPreviewUrl,
 }) => {
   const [showCardPreview, setShowCardPreview] = useState(false);
 
   const config = getStatusConfig(status);
 
   const renderActionButtons = () => {
+    const blueprintActions = <>
+      {hasBlueprint && <IconButton
+        onClick={onRemoveBlueprint}
+        icon={faCancel}
+        title="Remove blueprint"
+        variant="default"
+      />}
+      <IconButton
+        onClick={onEditBlueprint}
+        icon={faEdit}
+        title="Edit blueprint"
+        variant="primary"
+      />
+    </>
     switch (status) {
       case 'missing':
         return (
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <>
             <IconButton
-              onClick={onSetSkip}
+              onClick={onMarkSkip}
               icon={faCancel}
               title="Set as Skip"
               variant="default"
             />
+            {blueprintActions}
             <IconButton
               onClick={onCreateCard}
               icon={faPlus}
@@ -58,53 +78,74 @@ export const StatusTableCell: React.FC<StatusTableCellProps> = ({
               title="Link an Existing Card"
               variant="primary"
             />
-          </div>
+          </>
         );
 
       case 'skip':
         return (
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <>
             <IconButton
               onClick={onMarkNotSkip}
               icon={faPlay}
               title="Mark as Not Skip"
               variant="default"
             />
-          </div>
+          </>
         );
 
       case 'invalid':
       case 'valid':
         return (
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {cardPreviewUrl && (
-              <div className="relative group">
-                <IconButton
-                  icon={faImage}
-                  title="Card Preview"
-                  variant="default"
-                  onMouseEnter={() => setShowCardPreview(true)}
-                  onMouseLeave={() => setShowCardPreview(false)}
-                  onClick={onEditCard}
-                />
-                {showCardPreview && (
-                  <div className="absolute rounded-xl bottom-full left-0 mb-2 z-50 bg-white border border-gray-300 shadow-lg">
-                    <img
-                      src={cardPreviewUrl}
-                      alt="Card preview"
-                      className="max-w-[250px] object-contain"
-                    />
-                  </div>
+          <>
+            <div className="group">
+              {blueprintActions}
+              <IconButton
+                onClick={onUnlinkCard}
+                icon={faUnlink}
+                title="Unlink Card"
+                variant="danger"
+              />
+              <IconButton
+                icon={faImage}
+                title="Card Preview"
+                variant="default"
+                onClick={onEditCard}
+              />
+
+              {showCardPreview && <div className={`absolute ${status === 'valid' ? 'w-[250px] right-0' : 'w-[500px] -right-[80px]'} bg-white shadow-xl border border-gray-500 rounded-xl z-50 flex items-start gap-2`}>
+                {cardPreviewUrl && (
+                  <img
+                    src={cardPreviewUrl}
+                    alt="Card preview"
+                    className="w-[250px] object-contain"
+                  />
                 )}
-              </div>
-            )}
-            <IconButton
-              onClick={onUnlinkCard}
-              icon={faUnlink}
-              title="Unlink Card"
-              variant="danger"
-            />
-          </div>
+                {statusReasons.length > 0 && <div className="py-2 overflow-y-scroll text-sm max-h-[350px]">
+                  <ul className='space-y-2'>
+                    {statusReasons.map((r, index) => (
+                      <li key={index}>
+                        <p className="inline border-b border-gray-300">
+                          <span className="text-red-800 font-bold text-base">{index + 1}<span className="font-normal text-xs">/{statusReasons.length}</span></span>{' '}
+                          <FontAwesomeIcon icon={faTimes} className="text-red-800" />{' '}
+                          <span className="font-bold">{r.location}</span>
+                          <span className="text-gray-500 text-xs">{' '}(from {r.source})</span>
+                        </p>
+                        <p className="py-0.5 px-2">
+                          is <span className="text-red-700">{JSON.stringify(r.value)}</span>, while it{' '}
+                          {r.criteria.key.substring(r.criteria.key.indexOf('/') + 1).replaceAll('-', ' ')}{' '}
+                          <span className="text-green-700">{r.criteria.value
+                            ? (Array.isArray(r.criteria.value)
+                              ? '[' + r.criteria.value.map(v => JSON.stringify(v)).join(', ') + ']'
+                              : JSON.stringify(r.criteria.value))
+                            : ''}</span>
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>}
+              </div>}
+            </div>
+          </>
         );
 
       default:
@@ -113,7 +154,9 @@ export const StatusTableCell: React.FC<StatusTableCellProps> = ({
   };
 
   return (
-    <td className={`py-0.5 px-2 border ${config.borderColor} ${config.bgColor} transition-all duration-200 group min-w-[150px]`}>
+    <td
+      className={`relative py-0.5 px-2 border ${config.borderColor} ${config.bgColor} transition-all duration-200 group min-w-[250px]`}
+    >
       <div className="flex items-center justify-between">
         {/* Status display */}
         <div className="flex items-center gap-2">
@@ -124,7 +167,13 @@ export const StatusTableCell: React.FC<StatusTableCellProps> = ({
         </div>
 
         {/* Action buttons */}
-        {renderActionButtons()}
+        <div
+          onMouseEnter={() => setShowCardPreview(true)}
+          onMouseLeave={() => setShowCardPreview(false)}
+          className="flex opacity-0 group-hover:opacity-100"
+        >
+          {renderActionButtons()}
+        </div>
       </div>
     </td>
   );
