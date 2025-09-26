@@ -1,67 +1,36 @@
-import { Card } from '../card';
-import { SerializableBlueprint } from './serializable-blueprint';
-import { BlueprintValidator, CriteriaFailureReason, SerializableBlueprintWithSource } from './blueprint-validator';
+import { z } from 'zod';
+import { SerializableBlueprintSchema } from './serializable-blueprint';
 
-export type SerializableCardReference = { cardId: string };
-export type SerializableSlot = { blueprint?: SerializableBlueprint, cardRef: SerializableCardReference };
+export const SerializableCardReferenceSchema = z.object({
+  cardId: z.string(),
+});
+export type SerializableCardReference = z.infer<typeof SerializableCardReferenceSchema>;
 
-export interface SerializableArchetype {
-  name: string,
-  blueprint?: SerializableBlueprint,
-  metadata: { [metadataKey: string]: string | undefined },
-  cycles: { [cycleKey: string]: /*(missing)*/ undefined | 'skip' | SerializableSlot },
-}
+export const SerializableSlotSchema = z.object({
+  blueprint: SerializableBlueprintSchema.optional(),
+  cardRef: SerializableCardReferenceSchema,
+});
+export type SerializableSlot = z.infer<typeof SerializableSlotSchema>;
 
-export interface SerializableSet {
-  name: string,
-  blueprint?: SerializableBlueprint,
-  metadataKeys: string[],
-  cycles: { key: string, blueprint?: SerializableBlueprint }[],
-  archetypes: SerializableArchetype[],
-}
+export const SerializableArchetypeSchema = z.object({
+  name: z.string(),
+  blueprint: SerializableBlueprintSchema.optional(),
+  metadata: z.record(z.string().optional()),
+  cycles: z.record(z.union([z.literal('skip'), SerializableSlotSchema]).optional()),
+});
+export type SerializableArchetype = z.infer<typeof SerializableArchetypeSchema>;
 
-export type SlotStatus = 'missing' | 'skip' | 'invalid' | 'valid';
-export const getBlueprintsForSlot = (
-  set: SerializableSet,
-  archetypeIndex: number,
-  cycleKey: string,
-): SerializableBlueprintWithSource[] => {
-  const archetype = set.archetypes[archetypeIndex];
-  const slot = archetype?.cycles[cycleKey];
-  if (!slot || slot === 'skip') return [];
+const SerializableCycleSchema = z.object({
+  key: z.string(),
+  blueprint: SerializableBlueprintSchema.optional(),
+});
+export type SerializableCycle = z.infer<typeof SerializableCycleSchema>;
 
-  return [
-    { source: 'set', blueprint: set.blueprint },
-    { source: 'archetype', blueprint: archetype.blueprint },
-    { source: 'cycle', blueprint: set.cycles.find(c => c.key === cycleKey)?.blueprint },
-    { source: 'slot', blueprint: slot.blueprint },
-  ].filter(b => b.blueprint !== undefined) as SerializableBlueprintWithSource[];
-};
-
-export const getSlotStatus = (
-  cards: Card[],
-  set: SerializableSet,
-  archetypeIndex: number,
-  cycleKey: string,
-): { status: SlotStatus, reasons?: CriteriaFailureReason[] } => {
-  const blueprintValidator = new BlueprintValidator();
-  const archetype = set.archetypes[archetypeIndex];
-  const slot = archetype?.cycles[cycleKey];
-
-  if (!slot) return { status: 'missing' };
-  if (slot === 'skip') return { status: 'skip' };
-  const card = cards.find(c => c.id === slot.cardRef.cardId);
-  if (!card) return { status: 'missing' };
-
-  const metadata = archetype.metadata;
-  const blueprints = getBlueprintsForSlot(set, archetypeIndex, cycleKey);
-
-  const result = blueprintValidator.validate({
-    metadata,
-    blueprints,
-    card,
-  });
-  return result.success
-    ? { status: 'valid' }
-    : { status: 'invalid', reasons: result.reasons };
-};
+export const SerializableSetSchema = z.object({
+  name: z.string(),
+  blueprint: SerializableBlueprintSchema.optional(),
+  metadataKeys: z.array(z.string()),
+  cycles: z.array(SerializableCycleSchema),
+  archetypes: z.array(SerializableArchetypeSchema),
+});
+export type SerializableSet = z.infer<typeof SerializableSetSchema>;

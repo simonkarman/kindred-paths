@@ -16,7 +16,7 @@ import {
 import { StatusTableCell } from '@/app/set/status-table-cell';
 import { IconButton } from '@/app/set/icon-button';
 import { DragHandle } from '@/app/set/drag-handle';
-import { Card, getSlotStatus, SerializableArchetype, SerializableBlueprint, SerializableSet, SerializedCard } from 'kindred-paths';
+import { Card, SerializableBlueprint, SerializableSet, SerializedCard, Set } from 'kindred-paths';
 import { serverUrl } from '@/utils/server';
 
 export interface SetTableProps {
@@ -25,107 +25,64 @@ export interface SetTableProps {
 }
 
 export function SetTable(props: SetTableProps) {
-  const cards = props.cards.map(c => new Card(c));
-  const [set, onSave] = useState(props.set);
+  const [serializableSet, setSerializableSet] = useState(props.set);
 
   const [dragOverIndex, setDragOverIndex] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
   const [draggedItem, setDraggedItem] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
 
-  // Calculate status counts for legend
-  const statusCounts = { missing: 0, skip: 0, invalid: 0, valid: 0 };
-  set.cycles.forEach(({ key: cycleKey }) => {
-    set.archetypes.forEach((_, archetypeIndex) => {
-      const { status } = getSlotStatus(cards, set, archetypeIndex, cycleKey);
-      statusCounts[status]++;
-    });
-  });
+  const set = new Set(serializableSet);
+  const cards = props.cards.map(c => new Card(c));
+  const statusCounts = set.getStatusCounts(cards);
 
-  const updateSet = (updates: Partial<SerializableSet>) => {
-    onSave({ ...set, ...updates });
+  const saveChanges = () => {
+    setSerializableSet(set.serialize());
+    // TODO: Save in backend.
   };
 
   const updateSetName = (newName: string) => {
-    updateSet({ name: newName });
+    set.updateName(newName);
+    saveChanges();
   };
 
   const updateArchetypeName = (archetypeIndex: number, newName: string) => {
-    const newArchetypes = [...set.archetypes];
-    newArchetypes[archetypeIndex] = {
-      ...newArchetypes[archetypeIndex],
-      name: newName
-    };
-    updateSet({ archetypes: newArchetypes });
+    set.updateArchetypeName(archetypeIndex, newName);
+    saveChanges();
   };
 
   const addArchetype = () => {
     const newName = prompt('Enter new archetype name:');
     if (newName) {
-      const newArchetype: SerializableArchetype = {
-        name: newName,
-        metadata: {},
-        cycles: {}
-      };
-      updateSet({ archetypes: [...set.archetypes, newArchetype] });
+      set.addArchetype(newName);
+      saveChanges();
     }
   };
 
   const deleteArchetype = (archetypeIndex: number) => {
-    if (confirm(`Are you sure you want to delete archetype "${set.archetypes[archetypeIndex].name}"? This action cannot be undone.`)) {
-      const newArchetypes = [...set.archetypes];
-      newArchetypes.splice(archetypeIndex, 1);
-      updateSet({ archetypes: newArchetypes });
+    if (confirm(`Are you sure you want to delete archetype "${set.getArchetype(archetypeIndex).name}"? This action cannot be undone.`)) {
+      set.deleteArchetype(archetypeIndex);
+      saveChanges();
     }
   };
 
-  const updateMetadata = (archetypeIndex: number, metadataKey: string, _value: string) => {;
-    const value = _value.trim() === '' ? undefined : _value;
-    const newArchetypes = [...set.archetypes];
-    newArchetypes[archetypeIndex] = {
-      ...newArchetypes[archetypeIndex],
-      metadata: { ...newArchetypes[archetypeIndex].metadata, [metadataKey]: value }
-    };
-    updateSet({ archetypes: newArchetypes });
+  const updateMetadata = (archetypeIndex: number, metadataKey: string, value: string) => {
+    set.updateMetadata(archetypeIndex, metadataKey, value);
+    saveChanges();
   };
 
   const reorderMetadataKeys = (fromIndex: number, toIndex: number) => {
-    const newKeys = [...set.metadataKeys];
-    const [removed] = newKeys.splice(fromIndex, 1);
-    newKeys.splice(toIndex, 0, removed);
-    updateSet({ metadataKeys: newKeys });
-  };
-
-  const reorderCycleKeys = (fromIndex: number, toIndex: number) => {
-    const newCycles = [...set.cycles];
-    const [removed] = newCycles.splice(fromIndex, 1);
-    newCycles.splice(toIndex, 0, removed);
-    updateSet({ cycles: newCycles });
+   set.reorderMetadataKeys(fromIndex, toIndex);
+   saveChanges();
   };
 
   const addMetadataKey = (atIndex: number) => {
     const newKey = prompt(`Enter metadata key name:`);
-    if (newKey && !set.metadataKeys.includes(newKey)) {
-      const newKeys = [...set.metadataKeys];
-      newKeys.splice(atIndex, 0, newKey);
-      updateSet({ metadataKeys: newKeys });
+    if (newKey && !set.hasMetadataKey(newKey)) {
+      set.addMetadataKey(atIndex, newKey);
+      saveChanges();
     }
   };
 
-  const addCycleKey = (atIndex: number) => {
-    const newKey = prompt(`Enter cycle key name:`);
-    if (newKey && !set.cycles.map(c => c.key).includes(newKey)) {
-      const newCycles = [...set.cycles];
-      newCycles.splice(atIndex, 0, { key: newKey, blueprint: undefined });
-      updateSet({ cycles: newCycles });
-    }
-  };
-
-  const onRemoveCycleBlueprint = (cycleIndex: number) => {
-    if (confirm('Are you sure you want to remove the blueprint?')) {
-      const newCycles = [...set.cycles];
-      newCycles[cycleIndex] = { ...newCycles[cycleIndex], blueprint: undefined };
-      updateSet({ cycles: newCycles });
-    }
-  };
+  // BELOW!
 
   const updateMetadataKey = (rowIndex: number, _newKey: string) => {
     let index = 1;
@@ -152,7 +109,7 @@ export function SetTable(props: SetTableProps) {
       return { ...archetype, metadata: newMetadata };
     });
 
-    updateSet({ metadataKeys: newMetadataKeys, archetypes: newArchetypes });
+    saveChanges({ metadataKeys: newMetadataKeys, archetypes: newArchetypes });
   };
 
   const deleteMetadataKey = (rowIndex: number) => {
@@ -170,7 +127,31 @@ export function SetTable(props: SetTableProps) {
         return { ...archetype, metadata: newMetadata };
       });
 
-      updateSet({ metadataKeys: newMetadataKeys, archetypes: newArchetypes });
+      saveChanges({ metadataKeys: newMetadataKeys, archetypes: newArchetypes });
+    }
+  };
+
+  const reorderCycleKeys = (fromIndex: number, toIndex: number) => {
+    const newCycles = [...set.cycles];
+    const [removed] = newCycles.splice(fromIndex, 1);
+    newCycles.splice(toIndex, 0, removed);
+    saveChanges({ cycles: newCycles });
+  };
+
+  const addCycleKey = (atIndex: number) => {
+    const newKey = prompt(`Enter cycle key name:`);
+    if (newKey && !set.cycles.map(c => c.key).includes(newKey)) {
+      const newCycles = [...set.cycles];
+      newCycles.splice(atIndex, 0, { key: newKey, blueprint: undefined });
+      saveChanges({ cycles: newCycles });
+    }
+  };
+
+  const onRemoveCycleBlueprint = (cycleIndex: number) => {
+    if (confirm('Are you sure you want to remove the blueprint?')) {
+      const newCycles = [...set.cycles];
+      newCycles[cycleIndex] = { ...newCycles[cycleIndex], blueprint: undefined };
+      saveChanges({ cycles: newCycles });
     }
   };
 
@@ -199,7 +180,7 @@ export function SetTable(props: SetTableProps) {
       return { ...archetype, cycles: newCycles };
     });
 
-    updateSet({ cycles: newCycles, archetypes: newArchetypes });
+    saveChanges({ cycles: newCycles, archetypes: newArchetypes });
   };
 
   const deleteCycleKey = (rowIndex: number) => {
@@ -217,7 +198,7 @@ export function SetTable(props: SetTableProps) {
         return { ...archetype, cycles: newCycles };
       });
 
-      updateSet({ cycles: newCycles, archetypes: newArchetypes });
+      saveChanges({ cycles: newCycles, archetypes: newArchetypes });
     }
   };
 
@@ -225,7 +206,7 @@ export function SetTable(props: SetTableProps) {
     const newBlueprint: SerializableBlueprint = {};
     const newCycles = [...set.cycles];
     newCycles[cycleIndex] = { ...newCycles[cycleIndex], blueprint: newBlueprint };
-    updateSet({ cycles: newCycles });
+    saveChanges({ cycles: newCycles });
   };
 
   return (
@@ -233,13 +214,13 @@ export function SetTable(props: SetTableProps) {
       <h2 className='mb-2'>
         <input
           type="text"
-          value={set.name}
+          value={serializableSet.name}
           onChange={(e) => updateSetName(e.target.value)}
           className="text-xl font-bold border-none bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
           placeholder="..."
         />
         <span className="font-medium text-sm inline-flex gap-2">
-          {set.blueprint && <IconButton
+          {serializableSet.blueprint && <IconButton
             onClick={() => onRemoveSetBlueprint()}
             icon={faCancel}
             title="Clear Blueprint"
@@ -260,7 +241,7 @@ export function SetTable(props: SetTableProps) {
           <thead>
           <tr>
             <th className="sticky text-left p-2 font-medium min-w-[250px]">Archetypes</th>
-            {set.archetypes.map((archetype, archetypeIndex) => {
+            {serializableSet.archetypes.map((archetype, archetypeIndex) => {
               return <th key={archetypeIndex} className="group border border-zinc-300 p-1 bg-zinc-50 text-center font-medium">
                 <div className="flex gap-1 px-1">
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -305,12 +286,12 @@ export function SetTable(props: SetTableProps) {
           </thead>
           <tbody>
           <tr>
-            <th colSpan={set.archetypes.length + 1} className="p-2 pt-2 text-left font-medium">
+            <th colSpan={serializableSet.archetypes.length + 1} className="p-2 pt-2 text-left font-medium">
               Metadata
             </th>
           </tr>
           {/* Metadata Rows */}
-          {set.metadataKeys.map((metadataKey, rowIndex) => (
+          {serializableSet.metadataKeys.map((metadataKey, rowIndex) => (
             <React.Fragment key={rowIndex}>
               <tr>
                 <td
@@ -380,7 +361,7 @@ export function SetTable(props: SetTableProps) {
                     </div>
                   </div>
                 </td>
-                {set.archetypes.map((archetype, archetypeIndex) => {
+                {serializableSet.archetypes.map((archetype, archetypeIndex) => {
                   const hasValue = metadataKey in archetype.metadata && archetype.metadata[metadataKey] !== undefined;
                   return (
                     <td key={archetypeIndex} className={`border border-zinc-300 p-0.5 ${hasValue ? 'bg-white' : 'bg-yellow-100'}`}>
@@ -398,14 +379,14 @@ export function SetTable(props: SetTableProps) {
             </React.Fragment>
           ))}
           <tr>
-            <th colSpan={set.archetypes.length + 1} className="p-2 pt-4 text-left font-medium">
+            <th colSpan={serializableSet.archetypes.length + 1} className="p-2 pt-4 text-left font-medium">
               Cycles
             </th>
           </tr>
           </tbody>
           {/* Cycle Rows */}
           <tbody>
-          {set.cycles.map(({ key: cycleKey, blueprint }, rowIndex) => (
+          {serializableSet.cycles.map(({ key: cycleKey, blueprint }, rowIndex) => (
             <React.Fragment key={rowIndex}>
               <tr>
                 <td
@@ -488,7 +469,7 @@ export function SetTable(props: SetTableProps) {
                   </div>
                 </td>
                 {!blueprint && (<td
-                    colSpan={set.archetypes.length}
+                    colSpan={serializableSet.archetypes.length}
                     className="border border-zinc-300 p-1 text-center bg-purple-50 text-purple-600"
                   >
                     <div className="flex gap-2 items-center justify-center px-1">
@@ -499,9 +480,9 @@ export function SetTable(props: SetTableProps) {
                       </span>
                     </div>
                 </td>)}
-                {blueprint && set.archetypes.map((archetype, archetypeIndex) => {
-                  const { status, reasons } = getSlotStatus(cards, set, archetypeIndex, cycleKey);
-                  const slot = set.archetypes[archetypeIndex].cycles[cycleKey];
+                {blueprint && serializableSet.archetypes.map((archetype, archetypeIndex) => {
+                  const { status, reasons } = set.getSlotStatus(cards, archetypeIndex, cycleKey);
+                  const slot = serializableSet.archetypes[archetypeIndex].cycles[cycleKey];
                   const cardRef = slot && typeof slot !== 'string' && "cardRef" in slot ? slot.cardRef : undefined;
                   const hasSlotBlueprint = (slot && typeof slot !== 'string' && "blueprint" in slot ? slot.blueprint : undefined) !== undefined;
                   return <StatusTableCell
@@ -526,7 +507,7 @@ export function SetTable(props: SetTableProps) {
 
           {/* Status Legend */}
           <tr>
-            <td colSpan={set.archetypes.length + 1} className="p-1 pt-2 text-right">
+            <td colSpan={serializableSet.archetypes.length + 1} className="p-1 pt-2 text-right">
               <div className="flex flex-wrap w-full justify-end gap-4 text-xs text-zinc-700">
                 <span className="flex items-center gap-1">
                   <FontAwesomeIcon icon={faExclamationTriangle} className="text-yellow-600" />
