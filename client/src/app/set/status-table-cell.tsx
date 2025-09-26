@@ -2,13 +2,64 @@
 
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLink, faImage, faPlay, faCancel, faPlus, faUnlink, faEdit, faCross, faTimes } from '@fortawesome/free-solid-svg-icons';
-import { CycleSlotStatus, getStatusConfig } from '@/app/set/types';
+import {
+  faLink,
+  faImage,
+  faPlay,
+  faCancel,
+  faPlus,
+  faUnlink,
+  faEdit,
+  faTimes,
+  faTriangleExclamation,
+  faCircleXmark, faCircleCheck,
+} from '@fortawesome/free-solid-svg-icons';
 import { IconButton } from '@/app/set/icon-button';
-import { CriteriaFailureReason } from '@/app/set/blueprint-validator';
+import { CriteriaFailureReason, SlotStatus } from 'kindred-paths';
+
+export const getStatusConfig = (status: SlotStatus) => {
+  switch (status) {
+    case 'missing':
+      return {
+        label: 'Missing',
+        icon: faTriangleExclamation,
+        bgColor: 'bg-yellow-50 hover:bg-yellow-100',
+        textColor: 'text-yellow-800',
+        borderColor: 'border-yellow-200',
+        iconColor: 'text-yellow-600'
+      };
+    case 'skip':
+      return {
+        label: 'Skip',
+        icon: faCancel,
+        bgColor: 'bg-gray-50 hover:bg-gray-100',
+        textColor: 'text-gray-500',
+        borderColor: 'border-gray-200',
+        iconColor: 'text-gray-300'
+      };
+    case 'invalid':
+      return {
+        label: 'Invalid',
+        icon: faCircleXmark,
+        bgColor: 'bg-red-50 hover:bg-red-100',
+        textColor: 'text-red-800',
+        borderColor: 'border-red-200',
+        iconColor: 'text-red-600'
+      };
+    case 'valid':
+      return {
+        label: 'Valid',
+        icon: faCircleCheck,
+        bgColor: 'bg-green-50 hover:bg-green-100',
+        textColor: 'text-green-800',
+        borderColor: 'border-green-200',
+        iconColor: 'text-green-600'
+      };
+  }
+};
 
 interface StatusTableCellProps {
-  status: CycleSlotStatus;
+  status: SlotStatus;
   statusReasons: CriteriaFailureReason[];
   onMarkSkip: () => void;
   onMarkNotSkip: () => void;

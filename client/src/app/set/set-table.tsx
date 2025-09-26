@@ -13,16 +13,10 @@ import {
   faTimes,
   faTrashCan, faWarning,
 } from '@fortawesome/free-solid-svg-icons';
-import {
-  getCycleSlotStatus,
-  SerializableArchetype,
-  SerializableSet,
-} from '@/app/set/types';
 import { StatusTableCell } from '@/app/set/status-table-cell';
 import { IconButton } from '@/app/set/icon-button';
 import { DragHandle } from '@/app/set/drag-handle';
-import { Card, SerializedCard } from 'kindred-paths';
-import { SerializableBlueprint } from '@/app/set/blueprint-validator';
+import { Card, getSlotStatus, SerializableArchetype, SerializableBlueprint, SerializableSet, SerializedCard } from 'kindred-paths';
 import { serverUrl } from '@/utils/server';
 
 export interface SetTableProps {
@@ -41,7 +35,7 @@ export function SetTable(props: SetTableProps) {
   const statusCounts = { missing: 0, skip: 0, invalid: 0, valid: 0 };
   set.cycles.forEach(({ key: cycleKey }) => {
     set.archetypes.forEach((_, archetypeIndex) => {
-      const { status } = getCycleSlotStatus(cards, set, archetypeIndex, cycleKey);
+      const { status } = getSlotStatus(cards, set, archetypeIndex, cycleKey);
       statusCounts[status]++;
     });
   });
@@ -506,7 +500,7 @@ export function SetTable(props: SetTableProps) {
                     </div>
                 </td>)}
                 {blueprint && set.archetypes.map((archetype, archetypeIndex) => {
-                  const { status, reasons } = getCycleSlotStatus(cards, set, archetypeIndex, cycleKey);
+                  const { status, reasons } = getSlotStatus(cards, set, archetypeIndex, cycleKey);
                   const slot = set.archetypes[archetypeIndex].cycles[cycleKey];
                   const cardRef = slot && typeof slot !== 'string' && "cardRef" in slot ? slot.cardRef : undefined;
                   const hasSlotBlueprint = (slot && typeof slot !== 'string' && "blueprint" in slot ? slot.blueprint : undefined) !== undefined;

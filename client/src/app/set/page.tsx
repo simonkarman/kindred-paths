@@ -1,6 +1,6 @@
 import { SetTable } from '@/app/set/set-table';
-import { SerializableSet } from '@/app/set/types';
 import { getCards } from '@/utils/server';
+import { SerializableSet } from 'kindred-paths';
 
 export default async function Page() {
   const set: SerializableSet = {
@@ -81,8 +81,7 @@ export default async function Page() {
           "mythic": {
             "cardRef": {
               "cardId": "mfy-401-miffy-the-kind"
-            },
-            "count": 1
+            }
           }
         }
       },
@@ -108,8 +107,7 @@ export default async function Page() {
           "mythic": {
             "cardRef": {
               "cardId": "mfy-426-miffy-the-brave"
-            },
-            "count": 1
+            }
           }
         }
       },
@@ -135,8 +133,7 @@ export default async function Page() {
           "mythic": {
             "cardRef": {
               "cardId": "mfy-451-miffy-the-curious"
-            },
-            "count": 1
+            }
           }
         }
       }
