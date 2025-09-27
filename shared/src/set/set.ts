@@ -4,6 +4,10 @@ import { SerializableArchetype, SerializableCardReference, SerializableCycle, Se
 import { SerializableBlueprint } from './serializable-blueprint';
 
 export type SlotStatus = 'missing' | 'skip' | 'invalid' | 'valid';
+export type BlueprintLocation = { type: 'set' }
+  | { type: 'archetype', index: number }
+  | { type: 'cycle', index: number }
+  | { type: 'slot', archetypeIndex: number, cycleKey: string };
 
 export class Set {
   private readonly blueprintValidator = new BlueprintValidator();
@@ -134,6 +138,10 @@ export class Set {
   // Metadata
   getMetadataKey(metadataIndex: number) {
     return this.metadataKeys[metadataIndex];
+  }
+
+  getMetadataKeys() {
+    return [...this.metadataKeys];
   }
 
   reorderMetadataKeys(fromIndex: number, toIndex: number) {
@@ -374,6 +382,69 @@ export class Set {
     delete archetype.cycles[cycleKey].cardRef;
     if (!archetype.cycles[cycleKey].blueprint) {
       delete archetype.cycles[cycleKey];
+    }
+  }
+
+  // Blueprints
+  getBlueprintAt(location: BlueprintLocation): SerializableBlueprint | undefined {
+    if (location.type === 'set') {
+      return this.blueprint;
+
+    } else if (location.type === 'archetype') {
+      return this.archetypes[location.index]?.blueprint;
+
+    } else if (location.type === 'cycle') {
+      return this.cycles[location.index]?.blueprint;
+
+    } else if (location.type === 'slot') {
+      const slot = this.archetypes[location.archetypeIndex]?.cycles[location.cycleKey];
+      if (slot && slot !== 'skip') {
+        return slot.blueprint;
+      }
+    }
+  }
+
+  setBlueprintAt(location: BlueprintLocation, blueprint: SerializableBlueprint) {
+    if (location.type === 'set') {
+      this.blueprint = blueprint;
+
+    } else if (location.type === 'archetype') {
+      this.archetypes[location.index].blueprint = blueprint;
+
+    } else if (location.type === 'cycle') {
+      this.cycles[location.index].blueprint = blueprint;
+
+    } else if (location.type === 'slot') {
+      const archetype = this.archetypes[location.archetypeIndex];
+      const slot = archetype.cycles[location.cycleKey];
+      if (slot === undefined || slot === 'skip') {
+        archetype.cycles[location.cycleKey] = { blueprint };
+      } else {
+        slot.blueprint = blueprint;
+      }
+    }
+  }
+
+  removeBlueprintAt(location: BlueprintLocation) {
+    if (location.type === 'set') {
+      delete this.blueprint;
+
+    } else if (location.type === 'archetype') {
+      delete this.archetypes[location.index].blueprint;
+
+    } else if (location.type === 'cycle') {
+      delete this.cycles[location.index].blueprint;
+
+    } else if (location.type === 'slot') {
+      const archetype = this.archetypes[location.archetypeIndex];
+      const slot = archetype.cycles[location.cycleKey];
+      if (!slot || slot === 'skip') {
+        return;
+      }
+      delete slot.blueprint;
+      if (!slot.cardRef) {
+        delete archetype.cycles[location.cycleKey];
+      }
     }
   }
 }

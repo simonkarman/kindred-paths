@@ -6,10 +6,22 @@ export default async function Page() {
   const set: SerializableSet = {
     "name": "MFY",
     "blueprint": {
-      subtypes: [{
-        key: 'string-array/allow',
-        value: ['rabbit', 'bird', 'cat', 'dog', 'pig', 'human', 'advisor', 'druid', 'scout'],
-      }],
+      "subtypes": [
+        {
+          "key": "string-array/allow",
+          "value": [
+            "rabbit",
+            "bird",
+            "cat",
+            "dog",
+            "pig",
+            "human",
+            "advisor",
+            "druid",
+            "scout"
+          ]
+        }
+      ]
     },
     "metadataKeys": [
       "mainCharacter",
@@ -25,17 +37,60 @@ export default async function Page() {
       {
         "key": "mythic",
         "blueprint": {
-          name: [{ key: 'string/contain-one-of', value: ['$[mainCharacter]'] }],
-          rarity: [{ key: 'string/contain-one-of', value: ['mythic'] }],
-          supertype: [{ key: 'string/contain-one-of', value: ['legendary'] }],
-          types: [{ key: 'string-array/includes-all-of', value: ['creature'] }],
-          subtypes: [{ key: 'string-array/includes-all-of', value: ['rabbit'] }],
-          rules: [{ key: 'string/contain-all-of', value: ['$[mechanicB]', '$[mechanicC]'] }]
-        },
+          "name": [
+            {
+              "key": "string/contain-one-of",
+              "value": [
+                "$[mainCharacter]"
+              ]
+            }
+          ],
+          "rarity": [
+            {
+              "key": "string/contain-one-of",
+              "value": [
+                "mythic"
+              ]
+            }
+          ],
+          "supertype": [
+            {
+              "key": "string/contain-one-of",
+              "value": [
+                "legendary"
+              ]
+            }
+          ],
+          "types": [
+            {
+              "key": "string-array/includes-all-of",
+              "value": [
+                "creature"
+              ]
+            }
+          ],
+          "subtypes": [
+            {
+              "key": "string-array/includes-all-of",
+              "value": [
+                "rabbit"
+              ]
+            }
+          ],
+          "rules": [
+            {
+              "key": "string/contain-all-of",
+              "value": [
+                "$[mechanicB]",
+                "$[mechanicC]"
+              ]
+            }
+          ]
+        }
       },
       {
         "key": "friend",
-        blueprint: {},
+        "blueprint": {}
       },
       {
         "key": "second friend"
@@ -62,11 +117,22 @@ export default async function Page() {
     "archetypes": [
       {
         "name": "White",
-        blueprint: {
-          color: [
-            { key: 'string-array/includes-all-of', value: ['white'] },
-            { key: 'string-array/length', value: { key: 'number/at-most', value: 1 }},
-          ],
+        "blueprint": {
+          "color": [
+            {
+              "key": "string-array/includes-all-of",
+              "value": [
+                "white"
+              ]
+            },
+            {
+              "key": "string-array/length",
+              "value": {
+                "key": "number/at-most",
+                "value": 1
+              }
+            }
+          ]
         },
         "metadata": {
           "mainCharacter": "Miffy, The Kind",
@@ -88,11 +154,22 @@ export default async function Page() {
       },
       {
         "name": "Green",
-        blueprint: {
-          color: [
-            { key: 'string-array/includes-all-of', value: ['green'] },
-            { key: 'string-array/length', value: { key: 'number/at-most', value: 1 }},
-          ],
+        "blueprint": {
+          "color": [
+            {
+              "key": "string-array/includes-all-of",
+              "value": [
+                "green"
+              ]
+            },
+            {
+              "key": "string-array/length",
+              "value": {
+                "key": "number/at-most",
+                "value": 1
+              }
+            }
+          ]
         },
         "metadata": {
           "mainToken": "4/4 green Rabbit creature token",
@@ -114,11 +191,26 @@ export default async function Page() {
       },
       {
         "name": "Green/White",
-        blueprint: {
-          color: [
-            { key: 'string-array/includes-all-of', value: ['white', 'green'] },
-            { key: 'string-array/length', value: { key: 'number/one-of', value: [0, 2] }},
-          ],
+        "blueprint": {
+          "color": [
+            {
+              "key": "string-array/includes-all-of",
+              "value": [
+                "white",
+                "green"
+              ]
+            },
+            {
+              "key": "string-array/length",
+              "value": {
+                "key": "number/one-of",
+                "value": [
+                  0,
+                  2
+                ]
+              }
+            }
+          ]
         },
         "metadata": {
           "mainToken": "2/2 green and white Rabbit creature token",

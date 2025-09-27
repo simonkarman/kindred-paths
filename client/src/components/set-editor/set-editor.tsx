@@ -13,11 +13,13 @@ import {
   faTimes,
   faTrashCan, faWarning,
 } from '@fortawesome/free-solid-svg-icons';
-import { Card, SerializableSet, SerializedCard, Set } from 'kindred-paths';
+import { BlueprintLocation, Card, SerializableSet, SerializedCard, Set } from 'kindred-paths';
 import { serverUrl } from '@/utils/server';
+import { capitalize } from '@/utils/typography';
 import { IconButton } from '@/components/icon-button';
 import { DragHandle } from '@/components/set-editor/drag-handle';
 import { SetEditorCell } from '@/components/set-editor/set-editor-cell';
+import { BlueprintEditor } from '@/components/set-editor/blueprint-editor';
 
 export interface SetEditorProps {
   cards: SerializedCard[],
@@ -27,6 +29,7 @@ export interface SetEditorProps {
 export function SetEditor(props: SetEditorProps) {
   const [serializableSet, setSerializableSet] = useState(props.set);
   const [validationMessages, setValidationMessages] = useState<string[]>([]);
+  const [blueprintEditorLocation, setBlueprintEditorLocation] = useState<BlueprintLocation>();
 
   const [dragOverIndex, setDragOverIndex] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
   const [draggedItem, setDraggedItem] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
@@ -166,8 +169,46 @@ export function SetEditor(props: SetEditorProps) {
     saveChanges();
   }
 
+  const onEditSetBlueprint = () => {
+    setBlueprintEditorLocation({ type: 'set' });
+  };
+
+  const onEditArchetypeBlueprint = (archetypeIndex: number) => {
+    setBlueprintEditorLocation({ type: 'archetype', index: archetypeIndex });
+  };
+
+  const onEditCycleBlueprint = (cycleIndex: number) => {
+    setBlueprintEditorLocation({ type: 'cycle', index: cycleIndex });
+  };
+
+  const onEditSlotBlueprint = (archetypeIndex: number, cycleKey: string) => {
+    setBlueprintEditorLocation({ type: 'slot', archetypeIndex, cycleKey });
+  };
+
   return (
     <div>
+      {blueprintEditorLocation && <div
+        className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center pt-10 overflow-auto"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setBlueprintEditorLocation(undefined);
+          }
+        }}
+      >
+        <div className="max-w-[900px]">
+          <BlueprintEditor
+            title={capitalize(blueprintEditorLocation.type) + ' Blueprint'}
+            metadataKeys={set.getMetadataKeys()}
+            blueprint={set.getBlueprintAt(blueprintEditorLocation) ?? {}}
+            onSave={(blueprint) => {
+              set.setBlueprintAt(blueprintEditorLocation, blueprint);
+              saveChanges();
+              setBlueprintEditorLocation(undefined);
+            }}
+            onCancel={() => setBlueprintEditorLocation(undefined)}
+          />
+        </div>
+      </div>}
       {validationMessages.length > 0 && <div className="text-amber-700 text-sm px-4 py-2 border rounded-lg bg-amber-50 mb-4">
         <h3 className="font-bold underline">Warnings!</h3>
         <ul className="p-0.5">
