@@ -1,6 +1,6 @@
 import { BlueprintValidator, CriteriaFailureReason, SerializableBlueprintWithSource } from './blueprint-validator';
 import { Card } from '../card';
-import { SerializableArchetype, SerializableCycle, SerializableSet } from './serializable-set';
+import { SerializableArchetype, SerializableCardReference, SerializableCycle, SerializableSet } from './serializable-set';
 import { SerializableBlueprint } from './serializable-blueprint';
 
 export type SlotStatus = 'missing' | 'skip' | 'invalid' | 'valid';
@@ -41,9 +41,65 @@ export class Set {
     });
   }
 
+  // Validate
+  validateAndCorrect(cards: Card[]): string[] {
+    const messages: string[] = [];
+
+    // check that there are no slots without a blueprint AND without a cardRef
+    this.archetypes.forEach(archetype => {
+      Object.entries(archetype.cycles).forEach(([cycleKey, slot]) => {
+        if (slot && slot !== 'skip' && !slot.blueprint && !slot.cardRef) {
+          delete archetype.cycles[cycleKey];
+          messages.push(`Removed invalid slot in archetype "${archetype.name}", cycle "${cycleKey}" as it didn't have a blueprint or a card linked.`);
+        }
+      });
+    });
+
+    // check that all cardRefs point to an existing card
+    const cardIdsToLocations = new Map<string, string[]>();
+    this.archetypes.forEach(archetype => {
+      Object.entries(archetype.cycles).forEach(([cycleKey, slot]) => {
+        if (slot && slot !== 'skip' && slot.cardRef) {
+          const cardId = slot.cardRef.cardId;
+          const cardExists = cards.some(c => c.id === cardId);
+          if (!cardExists) {
+            messages.push(`Unlinked non-existing card "${cardId}" from slot in archetype "${archetype.name}", cycle "${cycleKey}".`);
+            delete slot.cardRef;
+            if (!slot.blueprint) {
+              delete archetype.cycles[cycleKey];
+            }
+          } else {
+            const locations = cardIdsToLocations.get(cardId) ?? [];
+            cardIdsToLocations.set(cardId, [...locations, `"${archetype.name}"."${cycleKey}"`]);
+          }
+        }
+      });
+    });
+
+    // check that no card is linked more than once
+    cardIdsToLocations.forEach((locations, cardId) => {
+      if (locations.length > 1) {
+        messages.push(
+          `Card "${cardId}" is linked to ${locations.length} locations (${locations.join(' and ')}). ` +
+          'Each card should only be linked to up to one location.',
+        );
+      }
+    });
+
+    return messages;
+  }
+
   // Set
   updateName(name: string) {
     this.name = name;
+  }
+
+  removeSetBlueprint() {
+    delete this.blueprint;
+  }
+
+  setSetBlueprint(blueprint: SerializableBlueprint) {
+    this.blueprint = blueprint;
   }
 
   // Archetype
@@ -67,9 +123,17 @@ export class Set {
     this.archetypes.splice(archetypeIndex, 1);
   }
 
+  removeArchetypeBlueprint(archetypeIndex: number) {
+    delete this.archetypes[archetypeIndex].blueprint;
+  }
+
+  setArchetypeBlueprint(archetypeIndex: number, blueprint: SerializableBlueprint) {
+    this.archetypes[archetypeIndex].blueprint = blueprint;
+  }
+
   // Metadata
-  updateMetadata(archetypeIndex: number, metadataKey: string, _value: string) {
-    this.archetypes[archetypeIndex].metadata[metadataKey] = _value.trim() === '' ? undefined : _value;
+  getMetadataKey(metadataIndex: number) {
+    return this.metadataKeys[metadataIndex];
   }
 
   reorderMetadataKeys(fromIndex: number, toIndex: number) {
@@ -81,13 +145,125 @@ export class Set {
     return this.metadataKeys.includes(name);
   }
 
-  addMetadataKey(atIndex: number, name: string) {
-    this.metadataKeys.splice(atIndex, 0, name);
+  addMetadataKey(atIndex: number, key: string) {
+    let index = 1;
+    let newKey = key;
+    while (this.cycles.find(c => c.key === newKey)) {
+      newKey = `${key}_${index}`;
+      index += 1;
+      if (index > 100) return; // Prevent infinite loop -> no change
+    }
+    this.metadataKeys.splice(atIndex, 0, newKey);
+  }
+
+  updateMetadataKey(metadataIndex: number, _newKey: string) {
+    let index = 1;
+    let newKey = _newKey;
+    while (this.metadataKeys.includes(newKey)) {
+      newKey = `${_newKey}_${index}`;
+      index += 1;
+      if (index > 100) return; // Prevent infinite loop -> no change
+    }
+
+    const oldKey = this.metadataKeys[metadataIndex];
+    if (newKey === oldKey) return; // No change
+
+    // Update metadataKey itself
+    this.metadataKeys[metadataIndex] = newKey;
+
+    // Update archetypes to rename the metadata key
+    this.archetypes.forEach(archetype => {
+      if (oldKey in archetype.metadata) {
+        archetype.metadata[newKey] = archetype.metadata[oldKey];
+        delete archetype.metadata[oldKey];
+      }
+    });
+  }
+
+  deleteMetadataKey(metadataIndex: number) {
+    const [keyToDelete] = this.metadataKeys.splice(metadataIndex, 1);
+    this.archetypes.forEach(archetype => {
+      if (keyToDelete in archetype.metadata) {
+        delete archetype.metadata[keyToDelete];
+      }
+    });
+  }
+
+  updateMetadataValue(archetypeIndex: number, metadataKey: string, _value: string) {
+    this.archetypes[archetypeIndex].metadata[metadataKey] = _value.trim() === '' ? undefined : _value;
   }
 
   // Cycle
+  getCycleKey(cycleIndex: number) {
+    return this.cycles[cycleIndex].key;
+  }
 
-  // Status
+  reorderCycles(fromIndex: number, toIndex: number) {
+    const [movedCycle] = this.cycles.splice(fromIndex, 1);
+    this.cycles.splice(toIndex, 0, movedCycle);
+  }
+
+  addCycle(atIndex: number, key: string) {
+    let index = 1;
+    let newKey = key;
+    while (this.cycles.find(c => c.key === newKey)) {
+      newKey = `${key}_${index}`;
+      index += 1;
+      if (index > 100) return; // Prevent infinite loop -> no change
+    }
+    this.cycles.splice(atIndex, 0, { key: newKey });
+  }
+
+  updateCycleKey(cycleIndex: number, _newKey: string) {
+    let index = 1;
+    let newKey = _newKey;
+    while (this.cycles.find(c => c.key === newKey)) {
+      newKey = `${_newKey}_${index}`;
+      index += 1;
+      if (index > 100) return; // Prevent infinite loop -> no change
+    }
+
+    const oldKey = this.cycles[cycleIndex].key;
+    if (newKey === oldKey) return; // No change
+
+    // Update cycle key itself
+    this.cycles[cycleIndex].key = newKey;
+
+    // Update archetypes to rename the cycle key
+    this.archetypes.forEach(archetype => {
+      if (oldKey in archetype.cycles) {
+        archetype.cycles[newKey] = archetype.cycles[oldKey];
+        delete archetype.cycles[oldKey];
+      }
+    });
+  }
+
+  deleteCycle(cycleIndex: number) {
+    const [cycleToDelete] = this.cycles.splice(cycleIndex, 1);
+    this.archetypes.forEach(archetype => {
+      if (cycleToDelete.key in archetype.cycles) {
+        delete archetype.cycles[cycleToDelete.key];
+      }
+    });
+  }
+
+  removeCycleBlueprint(cycleIndex: number) {
+    delete this.cycles[cycleIndex].blueprint;
+  }
+
+  setCycleBlueprint(cycleIndex: number, blueprint: SerializableBlueprint) {
+    this.cycles[cycleIndex].blueprint = blueprint;
+  }
+
+  // Slot
+  clearSlot(archetypeIndex: number, cycleKey: string) {
+    delete this.archetypes[archetypeIndex].cycles[cycleKey];
+  }
+
+  markSlotAsSkip(archetypeIndex: number, cycleKey: string) {
+    this.archetypes[archetypeIndex].cycles[cycleKey] = 'skip';
+  }
+
   private getBlueprintsForSlot(
     archetypeIndex: number,
     cycleKey: string,
@@ -114,7 +290,10 @@ export class Set {
 
     if (!slot) return { status: 'missing' };
     if (slot === 'skip') return { status: 'skip' };
-    const card = cards.find(c => c.id === slot.cardRef.cardId);
+    const cardRef = slot.cardRef;
+    if (!cardRef) return { status: 'missing' };
+
+    const card = cards.find(c => c.id === cardRef.cardId);
     if (!card) return { status: 'missing' };
 
     const metadata = archetype.metadata;
@@ -130,7 +309,7 @@ export class Set {
       : { status: 'invalid', reasons: result.reasons };
   }
 
-  getStatusCounts(cards: Card[]) {
+  getSlotStats(cards: Card[]) {
     const statusCounts = { missing: 0, skip: 0, invalid: 0, valid: 0 };
     this.cycles.forEach(({ key: cycleKey }) => {
       this.archetypes.forEach((_, archetypeIndex) => {
@@ -139,5 +318,62 @@ export class Set {
       });
     });
     return statusCounts;
+  }
+
+  setSlotBlueprint(
+    archetypeIndex: number,
+    cycleKey: string,
+    blueprint: SerializableBlueprint,
+  ) {
+    const archetype = this.archetypes[archetypeIndex];
+    if (!archetype.cycles[cycleKey] || archetype.cycles[cycleKey] === 'skip') {
+      archetype.cycles[cycleKey] = {
+        cardRef: { cardId: '' },
+        blueprint,
+      };
+    } else {
+      archetype.cycles[cycleKey].blueprint = blueprint;
+    }
+  }
+
+  removeSlotBlueprint(
+    archetypeIndex: number,
+    cycleKey: string,
+  ) {
+    const archetype = this.archetypes[archetypeIndex];
+    if (!archetype.cycles[cycleKey] || archetype.cycles[cycleKey] === 'skip') {
+      return;
+    }
+    delete archetype.cycles[cycleKey].blueprint;
+    if (!archetype.cycles[cycleKey].cardRef) {
+      delete archetype.cycles[cycleKey];
+    }
+  }
+
+  linkCardToSlot(
+    archetypeIndex: number,
+    cycleKey: string,
+    cardRef: SerializableCardReference,
+  ) {
+    const archetype = this.archetypes[archetypeIndex];
+    if (!archetype.cycles[cycleKey] || archetype.cycles[cycleKey] === 'skip') {
+      archetype.cycles[cycleKey] = { cardRef };
+    } else {
+      archetype.cycles[cycleKey].cardRef = cardRef;
+    }
+  }
+
+  unlinkCardFromSlot(
+    archetypeIndex: number,
+    cycleKey: string,
+  ) {
+    const archetype = this.archetypes[archetypeIndex];
+    if (!archetype.cycles[cycleKey] || archetype.cycles[cycleKey] === 'skip') {
+      return;
+    }
+    delete archetype.cycles[cycleKey].cardRef;
+    if (!archetype.cycles[cycleKey].blueprint) {
+      delete archetype.cycles[cycleKey];
+    }
   }
 }

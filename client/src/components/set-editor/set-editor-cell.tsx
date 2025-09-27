@@ -14,8 +14,8 @@ import {
   faTriangleExclamation,
   faCircleXmark, faCircleCheck,
 } from '@fortawesome/free-solid-svg-icons';
-import { IconButton } from '@/app/set/icon-button';
 import { CriteriaFailureReason, SlotStatus } from 'kindred-paths';
+import { IconButton } from '@/components/icon-button';
 
 export const getStatusConfig = (status: SlotStatus) => {
   switch (status) {
@@ -58,7 +58,7 @@ export const getStatusConfig = (status: SlotStatus) => {
   }
 };
 
-interface StatusTableCellProps {
+interface SetEditorCellProps {
   status: SlotStatus;
   statusReasons: CriteriaFailureReason[];
   onMarkSkip: () => void;
@@ -73,7 +73,7 @@ interface StatusTableCellProps {
   cardPreviewUrl?: string;
 }
 
-export const StatusTableCell: React.FC<StatusTableCellProps> = ({
+export const SetEditorCell: React.FC<SetEditorCellProps> = ({
   status,
   statusReasons,
   onMarkSkip,

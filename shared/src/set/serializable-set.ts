@@ -8,7 +8,7 @@ export type SerializableCardReference = z.infer<typeof SerializableCardReference
 
 export const SerializableSlotSchema = z.object({
   blueprint: SerializableBlueprintSchema.optional(),
-  cardRef: SerializableCardReferenceSchema,
+  cardRef: SerializableCardReferenceSchema.optional(),
 });
 export type SerializableSlot = z.infer<typeof SerializableSlotSchema>;
 

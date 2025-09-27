@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
@@ -13,37 +13,45 @@ import {
   faTimes,
   faTrashCan, faWarning,
 } from '@fortawesome/free-solid-svg-icons';
-import { StatusTableCell } from '@/app/set/status-table-cell';
-import { IconButton } from '@/app/set/icon-button';
-import { DragHandle } from '@/app/set/drag-handle';
-import { Card, SerializableBlueprint, SerializableSet, SerializedCard, Set } from 'kindred-paths';
+import { Card, SerializableSet, SerializedCard, Set } from 'kindred-paths';
 import { serverUrl } from '@/utils/server';
+import { IconButton } from '@/components/icon-button';
+import { DragHandle } from '@/components/set-editor/drag-handle';
+import { SetEditorCell } from '@/components/set-editor/set-editor-cell';
 
-export interface SetTableProps {
+export interface SetEditorProps {
   cards: SerializedCard[],
   set: SerializableSet;
 }
 
-export function SetTable(props: SetTableProps) {
+export function SetEditor(props: SetEditorProps) {
   const [serializableSet, setSerializableSet] = useState(props.set);
+  const [validationMessages, setValidationMessages] = useState<string[]>([]);
 
   const [dragOverIndex, setDragOverIndex] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
   const [draggedItem, setDraggedItem] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
 
   const set = new Set(serializableSet);
-  const cards = props.cards.map(c => new Card(c));
-  const statusCounts = set.getStatusCounts(cards);
+  const cards = useMemo(() => props.cards.map(c => new Card(c)), [props.cards]);
+  const statusCounts = set.getSlotStats(cards);
 
   const saveChanges = () => {
+    setValidationMessages(set.validateAndCorrect(cards));
     setSerializableSet(set.serialize());
     // TODO: Save in backend.
   };
 
+  useEffect(() => {
+    saveChanges();
+  }, []);
+
+  // Set
   const updateSetName = (newName: string) => {
     set.updateName(newName);
     saveChanges();
   };
 
+  // Archetype
   const updateArchetypeName = (archetypeIndex: number, newName: string) => {
     set.updateArchetypeName(archetypeIndex, newName);
     saveChanges();
@@ -64,8 +72,9 @@ export function SetTable(props: SetTableProps) {
     }
   };
 
-  const updateMetadata = (archetypeIndex: number, metadataKey: string, value: string) => {
-    set.updateMetadata(archetypeIndex, metadataKey, value);
+  // Metadata
+  const updateMetadataValue = (archetypeIndex: number, metadataKey: string, value: string) => {
+    set.updateMetadataValue(archetypeIndex, metadataKey, value);
     saveChanges();
   };
 
@@ -82,135 +91,91 @@ export function SetTable(props: SetTableProps) {
     }
   };
 
-  // BELOW!
-
-  const updateMetadataKey = (rowIndex: number, _newKey: string) => {
-    let index = 1;
-    let newKey = _newKey;
-    while (set.metadataKeys.includes(newKey)) {
-      newKey = `${_newKey}_${index}`;
-      index++;
-      if (index > 100) return; // Prevent infinite loop
-    }
-
-    const oldKey = set.metadataKeys[rowIndex];
-    if (newKey === oldKey) return; // No change
-
-    const newMetadataKeys = [...set.metadataKeys];
-    newMetadataKeys[rowIndex] = newKey;
-
-    // Update archetypes to rename the metadata key
-    const newArchetypes = set.archetypes.map(archetype => {
-      const newMetadata = { ...archetype.metadata };
-      if (oldKey in newMetadata) {
-        newMetadata[newKey] = newMetadata[oldKey];
-        delete newMetadata[oldKey];
-      }
-      return { ...archetype, metadata: newMetadata };
-    });
-
-    saveChanges({ metadataKeys: newMetadataKeys, archetypes: newArchetypes });
+  const updateMetadataKey = (metadataIndex: number, newKey: string) => {
+    set.updateMetadataKey(metadataIndex, newKey);
+    saveChanges();
   };
 
-  const deleteMetadataKey = (rowIndex: number) => {
-    const keyToDelete = set.metadataKeys[rowIndex];
+  const deleteMetadataKey = (metadataIndex: number) => {
+    const keyToDelete = set.getMetadataKey(metadataIndex);
     if (confirm(`Are you sure you want to delete metadata key "${keyToDelete}"? This will also remove associated metadata from all archetypes. This action cannot be undone.`)) {
-      const newMetadataKeys = [...set.metadataKeys];
-      newMetadataKeys.splice(rowIndex, 1);
-
-      // Update archetypes to remove the metadata key
-      const newArchetypes = set.archetypes.map(archetype => {
-        const newMetadata = { ...archetype.metadata };
-        if (keyToDelete in newMetadata) {
-          delete newMetadata[keyToDelete];
-        }
-        return { ...archetype, metadata: newMetadata };
-      });
-
-      saveChanges({ metadataKeys: newMetadataKeys, archetypes: newArchetypes });
+      set.deleteMetadataKey(metadataIndex);
+      saveChanges();
     }
   };
 
-  const reorderCycleKeys = (fromIndex: number, toIndex: number) => {
-    const newCycles = [...set.cycles];
-    const [removed] = newCycles.splice(fromIndex, 1);
-    newCycles.splice(toIndex, 0, removed);
-    saveChanges({ cycles: newCycles });
+  // Cycle
+  const reorderCycles = (fromIndex: number, toIndex: number) => {
+    set.reorderCycles(fromIndex, toIndex);
+    saveChanges();
   };
 
-  const addCycleKey = (atIndex: number) => {
+  const addCycle = (atIndex: number) => {
     const newKey = prompt(`Enter cycle key name:`);
-    if (newKey && !set.cycles.map(c => c.key).includes(newKey)) {
-      const newCycles = [...set.cycles];
-      newCycles.splice(atIndex, 0, { key: newKey, blueprint: undefined });
-      saveChanges({ cycles: newCycles });
+    if (newKey) {
+      set.addCycle(atIndex, newKey);
+      saveChanges();
     }
   };
+
+  const updateCycleKey = (cycleIndex: number, _newKey: string) => {
+    set.updateCycleKey(cycleIndex, _newKey);
+    saveChanges();
+  };
+
+  const deleteCycle = (cycleIndex: number) => {
+    const keyToDelete = set.getCycleKey(cycleIndex);
+    if (confirm(`Are you sure you want to delete cycle key "${keyToDelete}"? This will also remove associated cycle slots from all archetypes. This action cannot be undone.`)) {
+      set.deleteCycle(cycleIndex);
+      saveChanges();
+    }
+  };
+
+  const markSkip = (archetypeIndex: number, cycleKey: string) => {
+    set.markSlotAsSkip(archetypeIndex, cycleKey);
+    saveChanges();
+  }
+
+  const markNotSkip = (archetypeIndex: number, cycleKey: string) => {
+    set.clearSlot(archetypeIndex, cycleKey);
+    saveChanges();
+  }
+
+  const unlinkCard = (archetypeIndex: number, cycleKey: string) => {
+    set.unlinkCardFromSlot(archetypeIndex, cycleKey);
+    saveChanges();
+  };
+
+  const onRemoveSetBlueprint = () => {
+    set.removeSetBlueprint();
+    saveChanges();
+  };
+
+  const onRemoveArchetypeBlueprint = (archetypeIndex: number) => {
+    set.removeArchetypeBlueprint(archetypeIndex);
+    saveChanges();
+  }
 
   const onRemoveCycleBlueprint = (cycleIndex: number) => {
-    if (confirm('Are you sure you want to remove the blueprint?')) {
-      const newCycles = [...set.cycles];
-      newCycles[cycleIndex] = { ...newCycles[cycleIndex], blueprint: undefined };
-      saveChanges({ cycles: newCycles });
-    }
+    set.removeCycleBlueprint(cycleIndex);
+    saveChanges();
   };
 
-  const updateCycleKey = (rowIndex: number, _newKey: string) => {
-    let index = 2;
-    let newKey = _newKey;
-    while (set.cycles.map(c => c.key).includes(newKey)) {
-      newKey = `${_newKey}_${index}`;
-      index++;
-      if (index > 100) return; // Prevent infinite loop
-    }
-
-    const oldKey = set.cycles[rowIndex].key;
-    if (newKey === oldKey) return; // No change
-
-    const newCycles = [...set.cycles];
-    newCycles[rowIndex] = { key: newKey, blueprint: set.cycles[rowIndex].blueprint };
-
-    // Update archetypes to rename the cycle key
-    const newArchetypes = set.archetypes.map(archetype => {
-      const newCycles = { ...archetype.cycles };
-      if (oldKey in newCycles) {
-        newCycles[newKey] = newCycles[oldKey];
-        delete newCycles[oldKey];
-      }
-      return { ...archetype, cycles: newCycles };
-    });
-
-    saveChanges({ cycles: newCycles, archetypes: newArchetypes });
-  };
-
-  const deleteCycleKey = (rowIndex: number) => {
-    const keyToDelete = set.cycles[rowIndex].key;
-    if (confirm(`Are you sure you want to delete cycle key "${keyToDelete}"? This will also remove associated cycle slots from all archetypes. This action cannot be undone.`)) {
-      const newCycles = [...set.cycles];
-      newCycles.splice(rowIndex, 1);
-
-      // Update archetypes to remove the cycle key
-      const newArchetypes = set.archetypes.map(archetype => {
-        const newCycles = { ...archetype.cycles };
-        if (keyToDelete in newCycles) {
-          delete newCycles[keyToDelete];
-        }
-        return { ...archetype, cycles: newCycles };
-      });
-
-      saveChanges({ cycles: newCycles, archetypes: newArchetypes });
-    }
-  };
-
-  const onEditCycleBlueprint = (cycleIndex: number) => {
-    const newBlueprint: SerializableBlueprint = {};
-    const newCycles = [...set.cycles];
-    newCycles[cycleIndex] = { ...newCycles[cycleIndex], blueprint: newBlueprint };
-    saveChanges({ cycles: newCycles });
-  };
+  const onRemoveSlotBlueprint = (archetypeIndex: number, cycleKey: string) => {
+    set.removeSlotBlueprint(archetypeIndex, cycleKey);
+    saveChanges();
+  }
 
   return (
     <div>
+      {validationMessages.length > 0 && <div className="text-amber-700 text-sm px-4 py-2 border rounded-lg bg-amber-50 mb-4">
+        <h3 className="font-bold underline">Warnings!</h3>
+        <ul className="p-0.5">
+          {validationMessages.map(validationMessage => (<li key={validationMessage} className="p-1">
+            <FontAwesomeIcon icon={faWarning} className="pr-1" /> {validationMessage}
+          </li>))}
+        </ul>
+      </div>}
       <h2 className='mb-2'>
         <input
           type="text"
@@ -236,7 +201,7 @@ export function SetTable(props: SetTableProps) {
       </h2>
 
       {/* Main Table */}
-      <div className="overflow-x-scroll overflow-y-visible pb-[260px] border-b">
+      <div className="overflow-x-scroll overflow-y-visible pb-[260px] border-b border-gray-200">
         <table className="border-collapse text-xs">
           <thead>
           <tr>
@@ -368,7 +333,7 @@ export function SetTable(props: SetTableProps) {
                       <input
                         type="text"
                         value={archetype.metadata[metadataKey] || ''}
-                        onChange={(e) => updateMetadata(archetypeIndex, metadataKey, e.target.value)}
+                        onChange={(e) => updateMetadataValue(archetypeIndex, metadataKey, e.target.value)}
                         className="w-full border-none text-xs bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
                         placeholder="..."
                       />
@@ -396,7 +361,7 @@ export function SetTable(props: SetTableProps) {
                   onDrop={(e: React.DragEvent) => {
                     e.preventDefault();
                     if (draggedItem && draggedItem.type === 'cycleKeys' && draggedItem.index !== rowIndex) {
-                      reorderCycleKeys(draggedItem.index, rowIndex);
+                      reorderCycles(draggedItem.index, rowIndex);
                     }
                     setDraggedItem(null);
                     setDragOverIndex(null);
@@ -417,7 +382,7 @@ export function SetTable(props: SetTableProps) {
                   >
                     <div className="hidden rounded-lg border border-green-200 bg-green-50 starting:opacity-0 opacity-80 transition-opacity absolute -translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
                       <IconButton
-                        onClick={() => addCycleKey(rowIndex)}
+                        onClick={() => addCycle(rowIndex)}
                         icon={faPlus}
                         title="Add Cycle Key"
                         variant="success"
@@ -425,7 +390,7 @@ export function SetTable(props: SetTableProps) {
                     </div>
                     <div className="hidden rounded-lg border border-green-200 bg-green-50 starting:opacity-0 opacity-80 transition-opacity absolute translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
                       <IconButton
-                        onClick={() => addCycleKey(rowIndex + 1)}
+                        onClick={() => addCycle(rowIndex + 1)}
                         icon={faPlus}
                         title="Add Cycle Key"
                         variant="success"
@@ -440,7 +405,7 @@ export function SetTable(props: SetTableProps) {
                     <div className="flex w-full gap-2 pl-1">
                       <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
                         <IconButton
-                          onClick={() => deleteCycleKey(rowIndex)}
+                          onClick={() => deleteCycle(rowIndex)}
                           icon={faTrashCan}
                           title="Delete Cycle"
                           variant="danger"
@@ -485,7 +450,7 @@ export function SetTable(props: SetTableProps) {
                   const slot = serializableSet.archetypes[archetypeIndex].cycles[cycleKey];
                   const cardRef = slot && typeof slot !== 'string' && "cardRef" in slot ? slot.cardRef : undefined;
                   const hasSlotBlueprint = (slot && typeof slot !== 'string' && "blueprint" in slot ? slot.blueprint : undefined) !== undefined;
-                  return <StatusTableCell
+                  return <SetEditorCell
                     key={archetype.name}
                     status={status}
                     statusReasons={reasons ?? []}

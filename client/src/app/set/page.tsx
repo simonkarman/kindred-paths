@@ -1,6 +1,6 @@
-import { SetTable } from '@/app/set/set-table';
 import { getCards } from '@/utils/server';
 import { SerializableSet } from 'kindred-paths';
+import { SetEditor } from '@/components/set-editor/set-editor';
 
 export default async function Page() {
   const set: SerializableSet = {
@@ -34,7 +34,8 @@ export default async function Page() {
         },
       },
       {
-        "key": "friend"
+        "key": "friend",
+        blueprint: {},
       },
       {
         "key": "second friend"
@@ -134,6 +135,11 @@ export default async function Page() {
             "cardRef": {
               "cardId": "mfy-451-miffy-the-curious"
             }
+          },
+          "friend": {
+            "cardRef": {
+              "cardId": "mfy-451-miffy-the-curious"
+            }
           }
         }
       }
@@ -142,7 +148,7 @@ export default async function Page() {
   const cards = await getCards();
 
   return (<>
-    <SetTable cards={cards} set={set} />
+    <SetEditor cards={cards} set={set} />
     <pre className='hidden mt-4 p-2 bg-gray-100 text-xs rounded border border-gray-300 overflow-x-auto'>
       {JSON.stringify(set, null, 2)}
     </pre>
