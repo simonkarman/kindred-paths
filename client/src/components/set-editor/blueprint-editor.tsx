@@ -3,14 +3,14 @@
 import { Fragment, ReactNode, useState } from 'react';
 import {
   allCriteriaKeys,
-  AnyCriteria, BlueprintCriteriaType,
+  AnyCriteria, BlueprintCriteriaType, blueprintFields,
   defaultCriteriaFor,
   getCriteriaTypesForSerializableBlueprintField,
   NumberCriteria,
   SerializableBlueprint,
 } from 'kindred-paths';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faCopy, faPlus } from '@fortawesome/free-solid-svg-icons';
 
 const criteriaInputStyle = 'font-mono font-bold tracking-wide text-center field-sizing-content text-sm border rounded px-2 py-0.5 bg-gray-50 border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-200';
 
@@ -85,13 +85,13 @@ function NumberCriteriaValueEditor(props: {
       return;
     }
     const currentValue = typeof props.value.value === 'number' ? props.value.value : props.value.value[0];
-    if (key === 'number/must-be-one-of') {
+    if (key === 'number/one-of') {
       props.setValue({ key, value: [currentValue] });
-    } else if (key === 'number/must-be-at-least') {
+    } else if (key === 'number/at-least') {
       props.setValue({ key, value: currentValue });
-    } else if (key === 'number/must-be-at-most') {
+    } else if (key === 'number/at-most') {
       props.setValue({ key, value: currentValue });
-    } else if (key === 'number/must-be-between') {
+    } else if (key === 'number/between') {
       props.setValue({ key, value: [currentValue, currentValue + 2] });
     }
   };
@@ -108,10 +108,10 @@ function NumberCriteriaValueEditor(props: {
       <option value="number/must-be-at-most">of at most</option>
       <option value="number/must-be-between">between (inclusive)</option>
     </select>
-    {props.value.key === 'number/must-be-one-of' &&
-      <NumberArrayValueEditor prefix="" separator="or" value={props.value.value} setValue={(value: number[]) => props.setValue({ key: 'number/must-be-one-of', value })} />
+    {props.value.key === 'number/one-of' &&
+      <NumberArrayValueEditor prefix="" separator="or" value={props.value.value} setValue={(value: number[]) => props.setValue({ key: 'number/one-of', value })} />
     }
-    {(props.value.key === 'number/must-be-at-least' || props.value.key === 'number/must-be-at-most') &&
+    {(props.value.key === 'number/at-least' || props.value.key === 'number/at-most') &&
       <input
         type="number"
         className={criteriaInputStyle}
@@ -119,20 +119,20 @@ function NumberCriteriaValueEditor(props: {
         onChange={(key => e => props.setValue({ key, value: e.target.valueAsNumber }))(props.value.key)}
       />
     }
-    {props.value.key === 'number/must-be-between' &&
+    {props.value.key === 'number/between' &&
       <>
         <input
           type="number"
           className={criteriaInputStyle}
           value={props.value.value[0]}
-          onChange={e => props.setValue({ key: 'number/must-be-between', value: [e.target.valueAsNumber, (props.value.value as [number, number])[1]] })}
+          onChange={e => props.setValue({ key: 'number/between', value: [e.target.valueAsNumber, (props.value.value as [number, number])[1]] })}
         />
         and
         <input
           type="number"
           className={criteriaInputStyle}
           value={props.value.value[1]}
-          onChange={e => props.setValue({ key: 'number/must-be-between', value: [(props.value.value as [number, number])[0], e.target.valueAsNumber] })}
+          onChange={e => props.setValue({ key: 'number/between', value: [(props.value.value as [number, number])[0], e.target.valueAsNumber] })}
         />
       </>
     }
@@ -203,7 +203,10 @@ function CriteriaHeader(props: {
   return <div className="flex border border-gray-200 rounded-md items-stretch">
     <div className="flex items-center grow-0 w-54 py-2 px-4 border-r border-gray-200">
       <p className="text-right w-full">
-        {props.field[0].toUpperCase() + props.field.slice(1)}
+        {props.field[0].toUpperCase() + props.field.slice(1)}<br />
+        <span className="text-xs text-gray-400 italic">
+          ({props.criteriaTypes.join(', ')})
+        </span>
       </p>
     </div>
     {props.children}
@@ -211,74 +214,185 @@ function CriteriaHeader(props: {
 }
 
 type CriteriaEditorProps = {
-  field: string,
+  field: keyof SerializableBlueprint,
   criteriaTypes: BlueprintCriteriaType[],
   criteria: AnyCriteria[],
   onAdd: (criteria: AnyCriteria) => void,
   onUpdate: (index: number, criteria: AnyCriteria) => void,
   onRemove: (index: number) => () => void,
+  shouldShow: boolean,
 };
 
+function defaultStringValueForField(field: keyof SerializableBlueprint): string | undefined {
+  switch (field) {
+    case 'rarity':
+      return 'common';
+    case 'supertype':
+      return 'legendary';
+    case 'types':
+      return 'creature';
+    case 'subtypes':
+      return 'human';
+    case 'color':
+      return 'white';
+    case 'colorIdentity':
+      return 'white';
+    default:
+      return undefined;
+  }
+}
+
 function CriteriaEditor(props: CriteriaEditorProps) {
+  if (!props.shouldShow) {
+    return null;
+  }
+
   return <CriteriaHeader field={props.field} criteriaTypes={props.criteriaTypes}>
-     <ul className="w-full">
+    <ul className="flex flex-col w-full">
       {props.criteria.map((c, i) => <li
         key={i}
         className="flex justify-between items-center border-b last:border-0 border-gray-200"
       >
         <div className="px-3 py-2">
-          {c.key === 'string/must-include-one-of' && <StringArrayValueEditor prefix="must include" separator="or" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
-          {c.key === 'string/must-include-all-of' && <StringArrayValueEditor prefix="must include" separator="and" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
-          {c.key === 'string/must-have-length' && <NumberCriteriaValueEditor prefix="must have length" value={c.value} setValue={(value: NumberCriteria) => props.onUpdate(i, { key: c.key, value })} />}
-          {c.key === 'boolean/must-be-true' && <>must be <strong>true</strong></>}
-          {c.key === 'boolean/must-be-false' && <>must be <strong>false</strong></>}
-          {c.key === 'optional/is-present' && <>must be <strong>present</strong></>}
-          {c.key === 'optional/is-absent' && <>must be <strong>absent</strong></>}
-          {c.key === 'string-array/must-only-use-from' && <StringArrayValueEditor prefix="must only use from" separator="or" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
-          {c.key === 'string-array/must-include-one-of' && <StringArrayValueEditor prefix="must include" separator="or" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
-          {c.key === 'string-array/must-include-all-of' && <StringArrayValueEditor prefix="must include" separator="and" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
-          {c.key === 'string-array/must-have-length' && <NumberCriteriaValueEditor prefix="must have length" value={c.value} setValue={(value: NumberCriteria) => props.onUpdate(i, { key: c.key, value })} />}
-          {c.key === 'number/must-be-one-of' && <NumberArrayValueEditor prefix="must equal" separator="or" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
-          {c.key === 'number/must-be-at-least' && <NumberValueEditor prefix="must be at least" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
-          {c.key === 'number/must-be-at-most' && <NumberValueEditor prefix="must be at most" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
-          {c.key === 'number/must-be-between' && <NumberPairValueEditor prefix="must be between" separator="and" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })}  />}
-          {c.key === 'object/must-have-key' && <StringValueEditor prefix="must have key" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })}  />}
-          {c.key === 'object/must-not-have-key' && <StringValueEditor prefix="must not have key" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
-          {c.key === 'object/number' && <>Not yet implemented.</>}
-          {c.key === 'object/string' && <>Not yet implemented.</>}
-          {c.key === 'object/boolean' && <>Not yet implemented.</>}
+          {c.key === 'string/equal' && <StringValueEditor prefix="must be" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
+          {c.key === 'string/contain-one-of' && <StringArrayValueEditor prefix="must contain" separator="or" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
+          {c.key === 'string/contain-all-of' && <StringArrayValueEditor prefix="must contain" separator="and" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
+          {c.key === 'string/length' && <NumberCriteriaValueEditor prefix="must have length" value={c.value} setValue={(value: NumberCriteria) => props.onUpdate(i, { key: c.key, value })} />}
+          {c.key === 'boolean/true' && <>must be <strong>true</strong></>}
+          {c.key === 'boolean/false' && <>must be <strong>false</strong></>}
+          {c.key === 'optional/present' && <>must be <strong>present</strong></>}
+          {c.key === 'optional/absent' && <>must be <strong>absent</strong></>}
+          {c.key === 'string-array/allow' && <StringArrayValueEditor prefix="must only use from" separator="or" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
+          {c.key === 'string-array/deny' && <StringArrayValueEditor prefix="must never use from" separator="or" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
+          {c.key === 'string-array/includes-one-of' && <StringArrayValueEditor prefix="must include" separator="or" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
+          {c.key === 'string-array/includes-all-of' && <StringArrayValueEditor prefix="must include" separator="and" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
+          {c.key === 'string-array/length' && <NumberCriteriaValueEditor prefix="must have length" value={c.value} setValue={(value: NumberCriteria) => props.onUpdate(i, { key: c.key, value })} />}
+          {c.key === 'number/one-of' && <NumberArrayValueEditor prefix="must equal" separator="or" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
+          {c.key === 'number/at-least' && <NumberValueEditor prefix="must be at least" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
+          {c.key === 'number/at-most' && <NumberValueEditor prefix="must be at most" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
+          {c.key === 'number/between' && <NumberPairValueEditor prefix="must be between" separator="and" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })}  />}
+          {c.key === 'object/field-present' && <StringValueEditor prefix="must have key" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })}  />}
+          {c.key === 'object/field-absent' && <StringValueEditor prefix="must not have key" value={c.value} setValue={(value) => props.onUpdate(i, { key: c.key, value })} />}
+          {c.key === 'object/number-field' && <>Not yet implemented.</>}
+          {c.key === 'object/string-field' && <>Not yet implemented.</>}
+          {c.key === 'object/boolean-field' && <>Not yet implemented.</>}
         </div>
         <button
-          onClick={props.onRemove(i)}
-          className="cursor-pointer text-red-500 font-bold px-4 text-2xl leading-none hover:text-red-700"
-          title="Remove Criteria"
+         onClick={props.onRemove(i)}
+         className="cursor-pointer text-red-500 font-bold px-4 text-2xl leading-none hover:text-red-700"
+         title="Remove Criteria"
         >
           &times;
         </button>
       </li>)}
-     <div className="group flex text-sm bg-gray-100 text-left text-gray-500 w-full">
-       {allCriteriaKeys.filter(k => props.criteriaTypes.some(ct => k.startsWith(ct + '/'))).map(criteriaKey => <button
-         key={criteriaKey}
-         onClick={() => props.onAdd(defaultCriteriaFor(criteriaKey))}
-         className="cursor-pointer p-3 hover:bg-green-50 hover:text-green-700"
-       >
-         <FontAwesomeIcon icon={faPlus} className="mr-2 text-gray-300 group-hover:text-inherit" />
-         <span className="opacity-0 group-hover:opacity-100 text-xs">{criteriaKey.split('/')[1].replaceAll('-', ' ')}</span>
-       </button>)}
-     </div>
+      <li className="grow group flex items-stretch text-sm text-left text-gray-500 w-full">
+        <div className="flex items-center">
+          <FontAwesomeIcon icon={faPlus} className="p-4 opacity-100 group-hover:opacity-30" />
+        </div>
+        {allCriteriaKeys.filter(k => props.criteriaTypes.some(ct => k.startsWith(ct + '/'))).map(criteriaKey => <button
+          key={criteriaKey}
+          onClick={() => props.onAdd(defaultCriteriaFor(criteriaKey, defaultStringValueForField(props.field)))}
+          className="cursor-pointer p-3 hover:bg-green-50 hover:text-green-700 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <FontAwesomeIcon icon={faPlus} className="mr-2 text-gray-300 group-hover:text-inherit" />
+          <span className="text-xs">{criteriaKey.split('/')[1].replaceAll('-', ' ')}</span>
+        </button>)}
+      </li>
     </ul>
   </CriteriaHeader>
 }
 
+const CopyableMetadataKeys = ({ metadataKeys }: { metadataKeys: string[] }) => {
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const copyToClipboard = async (key: string) => {
+    const textToCopy = `$[${key}]`;
+
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setCopiedKey(key);
+
+      // Reset copied state after 2 seconds
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
+  const buttonClasses = `
+    inline-flex items-center gap-1 px-2 py-1 text-xs font-mono
+    border border-gray-300 rounded
+    bg-gray-50 hover:bg-blue-50
+    text-gray-700 hover:text-blue-700
+    hover:border-blue-300
+    transition-all duration-200
+    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+    cursor-pointer select-none
+  `;
+
+  const copiedButtonClasses = `
+    inline-flex items-center gap-1 px-2 py-1 text-xs font-mono
+    border border-green-300 rounded
+    bg-green-50 text-green-700
+    transition-all duration-200
+    cursor-pointer select-none
+  `;
+
+  if (metadataKeys.length === 0) {
+    return (
+      <p className="text-sm text-gray-500 italic">
+        No metadata keys available
+      </p>
+    );
+  }
+
+  return (
+    <div className="py-2 space-y-2">
+      <p className="text-sm font-medium text-gray-600">
+        Available metadata keys:
+      </p>
+
+      <div className="flex flex-wrap gap-1.5">
+        {metadataKeys.map(key => {
+          const isCopied = copiedKey === key;
+
+          return (
+            <button
+              key={key}
+              onClick={() => copyToClipboard(key)}
+              className={isCopied ? copiedButtonClasses : buttonClasses}
+              type="button"
+              title={`Click to copy $[${key}]`}
+              aria-label={`Copy metadata key ${key} to clipboard`}
+            >
+              <span className="text-gray-400 mr-1">
+                {isCopied ? <FontAwesomeIcon icon={faCheck} /> : <FontAwesomeIcon icon={faCopy} />}
+              </span>
+              <span>{key}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-xs text-gray-500 mt-1">
+        💡 Click any button to copy the metadata key to your clipboard
+      </p>
+    </div>
+  );
+};
+
 type BlueprintEditorProps = {
+  title: string,
+  metadataKeys: string[],
   blueprint: SerializableBlueprint,
   onSave: (blueprint: SerializableBlueprint) => void,
   onCancel: () => void,
-}
+};
 
 export function BlueprintEditor(props: BlueprintEditorProps) {
   const [blueprint, setBlueprint] = useState<SerializableBlueprint>(props.blueprint);
   const hasChanged = JSON.stringify(blueprint) !== JSON.stringify(props.blueprint);
+  const [forceShow, setForceShow] = useState<Partial<Record<keyof SerializableBlueprint, boolean>>>({});
 
   const removeCriteria = (field: keyof SerializableBlueprint, index: number) => {
     return () => {
@@ -308,6 +422,10 @@ export function BlueprintEditor(props: BlueprintEditorProps) {
     });
   };
 
+  const shouldShowField = (field: keyof SerializableBlueprint) => {
+    return forceShow[field] || ((blueprint[field]?.length ?? 0) > 0);
+  };
+
   const editorPropsFor = (field: keyof SerializableBlueprint): CriteriaEditorProps => ({
     field,
     criteriaTypes: getCriteriaTypesForSerializableBlueprintField(field),
@@ -315,11 +433,13 @@ export function BlueprintEditor(props: BlueprintEditorProps) {
     onAdd: (c: AnyCriteria) => addCriteria(field, c),
     onUpdate: (i: number, c: AnyCriteria) => updateCriteria(field, i, c),
     onRemove: (i: number) => removeCriteria(field, i),
+    shouldShow: shouldShowField(field),
   });
 
-  return <div className="p-3 border border-blue-200 rounded-lg space-y-3">
+  return <div className="p-3 border border-blue-200 bg-white rounded-lg space-y-3">
     <div>
-      <h2 className="font-bold tracking-wide pb-1 text-xl text-blue-500 border-b border-blue-100">Blueprint Editor</h2>
+      <h2 className="font-bold tracking-wide pb-1 text-lg border-b border-blue-100">{props.title}</h2>
+      <CopyableMetadataKeys metadataKeys={props.metadataKeys} />
     </div>
     <ul className="space-y-2">
       <CriteriaEditor {...editorPropsFor('name')} />
@@ -341,6 +461,61 @@ export function BlueprintEditor(props: BlueprintEditorProps) {
       <CriteriaEditor {...editorPropsFor('tags')} />
       <CriteriaEditor {...editorPropsFor('creatableTokens')} />
     </ul>
+
+    <p className="text-sm font-medium text-gray-900">
+      Add criteria on field:
+    </p>
+    <div className="flex flex-wrap gap-2">
+      {blueprintFields
+        .filter(field => !shouldShowField(field))
+        .map(field => (
+          <button
+            key={field}
+            onClick={() => setForceShow({
+              ...forceShow,
+              [field]: true,
+            })}
+            className={`
+              inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium
+              border border-gray-300 rounded-md
+              bg-white hover:bg-blue-50
+              text-gray-700 hover:text-blue-700
+              hover:border-blue-300
+              transition-colors duration-200
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+            `}
+            type="button"
+            aria-label={`Add ${field} criteria`}
+          >
+            <span>+</span>
+            {field}
+          </button>
+        ))
+      }
+    </div>
+
+    {/* Show reset button only if there are forced fields */}
+    {Object.keys(forceShow).length > 0 && (
+      <div className="pt-2 border-t border-gray-200">
+        <button
+          onClick={() => setForceShow({})}
+          className={`
+            inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium
+            border border-gray-300 rounded-md
+            bg-gray-50 hover:bg-yellow-100
+            text-gray-600 hover:text-yellow-800
+            hover:border-yellow-400
+            transition-colors duration-200
+            focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1
+          `}
+          type="button"
+          aria-label="Hide all unused criteria"
+        >
+          <span>×</span>
+          Hide unused criteria
+        </button>
+      </div>
+    )}
     <div className="flex justify-end w-full gap-2">
       <button
         className="cursor-pointer py-1 font-bold border bg-gray-500 text-white rounded-lg px-4 disabled:cursor-not-allowed disabled:opacity-50"

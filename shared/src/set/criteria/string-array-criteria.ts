@@ -3,19 +3,23 @@ import { z } from 'zod';
 
 export const StringArrayCriteriaSchema = z.union([
   z.object({
-    key: z.literal('string-array/must-include-one-of'),
+    key: z.literal('string-array/includes-one-of'),
     value: z.array(z.string()),
   }),
   z.object({
-    key: z.literal('string-array/must-include-all-of'),
+    key: z.literal('string-array/includes-all-of'),
     value: z.array(z.string()),
   }),
   z.object({
-    key: z.literal('string-array/must-only-use-from'),
+    key: z.literal('string-array/allow'),
     value: z.array(z.string()),
   }),
   z.object({
-    key: z.literal('string-array/must-have-length'),
+    key: z.literal('string-array/deny'),
+    value: z.array(z.string()),
+  }),
+  z.object({
+    key: z.literal('string-array/length'),
     value: NumberCriteriaSchema,
   }),
 ]);
@@ -28,13 +32,15 @@ export const checkStringArrayCriteria = (criteria: StringArrayCriteria, value: u
   }
   const stringArray = value as string[];
   switch (criteria.key) {
-  case 'string-array/must-include-one-of':
+  case 'string-array/includes-one-of':
     return criteria.value.some(v => stringArray.includes(v));
-  case 'string-array/must-include-all-of':
+  case 'string-array/includes-all-of':
     return criteria.value.every(v => stringArray.includes(v));
-  case 'string-array/must-only-use-from':
+  case 'string-array/allow':
     return stringArray.every(v => criteria.value.includes(v));
-  case 'string-array/must-have-length':
+  case 'string-array/deny':
+    return stringArray.every(v => !criteria.value.includes(v));
+  case 'string-array/length':
     return checkNumberCriteria(criteria.value, stringArray.length);
   }
 };

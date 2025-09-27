@@ -2,19 +2,19 @@ import { z } from 'zod';
 
 export const NumberCriteriaSchema = z.union([
   z.object({
-    key: z.literal('number/must-be-one-of'),
+    key: z.literal('number/one-of'),
     value: z.array(z.number()),
   }),
   z.object({
-    key: z.literal('number/must-be-at-least'),
+    key: z.literal('number/at-least'),
     value: z.number(),
   }),
   z.object({
-    key: z.literal('number/must-be-at-most'),
+    key: z.literal('number/at-most'),
     value: z.number(),
   }),
   z.object({
-    key: z.literal('number/must-be-between'),
+    key: z.literal('number/between'),
     value: z.tuple([z.number(), z.number()]),
   }),
 ]);
@@ -25,13 +25,13 @@ export const checkNumberCriteria = (criteria: NumberCriteria, value: unknown): b
     return false;
   }
   switch (criteria.key) {
-  case 'number/must-be-one-of':
+  case 'number/one-of':
     return criteria.value.includes(value);
-  case 'number/must-be-at-least':
+  case 'number/at-least':
     return value >= criteria.value;
-  case 'number/must-be-at-most':
+  case 'number/at-most':
     return value <= criteria.value;
-  case 'number/must-be-between':
+  case 'number/between':
     return value >= criteria.value[0] && value <= criteria.value[1];
   }
 };

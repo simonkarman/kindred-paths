@@ -8,70 +8,75 @@ import { StringCriteria } from './string-criteria';
 export type AnyCriteria = BooleanCriteria | NumberCriteria | ObjectCriteria | OptionalCriteria | StringArrayCriteria | StringCriteria;
 
 export const allCriteriaKeys: AnyCriteria['key'][] = [
-  'string/must-include-one-of',
-  'string/must-include-all-of',
-  'string/must-have-length',
-  'boolean/must-be-true',
-  'boolean/must-be-false',
-  'optional/is-present',
-  'optional/is-absent',
-  'string-array/must-only-use-from',
-  'string-array/must-include-one-of',
-  'string-array/must-include-all-of',
-  'string-array/must-have-length',
-  'number/must-be-one-of',
-  'number/must-be-at-least',
-  'number/must-be-at-most',
-  'number/must-be-between',
-  'object/must-have-key',
-  'object/must-not-have-key',
-  'object/number',
-  'object/string',
-  'object/boolean',
+  'string/equal',
+  'string/contain-one-of',
+  'string/contain-all-of',
+  'string/length',
+  'boolean/true',
+  'boolean/false',
+  'optional/present',
+  'optional/absent',
+  'string-array/allow',
+  'string-array/deny',
+  'string-array/includes-one-of',
+  'string-array/includes-all-of',
+  'string-array/length',
+  'number/one-of',
+  'number/at-least',
+  'number/at-most',
+  'number/between',
+  'object/field-present',
+  'object/field-absent',
+  'object/number-field',
+  'object/string-field',
+  'object/boolean-field',
 ];
 
-export function defaultCriteriaFor(key: AnyCriteria['key']): AnyCriteria {
-  const defaultStringValue = 'abc';
+export function defaultCriteriaFor(key: AnyCriteria['key'], defaultStringValue = 'abc'): AnyCriteria {
   switch (key) {
-  case 'boolean/must-be-true':
+  case 'boolean/true':
     return { key } as BooleanCriteria;
-  case 'boolean/must-be-false':
+  case 'boolean/false':
     return { key } as BooleanCriteria;
-  case 'number/must-be-one-of':
+  case 'number/one-of':
     return { key, value: [0] };
-  case 'number/must-be-at-least':
+  case 'number/at-least':
     return { key, value: 0 };
-  case 'number/must-be-at-most':
+  case 'number/at-most':
     return { key, value: 5 };
-  case 'number/must-be-between':
+  case 'number/between':
     return { key, value: [0, 5] };
-  case 'object/must-have-key':
+  case 'object/field-present':
     return { key, value: defaultStringValue };
-  case 'object/must-not-have-key':
+  case 'object/field-absent':
     return { key, value: defaultStringValue };
-  case 'object/number':
-    return { key, value: [defaultStringValue, { key: 'number/must-be-one-of', value: [0] }] };
-  case 'object/string':
-    return { key, value: [defaultStringValue, { key: 'string/must-include-one-of', value: [defaultStringValue] }] };
-  case 'object/boolean':
-    return { key, value: [defaultStringValue, { key: 'boolean/must-be-true' } as BooleanCriteria ] };
-  case 'optional/is-present':
+  case 'object/number-field':
+    return { key, value: [defaultStringValue, { key: 'number/one-of', value: [0] }] };
+  case 'object/string-field':
+    return { key, value: [defaultStringValue, { key: 'string/equal', value: defaultStringValue }] };
+  case 'object/boolean-field':
+    return { key, value: [defaultStringValue, { key: 'boolean/true' } as BooleanCriteria ] };
+  case 'optional/present':
     return { key } as OptionalCriteria;
-  case 'optional/is-absent':
+  case 'optional/absent':
     return { key } as OptionalCriteria;
-  case 'string-array/must-include-one-of':
+  case 'string-array/includes-one-of':
     return { key, value: [defaultStringValue] };
-  case 'string-array/must-include-all-of':
+  case 'string-array/includes-all-of':
     return { key, value: [defaultStringValue] };
-  case 'string-array/must-only-use-from':
+  case 'string-array/allow':
     return { key, value: [defaultStringValue] };
-  case 'string-array/must-have-length':
-    return { key, value: { key: 'number/must-be-at-least', value: 1 } };
-  case 'string/must-include-one-of':
+  case 'string-array/deny':
     return { key, value: [defaultStringValue] };
-  case 'string/must-include-all-of':
+  case 'string-array/length':
+    return { key, value: { key: 'number/at-least', value: 1 } };
+  case 'string/equal':
+    return { key, value: defaultStringValue };
+  case 'string/contain-one-of':
     return { key, value: [defaultStringValue] };
-  case 'string/must-have-length':
-    return { key, value: { key: 'number/must-be-at-least', value: 1 } };
+  case 'string/contain-all-of':
+    return { key, value: [defaultStringValue] };
+  case 'string/length':
+    return { key, value: { key: 'number/at-least', value: 1 } };
   }
 }

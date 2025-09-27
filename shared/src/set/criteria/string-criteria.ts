@@ -3,15 +3,19 @@ import { z } from 'zod';
 
 export const StringCriteriaSchema = z.union([
   z.object({
-    key: z.literal('string/must-include-one-of'),
+    key: z.literal('string/equal'),
+    value: z.string(),
+  }),
+  z.object({
+    key: z.literal('string/contain-one-of'),
     value: z.array(z.string()),
   }),
   z.object({
-    key: z.literal('string/must-include-all-of'),
+    key: z.literal('string/contain-all-of'),
     value: z.array(z.string()),
   }),
   z.object({
-    key: z.literal('string/must-have-length'),
+    key: z.literal('string/length'),
     value: NumberCriteriaSchema,
   }),
 ]);
@@ -23,11 +27,13 @@ export const checkStringCriteria = (criteria: StringCriteria, value: unknown): b
     return false;
   }
   switch (criteria.key) {
-  case 'string/must-include-one-of':
+  case 'string/equal':
+    return value === criteria.value;
+  case 'string/contain-one-of':
     return criteria.value.some(substring => value.includes(substring));
-  case 'string/must-include-all-of':
+  case 'string/contain-all-of':
     return criteria.value.every(substring => value.includes(substring));
-  case 'string/must-have-length':
+  case 'string/length':
     return checkNumberCriteria(criteria.value, value.length);
   }
 };

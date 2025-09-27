@@ -2,11 +2,11 @@ import { z } from 'zod';
 
 export const BooleanCriteriaSchema = z.union([
   z.object({
-    key: z.literal('boolean/must-be-true'),
+    key: z.literal('boolean/true'),
     value: z.never(),
   }),
   z.object({
-    key: z.literal('boolean/must-be-false'),
+    key: z.literal('boolean/false'),
     value: z.never(),
   }),
 ]);
@@ -18,9 +18,9 @@ export const checkBooleanCriteria = (criteria: BooleanCriteria, value: unknown):
     return false;
   }
   switch (criteria.key) {
-  case 'boolean/must-be-true':
+  case 'boolean/true':
     return value;
-  case 'boolean/must-be-false':
+  case 'boolean/false':
     return !value;
   }
 };

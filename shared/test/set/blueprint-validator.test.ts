@@ -63,7 +63,7 @@ test('blueprint validator', async () => {
   const exampleSetBlueprint: SerializableBlueprintWithSource = {
     source: 'set',
     blueprint: {
-      subtypes: [{ key: 'string-array/must-only-use-from', value: ['rabbit', 'bird', 'cat', 'dog', 'pig', 'human', 'advisor'] }],
+      subtypes: [{ key: 'string-array/allow', value: ['rabbit', 'bird', 'cat', 'dog', 'pig', 'human', 'advisor'] }],
     },
   };
 
@@ -71,8 +71,8 @@ test('blueprint validator', async () => {
     source: 'archetype',
     blueprint: {
       color: [
-        { key: 'string-array/must-include-all-of', value: ['white'] },
-        { key: 'string-array/must-have-length', value: { key: 'number/must-be-one-of', value: [1] } },
+        { key: 'string-array/includes-all-of', value: ['white'] },
+        { key: 'string-array/length', value: { key: 'number/one-of', value: [1] } },
       ],
     },
   };
@@ -80,12 +80,12 @@ test('blueprint validator', async () => {
   const exampleCycleBlueprint: SerializableBlueprintWithSource = {
     source: 'cycle',
     blueprint: {
-      name: [{ key: 'string/must-include-one-of', value: ['$[mainCharacter]'] }],
-      rarity: [{ key: 'string/must-include-one-of', value: ['mythic'] }],
-      supertype: [{ key: 'string/must-include-one-of', value: ['legendary'] }],
-      types: [{ key: 'string-array/must-include-all-of', value: ['creature'] }],
-      subtypes: [{ key: 'string-array/must-include-all-of', value: ['rabbit'] }],
-      rules: [{ key: 'string/must-include-all-of', value: ['$[mechanicB]', '$[mechanicC]'] }],
+      name: [{ key: 'string/contain-one-of', value: ['$[mainCharacter]'] }],
+      rarity: [{ key: 'string/contain-one-of', value: ['mythic'] }],
+      supertype: [{ key: 'string/contain-one-of', value: ['legendary'] }],
+      types: [{ key: 'string-array/includes-all-of', value: ['creature'] }],
+      subtypes: [{ key: 'string-array/includes-all-of', value: ['rabbit'] }],
+      rules: [{ key: 'string/contain-all-of', value: ['$[mechanicB]', '$[mechanicC]'] }],
     },
   };
 

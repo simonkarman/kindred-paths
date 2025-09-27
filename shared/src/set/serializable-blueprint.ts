@@ -31,6 +31,8 @@ export const SerializableBlueprintSchema = z.object({
 
 export type SerializableBlueprint = z.infer<typeof SerializableBlueprintSchema>;
 
+export const blueprintFields = Object.keys(SerializableBlueprintSchema.shape) as (keyof SerializableBlueprint)[];
+
 export type BlueprintCriteriaType = 'string' | 'boolean' | 'optional' | 'string-array' | 'number' | 'object';
 export function getCriteriaTypesForSerializableBlueprintField(field: keyof SerializableBlueprint): BlueprintCriteriaType[] {
   switch (field) {

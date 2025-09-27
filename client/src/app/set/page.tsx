@@ -7,7 +7,7 @@ export default async function Page() {
     "name": "MFY",
     "blueprint": {
       subtypes: [{
-        key: 'string-array/must-only-use-from',
+        key: 'string-array/allow',
         value: ['rabbit', 'bird', 'cat', 'dog', 'pig', 'human', 'advisor', 'druid', 'scout'],
       }],
     },
@@ -25,12 +25,12 @@ export default async function Page() {
       {
         "key": "mythic",
         "blueprint": {
-          name: [{ key: 'string/must-include-one-of', value: ['$[mainCharacter]'] }],
-          rarity: [{ key: 'string/must-include-one-of', value: ['mythic'] }],
-          supertype: [{ key: 'string/must-include-one-of', value: ['legendary'] }],
-          types: [{ key: 'string-array/must-include-all-of', value: ['creature'] }],
-          subtypes: [{ key: 'string-array/must-include-all-of', value: ['rabbit'] }],
-          rules: [{ key: 'string/must-include-all-of', value: ['$[mechanicB]', '$[mechanicC]'] }]
+          name: [{ key: 'string/contain-one-of', value: ['$[mainCharacter]'] }],
+          rarity: [{ key: 'string/contain-one-of', value: ['mythic'] }],
+          supertype: [{ key: 'string/contain-one-of', value: ['legendary'] }],
+          types: [{ key: 'string-array/includes-all-of', value: ['creature'] }],
+          subtypes: [{ key: 'string-array/includes-all-of', value: ['rabbit'] }],
+          rules: [{ key: 'string/contain-all-of', value: ['$[mechanicB]', '$[mechanicC]'] }]
         },
       },
       {
@@ -64,8 +64,8 @@ export default async function Page() {
         "name": "White",
         blueprint: {
           color: [
-            { key: 'string-array/must-include-all-of', value: ['white'] },
-            { key: 'string-array/must-have-length', value: { key: 'number/must-be-at-most', value: 1 }},
+            { key: 'string-array/includes-all-of', value: ['white'] },
+            { key: 'string-array/length', value: { key: 'number/at-most', value: 1 }},
           ],
         },
         "metadata": {
@@ -90,8 +90,8 @@ export default async function Page() {
         "name": "Green",
         blueprint: {
           color: [
-            { key: 'string-array/must-include-all-of', value: ['green'] },
-            { key: 'string-array/must-have-length', value: { key: 'number/must-be-at-most', value: 1 }},
+            { key: 'string-array/includes-all-of', value: ['green'] },
+            { key: 'string-array/length', value: { key: 'number/at-most', value: 1 }},
           ],
         },
         "metadata": {
@@ -116,8 +116,8 @@ export default async function Page() {
         "name": "Green/White",
         blueprint: {
           color: [
-            { key: 'string-array/must-include-all-of', value: ['white', 'green'] },
-            { key: 'string-array/must-have-length', value: { key: 'number/must-be-one-of', value: [0, 2] }},
+            { key: 'string-array/includes-all-of', value: ['white', 'green'] },
+            { key: 'string-array/length', value: { key: 'number/one-of', value: [0, 2] }},
           ],
         },
         "metadata": {
