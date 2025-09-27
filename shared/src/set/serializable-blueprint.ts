@@ -1,10 +1,12 @@
 import { z } from 'zod';
-import { StringCriteriaSchema } from './criteria/string-criteria';
-import { BooleanCriteriaSchema } from './criteria/boolean-criteria';
-import { OptionalCriteriaSchema } from './criteria/optional-criteria';
-import { StringArrayCriteriaSchema } from './criteria/string-array-criteria';
-import { NumberCriteriaSchema } from './criteria/number-criteria';
-import { ObjectCriteriaSchema } from './criteria/object-criteria';
+import {
+  BooleanCriteriaSchema,
+  NumberCriteriaSchema,
+  ObjectCriteriaSchema,
+  OptionalCriteriaSchema,
+  StringArrayCriteriaSchema,
+  StringCriteriaSchema,
+} from './criteria';
 
 export const SerializableBlueprintSchema = z.object({
   name: z.array(StringCriteriaSchema),
@@ -28,3 +30,28 @@ export const SerializableBlueprintSchema = z.object({
 }).partial();
 
 export type SerializableBlueprint = z.infer<typeof SerializableBlueprintSchema>;
+
+export type BlueprintCriteriaType = 'string' | 'boolean' | 'optional' | 'string-array' | 'number' | 'object';
+export function getCriteriaTypesForSerializableBlueprintField(field: keyof SerializableBlueprint): BlueprintCriteriaType[] {
+  switch (field) {
+  case 'name': return ['string'];
+  case 'rarity': return ['string'];
+  case 'isToken': return ['boolean'];
+  case 'supertype': return ['optional', 'string'];
+  case 'tokenColors': return ['string-array'];
+  case 'types': return ['string-array'];
+  case 'subtypes': return ['string-array'];
+  case 'manaValue': return ['number'];
+  case 'color': return ['string-array'];
+  case 'colorIdentity': return ['string-array'];
+  case 'rules': return ['string'];
+  case 'pt': return ['optional'];
+  case 'power': return ['number'];
+  case 'toughness': return ['number'];
+  case 'powerToughnessDiff': return ['number'];
+  case 'loyalty': return ['number'];
+  case 'tags': return ['object'];
+  case 'creatableTokens': return ['string-array'];
+  default: return [];
+  }
+}

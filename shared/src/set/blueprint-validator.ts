@@ -93,7 +93,7 @@ export class BlueprintValidator {
     }
     if (blueprint.supertype) {
       blueprint.supertype.forEach(c => {
-        if (c.key === 'is-present' || c.key === 'is-absent') {
+        if (c.key === 'optional/is-present' || c.key === 'optional/is-absent') {
           if (!checkOptionalCriteria(c, card.supertype)) {
             reasons.push({ location: 'supertype', criteria: c, value: card.supertype });
           }

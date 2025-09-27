@@ -1,3 +1,4 @@
+export * from './any-criteria';
 export * from './boolean-criteria';
 export * from './criteria';
 export * from './number-criteria';
