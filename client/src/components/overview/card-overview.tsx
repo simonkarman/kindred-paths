@@ -80,7 +80,7 @@ export function CardOverview(props: {
       </div>
 
       {/* Tab Content */}
-      <div className="mt-4">
+      <div className="mt-4 mx-auto max-w-262">
         {tabs.find(tab => tab.id === activeTab)?.component}
       </div>
     </div>

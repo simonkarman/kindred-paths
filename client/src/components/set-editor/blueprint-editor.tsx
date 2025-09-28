@@ -103,10 +103,10 @@ function NumberCriteriaValueEditor(props: {
       value={props.value.key}
       onChange={e => onChangeKey(e.target.value as NumberCriteria['key'])}
     >
-      <option value="number/must-be-one-of">exactly equal to</option>
-      <option value="number/must-be-at-least">of at least</option>
-      <option value="number/must-be-at-most">of at most</option>
-      <option value="number/must-be-between">between (inclusive)</option>
+      <option value="number/one-of">exactly equal to</option>
+      <option value="number/at-least">of at least</option>
+      <option value="number/at-most">of at most</option>
+      <option value="number/between">between (inclusive)</option>
     </select>
     {props.value.key === 'number/one-of' &&
       <NumberArrayValueEditor prefix="" separator="or" value={props.value.value} setValue={(value: number[]) => props.setValue({ key: 'number/one-of', value })} />

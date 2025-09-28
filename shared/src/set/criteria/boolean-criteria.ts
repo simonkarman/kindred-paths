@@ -14,6 +14,9 @@ export const BooleanCriteriaSchema = z.union([
 export type BooleanCriteria = z.infer<typeof BooleanCriteriaSchema>;
 
 export const checkBooleanCriteria = (criteria: BooleanCriteria, value: unknown): boolean => {
+  if (value === null || value === undefined) {
+    value = false;
+  }
   if (typeof value !== 'boolean') {
     return false;
   }

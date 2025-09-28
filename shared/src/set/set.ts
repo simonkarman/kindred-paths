@@ -87,7 +87,7 @@ export class Set {
       if (locations.length > 1) {
         messages.push(
           `Card "${cardId}" is linked to ${locations.length} locations (${locations.join(' and ')}). ` +
-          'Each card should only be linked to up to one location.',
+          'You can fix this by unlinking the card from one of these locations. Each card should only be linked to up to one location.',
         );
       }
     });
@@ -280,13 +280,12 @@ export class Set {
   ): SerializableBlueprintWithSource[] {
     const archetype = this.archetypes[archetypeIndex];
     const slot = archetype?.cycles[cycleKey];
-    if (!slot || slot === 'skip') return [];
 
     return [
       { source: 'set', blueprint: this.blueprint },
-      { source: 'archetype', blueprint: archetype.blueprint },
+      { source: 'archetype', blueprint: archetype?.blueprint },
       { source: 'cycle', blueprint: this.cycles.find(c => c.key === cycleKey)?.blueprint },
-      { source: 'slot', blueprint: slot.blueprint },
+      { source: 'slot', blueprint: slot === 'skip' ? undefined : slot?.blueprint },
     ].filter(b => b.blueprint !== undefined) as SerializableBlueprintWithSource[];
   }
 

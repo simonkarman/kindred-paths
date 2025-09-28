@@ -176,12 +176,12 @@ export const SetEditorCell: React.FC<SetEditorCellProps> = ({
                     {statusReasons.map((r, index) => (
                       <li key={index}>
                         <p className="inline border-b border-gray-300">
-                          <span className="text-red-800 font-bold text-base">{index + 1}<span className="font-normal text-xs">/{statusReasons.length}</span></span>{' '}
                           <FontAwesomeIcon icon={faTimes} className="text-red-800" />{' '}
-                          <span className="font-bold">{r.location}</span>
+                          <span className="text-red-800 font-bold text-base">Error {index + 1}</span>{' '}
                           <span className="text-gray-500 text-xs">{' '}(from {r.source})</span>
                         </p>
                         <p className="py-0.5 px-2">
+                          <span className="font-bold">{r.location + ' '}</span>
                           is <span className="text-red-700">{JSON.stringify(r.value)}</span>, while it must{' '}
                           {r.criteria.key.substring(r.criteria.key.indexOf('/') + 1).replaceAll('-', ' ')}{' '}
                           <span className="text-green-700">{r.criteria.value

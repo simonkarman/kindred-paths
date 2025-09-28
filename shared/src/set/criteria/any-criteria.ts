@@ -32,6 +32,55 @@ export const allCriteriaKeys: AnyCriteria['key'][] = [
   'object/boolean-field',
 ];
 
+export function explainCriteria(criteria: AnyCriteria): string {
+  switch (criteria.key) {
+  case 'boolean/true':
+    return 'be true';
+  case 'boolean/false':
+    return 'be false';
+  case 'number/one-of':
+    return `be one ${criteria.value.join(' or ')}`;
+  case 'number/at-least':
+    return `be at least ${criteria.value}`;
+  case 'number/at-most':
+    return `be at most ${criteria.value}`;
+  case 'number/between':
+    return `be between ${criteria.value[0]} and ${criteria.value[1]}`;
+  case 'object/field-present':
+    return `have field "${criteria.value}"`;
+  case 'object/field-absent':
+    return `not have field "${criteria.value}"`;
+  case 'object/number-field':
+    return `have number field "${criteria.value[0]}" that must ${explainCriteria(criteria.value[1])}`;
+  case 'object/string-field':
+    return `have string field "${criteria.value[0]}" that must ${explainCriteria(criteria.value[1])}`;
+  case 'object/boolean-field':
+    return `have boolean field "${criteria.value[0]}" that must ${explainCriteria(criteria.value[1])}`;
+  case 'optional/present':
+    return 'be present';
+  case 'optional/absent':
+    return 'be absent';
+  case 'string-array/includes-one-of':
+    return `include ${criteria.value.map(v => `"${v}"`).join(' or ')}`;
+  case 'string-array/includes-all-of':
+    return `include ${criteria.value.map(v => `"${v}"`).join(' and ')}`;
+  case 'string-array/allow':
+    return `only use values in [${criteria.value.map(v => `"${v}"`).join(', ')}]`;
+  case 'string-array/deny':
+    return `never use values in [${criteria.value.map(v => `"${v}"`).join(', ')}]`;
+  case 'string-array/length':
+    return `have length that must ${explainCriteria(criteria.value)}`;
+  case 'string/equal':
+    return `be "${criteria.value}"`;
+  case 'string/contain-one-of':
+    return `contain ${criteria.value.map(v => `"${v}"`).join(' or ')}`;
+  case 'string/contain-all-of':
+    return `contain ${criteria.value.map(v => `"${v}"`).join(' and ')}`;
+  case 'string/length':
+    return `have length that must ${explainCriteria(criteria.value)}`;
+  }
+}
+
 export function defaultCriteriaFor(key: AnyCriteria['key'], defaultStringValue = 'abc'): AnyCriteria {
   switch (key) {
   case 'boolean/true':

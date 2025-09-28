@@ -15,7 +15,7 @@ const manaTypeColors: Record<Mana, { bg: string; border: string; text: string; s
 export const CardManaCostInput = (props: {
   manaCost: { [type in Mana]?: number },
   setManaCost: (value: { [type in Mana]?: number }) => void,
-  getErrorMessage: (color: Mana) => string | undefined,
+  getErrorMessage: () => string | undefined,
   isChanged: boolean,
   revert: () => void,
 }) => {
@@ -34,52 +34,50 @@ export const CardManaCostInput = (props: {
     <div className="space-y-1">
       <InputHeader propertyName="mana cost" isChanged={props.isChanged} revert={props.revert} />
 
-      <div className="space-y-4">
-        {/* Mana type inputs */}
-        <div className="grid grid-cols-3 gap-1">
-          {(['colorless', 'x', undefined, ...cardColors] as const).map((manaType, i) => {
-            if (manaType === undefined) {
-              return <div key={i} />; // Leave empty space for undefined mana types
-            }
+      {/* Mana type inputs */}
+      <div className="grid grid-cols-3 gap-1">
+        {(['colorless', 'x', undefined, ...cardColors] as const).map((manaType, i) => {
+          if (manaType === undefined) {
+            return <div key={i} />; // Leave empty space for undefined mana types
+          }
 
-            const colors = manaTypeColors[manaType];
-            const currentValue = props.manaCost[manaType] || 0;
+          const colors = manaTypeColors[manaType];
+          const currentValue = props.manaCost[manaType] || 0;
 
-            return (
-              <div key={manaType} className="space-y-1">
-                <div className={`flex items-center justify-center gap-3 p-2 rounded-lg border-2 ${colors.bg} ${colors.border}`}>
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-6 h-6 rounded-full border-2 ${colors.border} ${colors.bg} flex items-center justify-center`}>
-                      <span className={`text-xs font-bold ${colors.text}`}>
-                        {colors.symbol}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      id={`manaCost-${manaType}`}
-                      type="number"
-                      min="0"
-                      max="20"
-                      value={currentValue || ''}
-                      onChange={(e) => updateManaValue(manaType, e.target.value)}
-                      placeholder="0"
-                      className="w-24 bg-white px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-300"
-                    />
+          return (
+            <div key={manaType} className="space-y-1">
+              <div className={`flex items-center justify-center gap-3 p-2 rounded-lg border-2 ${colors.bg} ${colors.border}`}>
+                <div className="flex items-center space-x-2">
+                  <div className={`w-6 h-6 rounded-full border-2 ${colors.border} ${colors.bg} flex items-center justify-center`}>
+                    <span className={`text-xs font-bold ${colors.text}`}>
+                      {colors.symbol}
+                    </span>
                   </div>
                 </div>
 
-                {props.getErrorMessage(manaType) && (
-                  <p className="text-red-700 text-xs">
-                    {props.getErrorMessage(manaType)}
-                  </p>
-                )}
+                <div className="flex items-center space-x-2">
+                  <input
+                    id={`manaCost-${manaType}`}
+                    type="number"
+                    min="0"
+                    max="20"
+                    value={currentValue || ''}
+                    onChange={(e) => updateManaValue(manaType, e.target.value)}
+                    placeholder="0"
+                    className="w-24 bg-white px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-300"
+                  />
+                </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
+
+      {props.getErrorMessage() && (
+        <p className="text-red-700 text-xs">
+          {props.getErrorMessage()}
+        </p>
+      )}
     </div>
   );
 };

@@ -147,7 +147,7 @@ export default async function Page() {
         "cycles": {
           "mythic": {
             "cardRef": {
-              "cardId": "mfy-401-miffy-the-kind"
+              "cardId": "kpa-104-vevictus-drawn-to-gold"
             }
           }
         }

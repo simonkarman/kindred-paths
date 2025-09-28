@@ -1,11 +1,14 @@
 "use client";
 
 import {
+  BlueprintValidator,
   Card,
   CardColor,
   CardRarity,
   CardSuperType,
   CardType,
+  CriteriaFailureReason,
+  explainCriteria,
   Mana,
   RuleVariant, SerializableBlueprintWithSource,
   SerializedCard,
@@ -33,12 +36,15 @@ import { useDeckNameFromSearch, useSetNameFromSearch } from '@/utils/use-search'
 
 type CardEditorProps = {
   start: SerializedCard,
-  blueprints?: SerializableBlueprintWithSource[],
+  validate?: {
+    blueprints: SerializableBlueprintWithSource[],
+    metadata: { [key: string]: string | undefined },
+  }
   onSave?: (card: SerializedCard) => void,
   onCancel?: () => void,
 };
 
-export function CardEditor({ start, onSave, onCancel }: CardEditorProps) {
+export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProps) {
   const isCreate = start.id === "<new>";
   const set = useSetNameFromSearch();
   const deck = useDeckNameFromSearch();
@@ -154,13 +160,45 @@ export function CardEditor({ start, onSave, onCancel }: CardEditorProps) {
     path: string,
     message: string,
   }[] = parsedCard.success ? [] : parsedCard.error.errors.map(e => ({ path: e.path.join('.'), message: e.message }));
-  const getErrorMessage = (path: string) => errors.find(e => e.path === path)?.message || undefined;
+  const getErrorMessage = (field: string) => {
+    const additionalCriteriaFields: { [field: string]: string[] | undefined } = {
+      types: ['isToken'],
+      manaCost: ['manaValue', 'color', 'colorIdentity'],
+      pt: ['power', 'toughness', 'powerToughnessDiff'],
+      rules: ['creatableTokens', 'colorIdentity'],
+    };
+    const criteriaFields = [
+      field,
+      ...(additionalCriteriaFields[field] ?? [])].flatMap(f => criteriaFailureReasonsPerField[f] ?? [],
+    );
+    const messages = [
+      ...errors.filter(e => e.path === field || e.path.startsWith(`${field}.`)).map(e => e.message),
+      ...criteriaFields.map(fe => capitalize(fe.location) + ' must ' + explainCriteria(fe.criteria)),
+    ].filter(m => m !== undefined);
+    return messages.length > 0 ? messages.join(' AND ') : undefined;
+  };
   let validationError: string | undefined;
   let card: Card | undefined;
   try {
     card = new Card(serializedCard);
   } catch (e: unknown) {
     validationError = (e as Error).message;
+  }
+  const criteriaFailureReasonsPerField: { [field: string]: CriteriaFailureReason[] | undefined } = {};
+  if (card && validate) {
+    const validation = new BlueprintValidator().validate({
+      metadata: validate.metadata,
+      blueprints: validate.blueprints,
+      card: serializedCard,
+    });
+    if (!validation.success) {
+      validation.reasons.forEach(r => {
+        if (!criteriaFailureReasonsPerField[r.location]) {
+          criteriaFailureReasonsPerField[r.location] = [];
+        }
+        criteriaFailureReasonsPerField[r.location]!.push(r);
+      });
+    }
   }
 
   // Handle cancel/discard
@@ -264,7 +302,7 @@ export function CardEditor({ start, onSave, onCancel }: CardEditorProps) {
             />}
           {(supertype !== 'basic' && !isToken)
             && <CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}
-                                  getErrorMessage={(color: Mana) => getErrorMessage(`manaCost.${color}`)}
+                                  getErrorMessage={() => getErrorMessage('manaCost')}
                                   isChanged={!isCreate && JSON.stringify(start.manaCost) !== JSON.stringify(manaCost)} revert={() => setManaCost(start.manaCost)}
             />}
           {tokenColors !== undefined

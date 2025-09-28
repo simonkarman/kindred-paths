@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
@@ -230,7 +230,10 @@ export function SetEditor(props: SetEditorProps) {
       <div className="max-w-[1200px]">
         <CardEditor
           start={cardEditorSettings.card}
-          blueprints={cardEditorSettings.blueprints}
+          validate={{
+            blueprints: cardEditorSettings.blueprints,
+            metadata: set.getArchetype(cardEditorSettings.archetypeIndex).metadata,
+          }}
           onSave={(updatedCard) => {
             const cardIndex = cards.findIndex(c => c.id === updatedCard.id);
             let newCards;
@@ -578,8 +581,8 @@ export function SetEditor(props: SetEditorProps) {
 
           {/* Status Legend */}
           <tr>
-            <td colSpan={serializableSet.archetypes.length + 1} className="p-1 pt-2 text-right">
-              <div className="flex flex-wrap w-full justify-end gap-4 text-xs text-zinc-700">
+            <td colSpan={serializableSet.archetypes.length + 1} className="p-1 pt-2">
+              <div className="flex flex-wrap w-full justify-start gap-4 px-2 text-xs text-zinc-700">
                 <span className="flex items-center gap-1">
                   <FontAwesomeIcon icon={faExclamationTriangle} className="text-yellow-600" />
                   <span>Missing: {statusCounts.missing}</span>
@@ -594,7 +597,11 @@ export function SetEditor(props: SetEditorProps) {
                 </span>
                 <span className="flex items-center gap-1">
                   <FontAwesomeIcon icon={faCheck} className="text-green-600" />
-                  <span>Valid: {statusCounts.valid}</span>
+                  <span>Valid: {statusCounts.valid}
+                    <span className="text-gray-400">
+                      /{statusCounts.missing + statusCounts.invalid + statusCounts.valid}
+                    </span>
+                  </span>
                 </span>
               </div>
             </td>

@@ -1,12 +1,14 @@
 import { Card } from '../card';
 import { SerializableBlueprint } from './serializable-blueprint';
-import { Criteria } from './criteria/criteria';
-import { checkStringCriteria } from './criteria/string-criteria';
-import { checkBooleanCriteria } from './criteria/boolean-criteria';
-import { checkOptionalCriteria } from './criteria/optional-criteria';
-import { checkStringArrayCriteria } from './criteria/string-array-criteria';
-import { checkNumberCriteria } from './criteria/number-criteria';
-import { checkObjectCriteria } from './criteria/object-criteria';
+import {
+  AnyCriteria,
+  checkBooleanCriteria,
+  checkNumberCriteria,
+  checkObjectCriteria,
+  checkOptionalCriteria,
+  checkStringArrayCriteria,
+  checkStringCriteria,
+} from './criteria';
 import { SerializedCard } from '../serialized-card';
 
 export type SerializableBlueprintWithSource = {
@@ -17,7 +19,7 @@ export type SerializableBlueprintWithSource = {
 export type CriteriaFailureReason = {
   source: string,
   location: string,
-  criteria: Criteria<string, unknown>,
+  criteria: AnyCriteria,
   value: unknown,
 };
 
