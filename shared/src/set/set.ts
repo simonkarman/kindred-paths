@@ -2,9 +2,11 @@ import { BlueprintValidator, CriteriaFailureReason, SerializableBlueprintWithSou
 import { Card } from '../card';
 import { SerializableArchetype, SerializableCardReference, SerializableCycle, SerializableSet } from './serializable-set';
 import { SerializableBlueprint } from './serializable-blueprint';
+import { capitalize } from '../../typography';
+import { SerializedCard } from '../serialized-card';
 
 export type SlotStatus = 'missing' | 'skip' | 'invalid' | 'valid';
-export type BlueprintLocation = { type: 'set' }
+export type SetLocation = { type: 'set' }
   | { type: 'archetype', index: number }
   | { type: 'cycle', index: number }
   | { type: 'slot', archetypeIndex: number, cycleKey: string };
@@ -46,7 +48,7 @@ export class Set {
   }
 
   // Validate
-  validateAndCorrect(cards: Card[]): string[] {
+  validateAndCorrect(cards: SerializedCard[]): string[] {
     const messages: string[] = [];
 
     // check that there are no slots without a blueprint AND without a cardRef
@@ -156,10 +158,10 @@ export class Set {
   addMetadataKey(atIndex: number, key: string) {
     let index = 1;
     let newKey = key;
-    while (this.cycles.find(c => c.key === newKey)) {
+    while (this.metadataKeys.includes(newKey)) {
       newKey = `${key}_${index}`;
       index += 1;
-      if (index > 100) return; // Prevent infinite loop -> no change
+      if (index > 99) return; // Prevent infinite loop -> no change
     }
     this.metadataKeys.splice(atIndex, 0, newKey);
   }
@@ -170,7 +172,7 @@ export class Set {
     while (this.metadataKeys.includes(newKey)) {
       newKey = `${_newKey}_${index}`;
       index += 1;
-      if (index > 100) return; // Prevent infinite loop -> no change
+      if (index > 99) return; // Prevent infinite loop -> no change
     }
 
     const oldKey = this.metadataKeys[metadataIndex];
@@ -217,7 +219,7 @@ export class Set {
     while (this.cycles.find(c => c.key === newKey)) {
       newKey = `${key}_${index}`;
       index += 1;
-      if (index > 100) return; // Prevent infinite loop -> no change
+      if (index > 99) return; // Prevent infinite loop -> no change
     }
     this.cycles.splice(atIndex, 0, { key: newKey });
   }
@@ -228,7 +230,7 @@ export class Set {
     while (this.cycles.find(c => c.key === newKey)) {
       newKey = `${_newKey}_${index}`;
       index += 1;
-      if (index > 100) return; // Prevent infinite loop -> no change
+      if (index > 99) return; // Prevent infinite loop -> no change
     }
 
     const oldKey = this.cycles[cycleIndex].key;
@@ -272,7 +274,7 @@ export class Set {
     this.archetypes[archetypeIndex].cycles[cycleKey] = 'skip';
   }
 
-  private getBlueprintsForSlot(
+  getBlueprintsForSlot(
     archetypeIndex: number,
     cycleKey: string,
   ): SerializableBlueprintWithSource[] {
@@ -289,7 +291,7 @@ export class Set {
   }
 
   getSlotStatus(
-    cards: Card[],
+    cards: SerializedCard[],
     archetypeIndex: number,
     cycleKey: string,
   ): { status: SlotStatus, reasons?: CriteriaFailureReason[] } {
@@ -317,7 +319,7 @@ export class Set {
       : { status: 'invalid', reasons: result.reasons };
   }
 
-  getSlotStats(cards: Card[]) {
+  getSlotStats(cards: SerializedCard[]) {
     const statusCounts = { missing: 0, skip: 0, invalid: 0, valid: 0 };
     this.cycles.forEach(({ key: cycleKey }) => {
       this.archetypes.forEach((_, archetypeIndex) => {
@@ -364,10 +366,11 @@ export class Set {
     cardRef: SerializableCardReference,
   ) {
     const archetype = this.archetypes[archetypeIndex];
-    if (!archetype.cycles[cycleKey] || archetype.cycles[cycleKey] === 'skip') {
+    const slot = archetype.cycles[cycleKey];
+    if (!slot || slot === 'skip') {
       archetype.cycles[cycleKey] = { cardRef };
     } else {
-      archetype.cycles[cycleKey].cardRef = cardRef;
+      slot.cardRef = cardRef;
     }
   }
 
@@ -386,7 +389,7 @@ export class Set {
   }
 
   // Blueprints
-  getBlueprintAt(location: BlueprintLocation): SerializableBlueprint | undefined {
+  getBlueprintAt(location: SetLocation): SerializableBlueprint | undefined {
     if (location.type === 'set') {
       return this.blueprint;
 
@@ -404,7 +407,7 @@ export class Set {
     }
   }
 
-  setBlueprintAt(location: BlueprintLocation, blueprint: SerializableBlueprint) {
+  setBlueprintAt(location: SetLocation, blueprint: SerializableBlueprint) {
     if (location.type === 'set') {
       this.blueprint = blueprint;
 
@@ -425,7 +428,7 @@ export class Set {
     }
   }
 
-  removeBlueprintAt(location: BlueprintLocation) {
+  removeBlueprintAt(location: SetLocation) {
     if (location.type === 'set') {
       delete this.blueprint;
 
@@ -446,5 +449,18 @@ export class Set {
         delete archetype.cycles[location.cycleKey];
       }
     }
+  }
+
+  getLocationName(location: SetLocation) {
+    let name = '';
+    if (location.type === 'archetype') {
+      name = capitalize(this.getArchetype(location.index).name);
+    } else if (location.type === 'cycle') {
+      name = capitalize(this.getCycleKey(location.index));
+    } else if (location.type === 'slot') {
+      const archetype = this.getArchetype(location.archetypeIndex);
+      name = `"${capitalize(archetype.name)}"."${capitalize(location.cycleKey)}"`;
+    }
+    return (name.length > 0 ? `${name} ` : '') + `${capitalize(location.type)} Blueprint`;
   }
 }

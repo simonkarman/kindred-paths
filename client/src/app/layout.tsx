@@ -29,7 +29,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} flex flex-col antialiased w-262 mx-auto min-h-svh`}
+        className={`${geistSans.variable} ${geistMono.variable} flex flex-col antialiased mx-auto min-h-svh`}
       >
         <header className="print:hidden flex items-end justify-between p-2 py-1 border-zinc-200">
           <div>

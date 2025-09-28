@@ -1,0 +1,26 @@
+{
+  "name": "Melanie the 2nd",
+  "rarity": "common",
+  "types": [
+    "creature"
+  ],
+  "subtypes": [
+    "rabbit"
+  ],
+  "manaCost": {
+    "colorless": 1,
+    "white": 1
+  },
+  "rules": [],
+  "pt": {
+    "power": 2,
+    "toughness": 2
+  },
+  "collectorNumber": 1,
+  "tags": {
+    "status": "concept",
+    "createdAt": "2025-09-28",
+    "set": "MFY",
+    "deleted": true
+  }
+}

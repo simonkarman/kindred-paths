@@ -13,33 +13,41 @@ import {
   faTimes,
   faTrashCan, faWarning,
 } from '@fortawesome/free-solid-svg-icons';
-import { BlueprintLocation, Card, SerializableSet, SerializedCard, Set } from 'kindred-paths';
+import { SetLocation, SerializableBlueprintWithSource, SerializableSet, SerializedCard, Set, Card } from 'kindred-paths';
 import { serverUrl } from '@/utils/server';
-import { capitalize } from '@/utils/typography';
 import { IconButton } from '@/components/icon-button';
 import { DragHandle } from '@/components/set-editor/drag-handle';
 import { SetEditorCell } from '@/components/set-editor/set-editor-cell';
 import { BlueprintEditor } from '@/components/set-editor/blueprint-editor';
+import { CardEditor } from '@/components/editor/card-editor';
 
 export interface SetEditorProps {
   cards: SerializedCard[],
   set: SerializableSet;
 }
 
+type CardEditorSettings = {
+  archetypeIndex: number,
+  cycleKey: string,
+  card: SerializedCard,
+  blueprints: SerializableBlueprintWithSource[],
+}
+
 export function SetEditor(props: SetEditorProps) {
+  const [cards, setAllCards] = useState<SerializedCard[]>(props.cards);
   const [serializableSet, setSerializableSet] = useState(props.set);
   const [validationMessages, setValidationMessages] = useState<string[]>([]);
-  const [blueprintEditorLocation, setBlueprintEditorLocation] = useState<BlueprintLocation>();
+  const [blueprintEditorLocation, setBlueprintEditorLocation] = useState<SetLocation>();
+  const [cardEditorSettings, setCardEditorSettings] = useState<CardEditorSettings>();
 
   const [dragOverIndex, setDragOverIndex] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
   const [draggedItem, setDraggedItem] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
 
   const set = new Set(serializableSet);
-  const cards = useMemo(() => props.cards.map(c => new Card(c)), [props.cards]);
   const statusCounts = set.getSlotStats(cards);
 
-  const saveChanges = () => {
-    setValidationMessages(set.validateAndCorrect(cards));
+  const saveChanges = (props?: { newCards?: SerializedCard[] }) => {
+    setValidationMessages(set.validateAndCorrect(props?.newCards ?? cards));
     setSerializableSet(set.serialize());
     // TODO: Save in backend.
   };
@@ -88,7 +96,7 @@ export function SetEditor(props: SetEditorProps) {
 
   const addMetadataKey = (atIndex: number) => {
     const newKey = prompt(`Enter metadata key name:`);
-    if (newKey && !set.hasMetadataKey(newKey)) {
+    if (newKey) {
       set.addMetadataKey(atIndex, newKey);
       saveChanges();
     }
@@ -185,10 +193,67 @@ export function SetEditor(props: SetEditorProps) {
     setBlueprintEditorLocation({ type: 'slot', archetypeIndex, cycleKey });
   };
 
+  const editCard = (archetypeIndex: number, cycleKey: string) => {
+    const slot = set.getArchetype(archetypeIndex).cycles[cycleKey];
+    if (slot && typeof slot !== 'string' && "cardRef" in slot && slot.cardRef) {
+      const card = cards.filter(c => c.id === slot.cardRef?.cardId).pop();
+      if (card) {
+        setCardEditorSettings({
+          archetypeIndex,
+          cycleKey,
+          card,
+          blueprints: set.getBlueprintsForSlot(archetypeIndex, cycleKey),
+        });
+      }
+    }
+  }
+
+  const createCard = (archetypeIndex: number , cycleKey: string) => {
+    setCardEditorSettings({
+      archetypeIndex,
+      cycleKey,
+      card: Card.new(),
+      blueprints: set.getBlueprintsForSlot(archetypeIndex, cycleKey),
+    });
+  }
+
   return (
     <div>
+      {cardEditorSettings && <div
+      className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center p-10 overflow-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          setCardEditorSettings(undefined);
+        }
+      }}
+    >
+      <div className="max-w-[1200px]">
+        <CardEditor
+          start={cardEditorSettings.card}
+          blueprints={cardEditorSettings.blueprints}
+          onSave={(updatedCard) => {
+            const cardIndex = cards.findIndex(c => c.id === updatedCard.id);
+            let newCards;
+            if (cardIndex === -1) {
+              newCards = [...cards, updatedCard];
+            } else {
+              newCards = [
+                ...cards.slice(0, cardIndex),
+                updatedCard,
+                ...cards.slice(cardIndex + 1),
+              ];
+            }
+            setAllCards(newCards);
+            set.linkCardToSlot(cardEditorSettings.archetypeIndex, cardEditorSettings.cycleKey, { cardId: updatedCard.id });
+            saveChanges({ newCards });
+            setCardEditorSettings(undefined);
+          }}
+          onCancel={() => setCardEditorSettings(undefined)}
+        />
+      </div>
+    </div>}
       {blueprintEditorLocation && <div
-        className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center pt-10 overflow-auto"
+        className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center p-10 overflow-auto"
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             setBlueprintEditorLocation(undefined);
@@ -197,7 +262,7 @@ export function SetEditor(props: SetEditorProps) {
       >
         <div className="max-w-[900px]">
           <BlueprintEditor
-            title={capitalize(blueprintEditorLocation.type) + ' Blueprint'}
+            title={set.getLocationName(blueprintEditorLocation)}
             metadataKeys={set.getMetadataKeys()}
             blueprint={set.getBlueprintAt(blueprintEditorLocation) ?? {}}
             onSave={(blueprint) => {
@@ -478,7 +543,7 @@ export function SetEditor(props: SetEditorProps) {
                     colSpan={serializableSet.archetypes.length}
                     className="border border-zinc-300 p-1 text-center bg-purple-50 text-purple-600"
                   >
-                    <div className="flex gap-2 items-center justify-center px-1">
+                    <div className="flex gap-2 items-center justify-start px-1">
                       <FontAwesomeIcon icon={faArrowLeft} />
                       <FontAwesomeIcon icon={faWarning} />
                       <span className={`text-sm font-medium text-purple-800`}>
@@ -499,7 +564,7 @@ export function SetEditor(props: SetEditorProps) {
                     onMarkNotSkip={() => markNotSkip(archetypeIndex, cycleKey)}
                     onCreateCard={() => createCard(archetypeIndex, cycleKey)}
                     onLinkCard={() => linkCard(archetypeIndex, cycleKey)}
-                    onEditCard={() => editCard(slot)}
+                    onEditCard={() => editCard(archetypeIndex, cycleKey)}
                     onUnlinkCard={() => unlinkCard(archetypeIndex, cycleKey)}
                     hasBlueprint={hasSlotBlueprint}
                     onEditBlueprint={() => onEditSlotBlueprint(archetypeIndex, cycleKey)}

@@ -7,7 +7,7 @@ import {
   CardSuperType,
   CardType,
   Mana,
-  RuleVariant,
+  RuleVariant, SerializableBlueprintWithSource,
   SerializedCard,
   SerializedCardSchema,
   tryParseLoyaltyAbility,
@@ -31,7 +31,14 @@ import { CardTokenColorsInput } from '@/components/editor/card-token-colors-inpu
 import { CardLoyaltyInput } from '@/components/editor/card-loyalty-input';
 import { useDeckNameFromSearch, useSetNameFromSearch } from '@/utils/use-search';
 
-export function CardEditor({ start }: { start: SerializedCard }) {
+type CardEditorProps = {
+  start: SerializedCard,
+  blueprints?: SerializableBlueprintWithSource[],
+  onSave?: (card: SerializedCard) => void,
+  onCancel?: () => void,
+};
+
+export function CardEditor({ start, onSave, onCancel }: CardEditorProps) {
   const isCreate = start.id === "<new>";
   const set = useSetNameFromSearch();
   const deck = useDeckNameFromSearch();
@@ -158,6 +165,10 @@ export function CardEditor({ start }: { start: SerializedCard }) {
 
   // Handle cancel/discard
   const handleDiscard = () => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
     // If the URL has a 't' parameter, redirect to that location
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('t')) {
@@ -187,14 +198,17 @@ export function CardEditor({ start }: { start: SerializedCard }) {
         ? await createCard(data)
         : await updateCard(data);
       if (result) {
-
-        // if /edit/<id>?t=/a/location is used, we want to get the t from the URL, and navigate to that page
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('t')) {
-          window.location.href = urlParams.get('t')!;
+        if (onSave) {
+          onSave(result);
         } else {
-          // Navigate to the new card's page
-          window.location.href = `/card/${result.id}`;
+          // if /edit/<id>?t=/a/location is used, we want to get the t from the URL, and navigate to that page
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.has('t')) {
+            window.location.href = urlParams.get('t')!;
+          } else {
+            // Navigate to the new card's page
+            window.location.href = `/card/${result.id}`;
+          }
         }
       }
     } catch (error) {

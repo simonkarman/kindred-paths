@@ -1,6 +1,7 @@
 import { SerializedCard } from './serialized-card';
 import { CardColor, cardColors, Mana, toOrderedColors, wubrg } from './colors';
 import { TokenExtractor } from './token-extracter';
+import { capitalize } from '../typography';
 
 export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
@@ -60,7 +61,6 @@ export const tryParseLoyaltyAbility = (rule: Rule): { success: false } | { succe
   return { success: false };
 };
 
-const capitalize = (str: string) => str.length === 0 ? '' : str.charAt(0).toUpperCase() + str.slice(1);
 const tokenExtractor = new TokenExtractor();
 
 export class Card {
@@ -79,6 +79,24 @@ export class Card {
   public readonly collectorNumber: number;
   public readonly art?: string;
   public readonly tags: { [key: string]: string | number | boolean | undefined };
+
+  static new(): SerializedCard {
+    return {
+      id: '<new>',
+      name: 'New Card',
+      rarity: 'common',
+      supertype: undefined,
+      tokenColors: undefined,
+      types: ['creature'],
+      subtypes: undefined,
+      manaCost: { colorless: 1 },
+      rules: undefined,
+      pt: undefined,
+      collectorNumber: 1,
+      art: undefined,
+      tags: { status: 'concept', createdAt: new Date().toISOString().substring(0, 10) },
+    };
+  }
 
   constructor(props: SerializedCard) {
     this.id = props.id;

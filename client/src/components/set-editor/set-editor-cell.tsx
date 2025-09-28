@@ -182,7 +182,7 @@ export const SetEditorCell: React.FC<SetEditorCellProps> = ({
                           <span className="text-gray-500 text-xs">{' '}(from {r.source})</span>
                         </p>
                         <p className="py-0.5 px-2">
-                          is <span className="text-red-700">{JSON.stringify(r.value)}</span>, while it{' '}
+                          is <span className="text-red-700">{JSON.stringify(r.value)}</span>, while it must{' '}
                           {r.criteria.key.substring(r.criteria.key.indexOf('/') + 1).replaceAll('-', ' ')}{' '}
                           <span className="text-green-700">{r.criteria.value
                             ? (Array.isArray(r.criteria.value)

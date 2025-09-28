@@ -7,6 +7,7 @@ import { checkOptionalCriteria } from './criteria/optional-criteria';
 import { checkStringArrayCriteria } from './criteria/string-array-criteria';
 import { checkNumberCriteria } from './criteria/number-criteria';
 import { checkObjectCriteria } from './criteria/object-criteria';
+import { SerializedCard } from '../serialized-card';
 
 export type SerializableBlueprintWithSource = {
   source: string,
@@ -24,7 +25,7 @@ export class BlueprintValidator {
   validate(props: {
     metadata: { [metadataKey: string]: string | undefined },
     blueprints: SerializableBlueprintWithSource[],
-    card: Card,
+    card: SerializedCard,
   }): ({ success: true } | { success: false, reasons: CriteriaFailureReason[] }) {
     const reasons: CriteriaFailureReason[] = [];
     props.blueprints.forEach(({ source, blueprint }) => {
@@ -67,8 +68,9 @@ export class BlueprintValidator {
   private validateCard(
     source: string,
     blueprint: SerializableBlueprint,
-    card: Card,
+    _card: SerializedCard,
   ): CriteriaFailureReason[] {
+    const card = new Card(_card);
     const reasons: Omit<CriteriaFailureReason, 'source'>[] = [];
     if (blueprint.name) {
       blueprint.name.forEach(c => {
