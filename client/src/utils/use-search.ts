@@ -1,7 +1,7 @@
 import { useLocalStorageState } from '@/utils/use-local-storage-state';
 import { Card, CardColor, CardColorCharacter, colorToLong, SerializedCard, wubrg } from 'kindred-paths';
 
-export const useSearch = (scope: string) => useLocalStorageState(`${scope}/search`, '');
+export const useSearch = (scope: string, initial?: string) => useLocalStorageState(`${scope}/search`, initial ?? '');
 
 const useValueFromHomeSearch = (keys: string[]): string | undefined => {
   // TODO: this could result in multiple values if the user specifies the same key multiple times

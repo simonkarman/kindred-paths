@@ -4,11 +4,12 @@ import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 
-export function CardRender({ serializedCard, hoverControls = false, quality, scale }: {
+export function CardRender({ serializedCard, hoverControls = false, quality, scale, hideBorder }: {
   serializedCard: SerializedCard,
   hoverControls?: boolean,
   quality?: number,
   scale?: number,
+  hideBorder?: boolean,
 }) {
   const card = new _Card(serializedCard);
 
@@ -26,7 +27,7 @@ export function CardRender({ serializedCard, hoverControls = false, quality, sca
       {/* Image */}
       <img
         alt={card.name + " image"}
-        className="aspect-[63/88] w-100 bg-zinc-100 rounded-2xl border"
+        className={`aspect-[63/88] w-100 rounded-2xl border ${hideBorder ? 'bg-transparent border-transparent' : 'bg-zinc-100'}`}
         src={`${serverUrl}/render/${card.id}?scale=${scale || 1}&quality=${quality || 100}`}
       />
 

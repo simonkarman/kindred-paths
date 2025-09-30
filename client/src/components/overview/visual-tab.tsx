@@ -83,8 +83,8 @@ export function VisualTab(props: {
         ))}
       </ul>
     </div>}
-    <hr className="break-after-page border-gray-200" />
-    <div className="grid grid-cols-3">
+    <hr className="break-after-page border-gray-200 py-2" />
+    <div className="grid grid-cols-3 not-print:gap-3">
       {cardGroups.map((group) => group
         .map(card => n(respectDeckCount && deckName && typeof card.tags?.[`deck/${deckName}`] === 'number'
             ? card.tags[`deck/${deckName}`] as number
@@ -92,7 +92,7 @@ export function VisualTab(props: {
           )
           .map(i => <div
               key={card.id + i}
-              className="border-3 bg-zinc-500"
+              className="print:border-3 print:bg-zinc-500"
             >
               <div className="hidden print:block">
                 <CardRender serializedCard={card} scale={0.6} quality={80} />

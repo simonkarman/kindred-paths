@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { PropsWithChildren, useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
@@ -20,6 +20,18 @@ import { DragHandle } from '@/components/set-editor/drag-handle';
 import { SetEditorCell } from '@/components/set-editor/set-editor-cell';
 import { BlueprintEditor } from '@/components/set-editor/blueprint-editor';
 import { CardEditor } from '@/components/editor/card-editor';
+import { CardSelector } from '@/components/set-editor/card-selector';
+
+function Modal(props: PropsWithChildren<{ onClose: () => void }>) {
+  return <div
+    className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center p-10 overflow-auto"
+    onClick={(e) => {
+      if (e.target === e.currentTarget) { props.onClose(); }
+    }}
+  >
+    {props.children}
+  </div>
+}
 
 export interface SetEditorProps {
   cards: SerializedCard[],
@@ -33,12 +45,19 @@ type CardEditorSettings = {
   blueprints: SerializableBlueprintWithSource[],
 }
 
+type CardSelectorSettings = {
+  archetypeIndex: number,
+  cycleKey: string,
+  blueprints: SerializableBlueprintWithSource[],
+}
+
 export function SetEditor(props: SetEditorProps) {
   const [cards, setAllCards] = useState<SerializedCard[]>(props.cards);
   const [serializableSet, setSerializableSet] = useState(props.set);
   const [validationMessages, setValidationMessages] = useState<string[]>([]);
   const [blueprintEditorLocation, setBlueprintEditorLocation] = useState<SetLocation>();
   const [cardEditorSettings, setCardEditorSettings] = useState<CardEditorSettings>();
+  const [cardSelectorSettings, setCardSelectorSettings] = useState<CardSelectorSettings>();
 
   const [dragOverIndex, setDragOverIndex] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
   const [draggedItem, setDraggedItem] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
@@ -217,53 +236,51 @@ export function SetEditor(props: SetEditorProps) {
     });
   }
 
+  const linkCard = (archetypeIndex: number, cycleKey: string) => {
+    setCardSelectorSettings({
+      archetypeIndex,
+      cycleKey,
+      blueprints: set.getBlueprintsForSlot(archetypeIndex, cycleKey),
+    });
+  }
+
   return (
     <div>
-      {cardEditorSettings && <div
-      className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center p-10 overflow-auto"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          setCardEditorSettings(undefined);
-        }
-      }}
-    >
-      <div className="max-w-[1200px]">
-        <CardEditor
-          start={cardEditorSettings.card}
-          validate={{
-            blueprints: cardEditorSettings.blueprints,
-            metadata: set.getArchetype(cardEditorSettings.archetypeIndex).metadata,
-          }}
-          onSave={(updatedCard) => {
-            const cardIndex = cards.findIndex(c => c.id === updatedCard.id);
-            let newCards;
-            if (cardIndex === -1) {
-              newCards = [...cards, updatedCard];
-            } else {
-              newCards = [
-                ...cards.slice(0, cardIndex),
-                updatedCard,
-                ...cards.slice(cardIndex + 1),
-              ];
-            }
-            setAllCards(newCards);
-            set.linkCardToSlot(cardEditorSettings.archetypeIndex, cardEditorSettings.cycleKey, { cardId: updatedCard.id });
-            saveChanges({ newCards });
-            setCardEditorSettings(undefined);
-          }}
-          onCancel={() => setCardEditorSettings(undefined)}
-        />
-      </div>
-    </div>}
-      {blueprintEditorLocation && <div
-        className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center p-10 overflow-auto"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            setBlueprintEditorLocation(undefined);
-          }
-        }}
+      {cardEditorSettings && <Modal
+        onClose={() => setCardEditorSettings(undefined)}
       >
-        <div className="max-w-[900px]">
+        <div className="max-w-[1200px] rounded-3xl shadow-lg">
+          <CardEditor
+            start={cardEditorSettings.card}
+            validate={{
+              blueprints: cardEditorSettings.blueprints,
+              metadata: set.getArchetype(cardEditorSettings.archetypeIndex).metadata,
+            }}
+            onSave={(updatedCard) => {
+              const cardIndex = cards.findIndex(c => c.id === updatedCard.id);
+              let newCards;
+              if (cardIndex === -1) {
+                newCards = [...cards, updatedCard];
+              } else {
+                newCards = [
+                  ...cards.slice(0, cardIndex),
+                  updatedCard,
+                  ...cards.slice(cardIndex + 1),
+                ];
+              }
+              setAllCards(newCards);
+              set.linkCardToSlot(cardEditorSettings.archetypeIndex, cardEditorSettings.cycleKey, { cardId: updatedCard.id });
+              saveChanges({ newCards });
+              setCardEditorSettings(undefined);
+            }}
+            onCancel={() => setCardEditorSettings(undefined)}
+          />
+        </div>
+      </Modal>}
+      {blueprintEditorLocation && <Modal
+        onClose={() => setBlueprintEditorLocation(undefined)}
+      >
+        <div className="max-w-[900px] rounded-3xl shadow-lg">
           <BlueprintEditor
             title={set.getLocationName(blueprintEditorLocation)}
             metadataKeys={set.getMetadataKeys()}
@@ -276,7 +293,31 @@ export function SetEditor(props: SetEditorProps) {
             onCancel={() => setBlueprintEditorLocation(undefined)}
           />
         </div>
-      </div>}
+      </Modal>}
+      {cardSelectorSettings && <Modal
+        onClose={() => setCardSelectorSettings(undefined)}
+      >
+        <div className="bg-white p-4 w-[900px] rounded-3xl shadow-lg">
+          <CardSelector
+            search={{
+              scope: `set/${serializableSet.name}/selector`,
+              initial: `set:${serializableSet.name}`,
+          }}
+            cards={cards}
+            validation={{
+              blueprints: cardSelectorSettings.blueprints,
+              metadata: set.getArchetype(cardSelectorSettings.archetypeIndex).metadata,
+            }}
+            onSelect={(card) => {
+              set.linkCardToSlot(cardSelectorSettings.archetypeIndex, cardSelectorSettings.cycleKey, { cardId: card.id });
+              saveChanges();
+              setCardSelectorSettings(undefined);
+            }}
+            onCancel={() => setCardSelectorSettings(undefined)}
+          />
+        </div>
+      </Modal>}
+      {/* Validation Messages */}
       {validationMessages.length > 0 && <div className="text-amber-700 text-sm px-4 py-2 border rounded-lg bg-amber-50 mb-4">
         <h3 className="font-bold underline">Warnings!</h3>
         <ul className="p-0.5">
