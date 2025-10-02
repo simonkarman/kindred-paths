@@ -3,11 +3,11 @@ import { z } from 'zod';
 export const BooleanCriteriaSchema = z.union([
   z.object({
     key: z.literal('boolean/true'),
-    value: z.never(),
+    value: z.never().optional(),
   }),
   z.object({
     key: z.literal('boolean/false'),
-    value: z.never(),
+    value: z.never().optional(),
   }),
 ]);
 

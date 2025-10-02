@@ -26,7 +26,7 @@ maintenanceRouter.post('/cleanup', async (req, res) => {
 
       const message = `renamed card ${card.id} to ${cardId}`;
       messages.push(message);
-      await fs.rename(`./set/${card.id}.json`, `./set/${cardId}.json`);
+      await fs.rename(`./cards/${card.id}.json`, `./cards/${cardId}.json`);
       console.log(message);
     }
   }

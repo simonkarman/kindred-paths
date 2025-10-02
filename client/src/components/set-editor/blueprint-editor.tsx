@@ -249,7 +249,7 @@ function CriteriaEditor(props: CriteriaEditorProps) {
 
   return <CriteriaHeader field={props.field} criteriaTypes={props.criteriaTypes}>
     <ul className="flex flex-col w-full">
-      {props.criteria.map((c, i) => <li
+      {props?.criteria.map((c, i) => <li
         key={i}
         className="flex justify-between items-center border-b last:border-0 border-gray-200"
       >

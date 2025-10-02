@@ -3,11 +3,11 @@ import { z } from 'zod';
 export const OptionalCriteriaSchema = z.union([
   z.object({
     key: z.literal('optional/present'),
-    value: z.never(),
+    value: z.never().optional(),
   }),
   z.object({
     key: z.literal('optional/absent'),
-    value: z.never(),
+    value: z.never().optional(),
   }),
 ]);
 

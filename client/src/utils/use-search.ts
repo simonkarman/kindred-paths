@@ -10,9 +10,9 @@ const useValueFromHomeSearch = (keys: string[]): string | undefined => {
   const searchTerms = searchText.trim().toLowerCase().split(/\s+/);
   for (const term of searchTerms) {
     if (keys.some(key => term.startsWith(`${key}:`))) {
-      const deckName = term.slice(term.indexOf(':') + 1).trim();
-      if (deckName.length > 0) {
-        return deckName;
+      const value = term.slice(term.indexOf(':') + 1).trim();
+      if (value.length > 0) {
+        return value;
       }
     }
   }

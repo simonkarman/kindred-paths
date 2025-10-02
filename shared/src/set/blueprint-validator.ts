@@ -32,7 +32,7 @@ export class BlueprintValidator {
     const reasons: CriteriaFailureReason[] = [];
     props.blueprints.forEach(({ source, blueprint }) => {
       const blueprintWithMetadata = {
-        ...Object.entries(blueprint).map(([key, criteria]) => [key, criteria.map(c => {
+        ...Object.entries(blueprint).map(([key, criteria]) => [key, criteria?.map(c => {
           const regex = /^\$\[(.+?)]$/;
           if (c.value && typeof c.value === 'string') {
             const match = c.value.match(regex);

@@ -14,7 +14,7 @@ import {
   faTrashCan, faWarning,
 } from '@fortawesome/free-solid-svg-icons';
 import { SetLocation, SerializableBlueprintWithSource, SerializableSet, SerializedCard, Set, Card } from 'kindred-paths';
-import { serverUrl } from '@/utils/server';
+import { serverUrl, putSet } from '@/utils/server';
 import { IconButton } from '@/components/icon-button';
 import { DragHandle } from '@/components/set-editor/drag-handle';
 import { SetEditorCell } from '@/components/set-editor/set-editor-cell';
@@ -34,8 +34,8 @@ function Modal(props: PropsWithChildren<{ onClose: () => void }>) {
 }
 
 export interface SetEditorProps {
+  set: SerializableSet,
   cards: SerializedCard[],
-  set: SerializableSet;
 }
 
 type CardEditorSettings = {
@@ -67,8 +67,9 @@ export function SetEditor(props: SetEditorProps) {
 
   const saveChanges = (props?: { newCards?: SerializedCard[] }) => {
     setValidationMessages(set.validateAndCorrect(props?.newCards ?? cards));
-    setSerializableSet(set.serialize());
-    // TODO: Save in backend.
+    const serializableSet = set.toJson();
+    setSerializableSet(serializableSet);
+    putSet(serializableSet).catch(e => console.error('Error saving set:', e));
   };
 
   useEffect(() => {
@@ -300,9 +301,9 @@ export function SetEditor(props: SetEditorProps) {
         <div className="bg-white p-4 w-[900px] rounded-3xl shadow-lg">
           <CardSelector
             search={{
-              scope: `set/${serializableSet.name}/selector`,
+              scope: `set/${serializableSet.name}/archetype/${cardSelectorSettings.archetypeIndex}/cycle/${cardSelectorSettings.cycleKey}/selector`,
               initial: `set:${serializableSet.name}`,
-          }}
+            }}
             cards={cards}
             validation={{
               blueprints: cardSelectorSettings.blueprints,
@@ -326,7 +327,7 @@ export function SetEditor(props: SetEditorProps) {
           </li>))}
         </ul>
       </div>}
-      <h2 className='mb-2'>
+      <h2>
         <input
           type="text"
           value={serializableSet.name}
@@ -349,6 +350,7 @@ export function SetEditor(props: SetEditorProps) {
           />
         </span>
       </h2>
+      <p className="text-xs text-gray-300 px-1 mb-2">Id: {set.getId()}</p>
 
       {/* Main Table */}
       <div className="overflow-x-scroll overflow-y-visible pb-[260px] border-b border-gray-200">
@@ -493,14 +495,23 @@ export function SetEditor(props: SetEditorProps) {
               </tr>
             </React.Fragment>
           ))}
+          {/* If no keys yet */}
+          {serializableSet.metadataKeys.length === 0 && <tr>
+            <td colSpan={serializableSet.archetypes.length + 1} className="px-2">
+              <button
+                onClick={() => addMetadataKey(serializableSet.metadataKeys.length)}
+                className="px-2 py-1 border rounded active:bg-green-50 active:text-green-400 hover:text-green-600 hover:bg-green-100 p-0.5 text-xs flex items-center gap-1 transition-colors"
+              >
+                <FontAwesomeIcon icon={faPlus} className='text-sm' /> Add Metadata Key
+              </button>
+            </td>
+          </tr>}
           <tr>
             <th colSpan={serializableSet.archetypes.length + 1} className="p-2 pt-4 text-left font-medium">
               Cycles
             </th>
           </tr>
-          </tbody>
           {/* Cycle Rows */}
-          <tbody>
           {serializableSet.cycles.map(({ key: cycleKey, blueprint }, rowIndex) => (
             <React.Fragment key={rowIndex}>
               <tr>
@@ -619,6 +630,17 @@ export function SetEditor(props: SetEditorProps) {
               </tr>
             </React.Fragment>
           ))}
+          {/* If no keys yet */}
+          {serializableSet.cycles.length === 0 && <tr>
+            <td colSpan={serializableSet.archetypes.length + 1} className="px-2">
+              <button
+                onClick={() => addCycle(serializableSet.cycles.length)}
+                className="px-2 py-1 border rounded active:bg-green-50 active:text-green-400 hover:text-green-600 hover:bg-green-100 p-0.5 text-xs flex items-center gap-1 transition-colors"
+              >
+                <FontAwesomeIcon icon={faPlus} className='text-sm' /> Add Cycle
+              </button>
+            </td>
+          </tr>}
 
           {/* Status Legend */}
           <tr>

@@ -1,5 +1,4 @@
 import { BlueprintValidator, CriteriaFailureReason, SerializableBlueprintWithSource } from './blueprint-validator';
-import { Card } from '../card';
 import { SerializableArchetype, SerializableCardReference, SerializableCycle, SerializableSet } from './serializable-set';
 import { SerializableBlueprint } from './serializable-blueprint';
 import { capitalize } from '../../typography';
@@ -14,6 +13,7 @@ export type SetLocation = { type: 'set' }
 export class Set {
   private readonly blueprintValidator = new BlueprintValidator();
 
+  private id: string;
   private name: string;
   private blueprint?: SerializableBlueprint;
   private metadataKeys: string[];
@@ -21,6 +21,7 @@ export class Set {
   private archetypes: SerializableArchetype[];
 
   constructor(serializableSet: SerializableSet) {
+    this.id = serializableSet.id;
     this.name = serializableSet.name;
     this.blueprint = serializableSet.blueprint;
     this.metadataKeys = serializableSet.metadataKeys;
@@ -28,8 +29,9 @@ export class Set {
     this.archetypes = serializableSet.archetypes;
   }
 
-  static empty(name: string): Set {
+  static new(name: string): Set {
     return new Set({
+      id: crypto.randomUUID(),
       name,
       metadataKeys: [],
       cycles: [],
@@ -37,8 +39,9 @@ export class Set {
     });
   }
 
-  serialize(): SerializableSet {
+  toJson(): SerializableSet {
     return structuredClone({
+      id: this.id,
       name: this.name,
       blueprint: this.blueprint,
       metadataKeys: this.metadataKeys,
@@ -96,6 +99,14 @@ export class Set {
   }
 
   // Set
+  getId(): string {
+    return this.id;
+  }
+
+  getName(): string {
+    return this.name;
+  }
+
   updateName(name: string) {
     this.name = name;
   }
@@ -461,5 +472,12 @@ export class Set {
       name = `"${capitalize(archetype.name)}"."${capitalize(location.cycleKey)}"`;
     }
     return (name.length > 0 ? `${name} ` : '') + `${capitalize(location.type)} Blueprint`;
+  }
+
+  getCardCount(): number {
+    return this.archetypes
+      .flatMap(archetype => archetype.cycles)
+      .filter(slot => slot && slot !== 'skip' && slot.cardRef)
+      .length;
   }
 }

@@ -13,8 +13,8 @@ export function CardRender({ serializedCard, hoverControls = false, quality, sca
 }) {
   const card = new _Card(serializedCard);
 
-  const hoverStyle = "flex text-3xl hover:text-6xl items-center justify-center absolute inset-0 cursor-pointer z-5 transition-all duration-150 group-hover:bg-black/20 hover:bg-black/40 text-white/0 group-hover:text-white";
-  const hoverAreaSizes: [string, string] = card.id
+  const hoverStyle = "flex rounded-2xl text-3xl hover:text-6xl items-center justify-center absolute inset-0 cursor-pointer z-5 transition-all duration-150 group-hover:bg-black/20 hover:bg-black/40 text-white/0 group-hover:text-white";
+  const hoverAreaSizes: [string, string] = card.isToken
     ? (
       card.rules.length === 0
         ? ['bottom-[20%]', 'top-[80%]']

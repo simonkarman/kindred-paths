@@ -6,9 +6,9 @@ import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { useSearch } from '@/utils/use-search';
 import ColorCodedSearchInput from '@/components/color-coded-search-input';
 
-export default function SearchBar(props: { scope: string }) {
+export default function SearchBar(props: { scope: string, initial?: string }) {
   const searchInputRef = useRef<HTMLDivElement>(null);
-  const [searchText, setSearchText] = useSearch(props.scope);
+  const [searchText, setSearchText] = useSearch(props.scope, props.initial);
   const [open, setOpen] = useState(searchText.length > 0);
 
   useEffect(() => {

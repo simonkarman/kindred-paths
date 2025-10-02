@@ -82,9 +82,9 @@ export const SetEditorCell: React.FC<SetEditorCellProps> = ({
   onLinkCard,
   onEditCard,
   onUnlinkCard,
-  hasBlueprint,
-  onEditBlueprint,
-  onRemoveBlueprint,
+  // hasBlueprint,
+  // onEditBlueprint,
+  // onRemoveBlueprint,
   cardPreviewUrl,
 }) => {
   const [showCardPreview, setShowCardPreview] = useState(false);
@@ -92,20 +92,21 @@ export const SetEditorCell: React.FC<SetEditorCellProps> = ({
   const config = getStatusConfig(status);
 
   const renderActionButtons = () => {
-    const blueprintActions = <>
-      {hasBlueprint && <IconButton
-        onClick={onRemoveBlueprint}
-        icon={faCancel}
-        title="Remove blueprint"
-        variant="default"
-      />}
-      <IconButton
-        onClick={onEditBlueprint}
-        icon={faEdit}
-        title="Edit blueprint"
-        variant="primary"
-      />
-    </>
+    const blueprintActions = null;
+    // const blueprintActions = <>
+    //   {hasBlueprint && <IconButton
+    //     onClick={onRemoveBlueprint}
+    //     icon={faCancel}
+    //     title="Remove blueprint"
+    //     variant="default"
+    //   />}
+    //   <IconButton
+    //     onClick={onEditBlueprint}
+    //     icon={faEdit}
+    //     title="Edit blueprint"
+    //     variant="primary"
+    //   />
+    // </>
     switch (status) {
       case 'missing':
         return (

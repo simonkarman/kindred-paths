@@ -37,7 +37,11 @@ export default async function RootLayout({
               <h1 className="font-bold text-lg tracking-wide">Kindred Paths</h1>
             </Link>
             <p className="text-zinc-600 text-sm italic">
-              A tool for managing a collection of custom Magic the Gathering cards.
+              A tool for managing a collection or
+              <Link href={"/set"}>
+                <span className="text-blue-600 hover:text-blue-800">{' '}sets{' '}</span>
+              </Link>
+              of custom Magic the Gathering cards.
             </p>
           </div>
         </header>

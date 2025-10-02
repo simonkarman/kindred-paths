@@ -1,248 +1,73 @@
-import { getCards } from '@/utils/server';
-import { SerializableSet } from 'kindred-paths';
-import { SetEditor } from '@/components/set-editor/set-editor';
+import { getSets } from '@/utils/server';
+import Link from 'next/link';
+import CreateNewSetForm from '@/app/set/create-new-set-form';
 
 export default async function Page() {
-  const set: SerializableSet = {
-    "name": "MFY",
-    "blueprint": {
-      "subtypes": [
-        {
-          "key": "string-array/allow",
-          "value": [
-            "rabbit",
-            "bird",
-            "cat",
-            "dog",
-            "pig",
-            "human",
-            "advisor",
-            "druid",
-            "scout"
-          ]
-        }
-      ]
-    },
-    "metadataKeys": [
-      "mainCharacter",
-      "mainToken",
-      "creatureTypeA",
-      "creatureTypeB",
-      "mechanicA",
-      "mechanicB",
-      "mechanicC",
-      "mechanicD"
-    ],
-    "cycles": [
-      {
-        "key": "mythic",
-        "blueprint": {
-          "name": [
-            {
-              "key": "string/contain-one-of",
-              "value": [
-                "$[mainCharacter]"
-              ]
-            }
-          ],
-          "rarity": [
-            {
-              "key": "string/contain-one-of",
-              "value": [
-                "mythic"
-              ]
-            }
-          ],
-          "supertype": [
-            {
-              "key": "string/contain-one-of",
-              "value": [
-                "legendary"
-              ]
-            }
-          ],
-          "types": [
-            {
-              "key": "string-array/includes-all-of",
-              "value": [
-                "creature"
-              ]
-            }
-          ],
-          "subtypes": [
-            {
-              "key": "string-array/includes-all-of",
-              "value": [
-                "rabbit"
-              ]
-            }
-          ],
-          "rules": [
-            {
-              "key": "string/contain-all-of",
-              "value": [
-                "$[mechanicB]",
-                "$[mechanicC]"
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "key": "friend",
-        "blueprint": {}
-      },
-      {
-        "key": "second friend"
-      },
-      {
-        "key": "book_1"
-      },
-      {
-        "key": "book_2"
-      },
-      {
-        "key": "book_3"
-      },
-      {
-        "key": "removal"
-      },
-      {
-        "key": "mana rock"
-      },
-      {
-        "key": "land"
-      }
-    ],
-    "archetypes": [
-      {
-        "name": "White",
-        "blueprint": {
-          "color": [
-            {
-              "key": "string-array/includes-all-of",
-              "value": [
-                "white"
-              ]
-            },
-            {
-              "key": "string-array/length",
-              "value": {
-                "key": "number/at-most",
-                "value": 1
-              }
-            }
-          ]
-        },
-        "metadata": {
-          "mainCharacter": "Miffy, The Kind",
-          "mainToken": "1/1 white Rabbit creature token",
-          "mechanicA": "lifelink",
-          "mechanicB": "power 2 or less",
-          "mechanicC": "exile",
-          "mechanicD": "protection",
-          "creatureTypeA": "Cat",
-          "creatureTypeB": "Bird"
-        },
-        "cycles": {
-          "mythic": {
-            "cardRef": {
-              "cardId": "kpa-104-vevictus-drawn-to-gold"
-            }
-          }
-        }
-      },
-      {
-        "name": "Green",
-        "blueprint": {
-          "color": [
-            {
-              "key": "string-array/includes-all-of",
-              "value": [
-                "green"
-              ]
-            },
-            {
-              "key": "string-array/length",
-              "value": {
-                "key": "number/at-most",
-                "value": 1
-              }
-            }
-          ]
-        },
-        "metadata": {
-          "mainToken": "4/4 green Rabbit creature token",
-          "mainCharacter": "Miffy, The Brave",
-          "mechanicA": "+1/+1 counter",
-          "mechanicB": "power 4 or greater",
-          "mechanicC": "ward",
-          "mechanicD": "trample",
-          "creatureTypeA": "Dog",
-          "creatureTypeB": "Bear"
-        },
-        "cycles": {
-          "mythic": {
-            "cardRef": {
-              "cardId": "mfy-426-miffy-the-brave"
-            }
-          }
-        }
-      },
-      {
-        "name": "Green/White",
-        "blueprint": {
-          "color": [
-            {
-              "key": "string-array/includes-all-of",
-              "value": [
-                "white",
-                "green"
-              ]
-            },
-            {
-              "key": "string-array/length",
-              "value": {
-                "key": "number/one-of",
-                "value": [
-                  0,
-                  2
-                ]
-              }
-            }
-          ]
-        },
-        "metadata": {
-          "mainToken": "2/2 green and white Rabbit creature token",
-          "mainCharacter": "Miffy, The Curious",
-          "mechanicA": "+1/+1 counter",
-          "mechanicB": "populate",
-          "mechanicC": "convoke",
-          "mechanicD": "landfall",
-          "creatureTypeA": "Rabbit",
-          "creatureTypeB": "Human"
-        },
-        "cycles": {
-          "mythic": {
-            "cardRef": {
-              "cardId": "mfy-451-miffy-the-curious"
-            }
-          },
-          "friend": {
-            "cardRef": {
-              "cardId": "mfy-451-miffy-the-curious"
-            }
-          }
-        }
-      }
-    ]
-  };
-  const cards = await getCards();
+  const sets = await getSets();
+  return (
+    <div className="py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Header Section */}
+        <div className="mb-8">
+          <h2 className="text-4xl font-bold text-slate-900 mb-2">
+            All Sets
+          </h2>
+          <p className="text-slate-600">
+            Browse and manage your sets
+          </p>
+        </div>
 
-  return (<>
-    <SetEditor cards={cards} set={set} />
-    <pre className='hidden mt-4 p-2 bg-gray-100 text-xs rounded border border-gray-300 overflow-x-auto'>
-      {JSON.stringify(set, null, 2)}
-    </pre>
-  </>);
+        {/* Sets Grid */}
+        {sets.length > 0 ? (
+          <div className="grid gap-4 mb-4">
+            {sets.sort((a, b) => a.name.localeCompare(b.name)).map(set => (
+              <Link
+                key={set.name}
+                href={`/set/${set.name}`}
+                className="group block bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 p-4 border border-slate-200 hover:border-blue-300"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                      {set.name}
+                    </h3>
+                    <p className="text-sm text-slate-500 mt-1">
+                      {set.cardCount} {set.cardCount === 1 ? 'card' : 'cards'}
+                    </p>
+                  </div>
+                  <svg
+                    className="w-5 h-5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-sm p-8 mb-8 border border-slate-200 text-center">
+            <p className="text-slate-500">
+              No sets yet. Create your first set below!
+            </p>
+          </div>
+        )}
+
+        {/* Create New Set Section */}
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">
+            Create New Set
+          </h3>
+          <CreateNewSetForm />
+        </div>
+      </div>
+    </div>
+  );
 }

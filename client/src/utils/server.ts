@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Card, SerializedCard, SerializedCardSchema } from 'kindred-paths';
+import { Card, SerializableSet, SerializableSetSchema, SerializedCard, SerializedCardSchema } from 'kindred-paths';
 
 export const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:4101';
 
@@ -209,4 +209,71 @@ export async function getCardSampleGeneratorById(generatorId: string): Promise<{
     throw new Error('Failed to fetch card generator');
   }
   return await response.json();
+}
+
+export async function getSets(): Promise<{ name: string; cardCount: number; }[]> {
+  const response = await fetch(`${serverUrl}/set`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch sets');
+  }
+  const data = await response.json();
+  return z.array(z.object({
+    name: z.string(),
+    cardCount: z.number(),
+  })).parse(data);
+}
+
+export async function getSet(name: string): Promise<SerializableSet | null> {
+  const response = await fetch(`${serverUrl}/set/${name}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error('Failed to fetch set');
+  }
+  const jsonData = await response.json();
+  const parsed = SerializableSetSchema.safeParse(jsonData);
+  if (!parsed.success) {
+    console.error('Failed to parse set:', parsed.error);
+    return null;
+  }
+  return parsed.data;
+}
+
+export async function createSet(name: string): Promise<{ name: string }> {
+  const response = await fetch(`${serverUrl}/set`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create set');
+  }
+  const data = await response.json();
+  return z.object({ name: z.string() }).parse(data);
+}
+
+export async function putSet(set: SerializableSet): Promise<void> {
+  const response = await fetch(`${serverUrl}/set/${set.name}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(set),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update set');
+  }
 }

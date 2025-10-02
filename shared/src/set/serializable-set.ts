@@ -27,6 +27,7 @@ const SerializableCycleSchema = z.object({
 export type SerializableCycle = z.infer<typeof SerializableCycleSchema>;
 
 export const SerializableSetSchema = z.object({
+  id: z.string().uuid(),
   name: z.string(),
   blueprint: SerializableBlueprintSchema.optional(),
   metadataKeys: z.array(z.string()),
