@@ -72,10 +72,11 @@ export default function SearchBar(props: { scope: string, initial?: string }) {
         onBlur={handleBlur}
         isOpen={isOpen}
         placeholder="Search... (e.g., set:miffy type:artifact home)"
+        className={isOpen ? 'bg-white' : ''}
       />
       <button
         onClick={() => setOpen(true)}
-        className={`${isOpen ? 'hidden' : 'inline-block'} text-sm px-3 py-1 border border-gray-300 rounded`}
+        className={`${isOpen ? 'hidden' : 'inline-block'} text-sm px-3 py-1 border border-gray-300 rounded-lg`}
       >
         <FontAwesomeIcon icon={faSearch} />
       </button>

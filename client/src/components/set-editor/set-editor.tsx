@@ -11,7 +11,8 @@ import {
   faPenToSquare,
   faPlus,
   faTimes,
-  faTrashCan, faWarning,
+  faTrashCan,
+  faWarning,
 } from '@fortawesome/free-solid-svg-icons';
 import { SetLocation, SerializableBlueprintWithSource, SerializableSet, SerializedCard, Set, Card } from 'kindred-paths';
 import { serverUrl, putSet } from '@/utils/server';
@@ -23,14 +24,16 @@ import { CardEditor } from '@/components/editor/card-editor';
 import { CardSelector } from '@/components/set-editor/card-selector';
 
 function Modal(props: PropsWithChildren<{ onClose: () => void }>) {
-  return <div
-    className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center p-10 overflow-auto"
-    onClick={(e) => {
-      if (e.target === e.currentTarget) { props.onClose(); }
-    }}
-  >
-    {props.children}
-  </div>
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center p-4 sm:p-10 overflow-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) { props.onClose(); }
+      }}
+    >
+      {props.children}
+    </div>
+  );
 }
 
 export interface SetEditorProps {
@@ -110,8 +113,8 @@ export function SetEditor(props: SetEditorProps) {
   };
 
   const reorderMetadataKeys = (fromIndex: number, toIndex: number) => {
-   set.reorderMetadataKeys(fromIndex, toIndex);
-   saveChanges();
+    set.reorderMetadataKeys(fromIndex, toIndex);
+    saveChanges();
   };
 
   const addMetadataKey = (atIndex: number) => {
@@ -246,221 +249,246 @@ export function SetEditor(props: SetEditorProps) {
   }
 
   return (
-    <div>
-      {cardEditorSettings && <Modal
-        onClose={() => setCardEditorSettings(undefined)}
-      >
-        <div className="max-w-[1200px] rounded-3xl shadow-lg">
-          <CardEditor
-            start={cardEditorSettings.card}
-            validate={{
-              blueprints: cardEditorSettings.blueprints,
-              metadata: set.getArchetype(cardEditorSettings.archetypeIndex).metadata,
-            }}
-            onSave={(updatedCard) => {
-              const cardIndex = cards.findIndex(c => c.id === updatedCard.id);
-              let newCards;
-              if (cardIndex === -1) {
-                newCards = [...cards, updatedCard];
-              } else {
-                newCards = [
-                  ...cards.slice(0, cardIndex),
-                  updatedCard,
-                  ...cards.slice(cardIndex + 1),
-                ];
-              }
-              setAllCards(newCards);
-              set.linkCardToSlot(cardEditorSettings.archetypeIndex, cardEditorSettings.cycleKey, { cardId: updatedCard.id });
-              saveChanges({ newCards });
-              setCardEditorSettings(undefined);
-            }}
-            onCancel={() => setCardEditorSettings(undefined)}
-          />
-        </div>
-      </Modal>}
-      {blueprintEditorLocation && <Modal
-        onClose={() => setBlueprintEditorLocation(undefined)}
-      >
-        <div className="max-w-[900px] rounded-3xl shadow-lg">
-          <BlueprintEditor
-            title={set.getLocationName(blueprintEditorLocation)}
-            metadataKeys={set.getMetadataKeys()}
-            blueprint={set.getBlueprintAt(blueprintEditorLocation) ?? {}}
-            onSave={(blueprint) => {
-              set.setBlueprintAt(blueprintEditorLocation, blueprint);
-              saveChanges();
-              setBlueprintEditorLocation(undefined);
-            }}
-            onCancel={() => setBlueprintEditorLocation(undefined)}
-          />
-        </div>
-      </Modal>}
-      {cardSelectorSettings && <Modal
-        onClose={() => setCardSelectorSettings(undefined)}
-      >
-        <div className="bg-white p-4 w-[900px] rounded-3xl shadow-lg">
-          <CardSelector
-            search={{
-              scope: `set/${serializableSet.name}/archetype/${cardSelectorSettings.archetypeIndex}/cycle/${cardSelectorSettings.cycleKey}/selector`,
-              initial: `set:${serializableSet.name}`,
-            }}
-            cards={cards}
-            validation={{
-              blueprints: cardSelectorSettings.blueprints,
-              metadata: set.getArchetype(cardSelectorSettings.archetypeIndex).metadata,
-            }}
-            onSelect={(card) => {
-              set.linkCardToSlot(cardSelectorSettings.archetypeIndex, cardSelectorSettings.cycleKey, { cardId: card.id });
-              saveChanges();
-              setCardSelectorSettings(undefined);
-            }}
-            onCancel={() => setCardSelectorSettings(undefined)}
-          />
-        </div>
-      </Modal>}
-      {/* Validation Messages */}
-      {validationMessages.length > 0 && <div className="text-amber-700 text-sm px-4 py-2 border rounded-lg bg-amber-50 mb-4">
-        <h3 className="font-bold underline">Warnings!</h3>
-        <ul className="p-0.5">
-          {validationMessages.map(validationMessage => (<li key={validationMessage} className="p-1">
-            <FontAwesomeIcon icon={faWarning} className="pr-1" /> {validationMessage}
-          </li>))}
-        </ul>
-      </div>}
-      <h2>
-        <input
-          type="text"
-          value={serializableSet.name}
-          onChange={(e) => updateSetName(e.target.value)}
-          className="text-xl font-bold border-none bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
-          placeholder="..."
-        />
-        <span className="font-medium text-sm inline-flex gap-2">
-          {serializableSet.blueprint && <IconButton
-            onClick={() => onRemoveSetBlueprint()}
-            icon={faCancel}
-            title="Clear Blueprint"
-            variant="default"
-          />}
-          <IconButton
-            onClick={() => onEditSetBlueprint()}
-            icon={faPenToSquare}
-            title="Add/Edit Blueprint"
-            variant="primary"
-          />
-        </span>
-      </h2>
-      <p className="text-xs text-gray-300 px-1 mb-2">Id: {set.getId()}</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1600px] mx-auto">
+        {/* Modals */}
+        {cardEditorSettings && (
+          <Modal onClose={() => setCardEditorSettings(undefined)}>
+            <div className="w-full max-w-[1200px] rounded-xl shadow-2xl overflow-hidden">
+              <CardEditor
+                start={cardEditorSettings.card}
+                validate={{
+                  blueprints: cardEditorSettings.blueprints,
+                  metadata: set.getArchetype(cardEditorSettings.archetypeIndex).metadata,
+                }}
+                onSave={(updatedCard) => {
+                  const cardIndex = cards.findIndex(c => c.id === updatedCard.id);
+                  let newCards;
+                  if (cardIndex === -1) {
+                    newCards = [...cards, updatedCard];
+                  } else {
+                    newCards = [
+                      ...cards.slice(0, cardIndex),
+                      updatedCard,
+                      ...cards.slice(cardIndex + 1),
+                    ];
+                  }
+                  setAllCards(newCards);
+                  set.linkCardToSlot(cardEditorSettings.archetypeIndex, cardEditorSettings.cycleKey, { cardId: updatedCard.id });
+                  saveChanges({ newCards });
+                  setCardEditorSettings(undefined);
+                }}
+                onCancel={() => setCardEditorSettings(undefined)}
+              />
+            </div>
+          </Modal>
+        )}
 
-      {/* Main Table */}
-      <div className="overflow-x-scroll overflow-y-visible pb-[260px] border-b border-gray-200">
-        <table className="border-collapse text-xs">
-          <thead>
-          <tr>
-            <th className="sticky text-left p-2 font-medium min-w-[250px]">Archetypes</th>
-            {serializableSet.archetypes.map((archetype, archetypeIndex) => {
-              return <th key={archetypeIndex} className="group border border-zinc-300 p-1 bg-zinc-50 text-center font-medium">
-                <div className="flex gap-1 px-1">
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <IconButton
-                      onClick={() => deleteArchetype(archetypeIndex)}
-                      icon={faTrashCan}
-                      title="Delete Archetype"
-                      variant="danger"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    value={archetype.name}
-                    onChange={(e) => updateArchetypeName(archetypeIndex, e.target.value)}
-                    className="w-full border-none text-xs text-center bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
-                    placeholder="..."
-                  />
-                  {archetype.blueprint && <IconButton
-                    onClick={() => onRemoveArchetypeBlueprint(archetypeIndex)}
-                    icon={faCancel}
-                    title="Clear Blueprint"
-                    variant="default"
-                  />}
-                  <IconButton
-                    onClick={() => onEditArchetypeBlueprint(archetypeIndex)}
-                    icon={faPenToSquare}
-                    title="Add/Edit Blueprint"
-                    variant="primary"
-                  />
-                </div>
-              </th>;
-            })}
-            <th className="border border-zinc-300 p-1 bg-zinc-50 text-center font-medium">
-              <button
-                onClick={() => addArchetype()}
-                className="w-full border rounded active:bg-green-50 active:text-green-400 hover:text-green-600 hover:bg-green-100 p-0.5 text-xs flex items-center gap-1 transition-colors"
-              >
-                <FontAwesomeIcon icon={faPlus} className='text-sm mx-auto' />
-              </button>
-            </th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr>
-            <th colSpan={serializableSet.archetypes.length + 1} className="p-2 pt-2 text-left font-medium">
-              Metadata
-            </th>
-          </tr>
-          {/* Metadata Rows */}
-          {serializableSet.metadataKeys.map((metadataKey, rowIndex) => (
-            <React.Fragment key={rowIndex}>
+        {blueprintEditorLocation && (
+          <Modal onClose={() => setBlueprintEditorLocation(undefined)}>
+            <div className="w-full max-w-[900px] rounded-xl shadow-2xl overflow-hidden">
+              <BlueprintEditor
+                title={set.getLocationName(blueprintEditorLocation)}
+                metadataKeys={set.getMetadataKeys()}
+                blueprint={set.getBlueprintAt(blueprintEditorLocation) ?? {}}
+                onSave={(blueprint) => {
+                  set.setBlueprintAt(blueprintEditorLocation, blueprint);
+                  saveChanges();
+                  setBlueprintEditorLocation(undefined);
+                }}
+                onCancel={() => setBlueprintEditorLocation(undefined)}
+              />
+            </div>
+          </Modal>
+        )}
+
+        {cardSelectorSettings && (
+          <Modal onClose={() => setCardSelectorSettings(undefined)}>
+            <div className="bg-white w-full max-w-[900px] rounded-xl shadow-2xl overflow-hidden">
+              <CardSelector
+                search={{
+                  scope: `set/${serializableSet.name}/archetype/${cardSelectorSettings.archetypeIndex}/cycle/${cardSelectorSettings.cycleKey}/selector`,
+                  initial: `set:${serializableSet.name}`,
+                }}
+                cards={cards}
+                validation={{
+                  blueprints: cardSelectorSettings.blueprints,
+                  metadata: set.getArchetype(cardSelectorSettings.archetypeIndex).metadata,
+                }}
+                onSelect={(card) => {
+                  set.linkCardToSlot(cardSelectorSettings.archetypeIndex, cardSelectorSettings.cycleKey, { cardId: card.id });
+                  saveChanges();
+                  setCardSelectorSettings(undefined);
+                }}
+                onCancel={() => setCardSelectorSettings(undefined)}
+              />
+            </div>
+          </Modal>
+        )}
+
+        {/* Header Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
+          <div className="flex items-start gap-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                value={serializableSet.name}
+                onChange={(e) => updateSetName(e.target.value)}
+                className="text-2xl font-bold border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 w-full"
+                placeholder="Enter set name..."
+              />
+              <p className="text-xs text-slate-400 mt-1 px-2">ID: {set.getId()}</p>
+            </div>
+            <div className="flex gap-2 pt-8">
+              {serializableSet.blueprint && (
+                <IconButton
+                  onClick={() => onRemoveSetBlueprint()}
+                  icon={faCancel}
+                  title="Clear Blueprint"
+                  variant="default"
+                />
+              )}
+              <IconButton
+                onClick={() => onEditSetBlueprint()}
+                icon={faPenToSquare}
+                title="Add/Edit Blueprint"
+                variant="primary"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Validation Messages */}
+        {validationMessages.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <div className="flex gap-3">
+              <FontAwesomeIcon icon={faWarning} className="text-amber-600 text-lg mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-900 mb-2">Validation Warnings</h3>
+                <ul className="space-y-1">
+                  {validationMessages.map(validationMessage => (
+                    <li key={validationMessage} className="text-sm text-amber-800">
+                      {validationMessage}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Table Container */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-xs">
+              <thead>
               <tr>
-                <td
-                  className={`group px-2 border border-t-zinc-300 border-x-zinc-300 italic bg-zinc-50 text-zinc-600 ${dragOverIndex?.type === 'metadataKeys' && dragOverIndex.index === rowIndex && draggedItem?.index !== rowIndex
-                    ? `${((draggedItem?.index ?? 0) > rowIndex) ? 'border-t-2 border-t-zinc-800 border-b-zinc-300' : 'border-b-2 border-t-zinc-300 border-b-zinc-800'}`
-                    : 'border-y-zinc-300'}`}
-                  onDrop={(e: React.DragEvent) => {
-                    e.preventDefault();
-                    if (draggedItem && draggedItem.type === 'metadataKeys' && draggedItem.index !== rowIndex) {
-                      reorderMetadataKeys(draggedItem.index, rowIndex);
-                    }
-                    setDraggedItem(null);
-                    setDragOverIndex(null);
-                  }}
-                  onDragOver={(e: React.DragEvent) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                  }}
-                  onDragEnter={() => setDragOverIndex({type: 'metadataKeys', index: rowIndex})}
-                  onDragLeave={(e) => {
-                    if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node)) {
-                      setDragOverIndex(null);
-                    }
-                  }}
-                >
-                  <div
-                    className="flex items-center gap-1"
+                <th className="sticky left-0 bg-slate-100 text-left p-3 font-semibold text-slate-900 min-w-[250px] border-b-2 border-slate-300">
+                  Archetypes
+                </th>
+                {serializableSet.archetypes.map((archetype, archetypeIndex) => (
+                  <th key={archetypeIndex} className="group border-b-2 border-slate-300 border-l border-slate-200 p-2 bg-slate-50 text-center font-medium">
+                    <div className="flex gap-1 px-1 items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <IconButton
+                          onClick={() => deleteArchetype(archetypeIndex)}
+                          icon={faTrashCan}
+                          title="Delete Archetype"
+                          variant="danger"
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        value={archetype.name}
+                        onChange={(e) => updateArchetypeName(archetypeIndex, e.target.value)}
+                        className="w-full border-none text-xs text-center bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                        placeholder="Archetype name..."
+                      />
+                      {archetype.blueprint && (
+                        <IconButton
+                          onClick={() => onRemoveArchetypeBlueprint(archetypeIndex)}
+                          icon={faCancel}
+                          title="Clear Blueprint"
+                          variant="default"
+                        />
+                      )}
+                      <IconButton
+                        onClick={() => onEditArchetypeBlueprint(archetypeIndex)}
+                        icon={faPenToSquare}
+                        title="Add/Edit Blueprint"
+                        variant="primary"
+                      />
+                    </div>
+                  </th>
+                ))}
+                <th className="border-b-2 border-slate-300 border-l border-slate-200 p-2 bg-slate-50 text-center font-medium">
+                  <button
+                    onClick={() => addArchetype()}
+                    className="w-full px-3 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400 active:bg-green-200 transition-colors flex items-center justify-center gap-1"
                   >
-                    <div className="hidden rounded-lg border border-green-200 bg-green-50 starting:opacity-0 opacity-80 transition-opacity absolute -translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
-                      <IconButton
-                        onClick={() => addMetadataKey(rowIndex)}
-                        icon={faPlus}
-                        title="Add Metadata Key"
-                        variant="success"
+                    <FontAwesomeIcon icon={faPlus} className="text-sm" />
+                  </button>
+                </th>
+              </tr>
+              </thead>
+              <tbody>
+              {/* Metadata Section Header */}
+              <tr>
+                <th colSpan={serializableSet.archetypes.length + 2} className="sticky left-0 bg-slate-100 p-3 pt-4 text-left font-semibold text-slate-900 border-b border-slate-200">
+                  Metadata
+                </th>
+              </tr>
+
+              {/* Metadata Rows */}
+              {serializableSet.metadataKeys.map((metadataKey, rowIndex) => (
+                <tr key={rowIndex}>
+                  <td
+                    className={`group sticky left-0 px-3 py-2 border border-slate-200 bg-slate-50 text-slate-700 ${
+                      dragOverIndex?.type === 'metadataKeys' && dragOverIndex.index === rowIndex && draggedItem?.index !== rowIndex
+                        ? `${((draggedItem?.index ?? 0) > rowIndex) ? 'border-t-2 border-t-blue-500' : 'border-b-2 border-b-blue-500'}`
+                        : ''
+                    }`}
+                    onDrop={(e: React.DragEvent) => {
+                      e.preventDefault();
+                      if (draggedItem && draggedItem.type === 'metadataKeys' && draggedItem.index !== rowIndex) {
+                        reorderMetadataKeys(draggedItem.index, rowIndex);
+                      }
+                      setDraggedItem(null);
+                      setDragOverIndex(null);
+                    }}
+                    onDragOver={(e: React.DragEvent) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                    }}
+                    onDragEnter={() => setDragOverIndex({type: 'metadataKeys', index: rowIndex})}
+                    onDragLeave={(e) => {
+                      if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node)) {
+                        setDragOverIndex(null);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="hidden group-hover:flex absolute left-[-60px] flex-col gap-1">
+                        <IconButton
+                          onClick={() => addMetadataKey(rowIndex)}
+                          icon={faPlus}
+                          title="Add Metadata Key"
+                          variant="success"
+                        />
+                        <IconButton
+                          onClick={() => addMetadataKey(rowIndex + 1)}
+                          icon={faPlus}
+                          title="Add Metadata Key"
+                          variant="success"
+                        />
+                      </div>
+                      <DragHandle
+                        type="metadataKeys"
+                        index={rowIndex}
+                        draggedItem={draggedItem}
+                        setDraggedItem={setDraggedItem}
                       />
-                    </div>
-                    <div className="hidden rounded-lg border border-green-200 bg-green-50 starting:opacity-0 opacity-80 transition-opacity absolute translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
-                      <IconButton
-                        onClick={() => addMetadataKey(rowIndex + 1)}
-                        icon={faPlus}
-                        title="Add Metadata Key"
-                        variant="success"
-                      />
-                    </div>
-                    <DragHandle
-                      type="metadataKeys"
-                      index={rowIndex}
-                      draggedItem={draggedItem}
-                      setDraggedItem={setDraggedItem}
-                    />
-                    <div className="flex w-full gap-2 pl-1">
-                      <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                         <IconButton
                           onClick={() => deleteMetadataKey(rowIndex)}
                           icon={faTrashCan}
@@ -472,99 +500,99 @@ export function SetEditor(props: SetEditorProps) {
                         type="text"
                         value={metadataKey}
                         onChange={(e) => updateMetadataKey(rowIndex, e.target.value)}
-                        className="w-full border-none text-xs text-left bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
-                        placeholder="..."
+                        className="flex-1 border-none text-xs bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                        placeholder="Metadata key..."
                       />
                     </div>
-                  </div>
-                </td>
-                {serializableSet.archetypes.map((archetype, archetypeIndex) => {
-                  const hasValue = metadataKey in archetype.metadata && archetype.metadata[metadataKey] !== undefined;
-                  return (
-                    <td key={archetypeIndex} className={`border border-zinc-300 p-0.5 ${hasValue ? 'bg-white' : 'bg-yellow-100'}`}>
-                      <input
-                        type="text"
-                        value={archetype.metadata[metadataKey] || ''}
-                        onChange={(e) => updateMetadataValue(archetypeIndex, metadataKey, e.target.value)}
-                        className="w-full border-none text-xs bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
-                        placeholder="..."
-                      />
-                    </td>
-                  );
-                })}
-              </tr>
-            </React.Fragment>
-          ))}
-          {/* If no keys yet */}
-          {serializableSet.metadataKeys.length === 0 && <tr>
-            <td colSpan={serializableSet.archetypes.length + 1} className="px-2">
-              <button
-                onClick={() => addMetadataKey(serializableSet.metadataKeys.length)}
-                className="px-2 py-1 border rounded active:bg-green-50 active:text-green-400 hover:text-green-600 hover:bg-green-100 p-0.5 text-xs flex items-center gap-1 transition-colors"
-              >
-                <FontAwesomeIcon icon={faPlus} className='text-sm' /> Add Metadata Key
-              </button>
-            </td>
-          </tr>}
-          <tr>
-            <th colSpan={serializableSet.archetypes.length + 1} className="p-2 pt-4 text-left font-medium">
-              Cycles
-            </th>
-          </tr>
-          {/* Cycle Rows */}
-          {serializableSet.cycles.map(({ key: cycleKey, blueprint }, rowIndex) => (
-            <React.Fragment key={rowIndex}>
+                  </td>
+                  {serializableSet.archetypes.map((archetype, archetypeIndex) => {
+                    const hasValue = metadataKey in archetype.metadata && archetype.metadata[metadataKey] !== undefined;
+                    return (
+                      <td key={archetypeIndex} className={`border border-slate-200 p-1 ${hasValue ? 'bg-white' : 'bg-yellow-50'}`}>
+                        <input
+                          type="text"
+                          value={archetype.metadata[metadataKey] || ''}
+                          onChange={(e) => updateMetadataValue(archetypeIndex, metadataKey, e.target.value)}
+                          className="w-full border-none text-xs bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                          placeholder="Value..."
+                        />
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+
+              {/* Add Metadata Key Button */}
+              {serializableSet.metadataKeys.length === 0 && (
+                <tr>
+                  <td colSpan={serializableSet.archetypes.length + 2} className="p-3">
+                    <button
+                      onClick={() => addMetadataKey(serializableSet.metadataKeys.length)}
+                      className="px-4 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400 active:bg-green-200 transition-colors text-xs flex items-center gap-2"
+                    >
+                      <FontAwesomeIcon icon={faPlus} /> Add Metadata Key
+                    </button>
+                  </td>
+                </tr>
+              )}
+
+              {/* Cycles Section Header */}
               <tr>
-                <td
-                  className={`group px-2 border border-t-zinc-300 border-x-zinc-300 bg-zinc-50 text-zinc-800 ${dragOverIndex?.type === 'cycleKeys' && dragOverIndex.index === rowIndex && draggedItem?.index !== rowIndex
-                    ? `${((draggedItem?.index ?? 0) > rowIndex) ? 'border-t-2 border-t-zinc-800 border-b-zinc-300' : 'border-b-2 border-t-zinc-300 border-b-zinc-800'}`
-                    : 'border-y-zinc-300'}`}
-                  onDrop={(e: React.DragEvent) => {
-                    e.preventDefault();
-                    if (draggedItem && draggedItem.type === 'cycleKeys' && draggedItem.index !== rowIndex) {
-                      reorderCycles(draggedItem.index, rowIndex);
-                    }
-                    setDraggedItem(null);
-                    setDragOverIndex(null);
-                  }}
-                  onDragOver={(e: React.DragEvent) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                  }}
-                  onDragEnter={() => setDragOverIndex({type: 'cycleKeys', index: rowIndex})}
-                  onDragLeave={(e) => {
-                    if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node)) {
+                <th colSpan={serializableSet.archetypes.length + 2} className="sticky left-0 bg-slate-100 p-3 pt-4 text-left font-semibold text-slate-900 border-b border-slate-200">
+                  Cycles
+                </th>
+              </tr>
+
+              {/* Cycle Rows */}
+              {serializableSet.cycles.map(({ key: cycleKey, blueprint }, rowIndex) => (
+                <tr key={rowIndex}>
+                  <td
+                    className={`group sticky left-0 px-3 py-2 border border-slate-200 bg-slate-50 text-slate-800 ${
+                      dragOverIndex?.type === 'cycleKeys' && dragOverIndex.index === rowIndex && draggedItem?.index !== rowIndex
+                        ? `${((draggedItem?.index ?? 0) > rowIndex) ? 'border-t-2 border-t-blue-500' : 'border-b-2 border-b-blue-500'}`
+                        : ''
+                    }`}
+                    onDrop={(e: React.DragEvent) => {
+                      e.preventDefault();
+                      if (draggedItem && draggedItem.type === 'cycleKeys' && draggedItem.index !== rowIndex) {
+                        reorderCycles(draggedItem.index, rowIndex);
+                      }
+                      setDraggedItem(null);
                       setDragOverIndex(null);
-                    }
-                  }}
-                >
-                  <div
-                    className="flex items-center gap-1"
+                    }}
+                    onDragOver={(e: React.DragEvent) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                    }}
+                    onDragEnter={() => setDragOverIndex({type: 'cycleKeys', index: rowIndex})}
+                    onDragLeave={(e) => {
+                      if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget as Node)) {
+                        setDragOverIndex(null);
+                      }
+                    }}
                   >
-                    <div className="hidden rounded-lg border border-green-200 bg-green-50 starting:opacity-0 opacity-80 transition-opacity absolute -translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
-                      <IconButton
-                        onClick={() => addCycle(rowIndex)}
-                        icon={faPlus}
-                        title="Add Cycle Key"
-                        variant="success"
+                    <div className="flex items-center gap-2">
+                      <div className="hidden group-hover:flex absolute left-[-60px] flex-col gap-1">
+                        <IconButton
+                          onClick={() => addCycle(rowIndex)}
+                          icon={faPlus}
+                          title="Add Cycle Key"
+                          variant="success"
+                        />
+                        <IconButton
+                          onClick={() => addCycle(rowIndex + 1)}
+                          icon={faPlus}
+                          title="Add Cycle Key"
+                          variant="success"
+                        />
+                      </div>
+                      <DragHandle
+                        type="cycleKeys"
+                        index={rowIndex}
+                        draggedItem={draggedItem}
+                        setDraggedItem={setDraggedItem}
                       />
-                    </div>
-                    <div className="hidden rounded-lg border border-green-200 bg-green-50 starting:opacity-0 opacity-80 transition-opacity absolute translate-y-1/2 translate-x-[-120%] group-hover:flex justify-center">
-                      <IconButton
-                        onClick={() => addCycle(rowIndex + 1)}
-                        icon={faPlus}
-                        title="Add Cycle Key"
-                        variant="success"
-                      />
-                    </div>
-                    <DragHandle
-                      type="cycleKeys"
-                      index={rowIndex}
-                      draggedItem={draggedItem}
-                      setDraggedItem={setDraggedItem}
-                    />
-                    <div className="flex w-full gap-2 pl-1">
-                      <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                         <IconButton
                           onClick={() => deleteCycle(rowIndex)}
                           icon={faTrashCan}
@@ -576,15 +604,17 @@ export function SetEditor(props: SetEditorProps) {
                         type="text"
                         value={cycleKey}
                         onChange={(e) => updateCycleKey(rowIndex, e.target.value)}
-                        className="w-full border-none text-xs text-left bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
-                        placeholder="..."
+                        className="flex-1 border-none text-xs bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                        placeholder="Cycle key..."
                       />
-                      {blueprint && <IconButton
-                        onClick={() => onRemoveCycleBlueprint(rowIndex)}
-                        icon={faCancel}
-                        title="Clear Blueprint"
-                        variant="default"
-                      />}
+                      {blueprint && (
+                        <IconButton
+                          onClick={() => onRemoveCycleBlueprint(rowIndex)}
+                          icon={faCancel}
+                          title="Clear Blueprint"
+                          variant="default"
+                        />
+                      )}
                       <IconButton
                         onClick={() => onEditCycleBlueprint(rowIndex)}
                         icon={faPenToSquare}
@@ -592,85 +622,100 @@ export function SetEditor(props: SetEditorProps) {
                         variant="primary"
                       />
                     </div>
+                  </td>
+                  {!blueprint && (
+                    <td
+                      colSpan={serializableSet.archetypes.length}
+                      className="border border-slate-200 p-3 bg-purple-50"
+                    >
+                      <div className="flex gap-3 items-center">
+                        <FontAwesomeIcon icon={faArrowLeft} className="text-purple-600" />
+                        <FontAwesomeIcon icon={faWarning} className="text-purple-600" />
+                        <span className="text-sm font-medium text-purple-800">
+                            Cycle &ldquo;{cycleKey}&rdquo; is missing a blueprint
+                          </span>
+                      </div>
+                    </td>
+                  )}
+                  {blueprint && serializableSet.archetypes.map((archetype, archetypeIndex) => {
+                    const { status, reasons } = set.getSlotStatus(cards, archetypeIndex, cycleKey);
+                    const slot = serializableSet.archetypes[archetypeIndex].cycles[cycleKey];
+                    const cardRef = slot && typeof slot !== 'string' && "cardRef" in slot ? slot.cardRef : undefined;
+                    const hasSlotBlueprint = (slot && typeof slot !== 'string' && "blueprint" in slot ? slot.blueprint : undefined) !== undefined;
+                    return (
+                      <SetEditorCell
+                        key={archetype.name}
+                        status={status}
+                        statusReasons={reasons ?? []}
+                        onMarkSkip={() => markSkip(archetypeIndex, cycleKey)}
+                        onMarkNotSkip={() => markNotSkip(archetypeIndex, cycleKey)}
+                        onCreateCard={() => createCard(archetypeIndex, cycleKey)}
+                        onLinkCard={() => linkCard(archetypeIndex, cycleKey)}
+                        onEditCard={() => editCard(archetypeIndex, cycleKey)}
+                        onUnlinkCard={() => unlinkCard(archetypeIndex, cycleKey)}
+                        hasBlueprint={hasSlotBlueprint}
+                        onEditBlueprint={() => onEditSlotBlueprint(archetypeIndex, cycleKey)}
+                        onRemoveBlueprint={() => onRemoveSlotBlueprint(archetypeIndex, cycleKey)}
+                        cardPreviewUrl={cardRef === undefined ? undefined : `${serverUrl}/render/${cardRef.cardId}`}
+                      />
+                    );
+                  })}
+                </tr>
+              ))}
+
+              {/* Add Cycle Button */}
+              {serializableSet.cycles.length === 0 && (
+                <tr>
+                  <td colSpan={serializableSet.archetypes.length + 2} className="p-3">
+                    <button
+                      onClick={() => addCycle(serializableSet.cycles.length)}
+                      className="px-4 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400 active:bg-green-200 transition-colors text-xs flex items-center gap-2"
+                    >
+                      <FontAwesomeIcon icon={faPlus} /> Add Cycle
+                    </button>
+                  </td>
+                </tr>
+              )}
+
+              {/* Status Legend */}
+              <tr>
+                <td colSpan={serializableSet.archetypes.length + 2} className="p-4 bg-slate-50 border-t-2 border-slate-300">
+                  <div className="flex flex-wrap gap-6 text-sm">
+                    <div className="flex items-center gap-2">
+                      <FontAwesomeIcon icon={faExclamationTriangle} className="text-yellow-600" />
+                      <span className="text-slate-700">
+                          Missing: <span className="font-semibold text-slate-900">{statusCounts.missing}</span>
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <FontAwesomeIcon icon={faCircle} className="text-slate-400" />
+                      <span className="text-slate-700">
+                          Skip: <span className="font-semibold text-slate-900">{statusCounts.skip}</span>
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <FontAwesomeIcon icon={faTimes} className="text-red-600" />
+                      <span className="text-slate-700">
+                          Invalid: <span className="font-semibold text-slate-900">{statusCounts.invalid}</span>
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <FontAwesomeIcon icon={faCheck} className="text-green-600" />
+                      <span className="text-slate-700">
+                          Valid: <span className="font-semibold text-slate-900">{statusCounts.valid}</span>
+                          <span className="text-slate-500 ml-1">
+                            / {statusCounts.missing + statusCounts.invalid + statusCounts.valid}
+                          </span>
+                        </span>
+                    </div>
                   </div>
                 </td>
-                {!blueprint && (<td
-                    colSpan={serializableSet.archetypes.length}
-                    className="border border-zinc-300 p-1 text-center bg-purple-50 text-purple-600"
-                  >
-                    <div className="flex gap-2 items-center justify-start px-1">
-                      <FontAwesomeIcon icon={faArrowLeft} />
-                      <FontAwesomeIcon icon={faWarning} />
-                      <span className={`text-sm font-medium text-purple-800`}>
-                        Cycle &ldquo;{cycleKey}&rdquo; is missing a blueprint.
-                      </span>
-                    </div>
-                </td>)}
-                {blueprint && serializableSet.archetypes.map((archetype, archetypeIndex) => {
-                  const { status, reasons } = set.getSlotStatus(cards, archetypeIndex, cycleKey);
-                  const slot = serializableSet.archetypes[archetypeIndex].cycles[cycleKey];
-                  const cardRef = slot && typeof slot !== 'string' && "cardRef" in slot ? slot.cardRef : undefined;
-                  const hasSlotBlueprint = (slot && typeof slot !== 'string' && "blueprint" in slot ? slot.blueprint : undefined) !== undefined;
-                  return <SetEditorCell
-                    key={archetype.name}
-                    status={status}
-                    statusReasons={reasons ?? []}
-                    onMarkSkip={() => markSkip(archetypeIndex, cycleKey)}
-                    onMarkNotSkip={() => markNotSkip(archetypeIndex, cycleKey)}
-                    onCreateCard={() => createCard(archetypeIndex, cycleKey)}
-                    onLinkCard={() => linkCard(archetypeIndex, cycleKey)}
-                    onEditCard={() => editCard(archetypeIndex, cycleKey)}
-                    onUnlinkCard={() => unlinkCard(archetypeIndex, cycleKey)}
-                    hasBlueprint={hasSlotBlueprint}
-                    onEditBlueprint={() => onEditSlotBlueprint(archetypeIndex, cycleKey)}
-                    onRemoveBlueprint={() => onRemoveSlotBlueprint(archetypeIndex, cycleKey)}
-                    cardPreviewUrl={cardRef === undefined ? undefined : `${serverUrl}/render/${cardRef.cardId}`}
-                  />
-                })}
               </tr>
-            </React.Fragment>
-          ))}
-          {/* If no keys yet */}
-          {serializableSet.cycles.length === 0 && <tr>
-            <td colSpan={serializableSet.archetypes.length + 1} className="px-2">
-              <button
-                onClick={() => addCycle(serializableSet.cycles.length)}
-                className="px-2 py-1 border rounded active:bg-green-50 active:text-green-400 hover:text-green-600 hover:bg-green-100 p-0.5 text-xs flex items-center gap-1 transition-colors"
-              >
-                <FontAwesomeIcon icon={faPlus} className='text-sm' /> Add Cycle
-              </button>
-            </td>
-          </tr>}
-
-          {/* Status Legend */}
-          <tr>
-            <td colSpan={serializableSet.archetypes.length + 1} className="p-1 pt-2">
-              <div className="flex flex-wrap w-full justify-start gap-4 px-2 text-xs text-zinc-700">
-                <span className="flex items-center gap-1">
-                  <FontAwesomeIcon icon={faExclamationTriangle} className="text-yellow-600" />
-                  <span>Missing: {statusCounts.missing}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <FontAwesomeIcon icon={faCircle} className="text-zinc-400" />
-                  <span>Skip: {statusCounts.skip}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <FontAwesomeIcon icon={faTimes} className="text-red-600" />
-                  <span>Invalid: {statusCounts.invalid}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <FontAwesomeIcon icon={faCheck} className="text-green-600" />
-                  <span>Valid: {statusCounts.valid}
-                    <span className="text-gray-400">
-                      /{statusCounts.missing + statusCounts.invalid + statusCounts.valid}
-                    </span>
-                  </span>
-                </span>
-              </div>
-            </td>
-          </tr>
-          </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>);
-};
+    </div>
+  );
+}

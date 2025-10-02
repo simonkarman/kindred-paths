@@ -12,7 +12,7 @@ import { TextTab } from '@/components/overview/text-tab';
 import { VisualTab } from '@/components/overview/visual-tab';
 import { useLocalStorageState } from '@/utils/use-local-storage-state';
 
-type TabType = 'table' | 'statistics' | 'text' | 'render';
+type TabType = 'table' | 'statistics' | 'text' | 'visual';
 
 export function CardOverview(props: {
   cards: SerializedCard[],
@@ -35,53 +35,63 @@ export function CardOverview(props: {
   ];
 
   return (
-    <div className="space-y-3">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section with Tabs and Actions */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden">
+          {/* Top Bar with Search and Actions */}
+          <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+              <div className="flex justify-end gap-2 w-full flex-1">
+                <SearchBar scope="home" />
+              </div>
+              {showCreate && (
+                <div className="flex gap-2 flex-wrap">
+                  <Link
+                    className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm"
+                    href="/create?t=/"
+                  >
+                    Create New Card
+                  </Link>
+                  <Link
+                    className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-medium rounded-lg hover:from-purple-700 hover:to-blue-700 active:from-purple-800 active:to-blue-800 transition-all shadow-sm"
+                    href="/generate"
+                  >
+                    <FontAwesomeIcon
+                      icon={faWandMagicSparkles}
+                      className="mr-2"
+                    />
+                    Inspire Me!
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
 
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200 flex items-baseline justify-between gap-8">
-        <nav className="-mb-px flex space-x-8">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 text-sm transition-colors ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-        <div className="grow flex justify-end items-end gap-2">
-          <SearchBar scope="home" />
-          {showCreate && (
-            <>
-              <Link
-                className="grow-0 shrink-0 inline-block text-sm bg-blue-600 text-white px-3 py-1 border border-gray-300 rounded hover:bg-blue-800 active:bg-blue-900"
-                href="/create?t=/"
-              >
-                Create New Card
-              </Link>
-              <Link
-                className="grow-0 shrink-0 inline-block text-sm bg-blue-600 text-white px-3 py-1 border border-gray-300 rounded hover:bg-blue-800 active:bg-blue-900"
-                href="/generate"
-              >
-                <FontAwesomeIcon
-                  icon={faWandMagicSparkles}
-                  className="mr-2"
-                />
-                Inspire Me!
-              </Link>
-            </>
-          )}
+          {/* Tab Navigation */}
+          <div className="px-6">
+            <nav className="flex space-x-8 -mb-px">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`py-4 px-1 border-b-2 text-sm font-medium transition-all ${
+                    activeTab === tab.id
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
-      </div>
 
-      {/* Tab Content */}
-      <div className="mt-4 mx-auto max-w-262">
-        {tabs.find(tab => tab.id === activeTab)?.component}
+        {/* Tab Content */}
+        <div className="max-w-7xl mx-auto">
+          {tabs.find(tab => tab.id === activeTab)?.component}
+        </div>
       </div>
     </div>
   );
