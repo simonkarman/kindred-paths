@@ -29,26 +29,21 @@ export default function CreateNewSetForm() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 flex gap-4 items-baseline">
       <form
+        className="grow"
         onSubmit={(e) => {
           e.preventDefault();
           handleCreateSet();
         }}
       >
-        <label
-          htmlFor="set-name"
-          className="block text-sm font-medium text-slate-700 mb-2"
-        >
-          Set Name
-        </label>
         <input
           id="set-name"
           type="text"
           value={setName}
           onChange={(e) => setSetName(e.target.value.toUpperCase())}
           placeholder="Enter set name"
-          className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+          className="w-full bg-white px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
           disabled={isCreating}
         />
       </form>
@@ -56,7 +51,7 @@ export default function CreateNewSetForm() {
       <button
         onClick={handleCreateSet}
         disabled={isCreating || !setName.trim()}
-        className="w-full px-4 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:bg-slate-300 disabled:cursor-not-allowed disabled:hover:bg-slate-300"
+        className="px-4 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:bg-slate-300 disabled:cursor-not-allowed disabled:hover:bg-slate-300"
       >
         {isCreating ? (
           <span className="flex items-center justify-center gap-2">

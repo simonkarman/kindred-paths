@@ -7,7 +7,11 @@ export const setsRouter = Router();
 
 setsRouter.get('/', async (_, res) => {
   const sets: Set[] = await setService.getAll();
-  res.json(sets.map(s => ({ name: s.getName(), cardCount: s.getCardCount() })));
+  res.json(sets.map(s => ({
+    name: s.getName(),
+    validCardCount: s.getValidCardCount(),
+    cardCount: s.getTotalNonSkippedCardCount(),
+  })));
 });
 
 setsRouter.post('/', async (req, res) => {

@@ -410,15 +410,15 @@ export function SetEditor(props: SetEditorProps) {
 
         {/* Main Table Container */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-xs">
+          <div className="overflow-x-auto overflow-y-hidden">
+            <table className="w-full text-xs">
               <thead>
               <tr>
-                <th className="sticky z-10 left-0 bg-slate-100 text-left p-3 font-semibold text-slate-900 min-w-[250px] border-b-2 border-slate-300">
+                <th className="sticky z-10 left-0 bg-slate-100 text-left p-3 font-semibold text-slate-900 border-b-2 border-slate-300">
                   Archetypes
                 </th>
                 {serializableSet.archetypes.map((archetype, archetypeIndex) => (
-                  <th key={archetypeIndex} className="group border-b-2 border-slate-300 border-l p-2 bg-slate-50 text-center font-medium">
+                  <th key={archetypeIndex} className="group border-b-2 border-slate-300 border-l p-2 bg-slate-50 min-w-[250px] text-center font-medium">
                     <div className="flex gap-1 px-1 items-center justify-center">
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                         <IconButton
@@ -555,22 +555,21 @@ export function SetEditor(props: SetEditorProps) {
               ))}
 
               {/* Add Metadata Key Button */}
-              {serializableSet.metadataKeys.length === 0 && (
-                <tr>
-                  <td colSpan={serializableSet.archetypes.length + 2} className="p-3">
-                    <button
-                      onClick={() => addMetadataKey(serializableSet.metadataKeys.length)}
-                      className="px-4 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400 active:bg-green-200 transition-colors text-xs flex items-center gap-2"
-                    >
-                      <FontAwesomeIcon icon={faPlus} /> Add Metadata Key
-                    </button>
-                  </td>
-                </tr>
-              )}
+              <tr>
+                <td className="sticky z-10 left-0 p-3 bg-slate-100">
+                  <button
+                    onClick={() => addMetadataKey(serializableSet.metadataKeys.length)}
+                    className="px-4 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400 active:bg-green-200 transition-colors text-xs flex items-center gap-2"
+                  >
+                    <FontAwesomeIcon icon={faPlus} /> Add Metadata Key
+                  </button>
+                </td>
+                <td colSpan={serializableSet.archetypes.length + 1} className="bg-slate-100" />
+              </tr>
 
               {/* Cycles Section Header */}
               <tr>
-                <th className="sticky z-10 left-0 bg-slate-100 p-3 pt-4 text-left font-semibold text-slate-900 border-b border-slate-200">
+                <th className="sticky z-10 left-0 bg-slate-100 p-3 pt-8 text-left font-semibold text-slate-900 border-b border-slate-200">
                   Cycles
                 </th>
                 <th colSpan={serializableSet.archetypes.length + 1} className="bg-slate-100" />
@@ -659,12 +658,12 @@ export function SetEditor(props: SetEditorProps) {
                   {!blueprint && (
                     <td
                       colSpan={serializableSet.archetypes.length}
-                      className="border border-slate-200 p-3 bg-purple-50"
+                      className="border border-slate-200 p-3 bg-blue-50"
                     >
                       <div className="flex gap-3 items-center">
-                        <FontAwesomeIcon icon={faArrowLeft} className="text-purple-600" />
-                        <FontAwesomeIcon icon={faWarning} className="text-purple-600" />
-                        <span className="text-sm font-medium text-purple-800">
+                        <FontAwesomeIcon icon={faArrowLeft} className="text-blue-600" />
+                        <FontAwesomeIcon icon={faWarning} className="text-blue-600" />
+                        <span className="text-sm font-medium text-blue-800">
                             Cycle &ldquo;{cycleKey}&rdquo; is missing a blueprint
                           </span>
                       </div>
@@ -697,18 +696,17 @@ export function SetEditor(props: SetEditorProps) {
               ))}
 
               {/* Add Cycle Button */}
-              {serializableSet.cycles.length === 0 && (
-                <tr>
-                  <td colSpan={serializableSet.archetypes.length + 2} className="p-3">
-                    <button
-                      onClick={() => addCycle(serializableSet.cycles.length)}
-                      className="px-4 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400 active:bg-green-200 transition-colors text-xs flex items-center gap-2"
-                    >
-                      <FontAwesomeIcon icon={faPlus} /> Add Cycle
-                    </button>
-                  </td>
-                </tr>
-              )}
+              <tr>
+                <td className="sticky z-10 left-0 p-3 pb-80 bg-slate-100">
+                  <button
+                    onClick={() => addCycle(serializableSet.cycles.length)}
+                    className="px-4 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400 active:bg-green-200 transition-colors text-xs flex items-center gap-2"
+                  >
+                    <FontAwesomeIcon icon={faPlus} /> Add Cycle
+                  </button>
+                </td>
+                <td colSpan={serializableSet.archetypes.length + 1} className="bg-slate-100" />
+              </tr>
               </tbody>
             </table>
           </div>

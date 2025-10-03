@@ -211,7 +211,7 @@ export async function getCardSampleGeneratorById(generatorId: string): Promise<{
   return await response.json();
 }
 
-export async function getSets(): Promise<{ name: string; cardCount: number; }[]> {
+export async function getSets(): Promise<{ name: string; validCardCount: number; cardCount: number; }[]> {
   const response = await fetch(`${serverUrl}/set`, {
     method: 'GET',
     headers: {
@@ -224,6 +224,7 @@ export async function getSets(): Promise<{ name: string; cardCount: number; }[]>
   const data = await response.json();
   return z.array(z.object({
     name: z.string(),
+    validCardCount: z.number(),
     cardCount: z.number(),
   })).parse(data);
 }

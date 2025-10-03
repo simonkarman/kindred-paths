@@ -31,6 +31,7 @@ export default async function Page() {
                     {set.name}
                   </h3>
                   <p className="text-sm text-slate-500 mt-1">
+                    {set.validCardCount} /{' '}
                     {set.cardCount} {set.cardCount === 1 ? 'card' : 'cards'}
                   </p>
                 </div>
@@ -60,9 +61,9 @@ export default async function Page() {
       )}
 
       {/* Create New Set Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">
-          Create New Set
+      <div className="bg-blue-50 rounded-lg shadow-sm p-6 border border-blue-200">
+        <h3 className="text-lg text-slate-900 mb-4">
+          ... or create a new set
         </h3>
         <CreateNewSetForm />
       </div>

@@ -474,10 +474,18 @@ export class Set {
     return (name.length > 0 ? `${name} ` : '') + `${capitalize(location.type)} Blueprint`;
   }
 
-  getCardCount(): number {
+  getValidCardCount(): number {
     return this.archetypes
-      .flatMap(archetype => archetype.cycles)
+      .flatMap(archetype => Object.values(archetype.cycles))
       .filter(slot => slot && slot !== 'skip' && slot.cardRef)
       .length;
+  }
+
+  getTotalNonSkippedCardCount(): number {
+    const skipped = this.archetypes
+      .flatMap(archetype => Object.values(archetype.cycles))
+      .filter(slot => slot === 'skip')
+      .length;
+    return (this.cycles.length * this.archetypes.length) - skipped;
   }
 }
