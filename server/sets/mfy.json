@@ -14,7 +14,33 @@
           "human",
           "advisor",
           "druid",
-          "scout"
+          "scout",
+          "cleric",
+          "bear",
+          "equipment",
+          "forest",
+          "plains",
+          "ranger"
+        ]
+      }
+    ],
+    "rules": [
+      {
+        "key": "string/contain-one-of",
+        "value": [
+          "$[mechanicA]",
+          "$[mechanicB]",
+          "$[mechanicC]",
+          "$[mechanicD]",
+          ""
+        ]
+      }
+    ],
+    "creatableTokens": [
+      {
+        "key": "string-array/allow",
+        "value": [
+          "$[mainToken]"
         ]
       }
     ]
@@ -31,7 +57,7 @@
   ],
   "cycles": [
     {
-      "key": "mythic",
+      "key": "Miffy",
       "blueprint": {
         "name": [
           {
@@ -85,14 +111,223 @@
       }
     },
     {
-      "key": "friend",
-      "blueprint": {}
+      "key": "Supporting Character A",
+      "blueprint": {
+        "types": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "creature"
+            ]
+          }
+        ]
+      }
     },
     {
-      "key": "second friend"
+      "key": "Supporting Character B",
+      "blueprint": {
+        "types": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "creature"
+            ]
+          }
+        ]
+      }
     },
     {
-      "key": "book_1",
+      "key": "Supporting Character C",
+      "blueprint": {
+        "types": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "creature"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "Supporting Character D",
+      "blueprint": {
+        "types": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "creature"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "Supporting Character E",
+      "blueprint": {
+        "types": [
+          {
+            "key": "string-array/includes-all-of",
+            "value": [
+              "creature"
+            ]
+          }
+        ],
+        "subtypes": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "$[creatureTypeA]"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "Supporting Character F",
+      "blueprint": {
+        "types": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "creature"
+            ]
+          }
+        ],
+        "subtypes": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "$[creatureTypeB]"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "Land Location A",
+      "blueprint": {
+        "types": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "land"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "Land Location B",
+      "blueprint": {
+        "types": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "land"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "Sorcery (Book)",
+      "blueprint": {
+        "name": [
+          {
+            "key": "string/contain-one-of",
+            "value": [
+              "At the"
+            ]
+          }
+        ],
+        "types": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "sorcery"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "Instant",
+      "blueprint": {
+        "types": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "instant"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "Non Creature Filler",
+      "blueprint": {
+        "types": [
+          {
+            "key": "string-array/deny",
+            "value": [
+              "creature",
+              "land"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "Mana Rock",
+      "blueprint": {
+        "types": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "artifact"
+            ]
+          }
+        ],
+        "rules": [
+          {
+            "key": "string/contain-all-of",
+            "value": [
+              "among creature tokens you control"
+            ]
+          }
+        ],
+        "creatableTokens": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "$[mainToken]"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "Basic Land",
+      "blueprint": {
+        "supertype": [
+          {
+            "key": "string/equal",
+            "value": "basic"
+          }
+        ],
+        "types": [
+          {
+            "key": "string-array/includes-one-of",
+            "value": [
+              "land"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "Token",
       "blueprint": {
         "isToken": [
           {
@@ -100,15 +335,6 @@
           }
         ]
       }
-    },
-    {
-      "key": "book_2"
-    },
-    {
-      "key": "book_3"
-    },
-    {
-      "key": "def"
     }
   ],
   "archetypes": [
@@ -117,17 +343,17 @@
       "blueprint": {
         "color": [
           {
-            "key": "string-array/includes-all-of",
-            "value": [
-              "white"
-            ]
-          },
-          {
             "key": "string-array/length",
             "value": {
               "key": "number/at-most",
               "value": 1
             }
+          },
+          {
+            "key": "string-array/allow",
+            "value": [
+              "white"
+            ]
           }
         ]
       },
@@ -138,44 +364,190 @@
         "mechanicB": "power 2 or less",
         "mechanicC": "exile",
         "mechanicD": "protection",
-        "creatureTypeA": "Cat",
-        "creatureTypeB": "Bird"
+        "creatureTypeA": "cat",
+        "creatureTypeB": "bird"
       },
-      "cycles": {}
+      "cycles": {
+        "Miffy": {
+          "cardRef": {
+            "cardId": "mfy-401-miffy-the-kind"
+          }
+        },
+        "Supporting Character A": {
+          "cardRef": {
+            "cardId": "mfy-406-grandma-bunny"
+          }
+        },
+        "Supporting Character B": {
+          "cardRef": {
+            "cardId": "mfy-407-grandpa-bunny"
+          }
+        },
+        "Supporting Character C": {
+          "cardRef": {
+            "cardId": "mfy-405-mother-bunny"
+          }
+        },
+        "Supporting Character D": {
+          "cardRef": {
+            "cardId": "mfy-404-father-bunny"
+          }
+        },
+        "Supporting Character E": {
+          "cardRef": {
+            "cardId": "mfy-408-kitty-nelly"
+          }
+        },
+        "Supporting Character F": {
+          "cardRef": {
+            "cardId": "mfy-409-the-little-bird"
+          }
+        },
+        "Land Location A": {
+          "cardRef": {
+            "cardId": "mfy-410-grand-parents-house"
+          }
+        },
+        "Land Location B": {
+          "cardRef": {
+            "cardId": "mfy-411-clover-warren"
+          }
+        },
+        "Sorcery (Book)": {
+          "cardRef": {
+            "cardId": "mfy-412-at-the-seaside"
+          }
+        },
+        "Instant": {
+          "cardRef": {
+            "cardId": "mfy-413-search-for-the-lost-toy"
+          }
+        },
+        "Non Creature Filler": {
+          "cardRef": {
+            "cardId": "mfy-415-red-balloon"
+          }
+        },
+        "Mana Rock": {
+          "cardRef": {
+            "cardId": "mfy-414-one-rabbit-home"
+          }
+        },
+        "Basic Land": {
+          "cardRef": {
+            "cardId": "mfy-417-basic-plains"
+          }
+        },
+        "Token": {
+          "cardRef": {
+            "cardId": "mfy-418-1-1-white-rabbit-creature-token"
+          }
+        }
+      }
     },
     {
       "name": "Green",
       "blueprint": {
         "color": [
           {
-            "key": "string-array/includes-all-of",
-            "value": [
-              "green"
-            ]
-          },
-          {
             "key": "string-array/length",
             "value": {
               "key": "number/at-most",
               "value": 1
             }
+          },
+          {
+            "key": "string-array/allow",
+            "value": [
+              "green"
+            ]
           }
         ]
       },
       "metadata": {
         "mainToken": "4/4 green Rabbit creature token",
         "mainCharacter": "Miffy, The Brave",
-        "mechanicA": "+1/+1 counter",
+        "mechanicA": "+1/+1",
         "mechanicB": "power 4 or greater",
         "mechanicC": "ward",
         "mechanicD": "trample",
-        "creatureTypeA": "Dog",
-        "creatureTypeB": "Bear"
+        "creatureTypeA": "dog",
+        "creatureTypeB": "bear"
       },
       "cycles": {
-        "mythic": {
+        "Miffy": {
           "cardRef": {
             "cardId": "mfy-426-miffy-the-brave"
+          }
+        },
+        "Supporting Character E": {
+          "cardRef": {
+            "cardId": "mfy-434-neighbour-s-dog"
+          }
+        },
+        "Supporting Character F": {
+          "cardRef": {
+            "cardId": "mfy-433-friendly-bear"
+          }
+        },
+        "Supporting Character A": {
+          "cardRef": {
+            "cardId": "mfy-429-snuffy-young-and-playful"
+          }
+        },
+        "Supporting Character B": {
+          "cardRef": {
+            "cardId": "mfy-430-snuffy-loyal-friend"
+          }
+        },
+        "Supporting Character C": {
+          "cardRef": {
+            "cardId": "mfy-431-boris-bear"
+          }
+        },
+        "Supporting Character D": {
+          "cardRef": {
+            "cardId": "mfy-432-barbara-bear"
+          }
+        },
+        "Land Location A": {
+          "cardRef": {
+            "cardId": "mfy-435-boris-forest-home"
+          }
+        },
+        "Land Location B": {
+          "cardRef": {
+            "cardId": "mfy-436-barbara-s-forest-home"
+          }
+        },
+        "Sorcery (Book)": {
+          "cardRef": {
+            "cardId": "mfy-437-at-the-playground"
+          }
+        },
+        "Instant": {
+          "cardRef": {
+            "cardId": "mfy-438-snuffy-s-sharp-teeth"
+          }
+        },
+        "Non Creature Filler": {
+          "cardRef": {
+            "cardId": "mfy-439-pop-goes-the-balloon"
+          }
+        },
+        "Mana Rock": {
+          "cardRef": {
+            "cardId": "mfy-440-four-rabbit-home"
+          }
+        },
+        "Basic Land": {
+          "cardRef": {
+            "cardId": "mfy-442-basic-forest"
+          }
+        },
+        "Token": {
+          "cardRef": {
+            "cardId": "mfy-443-4-4-green-rabbit-creature-token"
           }
         }
       }
@@ -185,13 +557,6 @@
       "blueprint": {
         "color": [
           {
-            "key": "string-array/includes-all-of",
-            "value": [
-              "white",
-              "green"
-            ]
-          },
-          {
             "key": "string-array/length",
             "value": {
               "key": "number/one-of",
@@ -200,28 +565,88 @@
                 2
               ]
             }
+          },
+          {
+            "key": "string-array/allow",
+            "value": [
+              "white",
+              "green"
+            ]
           }
         ]
       },
       "metadata": {
         "mainToken": "2/2 green and white Rabbit creature token",
         "mainCharacter": "Miffy, The Curious",
-        "mechanicA": "+1/+1 counter",
+        "mechanicA": "+1/+1",
         "mechanicB": "populate",
         "mechanicC": "convoke",
         "mechanicD": "landfall",
-        "creatureTypeA": "Rabbit",
-        "creatureTypeB": "Human"
+        "creatureTypeA": "rabbit",
+        "creatureTypeB": "human"
       },
       "cycles": {
-        "mythic": {
+        "Miffy": {
           "cardRef": {
             "cardId": "mfy-451-miffy-the-curious"
           }
         },
-        "friend": {
+        "Supporting Character E": {
           "cardRef": {
-            "cardId": "mfy-451-miffy-the-curious"
+            "cardId": "mfy-454-melanie-miffy-s-friend"
+          }
+        },
+        "Supporting Character F": {
+          "cardRef": {
+            "cardId": "mfy-455-farmer-john"
+          }
+        },
+        "Supporting Character A": {
+          "cardRef": {
+            "cardId": "mfy-452-poppy-pig-adventurer"
+          }
+        },
+        "Supporting Character B": {
+          "cardRef": {
+            "cardId": "mfy-453-poppy-pig-companion"
+          }
+        },
+        "Supporting Character C": "skip",
+        "Supporting Character D": "skip",
+        "Land Location A": {
+          "cardRef": {
+            "cardId": "mfy-460-poppy-pig-s-place"
+          }
+        },
+        "Sorcery (Book)": {
+          "cardRef": {
+            "cardId": "mfy-462-at-the-zoo"
+          }
+        },
+        "Land Location B": {
+          "cardRef": {
+            "cardId": "mfy-461-melanie-s-outerlands"
+          }
+        },
+        "Instant": {
+          "cardRef": {
+            "cardId": "mfy-463-family-tree"
+          }
+        },
+        "Non Creature Filler": {
+          "cardRef": {
+            "cardId": "mfy-465-family-picnic"
+          }
+        },
+        "Mana Rock": {
+          "cardRef": {
+            "cardId": "mfy-464-two-rabbit-home"
+          }
+        },
+        "Basic Land": "skip",
+        "Token": {
+          "cardRef": {
+            "cardId": "mfy-467-2-2-white-green-rabbit-creature-token"
           }
         }
       }

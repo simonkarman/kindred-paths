@@ -673,10 +673,12 @@ export function SetEditor(props: SetEditorProps) {
                     const { status, reasons } = set.getSlotStatus(cards, archetypeIndex, cycleKey);
                     const slot = serializableSet.archetypes[archetypeIndex].cycles[cycleKey];
                     const cardRef = slot && typeof slot !== 'string' && "cardRef" in slot ? slot.cardRef : undefined;
+                    const card = cardRef ? cards.filter(c => c.id === cardRef.cardId).pop() : undefined;
                     const hasSlotBlueprint = (slot && typeof slot !== 'string' && "blueprint" in slot ? slot.blueprint : undefined) !== undefined;
                     return (
                       <SetEditorCell
                         key={archetype.name}
+                        cardName={card?.name ?? 'Unknown Card'}
                         status={status}
                         statusReasons={reasons ?? []}
                         onMarkSkip={() => markSkip(archetypeIndex, cycleKey)}

@@ -16,7 +16,7 @@ import {
 import { CriteriaFailureReason, SlotStatus } from 'kindred-paths';
 import { IconButton } from '@/components/icon-button';
 
-export const getStatusConfig = (status: SlotStatus) => {
+export const getStatusConfig = (status: SlotStatus, cardName: string) => {
   switch (status) {
     case 'missing':
       return {
@@ -36,7 +36,7 @@ export const getStatusConfig = (status: SlotStatus) => {
       };
     case 'invalid':
       return {
-        label: 'Invalid',
+        label: cardName,
         icon: faCircleXmark,
         bgColor: 'bg-red-50 hover:bg-red-100',
         textColor: 'text-red-800',
@@ -44,7 +44,7 @@ export const getStatusConfig = (status: SlotStatus) => {
       };
     case 'valid':
       return {
-        label: 'Valid',
+        label: cardName,
         icon: faCircleCheck,
         bgColor: 'bg-green-50 hover:bg-green-100',
         textColor: 'text-green-800',
@@ -54,6 +54,7 @@ export const getStatusConfig = (status: SlotStatus) => {
 };
 
 interface SetEditorCellProps {
+  cardName: string,
   status: SlotStatus;
   statusReasons: CriteriaFailureReason[];
   onMarkSkip: () => void;
@@ -69,6 +70,7 @@ interface SetEditorCellProps {
 }
 
 export const SetEditorCell: React.FC<SetEditorCellProps> = ({
+  cardName,
   status,
   statusReasons,
   onMarkSkip,
@@ -84,7 +86,7 @@ export const SetEditorCell: React.FC<SetEditorCellProps> = ({
 }) => {
   const [showCardPreview, setShowCardPreview] = useState(false);
 
-  const config = getStatusConfig(status);
+  const config = getStatusConfig(status, cardName);
 
   const renderActionButtons = () => {
     const blueprintActions = null;
