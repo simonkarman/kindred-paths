@@ -4,16 +4,17 @@ import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 
-export function CardRender({ serializedCard, hoverControls = false, quality, scale }: {
+export function CardRender({ serializedCard, hoverControls = false, quality, scale, hideBorder }: {
   serializedCard: SerializedCard,
   hoverControls?: boolean,
   quality?: number,
   scale?: number,
+  hideBorder?: boolean,
 }) {
   const card = new _Card(serializedCard);
 
-  const hoverStyle = "flex text-3xl hover:text-6xl items-center justify-center absolute inset-0 cursor-pointer z-5 transition-all duration-150 group-hover:bg-black/20 hover:bg-black/40 text-white/0 group-hover:text-white";
-  const hoverAreaSizes: [string, string] = card.id
+  const hoverStyle = "flex w-full rounded-2xl text-3xl hover:text-6xl items-center justify-center absolute inset-0 cursor-pointer z-5 transition-all duration-150 group-hover:bg-black/20 hover:bg-black/40 text-white/0 group-hover:text-white";
+  const hoverAreaSizes: [string, string] = card.isToken
     ? (
       card.rules.length === 0
         ? ['bottom-[20%]', 'top-[80%]']
@@ -26,10 +27,9 @@ export function CardRender({ serializedCard, hoverControls = false, quality, sca
       {/* Image */}
       <img
         alt={card.name + " image"}
-        className="aspect-[63/88] w-100 bg-zinc-100 rounded-2xl border"
+        className={`aspect-[63/88] w-120 print:w-100 not-print:rounded-2xl border ${hideBorder ? 'bg-transparent border-transparent' : 'bg-zinc-400'}`}
         src={`${serverUrl}/render/${card.id}?scale=${scale || 1}&quality=${quality || 100}`}
       />
-
       {hoverControls && <>
         {/* Clickable areas */}
         {/* Top half - View card */}

@@ -1,13 +1,16 @@
 "use client";
 
 import {
+  BlueprintValidator,
   Card,
   CardColor,
   CardRarity,
   CardSuperType,
   CardType,
+  CriteriaFailureReason,
+  explainCriteria,
   Mana,
-  RuleVariant,
+  RuleVariant, SerializableBlueprintWithSource,
   SerializedCard,
   SerializedCardSchema,
   tryParseLoyaltyAbility,
@@ -31,8 +34,18 @@ import { CardTokenColorsInput } from '@/components/editor/card-token-colors-inpu
 import { CardLoyaltyInput } from '@/components/editor/card-loyalty-input';
 import { useDeckNameFromSearch, useSetNameFromSearch } from '@/utils/use-search';
 
-export function CardEditor({ start }: { start: SerializedCard }) {
-  const isCreate = start.id === "<new>";
+type CardEditorProps = {
+  start: SerializedCard,
+  validate?: {
+    blueprints: SerializableBlueprintWithSource[],
+    metadata: { [key: string]: string | undefined },
+  }
+  onSave?: (card: SerializedCard) => void,
+  onCancel?: () => void,
+};
+
+export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProps) {
+  const isCreate = start.id === "<new>" || start.id.startsWith('ai-');
   const set = useSetNameFromSearch();
   const deck = useDeckNameFromSearch();
 
@@ -138,7 +151,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     tags,
   };
   const isChanged = isCreate || (JSON.stringify(serializedCard) !== JSON.stringify(start));
-  const canSave = isChanged && (!isCreate || name !== start.name);
+  const canSave = isChanged && (!isCreate || name !== Card.new().name);
 
   // Form State
   const [isLoading, setIsLoading] = useState(false);
@@ -147,7 +160,23 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     path: string,
     message: string,
   }[] = parsedCard.success ? [] : parsedCard.error.errors.map(e => ({ path: e.path.join('.'), message: e.message }));
-  const getErrorMessage = (path: string) => errors.find(e => e.path === path)?.message || undefined;
+  const getErrorMessage = (field: string) => {
+    const additionalCriteriaFields: { [field: string]: string[] | undefined } = {
+      types: ['isToken'],
+      manaCost: ['manaValue', 'color', 'colorIdentity'],
+      pt: ['power', 'toughness', 'powerToughnessDiff'],
+      rules: ['creatableTokens', 'colorIdentity'],
+    };
+    const criteriaFields = [
+      field,
+      ...(additionalCriteriaFields[field] ?? [])].flatMap(f => criteriaFailureReasonsPerField[f] ?? [],
+    );
+    const messages = [
+      ...errors.filter(e => e.path === field || e.path.startsWith(`${field}.`)).map(e => e.message),
+      ...criteriaFields.map(fe => capitalize(fe.location) + ' must ' + explainCriteria(fe.criteria)),
+    ].filter(m => m !== undefined);
+    return messages.length > 0 ? messages.join(' AND ') : undefined;
+  };
   let validationError: string | undefined;
   let card: Card | undefined;
   try {
@@ -155,9 +184,29 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   } catch (e: unknown) {
     validationError = (e as Error).message;
   }
+  const criteriaFailureReasonsPerField: { [field: string]: CriteriaFailureReason[] | undefined } = {};
+  if (card && validate) {
+    const validation = new BlueprintValidator().validate({
+      metadata: validate.metadata,
+      blueprints: validate.blueprints,
+      card: serializedCard,
+    });
+    if (!validation.success) {
+      validation.reasons.forEach(r => {
+        if (!criteriaFailureReasonsPerField[r.location]) {
+          criteriaFailureReasonsPerField[r.location] = [];
+        }
+        criteriaFailureReasonsPerField[r.location]!.push(r);
+      });
+    }
+  }
 
   // Handle cancel/discard
   const handleDiscard = () => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
     // If the URL has a 't' parameter, redirect to that location
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('t')) {
@@ -183,18 +232,21 @@ export function CardEditor({ start }: { start: SerializedCard }) {
     setIsLoading(true);
 
     try {
-      const result = serializedCard.id === '<new>'
+      const result = isCreate
         ? await createCard(data)
         : await updateCard(data);
       if (result) {
-
-        // if /edit/<id>?t=/a/location is used, we want to get the t from the URL, and navigate to that page
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('t')) {
-          window.location.href = urlParams.get('t')!;
+        if (onSave) {
+          onSave(result);
         } else {
-          // Navigate to the new card's page
-          window.location.href = `/card/${result.id}`;
+          // if /edit/<id>?t=/a/location is used, we want to get the t from the URL, and navigate to that page
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.has('t')) {
+            window.location.href = urlParams.get('t')!;
+          } else {
+            // Navigate to the new card's page
+            window.location.href = `/card/${result.id}`;
+          }
         }
       }
     } catch (error) {
@@ -223,10 +275,10 @@ export function CardEditor({ start }: { start: SerializedCard }) {
   const setArtFocus = createSetterFor("art/focus");
 
   return (<>
-    <div className={`mx-auto space-y-6 border ${isChanged ? 'border-orange-200' : 'border-zinc-200'} bg-white rounded-lg px-3 pb-2 shadow-lg`}>
-      <h2 className="text-lg font-bold mt-2 mb-1 text-center">{isCreate ? 'Create Card' : `Update ${serializedCard.name}`}</h2>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-4 border-r border-zinc-100 pr-3">
+    <div className={`mx-auto max-w-[1400px] space-y-6 ${isChanged ? 'border-2 border-orange-200' : 'border border-zinc-200'} bg-white rounded-lg p-6 shadow-md`}>
+      <h2 className="text-2xl font-bold mt-2 mb-4 text-center">{isCreate ? 'Create Card' : `Update ${serializedCard.name}`}</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-4 border-r border-zinc-100 pr-6">
           <CardTypesInput types={types} setTypes={setTypes} getErrorMessage={() => getErrorMessage('types')}
                           isToken={isToken} setIsToken={setIsToken}
                           isChanged={!isCreate && JSON.stringify({ isToken: start.isToken, types: start.types }) !== JSON.stringify({ isToken, types })}
@@ -250,7 +302,7 @@ export function CardEditor({ start }: { start: SerializedCard }) {
             />}
           {(supertype !== 'basic' && !isToken)
             && <CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}
-                                  getErrorMessage={(color: Mana) => getErrorMessage(`manaCost.${color}`)}
+                                  getErrorMessage={() => getErrorMessage('manaCost')}
                                   isChanged={!isCreate && JSON.stringify(start.manaCost) !== JSON.stringify(manaCost)} revert={() => setManaCost(start.manaCost)}
             />}
           {tokenColors !== undefined

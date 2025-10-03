@@ -212,7 +212,7 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
         onFocus={handleFocus}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className={`inline-block w-full ${isOpen ? 'border' : 'text-white'} px-3 py-1 text-sm border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[1.5rem] ${className}`}
+        className={`inline-block w-full ${isOpen ? 'border' : 'text-white'} px-3 py-2 text-sm border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[1.5rem] ${className}`}
         style={{
           whiteSpace: 'nowrap',
           overflow: 'hidden',

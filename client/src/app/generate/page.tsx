@@ -1,14 +1,14 @@
 import { Metadata } from 'next';
-import { CardGenerator } from './card-generator';
+import { CardInspiration } from './card-inspiration';
 import { getCardSampleGenerators } from '@/utils/server';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: `KPA: Generate Card`,
+    title: `KPA: Inspire Me!`,
   }
 }
 
 export default async function CardGenerate() {
   const cardGenerators = await getCardSampleGenerators();
-  return <CardGenerator previousCardGenerators={cardGenerators} />;
+  return <CardInspiration previousCardGenerators={cardGenerators} />;
 }

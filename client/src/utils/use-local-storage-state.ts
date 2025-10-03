@@ -18,16 +18,15 @@ export const useLocalStorageState = <T>(
         setIsHydrated(true);
       }
     }
-  }, [key, _initialState]);
+  }, [isHydrated, key, _initialState]);
 
   // Set up an interval to check for changes in localStorage
   useEffect(() => {
     const t = setInterval(() => {
       const currentValue = localStorage.getItem(key);
-      console.info(`currentValue of ${key}`, currentValue);
       setState((prevState) => {
         if (currentValue !== JSON.stringify(prevState)) {
-          return currentValue === null ? initialState : JSON.parse(currentValue);
+          return currentValue === null ? _initialState : JSON.parse(currentValue);
         }
         return prevState;
       });
@@ -35,7 +34,7 @@ export const useLocalStorageState = <T>(
     return () => {
       clearInterval(t);
     };
-  }, []);
+  }, [key, _initialState]);
 
   // Function to set the localStorage state and update the component state
   const setLocalStorageState = (value: T) => {

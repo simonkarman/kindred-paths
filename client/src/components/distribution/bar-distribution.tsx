@@ -13,7 +13,7 @@ export const BarDistribution = (props: {
   return (
     <div>
       <h3 className="font-bold mb-2 text-center">{title}<span className="pl-1 font-normal">Distribution</span></h3>
-      <div className={`space-y-1 ${fullWidth ? 'w-full' : 'w-70'}`}>
+      <div className={`mx-auto space-y-1 ${fullWidth ? 'w-full' : 'w-70'}`}>
         {Object.entries(data)
           .sort(([a, an], [b, bn]) => sortOnValue ? (bn - an) : a.localeCompare(b))
           .map(([key, value]) => (

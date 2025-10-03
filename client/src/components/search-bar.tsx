@@ -6,9 +6,9 @@ import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { useSearch } from '@/utils/use-search';
 import ColorCodedSearchInput from '@/components/color-coded-search-input';
 
-export default function SearchBar() {
+export default function SearchBar(props: { scope: string, initial?: string }) {
   const searchInputRef = useRef<HTMLDivElement>(null);
-  const [searchText, setSearchText] = useSearch();
+  const [searchText, setSearchText] = useSearch(props.scope, props.initial);
   const [open, setOpen] = useState(searchText.length > 0);
 
   useEffect(() => {
@@ -71,11 +71,12 @@ export default function SearchBar() {
         setSearchText={setSearchText}
         onBlur={handleBlur}
         isOpen={isOpen}
-        placeholder="Search... (e.g., set:miffy type:artifact home)"
+        placeholder="Search... (e.g., color:red type:creature)"
+        className={isOpen ? 'bg-white' : ''}
       />
       <button
         onClick={() => setOpen(true)}
-        className={`${isOpen ? 'hidden' : 'inline-block'} text-sm px-3 py-1 border border-gray-300 rounded`}
+        className={`${isOpen ? 'hidden' : 'inline-block'} text-sm px-3 py-1 border border-gray-300 rounded-lg`}
       >
         <FontAwesomeIcon icon={faSearch} />
       </button>

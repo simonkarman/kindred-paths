@@ -5,7 +5,7 @@ import { computeCardId } from '../utils/card-utils';
 export class CardService {
   async getAllCards(): Promise<SerializedCard[]> {
     try {
-      const files = await fs.readdir('./set');
+      const files = await fs.readdir('./cards');
       return await Promise.all(files
         .filter(file => file.endsWith('.json'))
         .map(file => file.replace('.json', ''))
@@ -22,7 +22,7 @@ export class CardService {
 
   async getCardById(id: string): Promise<Card | undefined> {
     try {
-      const data = await fs.readFile(`./set/${id}.json`, 'utf-8');
+      const data = await fs.readFile(`./cards/${id}.json`, 'utf-8');
       const parsed = JSON.parse(data);
       parsed.id = id;
       const result = SerializedCardSchema.safeParse(parsed);
@@ -40,8 +40,8 @@ export class CardService {
 
   async saveCard(card: Card, override?: Omit<Partial<SerializedCard>, 'id'>): Promise<SerializedCard> {
     const serializedCard = card.toJson();
-    const path = `./set/${card.id}.json`;
-    await fs.mkdir('./set', { recursive: true });
+    const path = `./cards/${card.id}.json`;
+    await fs.mkdir('./cards', { recursive: true });
     const value: SerializedCard = { ...serializedCard, ...override };
     await fs.writeFile(path, JSON.stringify({ ...value, id: undefined }, null, 2), 'utf-8');
     return value;
@@ -97,7 +97,7 @@ export class CardService {
 
     // If the new card ID is different from the old one, we need to delete the old file
     if (nextCardId !== previousCardId) {
-      await fs.rm(`./set/${previousCardId}.json`);
+      await fs.rm(`./cards/${previousCardId}.json`);
     }
 
     // Move the old art to the suggestions directory

@@ -1,0 +1,29 @@
+import { z } from 'zod';
+
+export const BooleanCriteriaSchema = z.union([
+  z.object({
+    key: z.literal('boolean/true'),
+    value: z.never().optional(),
+  }),
+  z.object({
+    key: z.literal('boolean/false'),
+    value: z.never().optional(),
+  }),
+]);
+
+export type BooleanCriteria = z.infer<typeof BooleanCriteriaSchema>;
+
+export const checkBooleanCriteria = (criteria: BooleanCriteria, value: unknown): boolean => {
+  if (value === null || value === undefined) {
+    value = false;
+  }
+  if (typeof value !== 'boolean') {
+    return false;
+  }
+  switch (criteria.key) {
+  case 'boolean/true':
+    return value;
+  case 'boolean/false':
+    return !value;
+  }
+};

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { RarityText } from '@/components/rarity-text';
 import { ManaCost } from '@/components/mana-cost';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClone, faImage, faPenToSquare, faShieldCat, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faClone, faImage, faPenToSquare, faShieldCat, faTrashCan, faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import { deleteCard } from '@/utils/server';
 import { useDeckNameFromSearch } from '@/utils/use-search';
@@ -88,11 +88,11 @@ export const TableTab = (props: {
         const aHasArt = a.art !== undefined && a.art.length > 0;
         const bHasArt = b.art !== undefined && b.art.length > 0;
         if (aHasArt && !bHasArt) {
-          return -1; // a has art, b does not
+          return -1;
         } else if (!aHasArt && bHasArt) {
-          return 1; // b has art, a does not
+          return 1;
         }
-        return 0; // both have or both do not have art
+        return 0;
       } else if (sortKey.k === 'tags') {
         const tagsA = tagsAsString(a.tags);
         const tagsB = tagsAsString(b.tags);
@@ -105,87 +105,140 @@ export const TableTab = (props: {
           } else if (typeof tagValue === 'string' && !isNaN(Number(tagValue))) {
             return Number(tagValue);
           } else if (typeof tagValue === 'boolean') {
-            return tagValue ? 1 : 0; // Treat boolean true as 1, false as 0
+            return tagValue ? 1 : 0;
           } else if (tagValue === undefined || tagValue === null) {
             return 0.5;
           }
-          return 99; // Default value for non-numeric tags
+          return 99;
         }
         return tagAsNumber(a, `deck/${deckName}`) - tagAsNumber(b, `deck/${deckName}`);
       }
       return 0;
     });
 
-  const className = 'data-[is-active=true]:font-bold inline-block text-xs font-medium transition-colors text-gray-500 hover:text-gray-700';
-  return <ul className='flex flex-col items-start'>
-    <li className="flex items-center px-2 border-b border-zinc-300 text-xs text-zinc-600">
-      <span onClick={() => sortOn('mana-value')} data-is-active={sortKey.k === "mana-value"} className={`${className} text-right pr-2 w-22`}>Cost</span>
-      <span onClick={() => sortOn('tag:count')} data-is-active={sortKey.k === "tag:count"} className={`${className} w-9 text-center px-0.5`}>Deck</span>
-      <span onClick={() => sortOn('collector-number')} data-is-active={sortKey.k === "collector-number"} className={`${className} w-16 text-right pr-1.5`}>#</span>
-      <span onClick={() => sortOn('name')} data-is-active={sortKey.k === "name"} className={`${className} w-74 border-r border-transparent mr-4`}>Name</span>
-      <span onClick={() => sortOn('rarity')} data-is-active={sortKey.k === "rarity"} className={`${className} w-24`}>Rarity</span>
-      <span onClick={() => sortOn('types')} data-is-active={sortKey.k === "types"} className={`${className} w-80`}>Types</span>
-      <span className="inline-block w-8 text-center">
-        <span onClick={() => sortOn('power')} data-is-active={sortKey.k === "power"} className={className}>P</span>
-        /
-        <span onClick={() => sortOn('toughness')} data-is-active={sortKey.k === "toughness"} className={className}>T</span>
-      </span>
-      <span onClick={() => sortOn('art')} data-is-active={sortKey.k === "art"} className={`${className} w-6 text-center`}>Art</span>
-      <span className="inline-block w-10 text-center">Token</span>
-    </li>
-    {cards.map((card) => {
-      return <li
-        key={card.id}
-        className="flex items-center px-2 py-0.5 border-t border-zinc-200 hover:bg-zinc-100"
-      >
-        <span className="inline-block w-22 pr-2 text-right"><ManaCost cost={card.renderManaCost()} /></span>
-        <span className="inline-block w-9 text-xs text-center px-0.5 text-zinc-500">
-          {card.tags?.[`deck/${deckName}`] ? card.tags?.[`deck/${deckName}`] + 'x' : '-'}
-        </span>
-        <span className="inline-block w-16 text-xs text-right pr-1.5 text-zinc-500">
-          {(card.tags?.['set'] ? card.tags?.['set'] + '/' : '') + card.collectorNumber.toString()}
-        </span>
-        <span className="inline-flex gap-2 justify-between pr-2 w-74 font-bold border-r border-zinc-200 mr-4">
-          {(onSelect !== undefined)
-            ? <button
-                className="hover:text-orange-700 active:text-orange-500"
-                onClick={() => onSelect(card.toJson())}
-              >
-                {card.name}
-              </button>
-            : <>
-                <Link
-                  className="hover:text-orange-700 active:text-orange-500"
-                  href={`/card/${card.id}`}
-                >
-                  {card.name}
-                </Link>
-                <span className="flex gap-1">
-                  <Link
-                    className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
-                    href={`/edit/${card.id}?t=/`}
-                  ><FontAwesomeIcon icon={faPenToSquare} /></Link>
-                  <Link
-                    className="text-zinc-600 hover:text-orange-700 active:text-orange-500"
-                    href={`/clone/${card.id}?t=/`}
-                  ><FontAwesomeIcon icon={faClone} /></Link>
+  const SortableHeader = ({ sortKey: key, children, className = "" }: { sortKey: SortKey, children: React.ReactNode, className?: string }) => (
+    <th
+      onClick={() => sortOn(key)}
+      className={`px-3 py-2 text-left text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer transition-colors ${className} ${sortKey.k === key ? 'bg-slate-50 text-slate-900 font-semibold' : ''}`}
+    >
+      <div className="flex items-center gap-1.5">
+        {children}
+        {sortKey.k === key && (
+          <FontAwesomeIcon
+            icon={sortKey.d === 'asc' ? faArrowUp : faArrowDown}
+            className="text-blue-600 text-xs"
+          />
+        )}
+      </div>
+    </th>
+  );
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50 border-b border-slate-200">
+          <tr>
+            <SortableHeader sortKey="mana-value" className="text-right">Cost</SortableHeader>
+            <SortableHeader sortKey="tag:count" className="text-center">Deck</SortableHeader>
+            <SortableHeader sortKey="collector-number" className="text-right">#</SortableHeader>
+            <SortableHeader sortKey="name">Name</SortableHeader>
+            <SortableHeader sortKey="rarity">Rarity</SortableHeader>
+            <SortableHeader sortKey="types">Types</SortableHeader>
+            <th className="px-3 py-2 text-center text-xs font-medium text-slate-600">
+              <span onClick={() => sortOn('power')} className={`cursor-pointer hover:text-slate-900 ${sortKey.k === 'power' ? 'text-slate-900 font-semibold' : ''}`}>P</span>
+              /
+              <span onClick={() => sortOn('toughness')} className={`cursor-pointer hover:text-slate-900 ${sortKey.k === 'toughness' ? 'text-slate-900 font-semibold' : ''}`}>T</span>
+            </th>
+            <SortableHeader sortKey="art" className="text-center">Art</SortableHeader>
+            <th className="px-3 py-2 text-center text-xs font-medium text-slate-600">Token</th>
+            {!onSelect && <th className="px-3 py-2 text-center text-xs font-medium text-slate-600">Actions</th>}
+          </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+          {cards.map((card) => (
+            <tr
+              key={card.id}
+              className="hover:bg-slate-50 transition-colors"
+            >
+              <td className="px-3 py-2 text-right whitespace-nowrap">
+                <ManaCost cost={card.renderManaCost()} />
+              </td>
+              <td className="px-3 py-2 text-center text-slate-600 text-xs">
+                {card.tags?.[`deck/${deckName}`] ? card.tags?.[`deck/${deckName}`] + 'x' : '-'}
+              </td>
+              <td className="px-3 py-2 text-right text-slate-600 text-xs whitespace-nowrap">
+                {(card.tags?.['set'] ? card.tags?.['set'] + '/' : '') + card.collectorNumber.toString()}
+              </td>
+              <td className="px-3 py-2 font-semibold">
+                {onSelect !== undefined ? (
                   <button
-                    className="text-zinc-600 hover:text-red-700 active:text-red-500"
-                    onClick={() => del(card.id)}
-                  ><FontAwesomeIcon icon={faTrashCan} /></button>
-                </span>
-              </>
-          }
-        </span>
-        <span className="w-24 border-zinc-200"><RarityText rarity={card.rarity} /></span>
-        <span className="inline-block w-80">{card.renderTypeLine()}</span>
-        <span className="inline-block w-8 text-center">{card.pt ? `${card.pt.power}/${card.pt.toughness}` : ''}</span>
-        <span className="inline-block w-6 text-center">{card.art
-          ? <FontAwesomeIcon className="ml-2 text-zinc-400" icon={faImage} />
-          : ''
-        }</span>
-        <span className="inline-block w-10 text-center">{card.getCreatableTokenNames().length > 0 ? <FontAwesomeIcon className="ml-2 text-zinc-400" icon={faShieldCat} /> : ''}</span>
-      </li>
-    })}
-  </ul>;
+                    className="hover:text-blue-600 active:text-blue-700 transition-colors"
+                    onClick={() => onSelect(card.toJson())}
+                  >
+                    {card.name}
+                  </button>
+                ) : (
+                  <Link
+                    className="hover:text-blue-600 active:text-blue-700 transition-colors"
+                    href={`/card/${card.id}`}
+                  >
+                    {card.name}
+                  </Link>
+                )}
+              </td>
+              <td className="px-3 py-2">
+                <RarityText rarity={card.rarity} />
+              </td>
+              <td className="px-3 py-2 text-slate-700">{card.renderTypeLine()}</td>
+              <td className="px-3 py-2 text-center text-slate-700">
+                {card.pt ? `${card.pt.power}/${card.pt.toughness}` : ''}
+              </td>
+              <td className="px-3 py-2 text-center">
+                {card.art && <FontAwesomeIcon className="text-slate-400" icon={faImage} />}
+              </td>
+              <td className="px-3 py-2 text-center">
+                {card.getCreatableTokenNames().length > 0 && (
+                  <FontAwesomeIcon className="text-slate-400" icon={faShieldCat} />
+                )}
+              </td>
+              {!onSelect && (
+                <td className="px-3 py-2">
+                  <div className="flex gap-2 justify-center">
+                    <Link
+                      className="text-slate-500 hover:text-blue-600 transition-colors"
+                      href={`/edit/${card.id}?t=/`}
+                      title="Edit"
+                    >
+                      <FontAwesomeIcon icon={faPenToSquare} />
+                    </Link>
+                    <Link
+                      className="text-slate-500 hover:text-blue-600 transition-colors"
+                      href={`/clone/${card.id}?t=/`}
+                      title="Clone"
+                    >
+                      <FontAwesomeIcon icon={faClone} />
+                    </Link>
+                    <button
+                      className="text-slate-500 hover:text-red-600 transition-colors"
+                      onClick={() => del(card.id)}
+                      title="Delete"
+                    >
+                      <FontAwesomeIcon icon={faTrashCan} />
+                    </button>
+                  </div>
+                </td>
+              )}
+            </tr>
+          ))}
+          </tbody>
+        </table>
+      </div>
+      {cards.length === 0 && (
+        <div className="text-center py-12 text-slate-500">
+          No cards found
+        </div>
+      )}
+    </div>
+  );
 }

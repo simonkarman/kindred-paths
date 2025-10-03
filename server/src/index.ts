@@ -5,12 +5,14 @@ import { renderRouter } from './routes/render';
 import { suggestionsRouter } from './routes/suggestions';
 import { maintenanceRouter } from './routes/maintenance';
 import { renderService } from './services/render-service';
+import { setsRouter } from './routes/sets';
 const app = express();
 app.use(express.json());
 app.use(cors());
 
 // Register routes
 app.use('/card', cardsRouter);
+app.use('/set', setsRouter);
 app.use('/', renderRouter);
 app.use('/suggest', suggestionsRouter);
 app.use('/', maintenanceRouter);

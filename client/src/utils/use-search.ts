@@ -1,26 +1,26 @@
 import { useLocalStorageState } from '@/utils/use-local-storage-state';
 import { Card, CardColor, CardColorCharacter, colorToLong, SerializedCard, wubrg } from 'kindred-paths';
 
-export const useSearch = () => useLocalStorageState('search', '');
+export const useSearch = (scope: string, initial?: string) => useLocalStorageState(`${scope}/search`, initial ?? '');
 
-const useValueFromSearch = (keys: string[]): string | undefined => {
+const useValueFromHomeSearch = (keys: string[]): string | undefined => {
   // TODO: this could result in multiple values if the user specifies the same key multiple times
   //       e.g. "deck:foo deck:bar" would return "foo" currently, but maybe should return undefined or an array of both values
-  const [searchText] = useSearch();
+  const [searchText] = useSearch('home');
   const searchTerms = searchText.trim().toLowerCase().split(/\s+/);
   for (const term of searchTerms) {
     if (keys.some(key => term.startsWith(`${key}:`))) {
-      const deckName = term.slice(term.indexOf(':') + 1).trim();
-      if (deckName.length > 0) {
-        return deckName;
+      const value = term.slice(term.indexOf(':') + 1).trim();
+      if (value.length > 0) {
+        return value;
       }
     }
   }
   return undefined;
 };
 
-export const useDeckNameFromSearch = () => useValueFromSearch(['deck', 'd']);
-export const useSetNameFromSearch = () => useValueFromSearch(['set', 's'])?.toUpperCase();
+export const useDeckNameFromSearch = () => useValueFromHomeSearch(['deck', 'd']);
+export const useSetNameFromSearch = () => useValueFromHomeSearch(['set', 's'])?.toUpperCase();
 
 const check = (
   keys: string[],
