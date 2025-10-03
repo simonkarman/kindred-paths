@@ -35,7 +35,7 @@ export const CardManaCostInput = (props: {
       <InputHeader propertyName="mana cost" isChanged={props.isChanged} revert={props.revert} />
 
       {/* Mana type inputs */}
-      <div className="grid grid-cols-3 gap-1">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
         {(['colorless', 'x', undefined, ...cardColors] as const).map((manaType, i) => {
           if (manaType === undefined) {
             return <div key={i} />; // Leave empty space for undefined mana types

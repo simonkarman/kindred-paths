@@ -275,10 +275,10 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
   const setArtFocus = createSetterFor("art/focus");
 
   return (<>
-    <div className={`mx-auto space-y-6 border ${isChanged ? 'border-orange-200' : 'border-zinc-200'} bg-white rounded-lg px-3 pb-2 shadow-lg`}>
-      <h2 className="text-lg font-bold mt-2 mb-1 text-center">{isCreate ? 'Create Card' : `Update ${serializedCard.name}`}</h2>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-4 border-r border-zinc-100 pr-3">
+    <div className={`mx-auto max-w-[1400px] space-y-6 ${isChanged ? 'border-2 border-orange-200' : 'border border-zinc-200'} bg-white rounded-lg p-6 shadow-md`}>
+      <h2 className="text-2xl font-bold mt-2 mb-4 text-center">{isCreate ? 'Create Card' : `Update ${serializedCard.name}`}</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-4 border-r border-zinc-100 pr-6">
           <CardTypesInput types={types} setTypes={setTypes} getErrorMessage={() => getErrorMessage('types')}
                           isToken={isToken} setIsToken={setIsToken}
                           isChanged={!isCreate && JSON.stringify({ isToken: start.isToken, types: start.types }) !== JSON.stringify({ isToken, types })}

@@ -56,7 +56,7 @@ export default async function RootLayout({
               href="/"
               className="text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
             >
-              Home
+              Collection
             </Link>
             <Link
               href="/set"
