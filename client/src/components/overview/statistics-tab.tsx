@@ -59,7 +59,7 @@ export function StatisticsTab(props: { cards: SerializedCard[] }) {
       {/* Primary Distributions */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
         <h3 className="text-lg font-semibold text-slate-900 mb-4">Primary Distributions</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-8">
           <BarDistribution title="Card Color" data={cardColorDistribution} />
           <BarDistribution title="Rarity" data={rarityDistribution} />
           <BarDistribution title="Mana Value" data={manaValueDistribution} />
@@ -69,7 +69,7 @@ export function StatisticsTab(props: { cards: SerializedCard[] }) {
       {/* Detailed Distributions */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
         <h3 className="text-lg font-semibold text-slate-900 mb-4">Detailed Breakdown</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-8">
           <BarDistribution title="Card Type" data={cardTypeDistribution} sortOnValue />
           <BarDistribution title="Subtype" data={subtypeDistribution} />
           <GridDistribution

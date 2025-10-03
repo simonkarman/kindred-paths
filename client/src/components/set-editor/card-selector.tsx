@@ -32,15 +32,15 @@ export function CardSelector(props: CardSelectorProps) {
     : props.cards;
   const cards = filterCardsBasedOnSearch(_cards, searchText);
 
-  return <>
+  return <div className="p-4">
     <h2 className="font-bold w-full text-center text-lg">Select a card</h2>
     <div
-      className={`flex gap-2 justify-center items-baseline mb-4 p-1 border rounded-lg ${searchText ? 'border-transparent' : 'border-gray-200'}`}
+      className={`flex gap-2 justify-center items-stretch mb-4 ${searchText ? 'border-transparent' : 'border-gray-200'}`}
     >
       <SearchBar scope={props.search.scope} initial={props.search.initial} />
       {hasValidation && <button
         onClick={() => setIgnoreBlueprintValidation(i => !i)}
-        className="shrink-0 px-3 py-0.5 border-2 text-blue-500 border-blue-500 rounded-lg hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 transition"
+        className="shrink-0 px-3 py-0.5 border-3 text-blue-500 border-blue-500 rounded-lg hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 transition"
       >
         {ignoreBlueprintValidation ? 'Exclude invalid cards' : 'Include invalid cards'}
       </button>}
@@ -71,5 +71,5 @@ export function CardSelector(props: CardSelectorProps) {
         </button>
       </div>)}
     </div>
-  </>;
+  </div>;
 }

@@ -29,11 +29,11 @@ export default async function RootLayout({
   return (
     <html lang="en">
     <body
-      className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col not-print:bg-gradient-to-br from-slate-50 to-slate-100`}
     >
     <header className="print:hidden bg-white border-b border-slate-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <Link href="/" className="group">
               <h1 className="font-bold text-2xl tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors">
@@ -62,14 +62,14 @@ export default async function RootLayout({
               href="/set"
               className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
             >
-              View Sets
+              Sets
             </Link>
           </nav>
         </div>
       </div>
     </header>
 
-    <main className="flex-1 p-3 w-full">
+    <main className="flex-1 non-print:p-3 w-full">
       {children}
     </main>
 

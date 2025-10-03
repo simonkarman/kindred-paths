@@ -45,7 +45,7 @@ type CardEditorProps = {
 };
 
 export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProps) {
-  const isCreate = start.id === "<new>";
+  const isCreate = start.id === "<new>" || start.id.startsWith('ai-');
   const set = useSetNameFromSearch();
   const deck = useDeckNameFromSearch();
 
@@ -151,7 +151,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
     tags,
   };
   const isChanged = isCreate || (JSON.stringify(serializedCard) !== JSON.stringify(start));
-  const canSave = isChanged && (!isCreate || name !== start.name);
+  const canSave = isChanged && (!isCreate || name !== Card.new().name);
 
   // Form State
   const [isLoading, setIsLoading] = useState(false);
@@ -232,7 +232,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
     setIsLoading(true);
 
     try {
-      const result = serializedCard.id === '<new>'
+      const result = isCreate
         ? await createCard(data)
         : await updateCard(data);
       if (result) {

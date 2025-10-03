@@ -45,7 +45,7 @@ export function CardInspiration(props: { previousCardGenerators: { generatorId: 
   }
 
   const handleGenerateCards = useCallback(async (continuation: boolean) => {
-    if (!prompt.trim()) {
+    if (!continuation && !prompt.trim()) {
       setError('Please enter a prompt');
       return;
     }
@@ -207,19 +207,10 @@ export function CardInspiration(props: { previousCardGenerators: { generatorId: 
               </div>
             )}
 
-            {/* Loading State */}
-            {loading && (
-              <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-blue-600 mb-4"></div>
-                <p className="text-slate-600 font-medium">Generating card suggestions...</p>
-                <p className="text-slate-500 text-sm mt-1">This may take a moment</p>
-              </div>
-            )}
-
             {/* Cards Grid */}
-            {!loading && suggestions.length > 0 && (
+            {suggestions.length > 0 && (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                   {filterCardsBasedOnSearch(
                     suggestions.map((s, i) => ({ ...s, tags: { ...s.tags, imageIndex: i } })),
                     searchText
@@ -256,6 +247,15 @@ export function CardInspiration(props: { previousCardGenerators: { generatorId: 
                     );
                   })}
                 </div>
+
+                {/* Loading State */}
+                {loading && (
+                  <div className="text-center py-12">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-blue-600 mb-4"></div>
+                    <p className="text-slate-600 font-medium">Generating card suggestions...</p>
+                    <p className="text-slate-500 text-sm mt-1">This may take a moment</p>
+                  </div>
+                )}
 
                 {/* Generate More Button */}
                 {generatorId && (

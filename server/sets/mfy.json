@@ -92,7 +92,14 @@
       "key": "second friend"
     },
     {
-      "key": "book_1"
+      "key": "book_1",
+      "blueprint": {
+        "isToken": [
+          {
+            "key": "boolean/true"
+          }
+        ]
+      }
     },
     {
       "key": "book_2"
@@ -101,13 +108,7 @@
       "key": "book_3"
     },
     {
-      "key": "removal"
-    },
-    {
-      "key": "mana rock"
-    },
-    {
-      "key": "land"
+      "key": "def"
     }
   ],
   "archetypes": [
@@ -224,11 +225,6 @@
           }
         }
       }
-    },
-    {
-      "name": "Red",
-      "metadata": {},
-      "cycles": {}
     }
   ]
 }

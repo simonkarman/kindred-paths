@@ -249,8 +249,8 @@ export function SetEditor(props: SetEditorProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-[1600px] mx-auto">
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto">
         {/* Modals */}
         {cardEditorSettings && (
           <Modal onClose={() => setCardEditorSettings(undefined)}>
@@ -327,8 +327,8 @@ export function SetEditor(props: SetEditorProps) {
         )}
 
         {/* Header Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
-          <div className="flex items-start gap-4">
+        <div className="mx-auto max-w-[1600px] bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6 space-y-2">
+          <div className="flex items-center gap-4">
             <div className="flex-1">
               <input
                 type="text"
@@ -339,7 +339,7 @@ export function SetEditor(props: SetEditorProps) {
               />
               <p className="text-xs text-slate-400 mt-1 px-2">ID: {set.getId()}</p>
             </div>
-            <div className="flex gap-2 pt-8">
+            <div className="flex gap-2">
               {serializableSet.blueprint && (
                 <IconButton
                   onClick={() => onRemoveSetBlueprint()}
@@ -356,11 +356,42 @@ export function SetEditor(props: SetEditorProps) {
               />
             </div>
           </div>
+
+          {/* Status Legend */}
+          <div className="flex flex-wrap justify-end gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faExclamationTriangle} className="text-yellow-600" />
+              <span className="text-slate-700">
+                Missing: <span className="font-semibold text-slate-900">{statusCounts.missing}</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faCircle} className="text-slate-400" />
+              <span className="text-slate-700">
+                      Skip: <span className="font-semibold text-slate-900">{statusCounts.skip}</span>
+                    </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faTimes} className="text-red-600" />
+              <span className="text-slate-700">
+                Invalid: <span className="font-semibold text-slate-900">{statusCounts.invalid}</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faCheck} className="text-green-600" />
+              <span className="text-slate-700">
+                Valid: <span className="font-semibold text-slate-900">{statusCounts.valid}</span>
+                <span className="text-slate-500 ml-1">
+                  / {statusCounts.missing + statusCounts.invalid + statusCounts.valid}
+                </span>
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Validation Messages */}
         {validationMessages.length > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+          <div className="mx-auto max-w-[1600px] bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
             <div className="flex gap-3">
               <FontAwesomeIcon icon={faWarning} className="text-amber-600 text-lg mt-0.5 flex-shrink-0" />
               <div className="flex-1">
@@ -383,11 +414,11 @@ export function SetEditor(props: SetEditorProps) {
             <table className="w-full border-collapse text-xs">
               <thead>
               <tr>
-                <th className="sticky left-0 bg-slate-100 text-left p-3 font-semibold text-slate-900 min-w-[250px] border-b-2 border-slate-300">
+                <th className="sticky z-10 left-0 bg-slate-100 text-left p-3 font-semibold text-slate-900 min-w-[250px] border-b-2 border-slate-300">
                   Archetypes
                 </th>
                 {serializableSet.archetypes.map((archetype, archetypeIndex) => (
-                  <th key={archetypeIndex} className="group border-b-2 border-slate-300 border-l border-slate-200 p-2 bg-slate-50 text-center font-medium">
+                  <th key={archetypeIndex} className="group border-b-2 border-slate-300 border-l p-2 bg-slate-50 text-center font-medium">
                     <div className="flex gap-1 px-1 items-center justify-center">
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                         <IconButton
@@ -421,7 +452,7 @@ export function SetEditor(props: SetEditorProps) {
                     </div>
                   </th>
                 ))}
-                <th className="border-b-2 border-slate-300 border-l border-slate-200 p-2 bg-slate-50 text-center font-medium">
+                <th className="border-b-2 border-slate-300 border-l p-2 bg-slate-50 text-center font-medium">
                   <button
                     onClick={() => addArchetype()}
                     className="w-full px-3 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400 active:bg-green-200 transition-colors flex items-center justify-center gap-1"
@@ -434,16 +465,17 @@ export function SetEditor(props: SetEditorProps) {
               <tbody>
               {/* Metadata Section Header */}
               <tr>
-                <th colSpan={serializableSet.archetypes.length + 2} className="sticky left-0 bg-slate-100 p-3 pt-4 text-left font-semibold text-slate-900 border-b border-slate-200">
+                <th className="sticky z-10 left-0 bg-slate-100 p-3 pt-4 text-left font-semibold text-slate-900 border-b border-slate-200">
                   Metadata
                 </th>
+                <th colSpan={serializableSet.archetypes.length + 1} className="bg-slate-100" />
               </tr>
 
               {/* Metadata Rows */}
               {serializableSet.metadataKeys.map((metadataKey, rowIndex) => (
                 <tr key={rowIndex}>
                   <td
-                    className={`group sticky left-0 px-3 py-2 border border-slate-200 bg-slate-50 text-slate-700 ${
+                    className={`group sticky z-10 left-0 px-3 py-2 border border-slate-200 bg-slate-50 text-slate-700 ${
                       dragOverIndex?.type === 'metadataKeys' && dragOverIndex.index === rowIndex && draggedItem?.index !== rowIndex
                         ? `${((draggedItem?.index ?? 0) > rowIndex) ? 'border-t-2 border-t-blue-500' : 'border-b-2 border-b-blue-500'}`
                         : ''
@@ -468,7 +500,7 @@ export function SetEditor(props: SetEditorProps) {
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <div className="hidden group-hover:flex absolute left-[-60px] flex-col gap-1">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex absolute left-[-10px] flex-col gap-1">
                         <IconButton
                           onClick={() => addMetadataKey(rowIndex)}
                           icon={faPlus}
@@ -508,13 +540,13 @@ export function SetEditor(props: SetEditorProps) {
                   {serializableSet.archetypes.map((archetype, archetypeIndex) => {
                     const hasValue = metadataKey in archetype.metadata && archetype.metadata[metadataKey] !== undefined;
                     return (
-                      <td key={archetypeIndex} className={`border border-slate-200 p-1 ${hasValue ? 'bg-white' : 'bg-yellow-50'}`}>
+                      <td key={archetypeIndex} className={`border border-slate-200 p-1 ${hasValue ? 'bg-white' : 'bg-yellow-50 hover:bg-yellow-100'}`}>
                         <input
                           type="text"
                           value={archetype.metadata[metadataKey] || ''}
                           onChange={(e) => updateMetadataValue(archetypeIndex, metadataKey, e.target.value)}
-                          className="w-full border-none text-xs bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-                          placeholder="Value..."
+                          className="w-full border-none text-xs bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 placeholder:text-yellow-800"
+                          placeholder="..."
                         />
                       </td>
                     );
@@ -538,16 +570,17 @@ export function SetEditor(props: SetEditorProps) {
 
               {/* Cycles Section Header */}
               <tr>
-                <th colSpan={serializableSet.archetypes.length + 2} className="sticky left-0 bg-slate-100 p-3 pt-4 text-left font-semibold text-slate-900 border-b border-slate-200">
+                <th className="sticky z-10 left-0 bg-slate-100 p-3 pt-4 text-left font-semibold text-slate-900 border-b border-slate-200">
                   Cycles
                 </th>
+                <th colSpan={serializableSet.archetypes.length + 1} className="bg-slate-100" />
               </tr>
 
               {/* Cycle Rows */}
               {serializableSet.cycles.map(({ key: cycleKey, blueprint }, rowIndex) => (
                 <tr key={rowIndex}>
                   <td
-                    className={`group sticky left-0 px-3 py-2 border border-slate-200 bg-slate-50 text-slate-800 ${
+                    className={`group sticky z-10 left-0 px-3 py-2 border border-slate-200 bg-slate-50 text-slate-800 ${
                       dragOverIndex?.type === 'cycleKeys' && dragOverIndex.index === rowIndex && draggedItem?.index !== rowIndex
                         ? `${((draggedItem?.index ?? 0) > rowIndex) ? 'border-t-2 border-t-blue-500' : 'border-b-2 border-b-blue-500'}`
                         : ''
@@ -572,7 +605,7 @@ export function SetEditor(props: SetEditorProps) {
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <div className="hidden group-hover:flex absolute left-[-60px] flex-col gap-1">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex absolute left-[-10px] flex-col gap-1">
                         <IconButton
                           onClick={() => addCycle(rowIndex)}
                           icon={faPlus}
@@ -676,41 +709,6 @@ export function SetEditor(props: SetEditorProps) {
                   </td>
                 </tr>
               )}
-
-              {/* Status Legend */}
-              <tr>
-                <td colSpan={serializableSet.archetypes.length + 2} className="p-4 bg-slate-50 border-t-2 border-slate-300">
-                  <div className="flex flex-wrap gap-6 text-sm">
-                    <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faExclamationTriangle} className="text-yellow-600" />
-                      <span className="text-slate-700">
-                          Missing: <span className="font-semibold text-slate-900">{statusCounts.missing}</span>
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faCircle} className="text-slate-400" />
-                      <span className="text-slate-700">
-                          Skip: <span className="font-semibold text-slate-900">{statusCounts.skip}</span>
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faTimes} className="text-red-600" />
-                      <span className="text-slate-700">
-                          Invalid: <span className="font-semibold text-slate-900">{statusCounts.invalid}</span>
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faCheck} className="text-green-600" />
-                      <span className="text-slate-700">
-                          Valid: <span className="font-semibold text-slate-900">{statusCounts.valid}</span>
-                          <span className="text-slate-500 ml-1">
-                            / {statusCounts.missing + statusCounts.invalid + statusCounts.valid}
-                          </span>
-                        </span>
-                    </div>
-                  </div>
-                </td>
-              </tr>
               </tbody>
             </table>
           </div>

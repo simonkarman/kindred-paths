@@ -121,7 +121,7 @@ export function VisualTab(props: {
       )}
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 print:gap-0 print:grid-cols-3">
+      <div className="break-before-page grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 print:gap-0 print:grid-cols-3">
         {cardGroups.map((group) => group
           .map(card => n(respectDeckCount && deckName && typeof card.tags?.[`deck/${deckName}`] === 'number'
               ? card.tags[`deck/${deckName}`] as number

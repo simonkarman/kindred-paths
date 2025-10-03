@@ -35,18 +35,18 @@ export function CardOverview(props: {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 print:px-1.5">
       <div className="max-w-7xl mx-auto">
         {/* Header Section with Tabs and Actions */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden">
           {/* Top Bar with Search and Actions */}
           <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-              <div className="flex justify-end gap-2 w-full flex-1">
+              <div className="flex justify-end gap-2 w-full shrink">
                 <SearchBar scope="home" />
               </div>
               {showCreate && (
-                <div className="flex gap-2 flex-wrap">
+                <div className="shrink-0 flex gap-2 justify-end">
                   <Link
                     className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm"
                     href="/create?t=/"

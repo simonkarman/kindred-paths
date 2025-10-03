@@ -9,7 +9,6 @@ import {
   faCancel,
   faPlus,
   faUnlink,
-  faEdit,
   faTimes,
   faTriangleExclamation,
   faCircleXmark, faCircleCheck,
@@ -25,7 +24,6 @@ export const getStatusConfig = (status: SlotStatus) => {
         icon: faTriangleExclamation,
         bgColor: 'bg-yellow-50 hover:bg-yellow-100',
         textColor: 'text-yellow-800',
-        borderColor: 'border-yellow-200',
         iconColor: 'text-yellow-600'
       };
     case 'skip':
@@ -34,7 +32,6 @@ export const getStatusConfig = (status: SlotStatus) => {
         icon: faCancel,
         bgColor: 'bg-gray-50 hover:bg-gray-100',
         textColor: 'text-gray-500',
-        borderColor: 'border-gray-200',
         iconColor: 'text-gray-300'
       };
     case 'invalid':
@@ -43,7 +40,6 @@ export const getStatusConfig = (status: SlotStatus) => {
         icon: faCircleXmark,
         bgColor: 'bg-red-50 hover:bg-red-100',
         textColor: 'text-red-800',
-        borderColor: 'border-red-200',
         iconColor: 'text-red-600'
       };
     case 'valid':
@@ -52,7 +48,6 @@ export const getStatusConfig = (status: SlotStatus) => {
         icon: faCircleCheck,
         bgColor: 'bg-green-50 hover:bg-green-100',
         textColor: 'text-green-800',
-        borderColor: 'border-green-200',
         iconColor: 'text-green-600'
       };
   }
@@ -207,7 +202,7 @@ export const SetEditorCell: React.FC<SetEditorCellProps> = ({
 
   return (
     <td
-      className={`relative py-0.5 px-2 border ${config.borderColor} ${config.bgColor} transition-all duration-200 group min-w-[250px]`}
+      className={`relative py-0.5 px-2 border border-gray-200 ${config.bgColor} transition-all duration-200 group min-w-[250px]`}
     >
       <div className="flex items-center justify-between">
         {/* Status display */}
