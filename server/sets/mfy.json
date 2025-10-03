@@ -20,7 +20,9 @@
           "equipment",
           "forest",
           "plains",
-          "ranger"
+          "ranger",
+          "treasure",
+          "food"
         ]
       }
     ],
@@ -327,7 +329,17 @@
       }
     },
     {
-      "key": "Token",
+      "key": "Token A",
+      "blueprint": {
+        "isToken": [
+          {
+            "key": "boolean/true"
+          }
+        ]
+      }
+    },
+    {
+      "key": "Token B",
       "blueprint": {
         "isToken": [
           {
@@ -438,9 +450,14 @@
             "cardId": "mfy-417-basic-plains"
           }
         },
-        "Token": {
+        "Token A": {
           "cardRef": {
             "cardId": "mfy-418-1-1-white-rabbit-creature-token"
+          }
+        },
+        "Token B": {
+          "cardRef": {
+            "cardId": "mfy-468-colorless-treasure-artifact-token"
           }
         }
       }
@@ -545,9 +562,14 @@
             "cardId": "mfy-442-basic-forest"
           }
         },
-        "Token": {
+        "Token A": {
           "cardRef": {
             "cardId": "mfy-443-4-4-green-rabbit-creature-token"
+          }
+        },
+        "Token B": {
+          "cardRef": {
+            "cardId": "mfy-469-colorless-food-artifact-token"
           }
         }
       }
@@ -644,11 +666,12 @@
           }
         },
         "Basic Land": "skip",
-        "Token": {
+        "Token A": {
           "cardRef": {
             "cardId": "mfy-467-2-2-white-green-rabbit-creature-token"
           }
-        }
+        },
+        "Token B": "skip"
       }
     }
   ]

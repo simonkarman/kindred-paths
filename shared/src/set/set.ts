@@ -106,6 +106,16 @@ export class Set {
       }
     });
 
+    // Check that all cards with the set tag are linked to a slot
+    const cardsWithSetTag = cards.filter(c => c.tags?.set === this.name);
+    cardsWithSetTag.forEach(card => {
+      if (!cardIdsToLocations.has(card.id)) {
+        messages.push(
+          `Card "${card.id}" with set tag "${this.name}" is not linked to any slot.`,
+        );
+      }
+    });
+
     return messages;
   }
 
