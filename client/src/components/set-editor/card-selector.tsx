@@ -23,8 +23,9 @@ export function CardSelector(props: CardSelectorProps) {
   const [searchText] = useSearch(props.search.scope, props.search.initial);
 
   const hasValidation = props.validation && props.validation.blueprints.length > 0;
+  const blueprintValidator = new BlueprintValidator();
   const _cards: SerializedCard[] = (hasValidation && !ignoreBlueprintValidation)
-    ? props.cards.filter(card => new BlueprintValidator().validate({
+    ? props.cards.filter(card => blueprintValidator.validate({
       metadata: props.validation!.metadata,
       blueprints: props.validation!.blueprints,
       card: card,

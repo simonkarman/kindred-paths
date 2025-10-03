@@ -10,6 +10,17 @@ export type SetLocation = { type: 'set' }
   | { type: 'cycle', index: number }
   | { type: 'slot', archetypeIndex: number, cycleKey: string };
 
+function findAvailable(key: string, checker: (k: string) => boolean): string | undefined {
+  let index = 1;
+  let newKey = key;
+  while (checker(newKey)) {
+    newKey = `${key}_${index}`;
+    index += 1;
+    if (index > 99) return undefined; // Prevent infinite loop -> no change
+  }
+  return newKey;
+}
+
 export class Set {
   private readonly blueprintValidator = new BlueprintValidator();
 
@@ -167,27 +178,17 @@ export class Set {
   }
 
   addMetadataKey(atIndex: number, key: string) {
-    let index = 1;
-    let newKey = key;
-    while (this.metadataKeys.includes(newKey)) {
-      newKey = `${key}_${index}`;
-      index += 1;
-      if (index > 99) return; // Prevent infinite loop -> no change
-    }
+    const newKey = findAvailable(key, (k: string) => this.metadataKeys.includes(k));
+    if (!newKey) return; // No available key found -> no change
+
     this.metadataKeys.splice(atIndex, 0, newKey);
   }
 
   updateMetadataKey(metadataIndex: number, _newKey: string) {
-    let index = 1;
-    let newKey = _newKey;
-    while (this.metadataKeys.includes(newKey)) {
-      newKey = `${_newKey}_${index}`;
-      index += 1;
-      if (index > 99) return; // Prevent infinite loop -> no change
-    }
+    const newKey = findAvailable(_newKey, (k: string) => this.metadataKeys.includes(k));
 
     const oldKey = this.metadataKeys[metadataIndex];
-    if (newKey === oldKey) return; // No change
+    if (!newKey || newKey === oldKey) return; // No change
 
     // Update metadataKey itself
     this.metadataKeys[metadataIndex] = newKey;
@@ -225,27 +226,17 @@ export class Set {
   }
 
   addCycle(atIndex: number, key: string) {
-    let index = 1;
-    let newKey = key;
-    while (this.cycles.find(c => c.key === newKey)) {
-      newKey = `${key}_${index}`;
-      index += 1;
-      if (index > 99) return; // Prevent infinite loop -> no change
-    }
+    const newKey = findAvailable(key, (k: string) => this.cycles.some(c => c.key === k));
+    if (!newKey) return; // No available key found -> no change
+
     this.cycles.splice(atIndex, 0, { key: newKey });
   }
 
   updateCycleKey(cycleIndex: number, _newKey: string) {
-    let index = 1;
-    let newKey = _newKey;
-    while (this.cycles.find(c => c.key === newKey)) {
-      newKey = `${_newKey}_${index}`;
-      index += 1;
-      if (index > 99) return; // Prevent infinite loop -> no change
-    }
+    const newKey = findAvailable(_newKey, (k: string) => this.cycles.some(c => c.key === k));
 
     const oldKey = this.cycles[cycleIndex].key;
-    if (newKey === oldKey) return; // No change
+    if (!newKey || newKey === oldKey) return; // No change
 
     // Update cycle key itself
     this.cycles[cycleIndex].key = newKey;

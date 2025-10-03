@@ -24,6 +24,8 @@ export type CriteriaFailureReason = {
 };
 
 export class BlueprintValidator {
+  metadataRegex = /^\$\[(.+?)]$/;
+
   validate(props: {
     metadata: { [metadataKey: string]: string | undefined },
     blueprints: SerializableBlueprintWithSource[],
@@ -33,9 +35,8 @@ export class BlueprintValidator {
     props.blueprints.forEach(({ source, blueprint }) => {
       const blueprintWithMetadata = {
         ...Object.entries(blueprint).map(([key, criteria]) => [key, criteria?.map(c => {
-          const regex = /^\$\[(.+?)]$/;
           if (c.value && typeof c.value === 'string') {
-            const match = c.value.match(regex);
+            const match = c.value.match(this.metadataRegex);
             if (match && match[1] && match[1] in props.metadata) {
               const metadataKey = match[1];
               return { ...c, value: props.metadata[metadataKey] ?? '' };
@@ -46,7 +47,7 @@ export class BlueprintValidator {
             return {
               ...c, value: c.value.map(v => {
                 if (typeof v === 'string') {
-                  const match = v.match(regex);
+                  const match = v.match(this.metadataRegex);
                   if (match && match[1] && match[1] in props.metadata) {
                     const metadataKey = match[1];
                     return props.metadata[metadataKey] ?? '';
