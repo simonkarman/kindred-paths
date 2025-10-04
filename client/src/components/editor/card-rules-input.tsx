@@ -53,9 +53,16 @@ export const CardRulesInput = (props: {
     <div className="space-y-1">
       <InputHeader propertyName="rules" isChanged={props.isChanged} revert={props.revert} />
 
-      <div className="space-y-1">
+      <div className="space-y-5">
+        {rules.length > 0 && <button
+          onClick={addRuleTop}
+          className="w-full px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          + Add rule at the top
+        </button>}
+
         {rules.map((rule, index) => (
-          <div key={index} className="flex flex-col gap-1 border-zinc-200 rounded hover:bg-zinc-50 mb-4">
+          <div key={index} className="flex flex-col gap-1 border-zinc-200 rounded hover:bg-zinc-50">
             <div key={index} className="flex items-center gap-2">
               {/* Variant Selector */}
               <select
@@ -122,20 +129,12 @@ export const CardRulesInput = (props: {
         ))}
 
         {/* Add Rule Button */}
-        <div className="flex gap-2">
-          <button
-            onClick={addRuleTop}
-            className="w-full px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            + Add rule at the top
-          </button>
-          <button
-            onClick={addRuleBottom}
-            className="w-full px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            + Add rule at the bottom
-          </button>
-        </div>
+        <button
+          onClick={addRuleBottom}
+          className="w-full px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          + Add rule{rules.length > 0 ? ' at the bottom' : ''}
+        </button>
       </div>
 
       {/* Error Message */}

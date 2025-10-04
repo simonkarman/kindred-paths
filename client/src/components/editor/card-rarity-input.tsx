@@ -11,7 +11,7 @@ export const CardRarityInput = (props: {
 }) => {
   return <div className="space-y-1">
     <InputHeader propertyName="rarity" isChanged={props.isChanged} revert={props.revert} />
-    <div className="px-1 flex gap-4 w-full justify-between">
+    <div className="px-1 grid gap-4 w-full justify-between grid-cols-2 sm:grid-cols-4">
       {cardRarities.map(rarityOption => (
         <div key={rarityOption} className="flex gap-2 items-center">
           <input

@@ -26,14 +26,14 @@ export const BarDistribution = (props: {
                   <span className="text-xs text-white font-bold">{value}x</span>
                 </div>
               </div>
-              <span className="inline-block h-6 font-mono text-right w-full pr-2 py-0.5">
+              <span className="inline-block h-6 font-mono text-right whitespace-nowrap overflow-x-scroll w-full pr-2 py-0.5">
                 {key.substring(0, 70)}{key.length > 70 && '...'}
-                {props.check && <>
-                  {check.includes(key) && value !== 0 && <span className="text-green-500"> ✔</span>}
-                  {check.includes(key) && value === 0 && <span className="text-yellow-500"> ⚠</span>}
-                  {!check.includes(key) && <span className="text-red-500"> ✘</span>}
-                </>}
               </span>
+              {props.check && <span className="pr-2">
+                {check.includes(key) && value !== 0 && <span className="text-green-500"> ✔</span>}
+                {check.includes(key) && value === 0 && <span className="text-yellow-500"> ⚠</span>}
+                {!check.includes(key) && <span className="text-red-500"> ✘</span>}
+              </span>}
             </div>
           ))}
       </div>

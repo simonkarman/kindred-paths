@@ -46,12 +46,11 @@ export default async function CardView({ params: _params }: Readonly<{ params: P
       <div className="max-w-7xl mx-auto">
         <div className="flex lg:flex-row justify-center items-center lg:items-start flex-col gap-8">
           {/* Card Render Section */}
-          <div className="shrink-0 space-y-6">
+          <div className="shrink-0 flex flex-col items-center lg:items-stretch space-y-6">
             {/* Card Render */}
-            <div className="bg-white rounded-2xl shadow-lg w-112">
+            <div className="bg-white rounded-2xl shadow-lg">
               <CardRender serializedCard={serializedCard} />
             </div>
-
 
             {/* Edit Card */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 shadow-md">
@@ -64,7 +63,7 @@ export default async function CardView({ params: _params }: Readonly<{ params: P
                     Want to make changes?
                   </h3>
                   <p className="text-sm text-blue-800 mb-3">
-                    You can edit {serializedCard.name} to modify its properties, <br/>abilities, or artwork.
+                    You can edit {serializedCard.name} to modify its properties, <br className="hidden lg:inline" />abilities, or artwork.
                   </p>
                   <Link
                     href={`/edit/${serializedCard.id}`}

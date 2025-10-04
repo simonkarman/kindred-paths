@@ -64,7 +64,7 @@ export const CardManaCostInput = (props: {
                     value={currentValue || ''}
                     onChange={(e) => updateManaValue(manaType, e.target.value)}
                     placeholder="0"
-                    className="w-24 bg-white px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-300"
+                    className="w-16 sm:w-16 bg-white px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-300"
                   />
                 </div>
               </div>
