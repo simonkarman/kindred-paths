@@ -678,7 +678,7 @@ export function SetEditor(props: SetEditorProps) {
                     return (
                       <SetEditorCell
                         key={archetype.name}
-                        cardName={card?.name ?? 'Unknown Card'}
+                        cardName={card ? `(#${card.collectorNumber}) ${card.name}` : 'Unknown Card'}
                         status={status}
                         statusReasons={reasons ?? []}
                         onMarkSkip={() => markSkip(archetypeIndex, cycleKey)}

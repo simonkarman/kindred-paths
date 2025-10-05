@@ -13,7 +13,7 @@ export const BarDistribution = (props: {
   return (
     <div>
       <h3 className="font-bold mb-2 text-center">{title}<span className="pl-1 font-normal">Distribution</span></h3>
-      <div className={`mx-auto space-y-1 ${fullWidth ? 'w-full' : 'w-70'}`}>
+      <div className={`mx-auto space-y-1 ${fullWidth ? 'w-full' : 'w-73'}`}>
         {Object.entries(data)
           .sort(([a, an], [b, bn]) => sortOnValue ? (bn - an) : a.localeCompare(b))
           .map(([key, value]) => (
@@ -26,7 +26,7 @@ export const BarDistribution = (props: {
                   <span className="text-xs text-white font-bold">{value}x</span>
                 </div>
               </div>
-              <span className="inline-block h-6 font-mono text-right whitespace-nowrap overflow-x-scroll w-full pr-2 py-0.5">
+              <span className="inline-block font-mono text-right whitespace-nowrap overflow-x-auto w-full pr-2 py-0.5">
                 {key.substring(0, 70)}{key.length > 70 && '...'}
               </span>
               {props.check && <span className="pr-2">

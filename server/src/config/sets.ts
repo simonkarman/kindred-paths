@@ -23,6 +23,11 @@ export const sets: { [name: string]: Set} = {
     shortName: 'MFY',
     symbol: 'custom/mfy',
     collectorNumberOffset: 400,
+  },
+  DTS: {
+    author: 'S.J. Karman & R. Dolfing',
+    shortName: 'DTS',
+    symbol: 'custom/dts',
   }
 };
 
