@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Card, SerializedCardSchema } from 'kindred-paths';
+import { SerializedCardSchema } from 'kindred-paths';
 import { aiService } from '../services/ai-service';
 import { cardService } from '../services/card-service';
 import fs from 'fs/promises';
@@ -111,13 +111,12 @@ suggestionsRouter.get('/art/:id', async (req, res) => {
   }
 
   try {
-    const artSuggestionDir = './art/suggestions';
-    const files = await fs.readdir(artSuggestionDir);
+    const files = await fs.readdir(aiService.artSuggestionsDir);
     const suggestions = files
       .filter(file => file.startsWith(`${cardId}-`) && file.endsWith('.png'))
       .map(file => ({
         fileName: `suggestions/${file}`,
-        base64Image: fs.readFile(`${artSuggestionDir}/${file}`, 'base64'),
+        base64Image: fs.readFile(`${aiService.artSuggestionsDir}/${file}`, 'base64'),
       }));
     res.json(suggestions);
   } catch (error) {

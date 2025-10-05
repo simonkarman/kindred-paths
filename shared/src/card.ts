@@ -1,7 +1,7 @@
 import { SerializedCard } from './serialized-card';
 import { CardColor, cardColors, Mana, toOrderedColors, wubrg } from './colors';
 import { TokenExtractor } from './token-extracter';
-import { capitalize } from '../typography';
+import { capitalize } from './typography';
 
 export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;

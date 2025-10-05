@@ -9,3 +9,5 @@ export * from './random';
 export * from './serialized-card';
 export * from './set';
 export * from './statistics';
+export * from './token-extracter';
+export * from './typography';

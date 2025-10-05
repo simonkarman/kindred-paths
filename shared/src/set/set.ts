@@ -1,7 +1,7 @@
 import { BlueprintValidator, CriteriaFailureReason, SerializableBlueprintWithSource } from './blueprint-validator';
 import { SerializableArchetype, SerializableCardReference, SerializableCycle, SerializableSet } from './serializable-set';
 import { SerializableBlueprint } from './serializable-blueprint';
-import { capitalize } from '../../typography';
+import { capitalize } from '../typography';
 import { SerializedCard } from '../serialized-card';
 
 export type SlotStatus = 'missing' | 'skip' | 'invalid' | 'valid';

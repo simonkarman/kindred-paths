@@ -3,20 +3,20 @@ import fs from 'fs/promises';
 import _fs from 'fs';
 
 class SetService {
-  private setDirectory = './sets';
+  public readonly setsDir = './content/sets';
 
   constructor() {
-    _fs.mkdirSync(this.setDirectory, { recursive: true });
+    _fs.mkdirSync(this.setsDir, { recursive: true });
   }
 
   async getAll(): Promise<Set[]> {
     try {
-      const files = await fs.readdir(this.setDirectory);
+      const files = await fs.readdir(this.setsDir);
       return await Promise.all(files
         .filter(file => file.endsWith('.json'))
         .map(file => file.replace('.json', ''))
         .map(async (name) => {
-          const data = await fs.readFile(`${this.setDirectory}/${name}.json`, 'utf-8');
+          const data = await fs.readFile(`${this.setsDir}/${name}.json`, 'utf-8');
           const parsed = SerializableSetSchema.parse(JSON.parse(data));
           return new Set(parsed);
         })
@@ -28,7 +28,7 @@ class SetService {
   }
 
   async getSetByName(name: string): Promise<Set | undefined> {
-    const path = `${this.setDirectory}/${name.toLowerCase()}.json`;
+    const path = `${this.setsDir}/${name.toLowerCase()}.json`;
     try {
       const data = await fs.readFile(path);
       const parsed = SerializableSetSchema.parse(JSON.parse(data.toString()));
@@ -43,7 +43,7 @@ class SetService {
   }
 
   async createSet(name: string): Promise<{ success: true } | { success: false, error: unknown }> {
-    const path = `${this.setDirectory}/${name.toLowerCase()}.json`;
+    const path = `${this.setsDir}/${name.toLowerCase()}.json`;
     try {
       if (_fs.existsSync(path)) {
         return { success: false, error: `Set ${name} already exists` };
@@ -61,7 +61,7 @@ class SetService {
   }
 
   async updateSet(name: string, set: Set): Promise<{ success: true } | { success: false, error: unknown }> {
-    const path = `${this.setDirectory}/${name.toLowerCase()}.json`;
+    const path = `${this.setsDir}/${name.toLowerCase()}.json`;
     try {
       const existingSet = await this.getSetByName(name);
       if (existingSet) {
@@ -83,7 +83,7 @@ class SetService {
         if (foundSetWithSameId) {
           // If the id can be found, save the set with a new name and then delete the file with old name (save first to avoid data loss)
           await fs.writeFile(path, JSON.stringify(set.toJson(), null, 2), 'utf-8');
-          const oldPath = `${this.setDirectory}/${foundSetWithSameId.getName()}.json`;
+          const oldPath = `${this.setsDir}/${foundSetWithSameId.getName()}.json`;
           await fs.unlink(oldPath);
           return { success: true };
         } else {

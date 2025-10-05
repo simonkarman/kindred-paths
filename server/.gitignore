@@ -1,5 +1,3 @@
 node_modules
 .cardconjurer
-renders
-previews
-generators
+.cache

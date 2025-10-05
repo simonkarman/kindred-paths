@@ -1,7 +1,6 @@
 import { chromium, Browser, Page } from 'playwright';
 import { setTimeout as sleep } from 'timers/promises';
-import { Card, TokenCardType, colorToShort, CardColor, loyaltyCostAsString, landSubtypeToColor, landSubtypes } from 'kindred-paths';
-import { capitalize } from './utils/typography';
+import { Card, TokenCardType, colorToShort, CardColor, loyaltyCostAsString, landSubtypeToColor, capitalize } from 'kindred-paths';
 
 type PlaneswalkerAbility = { cost: string, content: string, height: number, startHeight: number };
 const computePlaneswalkerData = (card: Card): { size: 'regular' | 'tall', rulesFontSize: number, abilities: PlaneswalkerAbility[] } | undefined => {

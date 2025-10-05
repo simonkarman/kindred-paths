@@ -7,6 +7,9 @@ import { computeCardId } from '../utils/card-utils';
 export class RenderService {
   private cardConjurer: CardConjurer;
 
+  public readonly rendersCacheDir = './.cache/renders';
+  public readonly previewsCacheDir = './.cache/previews';
+
   constructor(cardConjurerUrl: string) {
     this.cardConjurer = new CardConjurer(cardConjurerUrl);
   }
@@ -17,7 +20,7 @@ export class RenderService {
 
   private async getExistingRender(key: string): Promise<Buffer | undefined> {
     try {
-      const path = `./renders/${key}.png`;
+      const path = `${this.rendersCacheDir}/${key}.png`;
       return await fs.readFile(path);
     }
     catch {
@@ -26,8 +29,8 @@ export class RenderService {
   }
 
   private async saveRender(key: string, render: Buffer): Promise<void> {
-    const path = `./renders/${key}.png`;
-    await fs.mkdir('./renders', { recursive: true });
+    const path = `${this.rendersCacheDir}/${key}.png`;
+    await fs.mkdir(this.rendersCacheDir, { recursive: true });
     await fs.writeFile(path, render);
   }
 
@@ -37,7 +40,7 @@ export class RenderService {
     let art: string | undefined = undefined;
     if (card.art) {
       try {
-        const artBuffer = await fs.readFile(`./art/${card.art}`);
+        const artBuffer = await fs.readFile(`./content/art/${card.art}`);
         art = hash(artBuffer.toString('base64'));
       } catch (error) {
         console.error(`Error reading art file ${art}:`, error);
@@ -80,8 +83,8 @@ export class RenderService {
     // Save the card json to the previews directory
     if (!fromCache) {
       const previewId = `${new Date().toISOString()}-${computeCardId(card)}`;
-      const previewPath = `./previews/${previewId}.json`;
-      await fs.mkdir('./previews', { recursive: true });
+      const previewPath = `${this.previewsCacheDir}/${previewId}.json`;
+      await fs.mkdir(this.previewsCacheDir, { recursive: true });
       await fs.writeFile(previewPath, JSON.stringify(card.toJson(), null, 2), 'utf-8');
     }
 
