@@ -54,7 +54,7 @@ export default async function RootLayout({
           </div>
           <nav>
             <div className="hidden sm:flex items-center gap-4">
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-3 items-center">
                 <Link
                   href="/"
                   className="text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"

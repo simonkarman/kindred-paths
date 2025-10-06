@@ -183,6 +183,9 @@ class GitStorageBackend extends StorageBackendAdapter {
       await this.git.fetch();
       await this.git.pull('origin', backendInfo.branch, { '--no-rebase': null });
 
+      // Push to remote (in case auto-merging created new commits)
+      await this.git.push('origin', backendInfo.branch);
+
       return {
         success: true,
         message: 'Successfully pulled changes'
@@ -219,6 +222,12 @@ class GitStorageBackend extends StorageBackendAdapter {
 
       // Commit
       await this.git.commit(message);
+
+      // If there are remote changes, pull first to avoid non-fast-forward errors
+      const remoteStatus = await this.getRemoteSyncStatus();
+      if (remoteStatus.hasIncomingChanges) {
+        await this.git.pull('origin', backendInfo.branch, { '--no-rebase': null });
+      }
 
       // Push to remote
       await this.git.push('origin', backendInfo.branch);

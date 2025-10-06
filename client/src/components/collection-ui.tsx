@@ -22,7 +22,7 @@ export function CollectionUI() {
 
   // Revalidate every 30 seconds
   useEffect(() => {
-    const shouldRevalidate = !cached || Date.now() - cached.timestamp > 30000;
+    const shouldRevalidate = !cached || Date.now() - cached.timestamp > 5000;
 
     if (shouldRevalidate) {
       getCollection().then((data) => {
@@ -34,7 +34,7 @@ export function CollectionUI() {
       getCollection().then((data) => {
         setCached({ data, timestamp: Date.now() });
       }).catch(console.error);
-    }, 30000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, []);
@@ -60,7 +60,7 @@ export function CollectionUI() {
   };
 
   const getStatusText = () => {
-    if (hasLocalChanges && hasIncomingChanges) return '⚠';
+    if (hasLocalChanges && hasIncomingChanges) return 'Conflict ⚠';
     if (hasLocalChanges) return '●';
     if (hasIncomingChanges) return '↓';
     return '✓';
@@ -116,6 +116,7 @@ export function CollectionUI() {
       });
     } finally {
       setIsLoading(false);
+      setCommitMessage('');
     }
   };
 
