@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Card, SerializableSet, SerializableSetSchema, SerializedCard, SerializedCardSchema } from 'kindred-paths';
 
-export const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || `http://${global["location"] ? location.host : 'localhost'}:4101`;
+export const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:4101';
 
 export async function getCards(): Promise<SerializedCard[]> {
   try {
