@@ -2,53 +2,9 @@ import { Router } from 'express';
 import simpleGit, { SimpleGit } from 'simple-git';
 import fs from 'fs/promises';
 import path from 'path';
+import { Collection, FileModification, LocalSyncStatus, RemoteSyncStatus, StorageBackend, SyncResult, SyncStatus } from 'kindred-paths';
 
 export const collectionRouter = Router();
-
-type Collection = {
-  storage: StorageBackend,
-  status: SyncStatus
-};
-
-type StorageBackend =
-  | { type: 'none' }
-  | {
-    type: 'git',
-    repositoryUrl: string,
-    branch: string
-  };
-
-type SyncStatus = {
-  local: LocalSyncStatus,
-  remote: RemoteSyncStatus,
-};
-
-type FileModification = {
-  operation: 'addition' | 'modification' | 'deletion',
-  path: string,
-};
-
-type LocalSyncStatus = {
-  lastSyncCommit: string,
-  lastSyncTime: string,
-  modifications: FileModification[],
-};
-
-type RemoteSyncStatus = {
-  hasIncomingChanges: boolean,
-  lastChecked: string,
-};
-
-type SyncResult =
-  | {
-    success: true,
-    message: string,
-  }
-  | {
-    success: false,
-    error: string,
-    details?: string,
-  };
 
 // Abstract base class for storage backends
 abstract class StorageBackendAdapter {
@@ -329,8 +285,11 @@ collectionRouter.post('/sync', async (_, res) => {
     const result = await backend.sync();
 
     if (!result.success) {
-      const statusCode = result.error?.includes('local changes') ? 400 :
-        result.error?.includes('conflict') ? 409 : 500;
+      const statusCode = result.error?.includes('local changes')
+        ? 400
+        : result.error?.includes('conflict')
+          ? 409
+          : 500;
       res.status(statusCode).json(result);
       return;
     }

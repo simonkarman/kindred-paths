@@ -1,5 +1,6 @@
 export * from './card';
 export * from './card-art-prompt-creator';
+export * from './collection';
 export * from './colors';
 export * from './families';
 export * from './group';

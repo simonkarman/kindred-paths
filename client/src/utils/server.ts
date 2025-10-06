@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Card, SerializableSet, SerializableSetSchema, SerializedCard, SerializedCardSchema } from 'kindred-paths';
+import { Card, Collection, SerializableSet, SerializableSetSchema, SerializedCard, SerializedCardSchema, SyncResult } from 'kindred-paths';
 
 export const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:4101';
 
@@ -277,4 +277,46 @@ export async function putSet(set: SerializableSet): Promise<void> {
   if (!response.ok) {
     throw new Error('Failed to update set');
   }
+}
+
+export async function getCollection(): Promise<Collection> {
+  const response = await fetch(`${serverUrl}/collection`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch collection');
+  }
+  return await response.json();
+}
+
+export async function syncCollection(): Promise<SyncResult> {
+  const response = await fetch(`${serverUrl}/collection/sync`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    const errorResponse = await response.json();
+    throw new Error(response.status + ' Failed to sync collection: ' + errorResponse.error + ' ' + errorResponse.details);
+  }
+  return await response.json();
+}
+
+export async function commitCollection(message: string): Promise<SyncResult> {
+  const response = await fetch(`${serverUrl}/collection/commit`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ message }),
+  });
+  if (!response.ok) {
+    const errorResponse = await response.json();
+    throw new Error(response.status + ' Failed to commit collection: ' + errorResponse.error + ' ' + errorResponse.details);
+  }
+  return await response.json();
 }
