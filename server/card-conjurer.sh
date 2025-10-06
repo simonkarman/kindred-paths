@@ -39,6 +39,6 @@ fi
 # Start the Card Conjurer container at port 4102
 echo "Starting Card Conjurer at port 4102"
 docker run --name "kindred-paths-cardconjurer" -dit \
- -v "$(pwd)/content/art:/usr/share/nginx/html/local_art" \
- -v "$(pwd)/content/icons:/usr/share/nginx/html/img/setSymbols/official/custom" \
+ -v "$(pwd)/content/art:/usr/share/nginx/html/local_art:ro" \
+ -v "$(pwd)/content/icons:/usr/share/nginx/html/img/setSymbols/official/custom:ro" \
  -h 127.0.0.1 -p 4102:4242 "kindred-paths-cardconjurer"
