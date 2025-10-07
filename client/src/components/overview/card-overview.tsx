@@ -11,6 +11,7 @@ import { SerializedCard } from 'kindred-paths';
 import { TextTab } from '@/components/overview/text-tab';
 import { VisualTab } from '@/components/overview/visual-tab';
 import { useLocalStorageState } from '@/utils/use-local-storage-state';
+import { usePrintTitle } from '@/utils/use-print-title';
 
 type TabType = 'table' | 'statistics' | 'text' | 'visual';
 
@@ -22,6 +23,8 @@ export function CardOverview(props: {
   const [activeTab, setActiveTab] = useLocalStorageState<TabType>('home/tab', 'table');
 
   const [searchText] = useSearch('home');
+  usePrintTitle('KPA ' + searchText + ' date=' + new Date().toISOString().substring(0, 19).replaceAll(/[^\d]/g, '-'));
+
   const cards = filterCardsBasedOnSearch(props.cards, searchText);
 
   const tabs = [
@@ -38,7 +41,7 @@ export function CardOverview(props: {
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 print:px-1.5">
       <div className="max-w-7xl mx-auto">
         {/* Header Section with Tabs and Actions */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden">
+        <div className="print:hidden bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden">
           {/* Top Bar with Search and Actions */}
           <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">

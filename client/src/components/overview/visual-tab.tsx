@@ -39,7 +39,7 @@ export function VisualTab(props: {
   return (
     <div className="space-y-6">
       {/* Controls Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+      <div className="print:hidden bg-white rounded-lg shadow-sm border border-slate-200 p-4">
         <h3 className="text-sm font-semibold text-slate-900 mb-3">Display Options</h3>
         <div className="flex flex-wrap gap-4">
           <label className="flex items-center gap-2 cursor-pointer group">
@@ -121,7 +121,7 @@ export function VisualTab(props: {
       )}
 
       {/* Cards Grid */}
-      <div className="break-before-page grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 print:gap-0 print:grid-cols-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 print:gap-0 print:grid-cols-3">
         {cardGroups.map((group) => group
           .map(card => n(respectDeckCount && deckName && typeof card.tags?.[`deck/${deckName}`] === 'number'
               ? card.tags[`deck/${deckName}`] as number
