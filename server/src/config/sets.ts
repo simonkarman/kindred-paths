@@ -28,7 +28,12 @@ export const sets: { [name: string]: Set} = {
     author: 'S.J. Karman & R. Dolfing',
     shortName: 'DTS',
     symbol: 'custom/dts',
-  }
+  },
+  PRT: {
+    author: 'Simon Karman',
+    shortName: 'PRT',
+    symbol: 'custom/prt',
+  },
 };
 
 export const getSetForCard = (card: Card): Set => {

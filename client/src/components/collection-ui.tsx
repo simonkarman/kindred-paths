@@ -20,9 +20,9 @@ export function CollectionUI() {
   const [isLoading, setIsLoading] = useState(false);
   const [operationResult, setOperationResult] = useState<SyncResult | null>(null);
 
-  // Revalidate every 30 seconds
+  // Revalidate every 60 seconds, if the cache is older than 10 seconds
   useEffect(() => {
-    const shouldRevalidate = !cached || Date.now() - cached.timestamp > 5000;
+    const shouldRevalidate = !cached || Date.now() - cached.timestamp > 15000;
 
     if (shouldRevalidate) {
       getCollection().then((data) => {
@@ -34,7 +34,7 @@ export function CollectionUI() {
       getCollection().then((data) => {
         setCached({ data, timestamp: Date.now() });
       }).catch(console.error);
-    }, 10000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, []);

@@ -15,6 +15,12 @@ const useValueFromHomeSearch = (keys: string[]): string | undefined => {
         return value;
       }
     }
+    if (keys.some(key => term.startsWith(`${key}=`))) {
+      const value = term.slice(term.indexOf('=') + 1).trim();
+      if (value.length > 0) {
+        return value;
+      }
+    }
   }
   return undefined;
 };
