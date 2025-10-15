@@ -1,7 +1,7 @@
 "use client";
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faForward, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
+import { faForward, faPenToSquare, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import { useState } from 'react';
 import { CardRender } from '@/components/card-render';
@@ -19,13 +19,26 @@ export const CardView = (props: { serializedCard: SerializedCard }) => {
       <div className="bg-white rounded-2xl shadow-lg">
         <CardRender serializedCard={serializedCard} forceRender={forceRender} />
       </div>
-      <button
-        onClick={() => setForceRender(true)}
-        className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors shadow-sm"
-      >
-        <FontAwesomeIcon icon={faForward} />
-        Force Rerender
-      </button>
+
+      {/* Force Rerender Button */}
+      {forceRender
+        ? (<div
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors shadow-sm"
+          >
+            <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+            Rerendering...
+          </div>)
+        : (<button
+            onClick={() => {
+              setForceRender(true);
+              setTimeout(() => setForceRender(false), 11000);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors shadow-sm"
+          >
+            <FontAwesomeIcon icon={faForward} />
+            Force Rerender
+          </button>)
+      }
 
       {/* Edit Card */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 shadow-md">
