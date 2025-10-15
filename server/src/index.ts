@@ -7,6 +7,7 @@ import { maintenanceRouter } from './routes/maintenance';
 import { renderService } from './services/render-service';
 import { setsRouter } from './routes/sets';
 import { collectionRouter } from './routes/collection';
+import { configuration } from './configuration';
 
 const app = express();
 app.use(express.json());
@@ -21,9 +22,8 @@ app.use('/', maintenanceRouter);
 app.use('/collection', collectionRouter);
 
 renderService.start().then(() => {
-  const port = process.env.PORT || 4101;
-  app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+  app.listen(configuration.port, () => {
+    console.log(`Server is running on http://localhost:${configuration.port}`);
   });
 }).catch((e: unknown) => {
   console.error(`[ERROR] Unable to start render service. Is Card Conjurer running?`, e);

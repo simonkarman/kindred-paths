@@ -31,8 +31,8 @@ export LEONARDO_API_KEY="..."
 # Make sure you have Docker running...
 docker ps
 
-# (optional) Use a collection from an content repository - If you skip this step, you will start with an empty collection
-git clone https://github.com/simonkarman/kindred-paths-collection.git server/content
+# (optional) Use an existing collection from a repository - If you skip this step, you will start with an empty collection
+git clone https://github.com/simonkarman/kindred-paths-collection.git collection
 
 # Install and start the application (port 4100)
 npm install

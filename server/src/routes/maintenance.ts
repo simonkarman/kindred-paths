@@ -5,6 +5,7 @@ import { Card } from 'kindred-paths';
 import { cardService } from '../services/card-service';
 import { computeCardId } from '../utils/card-utils';
 import { aiService } from '../services/ai-service';
+import { configuration } from '../configuration';
 
 export const maintenanceRouter = Router();
 
@@ -27,7 +28,7 @@ maintenanceRouter.post('/cleanup', async (req, res) => {
 
       const message = `renamed card ${card.id} to ${computedCardId}`;
       messages.push(message);
-      await fs.rename(`${cardService.cardsDir}/${card.id}.json`, `${cardService.cardsDir}/${computedCardId}.json`);
+      await fs.rename(`${configuration.cardsDir}/${card.id}.json`, `${configuration.cardsDir}/${computedCardId}.json`);
       console.log(message);
     }
   }
@@ -80,7 +81,7 @@ maintenanceRouter.post('/cleanup', async (req, res) => {
   // Ensure that all cards reference art that exists
   const referencedArt = new Set<string>();
   for (const card of await cardService.getAllCards()) {
-    if (card.art && !existsSync(`${cardService.artDir}/${card.art}`)) {
+    if (card.art && !existsSync(`${configuration.artDir}/${card.art}`)) {
       const message = `removed missing art for card ${card.id}: ${card.art}`;
       messages.push(message);
       delete card.art;
@@ -104,14 +105,14 @@ maintenanceRouter.post('/cleanup', async (req, res) => {
   }
 
   // Validate that all art files in the art directory are referenced by at least one card
-  const artFiles = await fs.readdir(cardService.artDir);
+  const artFiles = await fs.readdir(configuration.artDir);
   for (const artFile of artFiles.filter(file => file.endsWith('.png'))) {
     if (!referencedArt.has(artFile)) {
       const message = `moved unreferenced art file to the suggestions directory: ${artFile}`;
       messages.push(message);
       // Move it to the suggestions directory
-      await fs.mkdir(aiService.artSuggestionsDir, { recursive: true });
-      await fs.rename(`${cardService.artDir}/${artFile}`, `${aiService.artSuggestionsDir}/${artFile}`);
+      await fs.mkdir(configuration.artSuggestionsDir, { recursive: true });
+      await fs.rename(`${configuration.artDir}/${artFile}`, `${configuration.artSuggestionsDir}/${artFile}`);
       console.log(message);
     }
   }
@@ -145,10 +146,10 @@ maintenanceRouter.post('/cleanup', async (req, res) => {
 async function tryMoveArtSuggestionToArt(card: any): Promise<string | undefined> {
   if (card.art && card.art.startsWith('suggestions/')) {
     try {
-      await fs.mkdir(cardService.artDir, { recursive: true });
-      const from = `${cardService.artDir}/${card.art}`;
+      await fs.mkdir(configuration.artDir, { recursive: true });
+      const from = `${configuration.artDir}/${card.art}`;
       const toFileName = card.art.replace('suggestions/', '');
-      const to = `${cardService.artDir}/${toFileName}`;
+      const to = `${configuration.artDir}/${toFileName}`;
       await fs.rename(from, to);
       console.log(`Moved new art from ${from} to ${to}`);
       return toFileName;

@@ -4,6 +4,7 @@ import { Card, SerializedCard, hash, cardRarities } from 'kindred-paths';
 import { CardConjurer } from '../card-conjurer';
 import { computeCardId } from '../utils/card-utils';
 import { z } from 'zod';
+import { configuration } from '../configuration';
 
 const SetMetadataOnDiskSchema = z.object({
   author: z.string().optional(),
@@ -27,10 +28,6 @@ const UnknownSet = (): SetMetadata => ({
 export class RenderService {
   private cardConjurer: CardConjurer;
 
-  public readonly rendersCacheDir = './.cache/renders';
-  public readonly previewsCacheDir = './.cache/previews';
-  public readonly symbolDir = `./content/symbols`;
-
   constructor(cardConjurerUrl: string) {
     this.cardConjurer = new CardConjurer(cardConjurerUrl);
   }
@@ -41,7 +38,7 @@ export class RenderService {
 
   private async getExistingRender(key: string): Promise<Buffer | undefined> {
     try {
-      const path = `${this.rendersCacheDir}/${key}.png`;
+      const path = `${configuration.rendersCacheDir}/${key}.png`;
       return await fs.readFile(path);
     }
     catch {
@@ -50,21 +47,21 @@ export class RenderService {
   }
 
   private async saveRender(key: string, render: Buffer): Promise<void> {
-    const path = `${this.rendersCacheDir}/${key}.png`;
-    await fs.mkdir(this.rendersCacheDir, { recursive: true });
+    const path = `${configuration.rendersCacheDir}/${key}.png`;
+    await fs.mkdir(configuration.rendersCacheDir, { recursive: true });
     await fs.writeFile(path, render);
   }
 
-  async getRender(card: Card): Promise<{ fromCache: boolean, render: Buffer }> {
+  async getRender(card: Card, force: boolean): Promise<{ fromCache: boolean, render: Buffer }> {
     // If there is card art, use a hash of the image as the art property
-    // This ensures the card will be rendered if the art itself changes
-    let art: string | undefined = undefined;
+    // This ensures the card will be rendered only if the art itself changes
+    let artHash: string | undefined = undefined;
     if (card.art) {
       try {
-        const artBuffer = await fs.readFile(`./content/art/${card.art}`);
-        art = hash(artBuffer.toString('base64'));
+        const artBuffer = await fs.readFile(`${configuration.artDir}/${card.art}`);
+        artHash = hash(artBuffer.toString('base64'));
       } catch (error) {
-        console.error(`Error reading art file ${art}:`, error);
+        console.error(`Error reading art file ${card.art}:`, error);
       }
     }
 
@@ -82,13 +79,15 @@ export class RenderService {
 
       // Include other properties that might affect the render
       set,
-      art,
+      art: artHash,
     }));
 
-    // Check if the render already exists
-    const existingRender = await this.getExistingRender(key);
-    if (existingRender) {
-      return { fromCache: true, render: existingRender };
+    if (!force) {
+      // Check if the render already exists
+      const existingRender = await this.getExistingRender(key);
+      if (existingRender) {
+        return { fromCache: true, render: existingRender };
+      }
     }
 
     // If not, render the card using Card Conjurer
@@ -99,13 +98,13 @@ export class RenderService {
 
   async generatePreview(cardData: SerializedCard): Promise<{ render: Buffer, fromCache: boolean }> {
     const card = new Card(cardData);
-    const { render, fromCache } = await this.getRender(card);
+    const { render, fromCache } = await this.getRender(card, false);
 
     // Save the card json to the previews directory
     if (!fromCache) {
       const previewId = `${new Date().toISOString()}-${computeCardId(card)}`;
-      const previewPath = `${this.previewsCacheDir}/${previewId}.json`;
-      await fs.mkdir(this.previewsCacheDir, { recursive: true });
+      const previewPath = `${configuration.previewsCacheDir}/${previewId}.json`;
+      await fs.mkdir(configuration.previewsCacheDir, { recursive: true });
       await fs.writeFile(previewPath, JSON.stringify(card.toJson(), null, 2), 'utf-8');
     }
 
@@ -125,7 +124,7 @@ export class RenderService {
     }
 
     // Find set disk metadata in content/symbols/<set>.json
-    const setMetadataFileName = `${this.symbolDir}/${shortName}-metadata.json`;
+    const setMetadataFileName = `${configuration.symbolDir}/${shortName}-metadata.json`;
     let setMetadataOnDisk: SetMetadataOnDisk | undefined = undefined;
     if (fsSync.existsSync(setMetadataFileName)) {
       const fileContents = fsSync.readFileSync(setMetadataFileName, 'utf-8');
@@ -138,7 +137,7 @@ export class RenderService {
     }
 
     // Find set icon based on rarity
-    const customSymbolPath = `${this.symbolDir}/${shortName}-${card.rarity[0]}.svg`;
+    const customSymbolPath = `${configuration.symbolDir}/${shortName}-${card.rarity[0]}.svg`;
     const hasCustomSymbol = fsSync.existsSync(customSymbolPath);
     if (setMetadataOnDisk && !hasCustomSymbol) {
       console.warn(`Missing ${card.rarity[0]} set symbol for custom set ${shortName}. Expected at ${customSymbolPath}`);

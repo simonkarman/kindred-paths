@@ -5,9 +5,8 @@ import { Leonardo } from "@leonardo-ai/sdk";
 import { z } from 'zod';
 import { GetGenerationByIdResponse } from '@leonardo-ai/sdk/sdk/models/operations';
 import { computeCardId } from '../utils/card-utils';
-import { AISampleGenerator } from './generator/ai-sample-generator';
 import { CardGenerator } from './generator/card-generator';
-import { cardService } from './card-service';
+import { configuration } from '../configuration';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -30,9 +29,6 @@ export class AIService {
   private anthropic: Anthropic;
   private leonardo: Leonardo;
   private cardArtPromptCreator: CardArtPromptCreator;
-
-  public readonly artSuggestionsDir = `${cardService.artDir}/suggestions`;
-  public readonly generatorsCacheDir = './.cache/generators';
 
   constructor() {
     this.anthropic = new Anthropic();
@@ -191,7 +187,7 @@ export class AIService {
     }
 
     // Download the images to the 'art/suggestions/' directory
-    await fs.mkdir(this.artSuggestionsDir, { recursive: true });
+    await fs.mkdir(configuration.artSuggestionsDir, { recursive: true });
     const arts = await Promise.all(images.map(async (image) => {
       const imageResponse = await fetch(image.url);
       if (!imageResponse.ok) {
@@ -201,7 +197,7 @@ export class AIService {
       const buffer = await imageResponse.arrayBuffer();
       const cardId = computeCardId(card);
       const fileName = `${cardId}-${image.id}.png`;
-      await fs.writeFile(`${this.artSuggestionsDir}/${fileName}`, Buffer.from(buffer));
+      await fs.writeFile(`${configuration.artSuggestionsDir}/${fileName}`, Buffer.from(buffer));
       console.log(`Saved art suggestion for ${cardId} (for image ${image.id}): ${fileName}`);
       return { fileName: `suggestions/${fileName}`, base64Image: Buffer.from(buffer).toString('base64') };
     }));
@@ -217,7 +213,7 @@ export class AIService {
     let preexistingSamples: Card[] = [];
     let iterationBudget = 3;
     const getFilePath = (generatorId: string) => {
-      return `${this.generatorsCacheDir}/${generatorId}.json`;
+      return `${configuration.generatorsCacheDir}/${generatorId}.json`;
     }
     if ('prompt' in props) {
       generatorId = crypto.randomUUID();
@@ -264,13 +260,13 @@ export class AIService {
     sampleCount: number,
   }[]> {
     try {
-      const files = await fs.readdir(this.generatorsCacheDir);
+      const files = await fs.readdir(configuration.generatorsCacheDir);
       return (await Promise.all(
         files
           .filter(file => file.endsWith('.json'))
           .map(file => file.replace('.json', ''))
           .map(async (generatorId) => {
-            const content = JSON.parse(await fs.readFile(`${this.generatorsCacheDir}/${generatorId}.json`, 'utf-8'));
+            const content = JSON.parse(await fs.readFile(`${configuration.generatorsCacheDir}/${generatorId}.json`, 'utf-8'));
             return {
               generatorId,
               createdAt: content.createdAt,
@@ -294,7 +290,7 @@ export class AIService {
     prompt: string,
     samples: SerializedCard[],
   } | undefined> {
-    const content = JSON.parse(await fs.readFile(`${this.generatorsCacheDir}/${generatorId}.json`, 'utf-8'));
+    const content = JSON.parse(await fs.readFile(`${configuration.generatorsCacheDir}/${generatorId}.json`, 'utf-8'));
     const samples: Card[] = content.samples.map((s: SerializedCard) => {
       try {
         return new Card(SerializedCardSchema.parse(s));

@@ -4,6 +4,7 @@ import { aiService } from '../services/ai-service';
 import { cardService } from '../services/card-service';
 import fs from 'fs/promises';
 import { z } from 'zod';
+import { configuration } from '../configuration';
 
 export const suggestionsRouter = Router();
 
@@ -111,12 +112,12 @@ suggestionsRouter.get('/art/:id', async (req, res) => {
   }
 
   try {
-    const files = await fs.readdir(aiService.artSuggestionsDir);
+    const files = await fs.readdir(configuration.artSuggestionsDir);
     const suggestions = files
       .filter(file => file.startsWith(`${cardId}-`) && file.endsWith('.png'))
       .map(file => ({
         fileName: `suggestions/${file}`,
-        base64Image: fs.readFile(`${aiService.artSuggestionsDir}/${file}`, 'base64'),
+        base64Image: fs.readFile(`${configuration.artSuggestionsDir}/${file}`, 'base64'),
       }));
     res.json(suggestions);
   } catch (error) {

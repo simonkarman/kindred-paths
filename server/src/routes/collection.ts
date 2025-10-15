@@ -3,6 +3,7 @@ import simpleGit, { SimpleGit } from 'simple-git';
 import fs from 'fs/promises';
 import path from 'path';
 import { Collection, FileModification, LocalSyncStatus, RemoteSyncStatus, StorageBackend, SyncResult, SyncStatus } from 'kindred-paths';
+import { configuration } from '../configuration';
 
 export const collectionRouter = Router();
 
@@ -250,19 +251,18 @@ class GitStorageBackend extends StorageBackendAdapter {
 
 // Factory function to detect and create the appropriate backend
 async function getActiveStorageBackend(): Promise<StorageBackendAdapter> {
-  const directory = './content';
   try {
-    const gitDir = path.join(directory, '.git');
+    const gitDir = path.join(configuration.collectionRootDir, '.git');
     const stats = await fs.stat(gitDir);
 
     if (stats.isDirectory()) {
-      return new GitStorageBackend(directory);
+      return new GitStorageBackend(configuration.collectionRootDir);
     }
   } catch {
     // Not a git repository
   }
 
-  return new NoneStorageBackend(directory);
+  return new NoneStorageBackend(configuration.collectionRootDir);
 }
 
 // GET / - Return collection info

@@ -1,14 +1,12 @@
 import fs from 'fs/promises';
 import { Card, SerializedCardSchema, SerializedCard } from 'kindred-paths';
 import { computeCardId } from '../utils/card-utils';
+import { configuration } from '../configuration';
 
 export class CardService {
-  public readonly cardsDir = './content/cards';
-  public readonly artDir = './content/art';
-
   async getAllCards(): Promise<SerializedCard[]> {
     try {
-      const files = await fs.readdir(this.cardsDir);
+      const files = await fs.readdir(configuration.cardsDir);
       return await Promise.all(files
         .filter(file => file.endsWith('.json'))
         .map(file => file.replace('.json', ''))
@@ -25,7 +23,7 @@ export class CardService {
 
   async getCardById(id: string): Promise<Card | undefined> {
     try {
-      const data = await fs.readFile(`${this.cardsDir}/${id}.json`, 'utf-8');
+      const data = await fs.readFile(`${configuration.cardsDir}/${id}.json`, 'utf-8');
       const parsed = JSON.parse(data);
       parsed.id = id;
       const result = SerializedCardSchema.safeParse(parsed);
@@ -43,8 +41,8 @@ export class CardService {
 
   async saveCard(card: Card, override?: Omit<Partial<SerializedCard>, 'id'>): Promise<SerializedCard> {
     const serializedCard = card.toJson();
-    const path = `${this.cardsDir}/${card.id}.json`;
-    await fs.mkdir(this.cardsDir, { recursive: true });
+    const path = `${configuration.cardsDir}/${card.id}.json`;
+    await fs.mkdir(configuration.cardsDir, { recursive: true });
     const value: SerializedCard = { ...serializedCard, ...override };
     await fs.writeFile(path, JSON.stringify({ ...value, id: undefined }, null, 2), 'utf-8');
     return value;
@@ -100,13 +98,13 @@ export class CardService {
 
     // If the new card ID is different from the old one, we need to delete the old file
     if (nextCardId !== previousCardId) {
-      await fs.rm(`${this.cardsDir}/${previousCardId}.json`);
+      await fs.rm(`${configuration.cardsDir}/${previousCardId}.json`);
     }
 
     // Move the old art to the suggestions directory
     if (existingCard.art && existingCard.art !== card.art && !existingCard.art.startsWith('suggestions/')) {
-      const oldArtPath = `${this.artDir}/${existingCard.art}`;
-      const suggestionsDir = `${this.artDir}/suggestions`;
+      const oldArtPath = `${configuration.artDir}/${existingCard.art}`;
+      const suggestionsDir = `${configuration.artDir}/suggestions`;
       try {
         await fs.mkdir(suggestionsDir, { recursive: true });
         const newArtPath = `${suggestionsDir}/${existingCard.art}`;
@@ -128,10 +126,10 @@ export class CardService {
   private async tryMoveArtSuggestionToArt(serializedCard: SerializedCard): Promise<string | undefined> {
     if (serializedCard.art && serializedCard.art.startsWith('suggestions/')) {
       try {
-        await fs.mkdir(this.artDir, { recursive: true });
-        const from = `${this.artDir}/${serializedCard.art}`;
+        await fs.mkdir(configuration.artDir, { recursive: true });
+        const from = `${configuration.artDir}/${serializedCard.art}`;
         const toFileName = serializedCard.art.replace('suggestions/', '');
-        const to = `${this.artDir}/${toFileName}`;
+        const to = `${configuration.artDir}/${toFileName}`;
         await fs.rename(from, to);
         console.log(`Moved new art from ${from} to ${to}`);
         return toFileName;

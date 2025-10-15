@@ -7,9 +7,16 @@ import sharp from 'sharp';
 export const renderRouter = Router();
 
 renderRouter.get('/render/:id', async (req, res) => {
-  const card = await cardService.getCardById(req.params.id);
+  // Get information from request
+  const cardId = req.params.id;
+  const force = [1, true, '1', 'true', 'yes', 'y', 'on'].includes(req.query.force as string);
+  const quality = req.query.quality ? parseInt(req.query.quality as string) : 100;
+  const scale = req.query.scale ? parseFloat(req.query.scale as string) : 1;
+
+  // Try and find the card
+  const card = await cardService.getCardById(cardId);
   if (!card) {
-    res.status(404).json({ error: `Card with ID ${req.params.id} not found` });
+    res.status(404).json({ error: `Card with ID ${cardId} not found` });
     return;
   }
 
@@ -18,10 +25,7 @@ renderRouter.get('/render/:id', async (req, res) => {
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
   res.setHeader('Content-Disposition', `inline; filename="${card.collectorNumber}-${card.id}.png"`);
-
-  let { render } = await renderService.getRender(card);
-  const quality = req.query.quality ? parseInt(req.query.quality as string) : 100;
-  const scale = req.query.scale ? parseFloat(req.query.scale as string) : 1;
+  let { render } = await renderService.getRender(card, force);
   if (quality < 0 || quality > 100) {
     res.status(400).json({ error: 'Quality must be between 0 and 100' });
     return;

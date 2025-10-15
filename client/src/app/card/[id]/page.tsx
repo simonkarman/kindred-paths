@@ -6,6 +6,7 @@ import { CardRender } from '@/components/card-render';
 import { CardExplanation } from '@/components/card-explanation';
 import { getCard } from '@/utils/server';
 import { PageProps } from '@/utils/page-props';
+import { CardView } from '@/app/card/[id]/card-view';
 
 export async function generateMetadata({ params: _params }: PageProps<{ id: string }>): Promise<Metadata> {
   const params = await _params;
@@ -15,7 +16,7 @@ export async function generateMetadata({ params: _params }: PageProps<{ id: stri
   }
 }
 
-export default async function CardView({ params: _params }: Readonly<{ params: Promise<{ id: string }> }>) {
+export default async function Page({ params: _params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const params = await _params;
   const serializedCard = await getCard(params.id);
 
@@ -44,50 +45,7 @@ export default async function CardView({ params: _params }: Readonly<{ params: P
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex lg:flex-row justify-center items-center lg:items-start flex-col gap-8">
-          {/* Card Render Section */}
-          <div className="shrink-0 flex flex-col items-center lg:items-stretch space-y-6">
-            {/* Card Render */}
-            <div className="bg-white rounded-2xl shadow-lg">
-              <CardRender serializedCard={serializedCard} />
-            </div>
-
-            {/* Edit Card */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 shadow-md">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 mt-1">
-                  <FontAwesomeIcon icon={faPenToSquare} className="text-blue-600 text-xl" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-blue-900 mb-2">
-                    Want to make changes?
-                  </h3>
-                  <p className="text-sm text-blue-800 mb-3">
-                    You can edit {serializedCard.name} to modify its properties, <br className="hidden lg:inline" />abilities, or artwork.
-                  </p>
-                  <Link
-                    href={`/edit/${serializedCard.id}`}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                  >
-                    <FontAwesomeIcon icon={faPenToSquare} />
-                    Edit Card
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card Information Section */}
-          <div className="space-y-6">
-            {/* Card Details Card */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <h2 className="text-2xl font-bold text-slate-900 mb-4">
-                Card Details
-              </h2>
-              <CardExplanation serializedCard={serializedCard} />
-            </div>
-          </div>
-        </div>
+        <CardView serializedCard={serializedCard} />
       </div>
     </div>
   );
