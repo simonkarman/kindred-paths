@@ -1,6 +1,7 @@
 import { chromium, Browser, Page } from 'playwright';
 import { setTimeout as sleep } from 'timers/promises';
 import { Card, TokenCardType, colorToShort, CardColor, loyaltyCostAsString, landSubtypeToColor, capitalize } from 'kindred-paths';
+import { SetMetadata } from './services/render-service';
 
 type PlaneswalkerAbility = { cost: string, content: string, height: number, startHeight: number };
 const computePlaneswalkerData = (card: Card): { size: 'regular' | 'tall', rulesFontSize: number, abilities: PlaneswalkerAbility[] } | undefined => {
@@ -69,14 +70,14 @@ export class CardConjurer {
     });
   }
 
-  async renderCard(card: Card, set: { shortName: string, symbol: string, author: string, collectorNumberOffset?: number }): Promise<Buffer> {
+  async renderCard(card: Card, set: SetMetadata): Promise<Buffer> {
     if (!this.browser) {
       throw new Error('Browser is not started. Call start() first.');
     }
 
     try {
       const context = await this.browser.newContext({
-        acceptDownloads: true
+        acceptDownloads: true,
       });
       // Load the page
       const page = await context.newPage();
@@ -332,11 +333,13 @@ export class CardConjurer {
       }
 
       // Handle symbol section
-      await page.click('#creator-menu-tabs h3:has-text("Set Symbol")');
-      await page.waitForLoadState('networkidle');
-      await page.fill('#creator-menu-setSymbol #set-symbol-code', set.symbol);
-      await page.fill('#creator-menu-setSymbol #set-symbol-rarity', card.rarity);
-      await page.waitForLoadState('networkidle');
+      if (set.symbol) {
+        await page.click('#creator-menu-tabs h3:has-text("Set Symbol")');
+        await page.waitForLoadState('networkidle');
+        await page.fill('#creator-menu-setSymbol #set-symbol-code', set.symbol);
+        await page.fill('#creator-menu-setSymbol #set-symbol-rarity', card.rarity);
+        await page.waitForLoadState('networkidle');
+      }
 
       // Handle collector section
       await page.click('#creator-menu-tabs h3:has-text("Collector")');
