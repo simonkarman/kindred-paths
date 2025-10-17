@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { CardType } from 'kindred-paths';
 import { InputHeader } from '@/components/editor/input-header';
 import { capitalize } from '@/utils/typography';

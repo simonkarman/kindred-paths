@@ -1,4 +1,4 @@
-import { CardColorCharacter, colorToShort, colorToLong, toOrderedColors } from '../src';
+import { CardColorCharacter, colorToLong, colorToShort, toOrderedColors } from '../src';
 import { expect, test } from 'vitest';
 
 const t = (_input: CardColorCharacter[], output: CardColorCharacter[]) => {
@@ -6,7 +6,7 @@ const t = (_input: CardColorCharacter[], output: CardColorCharacter[]) => {
   const result = toOrderedColors(input);
   expect(result).not.toBe(input);
   expect(result.map(cc => colorToShort(cc))).toStrictEqual(output);
-}
+};
 
 test('zero colors', () => {
   t([], []);

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { RarityText } from '@/components/rarity-text';
 import { ManaCost } from '@/components/mana-cost';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClone, faImage, faPenToSquare, faShieldCat, faTrashCan, faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons';
+import { faArrowDown, faArrowUp, faClone, faImage, faPenToSquare, faShieldCat, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import { deleteCard } from '@/utils/server';
 import { useDeckNameFromSearch } from '@/utils/use-search';

@@ -14,8 +14,8 @@ import {
   faTrashCan,
   faWarning,
 } from '@fortawesome/free-solid-svg-icons';
-import { SetLocation, SerializableBlueprintWithSource, SerializableSet, SerializedCard, Set, Card } from 'kindred-paths';
-import { serverUrl, putSet } from '@/utils/server';
+import { Card, SerializableBlueprintWithSource, SerializableSet, SerializedCard, Set, SetLocation } from 'kindred-paths';
+import { putSet, serverUrl } from '@/utils/server';
 import { IconButton } from '@/components/icon-button';
 import { DragHandle } from '@/components/set-editor/drag-handle';
 import { SetEditorCell } from '@/components/set-editor/set-editor-cell';

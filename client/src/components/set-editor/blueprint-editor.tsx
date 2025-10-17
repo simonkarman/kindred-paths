@@ -3,7 +3,9 @@
 import { Fragment, ReactNode, useState } from 'react';
 import {
   allCriteriaKeys,
-  AnyCriteria, BlueprintCriteriaType, blueprintFields,
+  AnyCriteria,
+  BlueprintCriteriaType,
+  blueprintFields,
   defaultCriteriaFor,
   getCriteriaTypesForSerializableBlueprintField,
   NumberCriteria,

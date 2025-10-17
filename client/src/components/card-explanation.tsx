@@ -1,5 +1,5 @@
 import { capitalize } from '@/utils/typography';
-import { SerializedCard, Card as _Card } from 'kindred-paths';
+import { Card as _Card, SerializedCard } from 'kindred-paths';
 
 export function CardExplanation({ serializedCard }: { serializedCard: SerializedCard }) {
   const card = new _Card(serializedCard);

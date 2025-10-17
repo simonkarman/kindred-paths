@@ -3,15 +3,16 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faLink,
-  faImage,
-  faPlay,
   faCancel,
+  faCircleCheck,
+  faCircleXmark,
+  faImage,
+  faLink,
+  faPlay,
   faPlus,
-  faUnlink,
   faTimes,
   faTriangleExclamation,
-  faCircleXmark, faCircleCheck,
+  faUnlink,
 } from '@fortawesome/free-solid-svg-icons';
 import { CriteriaFailureReason, SlotStatus } from 'kindred-paths';
 import { IconButton } from '@/components/icon-button';

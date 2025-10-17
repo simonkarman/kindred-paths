@@ -7,7 +7,7 @@ import { SerializedCard } from 'kindred-paths';
 import SearchBar from '@/components/search-bar';
 import { filterCardsBasedOnSearch, useSearch } from '@/utils/use-search';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faAngleDown, faAngleUp, faWandMagicSparkles, faArrowLeft, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faAngleDown, faAngleUp, faArrowLeft, faPlus, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 
 export function CardInspiration(props: { previousCardGenerators: { generatorId: string, createdAt: string, updatedAt: string, prompt: string, sampleCount: number }[] }) {
   const [showPreviousGenerators, setShowPreviousGenerators] = useState(false);

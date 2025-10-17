@@ -1,6 +1,6 @@
-import { useState, ReactNode, ChangeEvent } from 'react';
+import { ChangeEvent, ReactNode, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faWandMagicSparkles, faSpinner, faEye, faClose } from '@fortawesome/free-solid-svg-icons';
+import { faClose, faEye, faSpinner, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 import { Card } from 'kindred-paths';
 import { capitalize } from '@/utils/typography';
 import { InputHeader } from '@/components/editor/input-header';

@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import { z } from 'zod';
-import { Card, SerializedCard, hash } from 'kindred-paths';
+import { Card, hash, SerializedCard } from 'kindred-paths';
 import { CardConjurer } from '../card-conjurer';
 import { computeCardId } from '../utils/card-utils';
 import { configuration } from '../configuration';

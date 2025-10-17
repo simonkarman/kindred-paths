@@ -1,5 +1,5 @@
 import { serverUrl } from '@/utils/server';
-import { SerializedCard, Card as _Card } from 'kindred-paths';
+import { Card as _Card, SerializedCard } from 'kindred-paths';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faPenToSquare } from '@fortawesome/free-solid-svg-icons';

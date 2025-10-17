@@ -1,6 +1,6 @@
-import { chromium, Browser, Page } from 'playwright';
+import { Browser, chromium, Page } from 'playwright';
 import { setTimeout as sleep } from 'timers/promises';
-import { Card, TokenCardType, colorToShort, CardColor, landSubtypeToColor, capitalize } from 'kindred-paths';
+import { capitalize, Card, CardColor, colorToShort, landSubtypeToColor, TokenCardType } from 'kindred-paths';
 import { SetMetadata } from './services/render-service';
 import { computePlaneswalkerData } from './utils/compute-planeswalker-data';
 

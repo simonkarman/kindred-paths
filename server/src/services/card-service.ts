@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import { Card, SerializedCardSchema, SerializedCard } from 'kindred-paths';
+import { Card, SerializedCard, SerializedCardSchema } from 'kindred-paths';
 import { computeCardId } from '../utils/card-utils';
 import { configuration } from '../configuration';
 

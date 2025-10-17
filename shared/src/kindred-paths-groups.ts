@@ -1,4 +1,4 @@
-import { primaryRacesPerAllColors, families, primaryRacesPerPrimaryColor } from './families';
+import { families, primaryRacesPerAllColors, primaryRacesPerPrimaryColor } from './families';
 import { Group, Requirement } from './group';
 import { Card, CardRarity, CardSuperType, CardType } from './card';
 import { CardColor, cardColors } from './colors';
@@ -63,7 +63,7 @@ export const kindredPathsGroups = [
     name: `collector number ${i}`,
     predicate: (c: Card) => c.collectorNumber === i,
   }))),
-  new Group<Card>(`Creatures`, families().flatMap(family => [
+  new Group<Card>('Creatures', families().flatMap(family => [
     // Common
     ...requirementCreator({ count: 3, rarity: 'common', colors: [family.color.primary], types: ['creature'], subtypes: [family.race.primary], distributedSubtypes: [family.class.primary, family.class.secondary, family.class.primary] }),
     ...requirementCreator({ count: primaryRacesPerPrimaryColor[family.color.secondary].length, rarity: 'common', colors: [family.color.primary, family.color.secondary], types: ['creature'], subtypes: [family.race.primary], distributedSubtypes: primaryRacesPerPrimaryColor[family.color.secondary] }),
