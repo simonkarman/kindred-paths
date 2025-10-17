@@ -1,9 +1,9 @@
 import fs from 'fs/promises';
 import fsSync from 'fs';
-import { Card, SerializedCard, hash, cardRarities } from 'kindred-paths';
+import { z } from 'zod';
+import { Card, SerializedCard, hash } from 'kindred-paths';
 import { CardConjurer } from '../card-conjurer';
 import { computeCardId } from '../utils/card-utils';
-import { z } from 'zod';
 import { configuration } from '../configuration';
 
 const SetMetadataOnDiskSchema = z.object({
