@@ -1,19 +1,33 @@
 {
   "name": "kindred-paths-server",
   "version": "0.0.1",
+  "main": "src/index.ts",
   "author": "Simon Karman",
   "description": "A tool for managing the cards in Kindred Paths, the custom Magic the Gathering set by Simon Karman",
   "private": true,
   "scripts": {
     "start": "ts-node src/index.ts",
+    "precommit": "npm run lint && npm test",
     "dev": "./card-conjurer.sh && nodemon --exec ts-node src/index.ts --watch src --watch package.json",
+    "test": "vitest run",
+    "lint": "eslint . --ext .ts",
     "postinstall": "npx playwright install chromium && npx playwright install"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.33.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/node": "^24.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.40.0",
+    "@typescript-eslint/parser": "^8.40.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-import": "^2.32.0",
+    "globals": "^16.3.0",
     "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.57.0",

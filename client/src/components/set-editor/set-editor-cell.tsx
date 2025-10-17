@@ -163,6 +163,7 @@ export const SetEditorCell: React.FC<SetEditorCellProps> = ({
 
               {showCardPreview && <div className={`absolute ${status === 'valid' ? 'w-[250px] right-0' : 'w-[500px] -right-[80px]'} bg-white shadow-xl border border-gray-500 rounded-xl z-50 flex items-start gap-2`}>
                 {cardPreviewUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={cardPreviewUrl}
                     alt="Card preview"

@@ -40,7 +40,7 @@ cardsRouter.delete('/:id', async (req, res) => {
   }
 });
 
-cardsRouter.get("/:id/explain", async (req, res) => {
+cardsRouter.get('/:id/explain', async (req, res) => {
   const card = await cardService.getCardById(req.params.id);
   if (!card) {
     res.status(404).json({ error: `Card with ID ${req.params.id} not found` });

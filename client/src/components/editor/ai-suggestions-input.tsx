@@ -1,4 +1,4 @@
-import { useState, ReactNode, ChangeEventHandler, ChangeEvent } from 'react';
+import { useState, ReactNode, ChangeEvent } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWandMagicSparkles, faSpinner, faEye, faClose } from '@fortawesome/free-solid-svg-icons';
 import { Card } from 'kindred-paths';
@@ -148,4 +148,4 @@ export function AiSuggestionsInput<Suggestion>(props: {
       )}
     </div>
   );
-};
+}

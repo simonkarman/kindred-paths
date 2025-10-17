@@ -115,7 +115,7 @@ export class RenderService {
     // If the set tag is a 3-letter string, use that as the set for the card (enforce lowercase)
     const shortName = typeof card.tags.set === 'string' && card.tags.set.length === 3
       ? card.tags.set.toLowerCase()
-      : undefined
+      : undefined;
 
     // If the card does not belong to a set, return as unknown.
     const unknownSet = UnknownSet();
@@ -159,4 +159,4 @@ export class RenderService {
   }
 }
 
-export const renderService = new RenderService(process.env.CARD_CONJURER_URL || "http://localhost:4102");
+export const renderService = new RenderService(process.env.CARD_CONJURER_URL || 'http://localhost:4102');

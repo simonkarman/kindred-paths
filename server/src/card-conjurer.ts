@@ -8,7 +8,7 @@ export class CardConjurer {
   private browser: Browser | null;
 
   constructor(
-    public readonly url: string
+    public readonly url: string,
   ) {
     this.browser = null;
   }
@@ -57,7 +57,7 @@ export class CardConjurer {
         const numberOfColors = (card.tokenColors ?? []).length;
         const dominantCardType = (card.types[card.types.length - 1]) as TokenCardType;
         const frameColor = numberOfColors === 0
-          ? ({ "creature": "C", "artifact": 'A', "enchantment": "C", "land": 'L' }[dominantCardType])
+          ? ({ 'creature': 'C', 'artifact': 'A', 'enchantment': 'C', 'land': 'L' }[dominantCardType])
           : (numberOfColors > 1 ? 'M' : colorToShort(card.tokenColors![0]).toUpperCase());
         const frameName = frameColor === 'C' ? 'frameCThumb' : `tokenFrame${frameColor}${tokenType}Thumb`;
         if (frameColor === 'W') {
@@ -108,7 +108,7 @@ export class CardConjurer {
           await page.click(`div.frame-option:has(img[src="${frameImage}"])`);
           await page.click(`#${placement}`);
           await sleep(50);
-        }
+        };
         await addFrame(frameColorLeft);
         if (frameColorRight) {
           await addFrame(frameColorRight, 'addToRightHalf');
@@ -140,7 +140,7 @@ export class CardConjurer {
       // Set the type line
       await page.click('#text-options h4:has-text("Type")');
       const text_editor_type_line = page.locator('#text-editor');
-      const typeLine = card.renderTypeLine()
+      const typeLine = card.renderTypeLine();
       await text_editor_type_line.fill(typeLine.slice(0, -1));
       await sleep(500);
       await text_editor_type_line.focus();
@@ -195,7 +195,9 @@ export class CardConjurer {
 
             height = ability.height;
             cost = ability.cost;
-            shift = -shiftPerNumberOfAbilities[planeswalkerData.abilities.length - 1][abilityIndex][planeswalkerData.size] + (height / 2) + ability.startHeight - 5;
+            shift = -shiftPerNumberOfAbilities[planeswalkerData.abilities.length - 1][abilityIndex][planeswalkerData.size]
+              + (height / 2)
+              + ability.startHeight - 5;
           }
           await page.fill(`#planeswalker-height-${abilityIndex}`, height.toFixed());
           await page.fill(`#planeswalker-cost-${abilityIndex}`, cost);
@@ -282,12 +284,12 @@ export class CardConjurer {
             'zoom-1': { x: -300, y: 60, zoom: 170 },
             'zoom-2': { x: -503, y: -50, zoom: 200 },
           };
-          const _focus = card.getTagAsString("art/focus") ?? 'zoom-0';
+          const _focus = card.getTagAsString('art/focus') ?? 'zoom-0';
           const focusAreaName = _focus in focusAreas ? _focus as keyof typeof focusAreas : 'zoom-0';
           const focusArea = focusAreas[focusAreaName];
-          await page.fill("#art-x", focusArea.x.toFixed());
-          await page.fill("#art-y", focusArea.y.toFixed());
-          await page.fill("#art-zoom", focusArea.zoom.toFixed(1));
+          await page.fill('#art-x', focusArea.x.toFixed());
+          await page.fill('#art-y', focusArea.y.toFixed());
+          await page.fill('#art-zoom', focusArea.zoom.toFixed(1));
           await page.waitForLoadState('networkidle');
         }
       }
@@ -305,7 +307,7 @@ export class CardConjurer {
       await page.click('#creator-menu-tabs h3:has-text("Collector")');
       await page.waitForLoadState('networkidle');
       const collectorNumber = card.collectorNumber - (set.collectorNumberOffset ?? 0);
-      await page.fill('#creator-menu-bottomInfo #info-number', ("0000" + collectorNumber.toString()).slice(-4));
+      await page.fill('#creator-menu-bottomInfo #info-number', ('0000' + collectorNumber.toString()).slice(-4));
       await page.fill('#creator-menu-bottomInfo #info-rarity', card.rarity[0].toUpperCase());
       await page.fill('#creator-menu-bottomInfo #info-set', set.shortName);
       await page.fill('#creator-menu-bottomInfo #info-note', new Date().toISOString().split('T')[0]);

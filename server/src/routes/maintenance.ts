@@ -1,17 +1,20 @@
 import { Router } from 'express';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
-import { Card } from 'kindred-paths';
+import { Card, SerializedCard } from 'kindred-paths';
 import { cardService } from '../services/card-service';
 import { computeCardId } from '../utils/card-utils';
-import { aiService } from '../services/ai-service';
 import { configuration } from '../configuration';
 
 export const maintenanceRouter = Router();
 
-maintenanceRouter.post('/cleanup', async (req, res) => {
+maintenanceRouter.get('/health', (_, res) => {
+  res.json({ status: 'ok' });
+});
+
+maintenanceRouter.post('/cleanup', async (_, res) => {
   const messages: string[] = [];
-  console.info("Cleanup requested...");
+  console.info('Cleanup requested...');
 
   // Rename cards that have an ID different from the computed ID based on their name
   for (const card of await cardService.getAllCards()) {
@@ -44,7 +47,7 @@ maintenanceRouter.post('/cleanup', async (req, res) => {
         if (rule.content !== content) {
           hasChanged = true;
         }
-        return { ...rule, content, };
+        return { ...rule, content };
       }
       return rule;
     });
@@ -139,11 +142,11 @@ maintenanceRouter.post('/cleanup', async (req, res) => {
     }
   }
 
-  console.info("Cleanup completed!");
+  console.info('Cleanup completed!');
   res.json({ message: 'Cleanup completed', details: messages });
 });
 
-async function tryMoveArtSuggestionToArt(card: any): Promise<string | undefined> {
+async function tryMoveArtSuggestionToArt(card: SerializedCard): Promise<string | undefined> {
   if (card.art && card.art.startsWith('suggestions/')) {
     try {
       await fs.mkdir(configuration.artDir, { recursive: true });

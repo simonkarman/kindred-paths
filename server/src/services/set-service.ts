@@ -18,7 +18,7 @@ class SetService {
           const data = await fs.readFile(`${configuration.setsDir}/${name}.json`, 'utf-8');
           const parsed = SerializableSetSchema.parse(JSON.parse(data));
           return new Set(parsed);
-        })
+        }),
       );
     } catch (error) {
       console.error('Error reading set directory:', error);
@@ -72,7 +72,7 @@ class SetService {
           // if the id doesn't match, abort the save, as this might overwrite a different save
           return {
             success: false,
-            error: `Cannot save set as there is a name mismatch. You're probably trying to rename a set to an already existing name`,
+            error: 'Cannot save set as there is a name mismatch. You\'re probably trying to rename a set to an already existing name',
           };
         }
       } else {

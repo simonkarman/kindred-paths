@@ -1,5 +1,5 @@
 import { Card, hash } from 'kindred-paths';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { previewCard } from '@/utils/server';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -25,12 +25,12 @@ export function CardPreview({ card }: { card: Card }) {
   const [image, setImage] = useState<string>();
   const [error, setError] = useState<string>();
 
-  const cleanupImage = () => {
+  const cleanupImage = useCallback(() => {
     if (image) { URL.revokeObjectURL(image); }
-  };
-  useEffect(() => cleanupImage, []);
+  }, [image]);
+  useEffect(() => cleanupImage, [cleanupImage]);
 
-  const handleRefresh = async (initialWait = 0) => {
+  const handleRefresh = useCallback(async (initialWait = 0) => {
     const thisRenderIndex: number = latestRenderIndex.current + 1;
     latestRenderIndex.current = thisRenderIndex;
 
@@ -42,7 +42,7 @@ export function CardPreview({ card }: { card: Card }) {
       if (thisRenderIndex === latestRenderIndex.current) {
         const blob = await previewCard(card.toJson());
         if (thisRenderIndex === latestRenderIndex.current) {
-          cleanupImage();;
+          cleanupImage();
           setImage(URL.createObjectURL(blob));
         }
       }
@@ -55,14 +55,14 @@ export function CardPreview({ card }: { card: Card }) {
         setIsRendering(false);
       }
     }
-  }
+  }, [card, cleanupImage]);
 
   const isOutdated = latestRenderKey !== getRenderKey(card);
   useEffect(() => {
     if (autoRefresh && isOutdated) {
-      handleRefresh(1000);
+      handleRefresh(1000).catch(e => console.error(e));
     }
-  }, [card, autoRefresh]);
+  }, [card, autoRefresh, isOutdated, handleRefresh]);
 
   return (
     <div className="w-full max-w-90 mx-auto space-y-3">
@@ -133,6 +133,7 @@ export function CardPreview({ card }: { card: Card }) {
           </div>
         ) : image ? (
           <div className="relative">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               alt={`${card.name} preview`}
               className={`aspect-[63/88] shadow-xl w-full bg-zinc-50 rounded-2xl border transition-all duration-300 ${
@@ -152,7 +153,7 @@ export function CardPreview({ card }: { card: Card }) {
               <svg className="w-12 h-12 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <p className="text-sm text-gray-500">Click "Refresh Preview" to render</p>
+              <p className="text-sm text-gray-500">Click &ldquo;Refresh Preview&rdquo; to render</p>
             </div>
           </div>
         ) : null}

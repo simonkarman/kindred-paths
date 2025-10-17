@@ -120,6 +120,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
     } else if (!canHavePT && pt) {
       setPt(undefined);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supertype, subtypes, types]);
 
   // If setName changes, update tags

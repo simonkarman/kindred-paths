@@ -1,9 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { faPenToSquare, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { CardRender } from '@/components/card-render';
-import { CardExplanation } from '@/components/card-explanation';
 import { getCard } from '@/utils/server';
 import { PageProps } from '@/utils/page-props';
 import { CardView } from '@/app/card/[id]/card-view';
@@ -28,7 +26,7 @@ export default async function Page({ params: _params }: Readonly<{ params: Promi
             <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-600 text-4xl mb-4" />
             <h1 className="text-2xl font-bold text-red-900 mb-2">Card Not Found</h1>
             <p className="text-red-700 mb-4">
-              The card with ID "{params.id}" could not be found.
+              The card with ID &ldquo;{params.id}&rdquo; could not be found.
             </p>
             <Link
               href="/"

@@ -13,7 +13,7 @@ export class CardService {
         .map(async (id) => {
           const card = await this.getCardById(id);
           return card!.toJson();
-        })
+        }),
       );
     } catch (error) {
       console.error('Error reading set directory:', error);
@@ -48,7 +48,10 @@ export class CardService {
     return value;
   }
 
-  async createCard(cardData: SerializedCard): Promise<{ success: true, card: SerializedCard } | { success: false, error: string, statusCode: number }> {
+  async createCard(cardData: SerializedCard): Promise<
+      { success: true, card: SerializedCard }
+    | { success: false, error: string, statusCode: number }
+  > {
     const id = computeCardId(cardData);
 
     // Check if card with this ID already exists
@@ -61,7 +64,7 @@ export class CardService {
     let card;
     try {
       card = new Card({ ...cardData, id });
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Invalid card data', statusCode: 400 };
     }
 
@@ -73,7 +76,10 @@ export class CardService {
     return { success: true, card: saved };
   }
 
-  async updateCard(previousCardId: string, cardData: SerializedCard): Promise<{ success: true, card: SerializedCard } | { success: false, error: string, statusCode: number }> {
+  async updateCard(previousCardId: string, cardData: SerializedCard): Promise<
+      { success: true, card: SerializedCard }
+    | { success: false, error: string, statusCode: number }
+  > {
     // Check if the card exists
     const existingCard = await this.getCardById(previousCardId);
     if (!existingCard) {
@@ -92,7 +98,7 @@ export class CardService {
     let card;
     try {
       card = new Card(cardData);
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Invalid card data', statusCode: 400 };
     }
 

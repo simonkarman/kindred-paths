@@ -116,29 +116,29 @@ Prompt: ${basePrompt}`;
     while (iteration < iterationBudget) {
       try {
         // Build messages array with only current context
-        const messages: any[] = [];
+        const messages: Anthropic.Messages.MessageParam[] = [];
         if (previousAttempt) {
           // Include previous attempt and current prompt with error context
           messages.push({
             role: 'assistant',
-            content: previousAttempt
+            content: previousAttempt,
           });
           messages.push({
             role: 'user',
-            content: currentPrompt // This will contain the error message on subsequent iterations
+            content: currentPrompt, // This will contain the error message on subsequent iterations
           });
         } else {
           // First iteration or new generation - include differentiation context
           const promptWithContext = this.buildPrompt(currentPrompt);
           messages.push({
             role: 'user',
-            content: promptWithContext
+            content: promptWithContext,
           });
         }
 
         // Call Claude Opus 4
         const msg = await this.anthropic.messages.create({
-          model: "claude-opus-4-20250514",
+          model: 'claude-opus-4-20250514',
           max_tokens: this.maxTokens,
           temperature: 1,
           system: this.systemPrompt,
@@ -159,7 +159,7 @@ Prompt: ${basePrompt}`;
         try {
           const sample = this.transformer(response.trim());
           this.samples.push(sample);
-          try { this.immediatelyAfterGenerateHook(sample); } catch {}
+          try { this.immediatelyAfterGenerateHook(sample); } catch { /* empty */ }
 
           // Generate the summary for this sample
           const summary = this.summarizer(sample);
@@ -181,8 +181,9 @@ Prompt: ${basePrompt}`;
           previousAttempt = response;
 
           // Build error prompt with previous samples context
-          currentPrompt = `Previous attempt failed with error: ${errorMessage}. Please adjust your output to fix this issue. Original request: ${this.userPrompt}`;
-          iteration++;
+          currentPrompt = `Previous attempt failed with error: ${errorMessage}. Please adjust your output to fix this issue. Original request: ` +
+            this.userPrompt;
+          iteration += 1;
         }
       } catch (apiError: unknown) {
         const errorMessage = this.getErrorMessage(apiError);
@@ -196,7 +197,7 @@ Prompt: ${basePrompt}`;
         // On API error, reset the context and try again
         previousAttempt = null;
         currentPrompt = this.userPrompt;
-        iteration++;
+        iteration += 1;
       }
     }
 

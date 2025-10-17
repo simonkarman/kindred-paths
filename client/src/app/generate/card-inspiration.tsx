@@ -114,7 +114,7 @@ export function CardInspiration(props: { previousCardGenerators: { generatorId: 
     return () => {
       cardImages.forEach(url => URL.revokeObjectURL(url));
     }
-  }, []);
+  }, [cardImages]);
 
   if (selectedCard) {
     return (
@@ -226,6 +226,7 @@ export function CardInspiration(props: { previousCardGenerators: { generatorId: 
                         <div className="aspect-[2.5/3.5] bg-slate-100 flex items-center justify-center relative">
                           {imageUrl ? (
                             <>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={imageUrl}
                                 alt="Card preview"

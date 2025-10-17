@@ -52,6 +52,7 @@ export const CardArtInput = (props: {
       getServerSuggestions={getArtSuggestions}
       maxHeight={'max-h-200'}
       renderSuggestion={(suggestion: ArtSuggestion) => (
+        // eslint-disable-next-line @next/next/no-img-element
         <img className="w-full h-auto" alt={suggestion.fileName} src={'data:image/png;base64, ' + suggestion.base64Image} />
       )}
       suggestionsAsGrid={true}

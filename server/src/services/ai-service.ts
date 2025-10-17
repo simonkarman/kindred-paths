@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import { Card, CardArtPromptCreator, SerializedCard, SerializedCardSchema } from 'kindred-paths';
 import { Anthropic } from '@anthropic-ai/sdk';
-import { Leonardo } from "@leonardo-ai/sdk";
+import { Leonardo } from '@leonardo-ai/sdk';
 import { z } from 'zod';
 import { GetGenerationByIdResponse } from '@leonardo-ai/sdk/sdk/models/operations';
 import { computeCardId } from '../utils/card-utils';
@@ -42,46 +42,48 @@ export class AIService {
     const card = new Card(cardData);
 
     const msg = await this.anthropic.messages.create({
-      model: "claude-opus-4-20250514",
+      model: 'claude-opus-4-20250514',
       max_tokens: 1000,
       temperature: 1,
       system: "You're an expert in coming up with creative names for custom Magic the Gathering cards. " +
-        "Always respond with a JSON array where each entry is a suggestion. " +
-        "Generate name suggestions and return ONLY valid JSON without any markdown formatting or code blocks. " +
-        "Return as an array of objects with \"name\" and \"reason\" properties. " +
-        "Each suggestion is an object with two properties. " +
+        'Always respond with a JSON array where each entry is a suggestion. ' +
+        'Generate name suggestions and return ONLY valid JSON without any markdown formatting or code blocks. ' +
+        'Return as an array of objects with "name" and "reason" properties. ' +
+        'Each suggestion is an object with two properties. ' +
         "'name' - which is the name you suggest for the card. " +
         "'reason' - which is a short explanation of why you chose this name. " +
-        "Please add 5-10 suggestions. Avoid using the same name twice. " +
-        "Use different styles of names, it is okay if the users doesn't use one of the provided suggestion directly but picks from multiple suggestions. " +
-        "For sorceries and instants try to use the name either as something that happened or describes what happens when the spell resolves." +
+        'Please add 5-10 suggestions. Avoid using the same name twice. ' +
+        "Use different styles of names, it is okay if the users doesn't use one of the provided suggestion directly but picks from multiple " +
+        'suggestions. ' +
+        'For sorceries and instants try to use the name either as something that happened or describes what happens when the spell resolves.' +
         "For creatures use names like 'Arabho, The Great', that have a given name and a title. " +
-        "For noncreature permanents use names of places, objects, or concepts. That describe the context within what happens on the card could happen. " +
-        "In general, use different styles and approaches to naming the cards.",
+        'For noncreature permanents use names of places, objects, or concepts. That describe the context within what happens on the card could ' +
+        'happen. ' +
+        'In general, use different styles and approaches to naming the cards.',
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: [
             {
-              type: "text",
-              text: `Could you suggest some card names for ${card.explain({ withoutName: true })}`
-            }
-          ]
-        }
-      ]
+              type: 'text',
+              text: `Could you suggest some card names for ${card.explain({ withoutName: true })}`,
+            },
+          ],
+        },
+      ],
     });
 
-    const respondError = (reason: string): NameSuggestion[] => [{ name: "No name suggestions available", reason }];
+    const respondError = (reason: string): NameSuggestion[] => [{ name: 'No name suggestions available', reason }];
 
     const message = msg.content.find(content => content.type === 'text')?.text;
     if (!message) {
-      return respondError("No text was outputted by the AI model.");
+      return respondError('No text was outputted by the AI model.');
     }
 
     try {
       return z.array(z.object({ name: z.string().min(1), reason: z.string().min(1) })).parse(JSON.parse(message));
-    } catch (e) {
-      return respondError("The response from the AI model was not valid JSON.");
+    } catch {
+      return respondError('The response from the AI model was not valid JSON.');
     }
   }
 
@@ -89,48 +91,51 @@ export class AIService {
     const card = new Card(cardData);
 
     const msg = await this.anthropic.messages.create({
-      model: "claude-opus-4-20250514",
+      model: 'claude-opus-4-20250514',
       max_tokens: 1000,
       temperature: 1,
       system: "You're an expert in coming up with creative art settings for custom Magic the Gathering cards based on a given card. " +
-        "Always respond with a JSON array where each entry is a suggestion for an art setting. " +
-        "An art setting describes what the card artist that will make the artwork for the card should create. " +
-        "The art setting should describe the location, what happens on the foreground, and what happens on the background. " +
-        "Generate art setting suggestions and return ONLY valid JSON without any markdown formatting or code blocks. " +
-        "Return as an array art setting suggestions, which are objects with \"name\" and \"setting\" properties. " +
-        "Each art setting suggestion is an object with two properties. " +
+        'Always respond with a JSON array where each entry is a suggestion for an art setting. ' +
+        'An art setting describes what the card artist that will make the artwork for the card should create. ' +
+        'The art setting should describe the location, what happens on the foreground, and what happens on the background. ' +
+        'Generate art setting suggestions and return ONLY valid JSON without any markdown formatting or code blocks. ' +
+        'Return as an array art setting suggestions, which are objects with "name" and "setting" properties. ' +
+        'Each art setting suggestion is an object with two properties. ' +
         "'name' - which is a title for the art setting. " +
         "'setting' - which is the short art setting in 1-2 sentences that can be fed to the image generation AI. " +
-        "Please add 5-10 suggestions. Avoid using the same suggestion twice. " +
-        "Use different styles of art settings, it is okay if the users doesn't use one of the provided suggestion directly but picks ideas from multiple suggestions. " +
-        "For sorceries and instants describe the action or event that is happening. " +
-        "For creatures use the name, power, toughness, rarity and rules (keywords and abilities) to describe the art setting. The rules should influence this quite a lot. " +
-        "For noncreature permanents use the name of the card to describe the location or object and use the rules (keywords and abilities) to describe the setting. " +
-        "In general, use different styles and approaches to naming the cards and describe what you would see in the world if the card would resolve.",
+        'Please add 5-10 suggestions. Avoid using the same suggestion twice. ' +
+        "Use different styles of art settings, it is okay if the users doesn't use one of the provided suggestion directly but picks ideas from " +
+        'multiple suggestions. ' +
+        'For sorceries and instants describe the action or event that is happening. ' +
+        'For creatures use the name, power, toughness, rarity and rules (keywords and abilities) to describe the art setting. The rules should ' +
+        'influence this quite a lot. ' +
+        'For noncreature permanents use the name of the card to describe the location or object and use the rules (keywords and abilities) to ' +
+        'describe the setting. ' +
+        'In general, use different styles and approaches to naming the cards and describe what you would see in the world if the card would resolve.',
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: [
             {
-              type: "text",
-              text: `Could you suggest some card settings for ${card.explain()}`
-            }
-          ]
-        }
-      ]
+              type: 'text',
+              text: `Could you suggest some card settings for ${card.explain()}`,
+            },
+          ],
+        },
+      ],
     });
 
-    const respondError = (reason: string): ArtSettingSuggestion[] => [{ name: "No art setting suggestions available", setting: reason }];
+    const respondError = (reason: string): ArtSettingSuggestion[] => [{ name: 'No art setting suggestions available', setting: reason }];
 
     const message = msg.content.find(content => content.type === 'text')?.text;
     if (!message) {
-      return respondError("No text was outputted by the AI model.");
+      return respondError('No text was outputted by the AI model.');
     }
 
     try {
       return z.array(z.object({ name: z.string().min(1), setting: z.string().min(1) })).parse(JSON.parse(message));
-    } catch (e) {
-      return respondError("The response from the AI model was not valid JSON.");
+    } catch {
+      return respondError('The response from the AI model was not valid JSON.');
     }
   }
 
@@ -170,7 +175,7 @@ export class AIService {
         }
         console.log(`Waiting for generation ${generationId} to complete...`);
         await new Promise(resolve => setTimeout(resolve, 2500)); // Wait 2.5 seconds before retrying
-        retries++;
+        retries += 1;
       } catch (error) {
         console.error(`Error fetching generation ${generationId}:`, error);
         throw new Error('Failed to fetch card art generation');
@@ -214,7 +219,7 @@ export class AIService {
     let iterationBudget = 3;
     const getFilePath = (generatorId: string) => {
       return `${configuration.generatorsCacheDir}/${generatorId}.json`;
-    }
+    };
     if ('prompt' in props) {
       generatorId = crypto.randomUUID();
       prompt = props.prompt;
@@ -249,7 +254,7 @@ export class AIService {
     return {
       generatorId,
       samples: serializedSamples,
-    }
+    };
   }
 
   async getCardSampleGenerators(): Promise<{
@@ -274,7 +279,7 @@ export class AIService {
               prompt: content.prompt,
               sampleCount: Array.isArray(content.samples) ? content.samples.length : 0,
             };
-          })
+          }),
 
       )).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     } catch (error) {

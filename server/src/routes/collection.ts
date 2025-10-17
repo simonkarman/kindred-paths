@@ -51,7 +51,7 @@ class NoneStorageBackend extends StorageBackendAdapter {
       const files = await this.getAllFiles(this.directory);
       const modifications: FileModification[] = files.map(path => ({
         operation: 'addition' as const,
-        path
+        path,
       }));
 
       return {
@@ -63,7 +63,7 @@ class NoneStorageBackend extends StorageBackendAdapter {
         remote: {
           hasIncomingChanges: false,
           lastChecked: new Date().toISOString(),
-        }
+        },
       };
     } catch {
       return {
@@ -75,7 +75,7 @@ class NoneStorageBackend extends StorageBackendAdapter {
         remote: {
           hasIncomingChanges: false,
           lastChecked: new Date().toISOString(),
-        }
+        },
       };
     }
   }
@@ -83,14 +83,14 @@ class NoneStorageBackend extends StorageBackendAdapter {
   async sync(): Promise<SyncResult> {
     return {
       success: true,
-      message: 'No-op for none backend'
+      message: 'No-op for none backend',
     };
   }
 
   async commit(message: string): Promise<SyncResult> {
     return {
       success: true,
-      message: 'No-op for none backend'
+      message: 'No-op for none backend',
     };
   }
 }
@@ -116,7 +116,7 @@ class GitStorageBackend extends StorageBackendAdapter {
       return {
         type: 'git',
         repositoryUrl,
-        branch
+        branch,
       };
     } catch {
       throw new Error('Failed to get git repository info');
@@ -171,7 +171,7 @@ class GitStorageBackend extends StorageBackendAdapter {
       if (local.modifications.length > 0) {
         return {
           success: false,
-          error: 'Cannot sync with local changes. Commit your changes first.'
+          error: 'Cannot sync with local changes. Commit your changes first.',
         };
       }
 
@@ -189,7 +189,7 @@ class GitStorageBackend extends StorageBackendAdapter {
 
       return {
         success: true,
-        message: 'Successfully pulled changes'
+        message: 'Successfully pulled changes',
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -199,14 +199,14 @@ class GitStorageBackend extends StorageBackendAdapter {
         return {
           success: false,
           error: 'Merge conflict detected. Please resolve manually via command line.',
-          details: errorMessage
+          details: errorMessage,
         };
       }
 
       return {
         success: false,
         error: 'Failed to sync',
-        details: errorMessage
+        details: errorMessage,
       };
     }
   }
@@ -235,7 +235,7 @@ class GitStorageBackend extends StorageBackendAdapter {
 
       return {
         success: true,
-        message: 'Successfully committed and pushed changes'
+        message: 'Successfully committed and pushed changes',
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -243,7 +243,7 @@ class GitStorageBackend extends StorageBackendAdapter {
       return {
         success: false,
         error: 'Failed to commit and push',
-        details: errorMessage
+        details: errorMessage,
       };
     }
   }
@@ -282,7 +282,7 @@ collectionRouter.get('/', async (_, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to get collection info',
-      details: error instanceof Error ? error.message : String(error)
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 });
@@ -308,7 +308,7 @@ collectionRouter.post('/sync', async (_, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to sync',
-      details: error instanceof Error ? error.message : String(error)
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 });
@@ -321,7 +321,7 @@ collectionRouter.post('/commit', async (req, res) => {
     if (!message || typeof message !== 'string') {
       res.status(400).json({
         success: false,
-        error: 'Commit message is required'
+        error: 'Commit message is required',
       });
       return;
     }
@@ -339,7 +339,7 @@ collectionRouter.post('/commit', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to commit and push',
-      details: error instanceof Error ? error.message : String(error)
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 });

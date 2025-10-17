@@ -1,9 +1,20 @@
 #!/bin/sh
 
+# Skip if CARD_CONJURER_URL is set
+if [ -n "$CARD_CONJURER_URL" ]; then
+  echo "CARD_CONJURER_URL is set, skipping Card Conjurer setup"
+  exit 0
+fi
+
+# Skip if git or docker are not installed
+if ! command -v git >/dev/null 2>&1 || ! command -v docker >/dev/null 2>&1; then
+  echo "git or docker not installed, skipping Card Conjurer setup"
+  exit 0
+fi
+
 # Check if .cardconjurer directory exists
 if [ ! -d ".cardconjurer" ]; then
   echo "Cloning Card Conjurer to .cardconjurer directory"
-  # git clone https://github.com/Investigamer/cardconjurer/ .cardconjurer
   git clone https://github.com/joshbirnholz/cardconjurer.git .cardconjurer
 else
   echo ".cardconjurer exists"
@@ -24,7 +35,7 @@ fi
     echo "local_art is already in .dockerignore"
   fi
 
-  # Check if the "kindred-paths-cardconjurer" docker image exists
+  # Build "kindred-paths-cardconjurer" docker image
   echo "Building Card Conjurer Docker image"
   docker build -f Dockerfile --target "prod" . -t "kindred-paths-cardconjurer"
 )

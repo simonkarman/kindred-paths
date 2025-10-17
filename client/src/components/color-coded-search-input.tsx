@@ -57,9 +57,12 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
           if (!validation.value.includes(value)) {
             valueColor = 'text-red-600';
           }
-        } else if (validation.value instanceof RegExp) {
-          if (!validation.value.test(value)) {
-            valueColor = 'text-red-600';
+        } else {
+          // noinspection SuspiciousTypeOfGuard
+          if (validation.value instanceof RegExp) {
+            if (!validation.value.test(value)) {
+              valueColor = 'text-red-600';
+            }
           }
         }
       }
@@ -163,7 +166,7 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
         }
       }, 0);
     }
-  }, [setSearchText, getCursorPosition, colorizeText, setCursorPosition]);
+  }, [contentEditableRef, getCursorPosition, setSearchText, colorizeText, setCursorPosition]);
 
   // Update content when searchText changes externally (not from typing)
   useEffect(() => {
@@ -171,12 +174,11 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
       const currentText = contentEditableRef.current.textContent || '';
       // Only update if the text actually changed from external source
       if (currentText !== searchText) {
-        const colorized = colorizeText(searchText);
-        contentEditableRef.current.innerHTML = colorized;
+        contentEditableRef.current.innerHTML = colorizeText(searchText);
         setCursorPosition(searchText.length);
       }
     }
-  }, [searchText, colorizeText, setCursorPosition, isTyping]);
+  }, [searchText, colorizeText, setCursorPosition, isTyping, contentEditableRef]);
 
   // Handle focus events
   const handleFocus = useCallback(() => {
@@ -195,7 +197,7 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
       e.preventDefault();
       contentEditableRef.current?.blur();
     }
-  }, []);
+  }, [contentEditableRef]);
 
   return (
     <>

@@ -14,7 +14,7 @@ export const computePlaneswalkerData = (card: Card): PlaneswalkerData | undefine
   ];
   const rulesFontSize = -18 + (card.getTagAsNumber('fs/rules') ?? 0);
   const heights = abilities.map(({ content }) => {
-    const padding = 115 + rulesFontSize
+    const padding = 115 + rulesFontSize;
     const containsNewLine = content.includes('{lns}');
     const numberOfLines = Math.ceil(content.length / Math.max(10, 33 - (rulesFontSize / 3)) + (containsNewLine ? 0.5 : 0));
     const lineHeight = 75 + (rulesFontSize / 2);

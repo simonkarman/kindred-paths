@@ -103,20 +103,19 @@ Make sure to align the mana cost and name with the rules you choose.`;
           totalCount, nonlandCount, landCount,
           cardColorDistribution, cardTypeDistribution,
           manaValueDistribution, rarityDistribution,
-          manaValueRarityDistribution, subtypeDistribution
+          manaValueRarityDistribution, subtypeDistribution,
         } = getStatistics(samples);
         return JSON.stringify({
           totalCount, nonlandCount, landCount,
           cardColorDistribution, cardTypeDistribution,
           manaValueDistribution, rarityDistribution,
-          manaValueRarityDistribution, subtypeDistribution
+          manaValueRarityDistribution, subtypeDistribution,
         }, undefined, 2);
       },
       immediatelyAfterGenerateHook: sample => {
         // Create a preview render in parallel, to ensure the card can be shown quickly
-        // noinspection JSIgnoredPromiseFromCall
         renderService.generatePreview(sample.toJson()).catch(e => console.error('Skip render of ai generated card, because of error:', e));
-      }
+      },
     });
   };
 }

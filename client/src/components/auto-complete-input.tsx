@@ -1,21 +1,15 @@
-import { useState, useRef, useEffect, RefObject } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
-interface AutocompleteInputProps {
-  value: string;
-  onChange: (value: string) => void;
-  suggestions: string[];
-  placeholder?: string;
-  className?: string;
-}
-
-export default function AutoCompleteInput(props: {
+type AutoCompleteInputProps = {
   value: string,
   onChange: (value: string) => void,
   suggestions: string[],
   placeholder: string,
   className?: string,
   focusKey?: string,
-}) {
+}
+
+export default function AutoCompleteInput(props: AutoCompleteInputProps) {
   const { value, onChange, suggestions, placeholder, className } = props;
   const [isOpen, setIsOpen] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
@@ -54,7 +48,7 @@ export default function AutoCompleteInput(props: {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [props.focusKey]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(e.target.value);

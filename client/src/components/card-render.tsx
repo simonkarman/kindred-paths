@@ -26,6 +26,7 @@ export function CardRender({ serializedCard, forceRender, hoverControls = false,
   return (
     <div className="relative group">
       {/* Image */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         alt={card.name + " image"}
         className={`aspect-[63/88] w-120 print:w-100 not-print:rounded-2xl border ${hideBorder ? 'bg-transparent border-transparent' : 'bg-zinc-400'}`}
