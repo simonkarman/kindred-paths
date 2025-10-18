@@ -1,6 +1,6 @@
 'use client';
 
-import React, { PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { PropsWithChildren, useEffect, useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
@@ -68,16 +68,17 @@ export function SetEditor(props: SetEditorProps) {
   const set = useMemo(() => new Set(serializableSet), [serializableSet]);
   const statusCounts = set.getSlotStats(cards);
 
-  const saveChanges = useCallback((props?: { newCards?: SerializedCard[] }) => {
+  const saveChanges = (props?: { newCards?: SerializedCard[] }) => {
     setValidationMessages(set.validateAndCorrect(props?.newCards ?? cards));
     const serializableSet = set.toJson();
     setSerializableSet(serializableSet);
     putSet(serializableSet).catch(e => console.error('Error saving set:', e));
-  }, [cards, set]);
+  };
 
   useEffect(() => {
     saveChanges();
-  }, [saveChanges]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Set
   const updateSetName = (newName: string) => {

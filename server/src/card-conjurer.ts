@@ -6,6 +6,7 @@ import { computePlaneswalkerData } from './utils/compute-planeswalker-data';
 
 export class CardConjurer {
   private browser: Browser | null;
+  private isDebuggingMode = false;
 
   constructor(
     public readonly url: string,
@@ -26,7 +27,7 @@ export class CardConjurer {
 
     // Create headless browser instance
     this.browser = await chromium.launch({
-      headless: true,
+      headless: !this.isDebuggingMode,
     });
   }
 
@@ -116,7 +117,7 @@ export class CardConjurer {
         isFullArt = true;
       } else {
         // Enable autoFrame
-        await page.selectOption('#autoFrame', 'M15Regular-1');
+        await page.selectOption('#autoFrame', card.tags.borderless ? 'Borderless' : 'M15Regular-1');
       }
 
       // Click on text section
@@ -266,7 +267,7 @@ export class CardConjurer {
       if (card.art !== undefined) {
         await page.click('#creator-menu-tabs h3:has-text("Art")');
         await page.waitForLoadState('networkidle');
-        await page.fill('#creator-menu-art input[placeholder="Via URL"]', `local_art/${card.art}`);
+        await page.fill('#creator-menu-art input[placeholder="Via URL"]', card.art);
         await page.fill('#creator-menu-art #art-artist', set.author);
         await page.waitForLoadState('networkidle');
 
@@ -316,6 +317,11 @@ export class CardConjurer {
       await page.fill('#creator-menu-bottomInfo #info-year', new Date().getFullYear().toString());
       await page.click('label:has(#enableNewCollectorStyle)');
       await page.waitForLoadState('networkidle');
+
+      // Wait in debugging mode
+      if (this.isDebuggingMode) {
+        await sleep(15000);
+      }
 
       // Download the card
       await sleep(500); // Wait a bit for the image to load
