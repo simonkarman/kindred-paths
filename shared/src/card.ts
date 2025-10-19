@@ -381,7 +381,11 @@ export class Card {
       switch (rule.variant) {
       case 'card-type-reminder':
       case 'inline-reminder':
-        text += `{i}(${rule.content}){/i}`;
+        if (rule.content.endsWith('{lns}')) {
+          text += `{i}(${rule.content.substring(0, rule.content.length - 5)}){lns}{/i}\n\n`;
+        } else {
+          text += `{i}(${rule.content}){/i}`;
+        }
         checkLineEnding();
         break;
       case 'keyword':
