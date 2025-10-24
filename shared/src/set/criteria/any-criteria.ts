@@ -4,6 +4,7 @@ import { ObjectCriteria } from './object-criteria';
 import { OptionalCriteria } from './optional-criteria';
 import { StringArrayCriteria } from './string-array-criteria';
 import { StringCriteria } from './string-criteria';
+import { SerializableBlueprint } from '../serializable-blueprint';
 
 export type AnyCriteria = BooleanCriteria | NumberCriteria | ObjectCriteria | OptionalCriteria | StringArrayCriteria | StringCriteria;
 
@@ -32,6 +33,22 @@ export const allCriteriaKeys: AnyCriteria['key'][] = [
   'object/boolean-field',
 ];
 
+export function explainAllCriteria(blueprint: SerializableBlueprint): { field: string, explanations: string[] }[] {
+  const result: { field: string, explanations: string[] }[] = [];
+  for (const fieldKey of Object.keys(blueprint) as (keyof SerializableBlueprint)[]) {
+    const criteriaArray = blueprint[fieldKey];
+    if (criteriaArray) {
+      const explanations: string[] = [];
+      for (const criteria of criteriaArray) {
+        const explanation = explainCriteria(criteria);
+        explanations.push(explanation);
+      }
+      result.push({ field: fieldKey, explanations: explanations });
+    }
+  }
+  return result;
+}
+
 export function explainCriteria(criteria: AnyCriteria): string {
   switch (criteria.key) {
   case 'boolean/true':
@@ -39,7 +56,7 @@ export function explainCriteria(criteria: AnyCriteria): string {
   case 'boolean/false':
     return 'be false';
   case 'number/one-of':
-    return `be one ${criteria.value.join(' or ')}`;
+    return `be one of ${criteria.value.join(' or ')}`;
   case 'number/at-least':
     return `be at least ${criteria.value}`;
   case 'number/at-most':

@@ -14,7 +14,15 @@ import {
   faTrashCan,
   faWarning,
 } from '@fortawesome/free-solid-svg-icons';
-import { Card, SerializableBlueprintWithSource, SerializableSet, SerializedCard, Set, SetLocation } from 'kindred-paths';
+import {
+  Card,
+  explainAllCriteria,
+  SerializableBlueprintWithSource,
+  SerializableSet,
+  SerializedCard,
+  Set,
+  SetLocation,
+} from 'kindred-paths';
 import { putSet, serverUrl } from '@/utils/server';
 import { IconButton } from '@/components/icon-button';
 import { DragHandle } from '@/components/set-editor/drag-handle';
@@ -249,6 +257,8 @@ export function SetEditor(props: SetEditorProps) {
     });
   }
 
+  const setBlueprint = set.getBlueprintAt({ type: 'set' });
+
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto">
@@ -328,35 +338,45 @@ export function SetEditor(props: SetEditorProps) {
         )}
 
         {/* Header Section */}
-        <div className="mx-auto max-w-[1600px] bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6 space-y-2">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
+        <div className="mx-auto max-w-[1600px] bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
               <input
                 type="text"
                 value={serializableSet.name}
                 onChange={(e) => updateSetName(e.target.value)}
-                className="text-2xl font-bold border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 w-full"
+                className="field-sizing-content text-2xl font-bold border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
                 placeholder="Enter set name..."
               />
-              <p className="text-xs text-slate-400 mt-1 px-2">ID: {set.getId()}</p>
+              <p className="hidden text-xs text-slate-400 mt-1 px-2">ID: {set.getId()}</p>
             </div>
-            <div className="flex gap-2">
-              {serializableSet.blueprint && (
+            <div className="flex flex-col items-end">
+              <div className="flex gap-2">
+                {serializableSet.blueprint && (
+                  <IconButton
+                    onClick={() => onRemoveSetBlueprint()}
+                    icon={faCancel}
+                    title="Clear Blueprint"
+                    variant="default"
+                  />
+                )}
                 <IconButton
-                  onClick={() => onRemoveSetBlueprint()}
-                  icon={faCancel}
-                  title="Clear Blueprint"
-                  variant="default"
+                  onClick={() => onEditSetBlueprint()}
+                  icon={faPenToSquare}
+                  title="Add/Edit Blueprint"
+                  variant="primary"
                 />
-              )}
-              <IconButton
-                onClick={() => onEditSetBlueprint()}
-                icon={faPenToSquare}
-                title="Add/Edit Blueprint"
-                variant="primary"
-              />
+              </div>
             </div>
           </div>
+
+          {setBlueprint && (
+            <div className="mb-6 px-2 text-slate-400 text-xs">
+              <div>
+                Cards in this set {explainAllCriteria(setBlueprint).map(({ field, explanations }) =>  `must have ${field} that must ${explanations.join(' and ')}`).join(' and ')}.
+              </div>
+            </div>
+          )}
 
           {/* Status Legend */}
           <div className="flex flex-wrap justify-end gap-6 text-sm">
@@ -369,8 +389,8 @@ export function SetEditor(props: SetEditorProps) {
             <div className="flex items-center gap-2">
               <FontAwesomeIcon icon={faCircle} className="text-slate-400" />
               <span className="text-slate-700">
-                      Skip: <span className="font-semibold text-slate-900">{statusCounts.skip}</span>
-                    </span>
+                Skip: <span className="font-semibold text-slate-900">{statusCounts.skip}</span>
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <FontAwesomeIcon icon={faTimes} className="text-red-600" />
@@ -421,7 +441,7 @@ export function SetEditor(props: SetEditorProps) {
                 {serializableSet.archetypes.map((archetype, archetypeIndex) => (
                   <th key={archetypeIndex} className="group border-b-2 border-slate-300 border-l p-2 bg-slate-50 min-w-[250px] text-center font-medium">
                     <div className="flex gap-1 px-1 items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="opacity-10 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all">
                         <IconButton
                           onClick={() => deleteArchetype(archetypeIndex)}
                           icon={faTrashCan}
@@ -429,13 +449,15 @@ export function SetEditor(props: SetEditorProps) {
                           variant="danger"
                         />
                       </div>
-                      <input
-                        type="text"
-                        value={archetype.name}
-                        onChange={(e) => updateArchetypeName(archetypeIndex, e.target.value)}
-                        className="w-full border-none text-xs text-center bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-                        placeholder="Archetype name..."
-                      />
+                      <div>
+                        <input
+                          type="text"
+                          value={archetype.name}
+                          onChange={(e) => updateArchetypeName(archetypeIndex, e.target.value)}
+                          className="w-full border-none text-xs text-center bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                          placeholder="Archetype name..."
+                        />
+                      </div>
                       {archetype.blueprint && (
                         <IconButton
                           onClick={() => onRemoveArchetypeBlueprint(archetypeIndex)}
@@ -451,6 +473,11 @@ export function SetEditor(props: SetEditorProps) {
                         variant="primary"
                       />
                     </div>
+                    {archetype.blueprint && (
+                      <div className="mt-1 text-xs text-zinc-400">
+                        Cards in this archetype {explainAllCriteria(archetype.blueprint).map(({ field, explanations }) =>  `must have ${field} that must ${explanations.join(' and ')}`).join(' and ')}.
+                      </div>
+                    )}
                   </th>
                 ))}
                 <th className="border-b-2 border-slate-300 border-l p-2 bg-slate-50 text-center font-medium">
@@ -501,27 +528,13 @@ export function SetEditor(props: SetEditorProps) {
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex absolute left-[-10px] flex-col gap-1">
-                        <IconButton
-                          onClick={() => addMetadataKey(rowIndex)}
-                          icon={faPlus}
-                          title="Add Metadata Key"
-                          variant="success"
-                        />
-                        <IconButton
-                          onClick={() => addMetadataKey(rowIndex + 1)}
-                          icon={faPlus}
-                          title="Add Metadata Key"
-                          variant="success"
-                        />
-                      </div>
                       <DragHandle
                         type="metadataKeys"
                         index={rowIndex}
                         draggedItem={draggedItem}
                         setDraggedItem={setDraggedItem}
                       />
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="opacity-10 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all">
                         <IconButton
                           onClick={() => deleteMetadataKey(rowIndex)}
                           icon={faTrashCan}
@@ -605,27 +618,13 @@ export function SetEditor(props: SetEditorProps) {
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex absolute left-[-10px] flex-col gap-1">
-                        <IconButton
-                          onClick={() => addCycle(rowIndex)}
-                          icon={faPlus}
-                          title="Add Cycle Key"
-                          variant="success"
-                        />
-                        <IconButton
-                          onClick={() => addCycle(rowIndex + 1)}
-                          icon={faPlus}
-                          title="Add Cycle Key"
-                          variant="success"
-                        />
-                      </div>
                       <DragHandle
                         type="cycleKeys"
                         index={rowIndex}
                         draggedItem={draggedItem}
                         setDraggedItem={setDraggedItem}
                       />
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="opacity-10 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all">
                         <IconButton
                           onClick={() => deleteCycle(rowIndex)}
                           icon={faTrashCan}
@@ -655,6 +654,12 @@ export function SetEditor(props: SetEditorProps) {
                         variant="primary"
                       />
                     </div>
+
+                    {blueprint && (
+                      <div className="mt-1 text-xs text-zinc-400">
+                        Cards in this cycle {explainAllCriteria(blueprint).map(({ field, explanations }) =>  `must have ${field} that must ${explanations.join(' and ')}`).join(' and ')}.
+                      </div>
+                    )}
                   </td>
                   {!blueprint && (
                     <td
