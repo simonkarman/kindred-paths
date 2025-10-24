@@ -65,80 +65,95 @@ test('loyalty - complex', () => {
 test('creature card', () => {
   const serializedCreatureCard: SerializedCard = {
     id: 'creature',
-    name: 'Sam, The Great',
-    rarity: 'rare',
     isToken: undefined,
-    supertype: undefined,
-    tokenColors: undefined,
-    types: ['creature'],
-    subtypes: ['human', 'warrior'],
-    manaCost: { x: 2, colorless: 2, white: 1, blue: 0 },
-    rules: [
-      { variant: 'card-type-reminder', content: 'A creature can\'t attack unless it has been under its controller\'s control continuously since their most recent turn began.' },
-      { variant: 'keyword', content: 'vigilance' },
-      { variant: 'keyword', content: 'first strike' },
-      { variant: 'keyword', content: 'lifelink' },
-      { variant: 'inline-reminder', content: 'Damage dealt by this creature also causes you to gain that much life.' },
-      { variant: 'keyword', content: 'double strike' },
-      { variant: 'keyword', content: 'flying' },
-      { variant: 'keyword', content: 'extort' },
-      { variant: 'inline-reminder', content: 'Whenever you cast a spell, you may pay {w/b}. If you do, each opponent loses 1 life and you gain that much life.' },
-      { variant: 'ability', content: 'When ~ enters, add {g} or {r/w}.' },
-      { variant: 'flavor', content: 'To be, or not to be, that is the question.' },
-    ],
-    pt: { power: 2, toughness: 2 },
-    loyalty: undefined,
+    rarity: 'rare',
     collectorNumber: 1,
-    art: undefined,
     tags: { 'test': true },
+    faces: [{
+      name: 'Sam, The Great',
+      tokenColors: undefined,
+      supertype: undefined,
+      types: ['creature'],
+      subtypes: ['human', 'warrior'],
+      manaCost: { x: 2, colorless: 2, white: 1, blue: 0 },
+      rules: [
+        {
+          variant: 'card-type-reminder',
+          content: 'A creature can\'t attack unless it has been under its controller\'s control continuously since their most recent turn began.',
+        },
+        { variant: 'keyword', content: 'vigilance' },
+        { variant: 'keyword', content: 'first strike' },
+        { variant: 'keyword', content: 'lifelink' },
+        { variant: 'inline-reminder', content: 'Damage dealt by this creature also causes you to gain that much life.' },
+        { variant: 'keyword', content: 'double strike' },
+        { variant: 'keyword', content: 'flying' },
+        { variant: 'keyword', content: 'extort' },
+        {
+          variant: 'inline-reminder',
+          content: 'Whenever you cast a spell, you may pay {w/b}. If you do, each opponent loses 1 life and you gain that much life.',
+        },
+        { variant: 'ability', content: 'When ~ enters, add {g} or {r/w}.' },
+        { variant: 'flavor', content: 'To be, or not to be, that is the question.' },
+      ],
+      pt: { power: 2, toughness: 2 },
+      loyalty: undefined,
+      art: undefined,
+    }],
   };
   const creatureCard = new Card(serializedCreatureCard);
-  expect(creatureCard.manaValue()).toBe(3);
-  expect(creatureCard.renderManaCost()).toBe('{x}{x}{2}{w}');
-  expect(creatureCard.renderTypeLine()).toBe('Creature — Human Warrior');
-  expect(creatureCard.renderRules()).toBe('{i}(A creature can\'t attack unless it has been under its controller\'s control continuously since their most recent turn began.){/i}\n' +
+  expect(creatureCard.faces.length).toBe(1);
+  expect(creatureCard.getTagAsString('test')).toBe(undefined);
+  expect(creatureCard.getTagAsString('test', { stringify: true })).toBe('true');
+  expect(creatureCard.getTagAsNumber('test')).toBe(undefined);
+  expect(creatureCard.getTagAsNumber('test', { parseFromBoolean: true })).toBe(1);
+  expect(creatureCard.toJson()).toStrictEqual(serializedCreatureCard);
+
+  const frontFace = creatureCard.faces[0];
+  expect(frontFace.manaValue()).toBe(3);
+  expect(frontFace.renderManaCost()).toBe('{x}{x}{2}{w}');
+  expect(frontFace.renderTypeLine()).toBe('Creature — Human Warrior');
+  expect(frontFace.renderRules()).toBe('{i}(A creature can\'t attack unless it has been under its controller\'s control continuously since their most recent turn began.){/i}\n' +
     'Vigilance, first strike\n' +
     'Lifelink {i}(Damage dealt by this creature also causes you to gain that much life.){/i}\n' +
     'Double strike, flying\n' +
     'Extort {i}(Whenever you cast a spell, you may pay {w/b}. If you do, each opponent loses 1 life and you gain that much life.){/i}\n' +
     'When Sam enters, add {g} or {r/w}.{flavor}To be, or not to be, that is the question.',
   );
-  expect(creatureCard.loyaltyAbilities()).toStrictEqual([]);
-  expect(creatureCard.color()).toStrictEqual(['white']);
-  expect(creatureCard.colorIdentity()).toStrictEqual(['red', 'green', 'white']);
-  expect(creatureCard.toJson()).toStrictEqual(serializedCreatureCard);
-  expect(creatureCard.getReferenceName()).toBe('2/2 white Human Warrior creature');
-  expect(creatureCard.explain()).toBe('"Sam, The Great" (#1) is a rare 2/2 white Human Warrior creature for {x}{x}{2}{w} mana, with: "vigilance", "first strike", "lifelink", "double strike", "flying", "extort" and "When ~ enters, add {g} or {r/w}.".');
-  expect(creatureCard.getCreatableTokenNames()).toStrictEqual([]);
-  expect(creatureCard.getTagAsString('test')).toBe(undefined);
-  expect(creatureCard.getTagAsString('test', { stringify: true })).toBe('true');
-  expect(creatureCard.getTagAsNumber('test')).toBe(undefined);
-  expect(creatureCard.getTagAsNumber('test', { parseFromBoolean: true })).toBe(1);
+  expect(frontFace.loyaltyAbilities()).toStrictEqual([]);
+  expect(frontFace.color()).toStrictEqual(['white']);
+  expect(frontFace.colorIdentity()).toStrictEqual(['red', 'green', 'white']);
+  expect(frontFace.getReferenceName()).toBe('2/2 white Human Warrior creature');
+  expect(frontFace.explain()).toBe('"Sam, The Great" (#1) is a rare 2/2 white Human Warrior creature for {x}{x}{2}{w} mana, with: "vigilance", "first strike", "lifelink", "double strike", "flying", "extort" and "When ~ enters, add {g} or {r/w}.".');
+  expect(frontFace.getCreatableTokenNames()).toStrictEqual([]);
 });
 
 test('token card', () => {
   const serializedTokenCard: SerializedCard = {
     id: '821-1-1-white-mouse-token',
-    'name': 'Mouse',
     'rarity': 'common',
     'isToken': true,
-    'tokenColors': [
-      'white',
-    ],
-    'types': [
-      'creature',
-    ],
-    'subtypes': [
-      'mouse',
-    ],
-    'manaCost': {},
-    'rules': [],
-    'pt': {
-      'power': 1,
-      'toughness': 1,
-    },
+    faces: [{
+      'name': 'Mouse',
+      'tokenColors': [
+        'white',
+      ],
+      manaCost: undefined,
+      'types': [
+        'creature',
+      ],
+      'subtypes': [
+        'mouse',
+      ],
+      supertype: undefined,
+      'rules': [],
+      'pt': {
+        'power': 1,
+        'toughness': 1,
+      },
+      loyalty: undefined,
+      'art': '821-1-1-white-mouse-token-1495ce55-c5f9-4f25-bcf0-9957f4c3d0d6.png',
+    }],
     'collectorNumber': 821,
-    'art': '821-1-1-white-mouse-token-1495ce55-c5f9-4f25-bcf0-9957f4c3d0d6.png',
     'tags': {
       'status': 'concept',
       'createdAt': '2025-09-01',
@@ -146,77 +161,88 @@ test('token card', () => {
     },
   };
   const tokenCard = new Card(serializedTokenCard);
-  expect(tokenCard.manaValue()).toBe(0);
-  expect(tokenCard.renderManaCost()).toBe('');
-  expect(tokenCard.renderTypeLine()).toBe('Token Creature — Mouse');
-  expect(tokenCard.renderRules()).toBe('');
-  expect(tokenCard.loyaltyAbilities()).toStrictEqual([]);
-  expect(tokenCard.color()).toStrictEqual(['white']);
-  expect(tokenCard.colorIdentity()).toStrictEqual(['white']);
-  expect(tokenCard.toJson()).toStrictEqual({ ...serializedTokenCard, supertype: undefined, loyalty: undefined });
-  expect(tokenCard.getReferenceName()).toBe('1/1 white Mouse creature token');
-  expect(tokenCard.explain()).toBe('"Mouse" (#821) is a common 1/1 white Mouse creature token.');
-  expect(tokenCard.getCreatableTokenNames()).toStrictEqual([]);
+  expect(tokenCard.toJson()).toStrictEqual(serializedTokenCard);
   expect(tokenCard.getTagAsString('status')).toBe('concept');
+
+  const frontFace = tokenCard.faces[0];
+  expect(frontFace.manaValue()).toBe(0);
+  expect(frontFace.renderManaCost()).toBe('');
+  expect(frontFace.renderTypeLine()).toBe('Token Creature — Mouse');
+  expect(frontFace.renderRules()).toBe('');
+  expect(frontFace.loyaltyAbilities()).toStrictEqual([]);
+  expect(frontFace.color()).toStrictEqual(['white']);
+  expect(frontFace.colorIdentity()).toStrictEqual(['white']);
+  expect(frontFace.getReferenceName()).toBe('1/1 white Mouse creature token');
+  expect(frontFace.explain()).toBe('"Mouse" (#821) is a common 1/1 white Mouse creature token.');
+  expect(frontFace.getCreatableTokenNames()).toStrictEqual([]);
 });
 
 test('planeswalker card', () => {
   const serializedPlaneswalkerCard: SerializedCard = {
     id: 'farock-the-damned-doctor',
-    'name': 'Farock, The Damned Doctor',
+    isToken: undefined,
     'rarity': 'rare',
-    'supertype': 'legendary',
-    'types': [
-      'planeswalker',
-    ],
-    'subtypes': [],
-    'manaCost': {
-      'colorless': 1,
-      'black': 2,
-    },
-    'rules': [
-      {
-        'variant': 'keyword',
-        'content': 'deathtouch',
+    faces: [{
+      'name': 'Farock, The Damned Doctor',
+      'supertype': 'legendary',
+      'types': [
+        'planeswalker',
+      ],
+      'subtypes': [],
+      'manaCost': {
+        'colorless': 1,
+        'black': 2,
       },
-      {
-        'variant': 'keyword',
-        'content': 'lifelink',
-      },
-      {
-        variant: 'ability',
-        content: 'When ~ enters, you gain 2 life.',
-      },
-      {
-        'variant': 'ability',
-        'content': '+1: Create a 1/1 black Zombie creature token with menace.',
-      },
-      {
-        'variant': 'ability',
-        'content': '-4: Deal 1 damage to any target. Create a Treasure token.',
-      },
-      {
-        'variant': 'ability',
-        'content': '-X: Deal 1 damage to up to X targets.',
-      },
-    ],
-    'loyalty': 3,
+      'rules': [
+        {
+          'variant': 'keyword',
+          'content': 'deathtouch',
+        },
+        {
+          'variant': 'keyword',
+          'content': 'lifelink',
+        },
+        {
+          variant: 'ability',
+          content: 'When ~ enters, you gain 2 life.',
+        },
+        {
+          'variant': 'ability',
+          'content': '+1: Create a 1/1 black Zombie creature token with menace.',
+        },
+        {
+          'variant': 'ability',
+          'content': '-4: Deal 1 damage to any target. Create a Treasure token.',
+        },
+        {
+          'variant': 'ability',
+          'content': '-X: Deal 1 damage to up to X targets.',
+        },
+      ],
+      'loyalty': 3,
+      art: undefined,
+      pt: undefined,
+      tokenColors: undefined,
+    }],
     'collectorNumber': 822,
+    tags: {},
   };
   const planeswalkerCard = new Card(serializedPlaneswalkerCard);
-  expect(planeswalkerCard.manaValue()).toBe(3);
-  expect(planeswalkerCard.renderManaCost()).toBe('{1}{b}{b}');
-  expect(planeswalkerCard.renderTypeLine()).toBe('Legendary Planeswalker — Farock');
-  expect(planeswalkerCard.renderRules()).toBe('Deathtouch, lifelink\nWhen Farock enters, you gain 2 life.');
-  expect(planeswalkerCard.loyaltyAbilities()).toStrictEqual([
+  expect(planeswalkerCard.toJson()).toStrictEqual(serializedPlaneswalkerCard);
+
+  const frontFace = planeswalkerCard.faces[0];
+  expect(frontFace.manaValue()).toBe(3);
+  expect(frontFace.renderManaCost()).toBe('{1}{b}{b}');
+  expect(frontFace.renderTypeLine()).toBe('Legendary Planeswalker — Farock');
+  expect(frontFace.renderRules()).toBe('Deathtouch, lifelink\nWhen Farock enters, you gain 2 life.');
+  expect(frontFace.loyaltyAbilities()).toStrictEqual([
     { cost: 1, content: 'Create a 1/1 black Zombie creature token with menace.' },
     { cost: -4, content: 'Deal 1 damage to any target. Create a Treasure token.' },
     { cost: '-X', content: 'Deal 1 damage to up to X targets.' },
   ]);
-  expect(planeswalkerCard.color()).toStrictEqual(['black']);
-  expect(planeswalkerCard.colorIdentity()).toStrictEqual(['black']);
-  expect(planeswalkerCard.toJson()).toStrictEqual({ ...serializedPlaneswalkerCard, art: undefined, pt: undefined, tags: {}, tokenColors: undefined, isToken: undefined });
-  expect(planeswalkerCard.getReferenceName()).toBe('legendary black planeswalker');
-  expect(planeswalkerCard.explain()).toBe('"Farock, The Damned Doctor" (#822) is a rare legendary black planeswalker for {1}{b}{b} mana with 3 starting loyalty, with: "deathtouch", "lifelink" and "When ~ enters, you gain 2 life." and "+1: Create a 1/1 black Zombie creature token with menace." and "-4: Deal 1 damage to any target. Create a Treasure token." and "-X: Deal 1 damage to up to X targets.".');
-  expect(planeswalkerCard.getCreatableTokenNames()).toStrictEqual(['1/1 black Zombie creature token with menace', 'Treasure token']);
+  expect(frontFace.color()).toStrictEqual(['black']);
+  expect(frontFace.colorIdentity()).toStrictEqual(['black']);
+  expect(frontFace.getReferenceName()).toBe('legendary black planeswalker');
+  expect(frontFace.explain()).toBe('"Farock, The Damned Doctor" (#822) is a rare legendary black planeswalker for {1}{b}{b} mana with 3 starting loyalty, with: "deathtouch", "lifelink" and "When ~ enters, you gain 2 life." and "+1: Create a 1/1 black Zombie creature token with menace." and "-4: Deal 1 damage to any target. Create a Treasure token." and "-X: Deal 1 damage to up to X targets.".');
+  expect(frontFace.getCreatableTokenNames()).toStrictEqual(['1/1 black Zombie creature token with menace', 'Treasure token']);
 });

@@ -1,27 +1,13 @@
 import { z } from 'zod';
+import { SerializedCardFaceSchema } from './serialized-card-face';
 
 export const SerializedCardSchema = z.object({
   id: z.string().min(1),
-  name: z.string().min(1),
-  rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']),
   isToken: z.literal(true).optional(),
-  supertype: z.enum(['basic', 'legendary']).optional(),
-  tokenColors: z.array(z.enum(['white', 'blue', 'black', 'red', 'green'])).optional(),
-  types: z.array(z.enum(['creature', 'enchantment', 'artifact', 'instant', 'sorcery', 'land', 'planeswalker'])).nonempty(),
-  subtypes: z.array(z.string().min(1)).optional(),
-  manaCost: z.record(z.enum(['white', 'blue', 'black', 'red', 'green', 'colorless', 'x']), z.number().int().nonnegative()).default({}),
-  rules: z.array(z.object({
-    variant: z.enum(['card-type-reminder', 'keyword', 'ability', 'inline-reminder', 'flavor']),
-    content: z.string().min(1),
-  })).optional(),
-  pt: z.object({
-    power: z.number().int().nonnegative(),
-    toughness: z.number().int().nonnegative(),
-  }).optional(),
-  loyalty: z.number().int().nonnegative().optional(),
+  rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']),
   collectorNumber: z.number().int().min(1),
-  art: z.string().min(5).regex(/.+\.(jpeg|jpg|png)$/i).optional(),
   tags: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.undefined()])).optional(),
+  faces: z.array(SerializedCardFaceSchema).min(1).max(2),
 });
 
 export type SerializedCard = z.infer<typeof SerializedCardSchema>;

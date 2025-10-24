@@ -102,15 +102,17 @@ test('token extracter', () => {
   scenarios.forEach(({ abilities, expectedTokens }, index) => {
     const card = new Card({
       id: `test-card-${index}`,
-      name: `Test Card ${index}`,
       rarity: 'common',
-      types: ['creature'],
-      subtypes: ['human'],
-      manaCost: { colorless: 2 },
-      rules: abilities.map(content => ({ variant: 'ability', content })),
-      pt: { power: 2, toughness: 2 },
+      faces: [{
+        name: `Test Card ${index}`,
+        types: ['creature'],
+        subtypes: ['human'],
+        manaCost: { colorless: 2 },
+        rules: abilities.map(content => ({ variant: 'ability', content })),
+        pt: { power: 2, toughness: 2 },
+      }],
       collectorNumber: index + 1,
     });
-    expect([abilities, card.getCreatableTokenNames()]).toStrictEqual([abilities, expectedTokens]);
+    expect([abilities, card.faces[0].getCreatableTokenNames()]).toStrictEqual([abilities, expectedTokens]);
   });
 });
