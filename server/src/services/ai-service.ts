@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import { Card, CardArtPromptCreator, SerializedCard, SerializedCardSchema } from 'kindred-paths';
+import { Card, CardArtPromptCreator, CardFace, SerializedCard, SerializedCardSchema } from 'kindred-paths';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { Leonardo } from '@leonardo-ai/sdk';
 import { z } from 'zod';
@@ -139,11 +139,9 @@ export class AIService {
     }
   }
 
-  async generateCardArt(cardData: SerializedCard): Promise<ArtSuggestion[]> {
-    const card = new Card(cardData);
-
-    const prompt = this.cardArtPromptCreator.createPrompt(card);
-    const isTallCard = card.types.includes('planeswalker') || card.isToken;
+  async generateCardArt(cardFace: CardFace): Promise<ArtSuggestion[]> {
+    const prompt = this.cardArtPromptCreator.createPrompt(cardFace);
+    const isTallCard = cardFace.types.includes('planeswalker') || cardFace.card.isToken;
     const dimensions = isTallCard
       ? { width: 1024, height: 1024 }
       : { width: 1024, height: 768 };
@@ -156,7 +154,7 @@ export class AIService {
     });
 
     const generationId = result.object?.sdGenerationJob?.generationId;
-    console.info(`Card art suggestions for ${card.name} at generation: ${generationId}`);
+    console.info(`Card art suggestions for ${cardFace.name} at generation: ${generationId}`);
     console.info('Prompt:', prompt);
 
     if (!generationId) {
@@ -200,7 +198,7 @@ export class AIService {
         return;
       }
       const buffer = await imageResponse.arrayBuffer();
-      const cardId = computeCardId(card);
+      const cardId = computeCardId(cardFace.card.toJson()); // TODO: Verify multi-face cards
       const fileName = `${cardId}-${image.id}.png`;
       await fs.writeFile(`${configuration.artSuggestionsDir}/${fileName}`, Buffer.from(buffer));
       console.log(`Saved art suggestion for ${cardId} (for image ${image.id}): ${fileName}`);

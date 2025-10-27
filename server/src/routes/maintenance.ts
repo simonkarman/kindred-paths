@@ -1,10 +1,35 @@
 import { Router } from 'express';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
-import { Card, SerializedCard } from 'kindred-paths';
+import { z } from 'zod';
 import { cardService } from '../services/card-service';
 import { computeCardId } from '../utils/card-utils';
 import { configuration } from '../configuration';
+import { Card } from 'kindred-paths';
+
+export const LegacySerializedCardSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']),
+  isToken: z.literal(true).optional(),
+  supertype: z.enum(['basic', 'legendary']).optional(),
+  tokenColors: z.array(z.enum(['white', 'blue', 'black', 'red', 'green'])).optional(),
+  types: z.array(z.enum(['creature', 'enchantment', 'artifact', 'instant', 'sorcery', 'land', 'planeswalker'])).nonempty(),
+  subtypes: z.array(z.string().min(1)).optional(),
+  manaCost: z.record(z.enum(['white', 'blue', 'black', 'red', 'green', 'colorless', 'x']), z.number().int().nonnegative()).default({}),
+  rules: z.array(z.object({
+    variant: z.enum(['card-type-reminder', 'keyword', 'ability', 'inline-reminder', 'flavor']),
+    content: z.string().min(1),
+  })).optional(),
+  pt: z.object({
+    power: z.number().int().nonnegative(),
+    toughness: z.number().int().nonnegative(),
+  }).optional(),
+  loyalty: z.number().int().nonnegative().optional(),
+  collectorNumber: z.number().int().min(1),
+  art: z.string().min(5).regex(/.+\.(jpeg|jpg|png)$/i).optional(),
+  tags: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.undefined()])).optional(),
+});
 
 export const maintenanceRouter = Router();
 
@@ -15,6 +40,67 @@ maintenanceRouter.get('/health', (_, res) => {
 maintenanceRouter.post('/cleanup', async (_, res) => {
   const messages: string[] = [];
   console.info('Cleanup requested...');
+
+  // Check if any cards are using legacy serialization and transform them
+  await cardService.forEachCardFile(async (id) => {
+    const fileContent = await cardService.getCardFileContent(id);
+    let legacyCard;
+    try {
+      legacyCard = LegacySerializedCardSchema.parse(fileContent);
+    } catch {
+      return;
+    }
+
+    // Transform legacy card mana cost to new format
+    const manaCost = (legacyCard.isToken || legacyCard.supertype === 'basic' || (legacyCard.types.length === 1 && legacyCard.types[0] === 'land'))
+      ? undefined
+      : legacyCard.manaCost;
+
+    let card;
+    try {
+      console.info(`Transforming legacy serialized card ${legacyCard.id}...`);
+      console.info('From:', legacyCard);
+      const cardData = {
+        id: legacyCard.id,
+        isToken: legacyCard.isToken,
+        rarity: legacyCard.rarity,
+        collectorNumber: legacyCard.collectorNumber,
+        tags: legacyCard.tags,
+        faces: [{
+          name: legacyCard.name,
+          tokenColors: legacyCard.tokenColors,
+          manaCost,
+          types: legacyCard.types,
+          subtypes: legacyCard.subtypes,
+          supertype: legacyCard.supertype,
+          rules: legacyCard.rules,
+          pt: legacyCard.pt,
+          loyalty: legacyCard.loyalty,
+          art: legacyCard.art,
+        }],
+      };
+      console.info('To:', cardData);
+      card = new Card(cardData);
+    }
+    catch (e) {
+      console.error(
+        `\n\ncard failure ${id}:\n`,
+        e,
+        legacyCard.isToken,
+        legacyCard.supertype === 'basic',
+        legacyCard.types.length === 1,
+        legacyCard.types[0] === 'land',
+        manaCost,
+      );
+      throw e;
+    }
+
+    // If parsing succeeds, the card is in legacy format and needs to be transformed
+    const message = `transformed legacy serialized card ${legacyCard.id} to new format`;
+    messages.push(message);
+    await cardService.saveCard(card.toJson());
+    console.log(message);
+  });
 
   // Rename cards that have an ID different from the computed ID based on their name
   for (const card of await cardService.getAllCards()) {
@@ -38,72 +124,83 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
 
   // Ensure all keywords are lowercase
   for (const card of await cardService.getAllCards()) {
-    if (!card.rules) continue;
-
     let hasChanged = false;
-    card.rules = card.rules.map(rule => {
-      if (rule.variant === 'keyword') {
-        const content = rule.content.toLowerCase();
-        if (rule.content !== content) {
-          hasChanged = true;
+    card.faces.forEach(face => {
+      face.rules = face.rules?.map(rule => {
+        if (rule.variant === 'keyword') {
+          const content = rule.content.toLowerCase();
+          if (rule.content !== content) {
+            hasChanged = true;
+          }
+          return { ...rule, content };
         }
-        return { ...rule, content };
-      }
-      return rule;
+        return rule;
+      });
     });
     if (hasChanged) {
       const message = `updated keywords to lowercase for card ${card.id}`;
       messages.push(message);
-      await cardService.saveCard(new Card(card));
+      await cardService.saveCard(card);
       console.log(message);
     }
   }
 
   // Ensure that 0 values in the mana cost are removed
   for (const card of await cardService.getAllCards()) {
-    if (!Object.values(card.manaCost).includes(0)) {
-      continue; // No 0 values to remove
-    }
-
-    // Create a new mana cost object without 0 values
-    const newManaCost: { [key: string]: number } = {};
-    for (const [key, value] of Object.entries(card.manaCost)) {
-      if (value !== 0) {
-        newManaCost[key] = value;
+    let hasChanged = false;
+    card.faces.forEach(face => {
+      if (!face.manaCost || !Object.values(face.manaCost).includes(0)) {
+        return; // No 0 values to remove
       }
-    }
+      hasChanged = true;
 
-    // Update the card with the new mana cost
-    card.manaCost = newManaCost;
-    const message = `removed 0 values from mana cost for card ${card.id}`;
-    messages.push(message);
-    await cardService.saveCard(new Card(card));
-    console.log(message);
+      // Create a new mana cost object without 0 values
+      const newManaCost: { [key: string]: number } = {};
+      for (const [key, value] of Object.entries(face.manaCost)) {
+        if (value !== 0) {
+          newManaCost[key] = value;
+        }
+      }
+
+      // Update the card with the new mana cost
+      face.manaCost = newManaCost;
+    });
+    if (hasChanged) {
+      const message = `removed 0 values from mana cost for card ${card.id}`;
+      messages.push(message);
+      await cardService.saveCard(card);
+      console.log(message);
+    }
   }
 
   // Ensure that all cards reference art that exists
   const referencedArt = new Set<string>();
   for (const card of await cardService.getAllCards()) {
-    if (card.art && !existsSync(`${configuration.artDir}/${card.art}`)) {
-      const message = `removed missing art for card ${card.id}: ${card.art}`;
-      messages.push(message);
-      delete card.art;
-      await cardService.saveCard(new Card(card));
-      console.log(message);
-    }
+    for (const faceIndex in card.faces) {
+      const face = card.faces[faceIndex];
 
-    // Ensure that the art is not in the suggestions directory
-    const art = await tryMoveArtSuggestionToArt(card);
-    if (art !== card.art) {
-      const message = `updated art for card ${card.id} to ${art}`;
-      messages.push(message);
-      await cardService.saveCard(new Card({ ...card, art }));
-      console.log(message);
-    }
+      if (face.art && !existsSync(`${configuration.artDir}/${face.art}`)) {
+        const message = `removed missing art for face ${faceIndex} of card ${card.id}: ${face.art}`;
+        messages.push(message);
+        delete face.art;
+        await cardService.saveCard(card);
+        console.log(message);
+      }
 
-    // Collect all referenced art
-    if (art) {
-      referencedArt.add(art);
+      // Ensure that the art is not in the suggestions directory
+      const art = await cardService.tryMoveArtSuggestionToArt(face, card.id);
+      if (art !== face.art) {
+        face.art = art;
+        const message = `updated art for face ${faceIndex} of card ${card.id} to ${art}`;
+        messages.push(message);
+        await cardService.saveCard(card);
+        console.log(message);
+      }
+
+      // Collect all referenced art
+      if (art) {
+        referencedArt.add(art);
+      }
     }
   }
 
@@ -138,27 +235,10 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
       }
     }
     if (hasChanged) {
-      await cardService.saveCard(new Card(card));
+      await cardService.saveCard(card);
     }
   }
 
   console.info('Cleanup completed!');
   res.json({ message: 'Cleanup completed', details: messages });
 });
-
-async function tryMoveArtSuggestionToArt(card: SerializedCard): Promise<string | undefined> {
-  if (card.art && card.art.startsWith('suggestions/')) {
-    try {
-      await fs.mkdir(configuration.artDir, { recursive: true });
-      const from = `${configuration.artDir}/${card.art}`;
-      const toFileName = card.art.replace('suggestions/', '');
-      const to = `${configuration.artDir}/${toFileName}`;
-      await fs.rename(from, to);
-      console.log(`Moved new art from ${from} to ${to}`);
-      return toFileName;
-    } catch (error) {
-      console.error(`Error moving new art for card ${card.id}:`, error);
-    }
-  }
-  return card.art;
-}

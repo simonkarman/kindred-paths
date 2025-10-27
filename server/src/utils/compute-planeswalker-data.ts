@@ -1,18 +1,19 @@
-import { Card, loyaltyCostAsString } from 'kindred-paths';
+import { loyaltyCostAsString } from 'kindred-paths';
+import { Renderable } from '../card-conjurer';
 
 export type PlaneswalkerAbility = { cost: string, content: string, height: number, startHeight: number };
 export type PlaneswalkerData = { size: 'regular' | 'tall', rulesFontSize: number, abilities: PlaneswalkerAbility[] };
 
-export const computePlaneswalkerData = (card: Card): PlaneswalkerData | undefined => {
-  if (!card.types.includes('planeswalker')) {
+export const computePlaneswalkerData = (renderable: Renderable): PlaneswalkerData | undefined => {
+  if (!renderable.types.includes('planeswalker')) {
     return undefined;
   }
 
   const abilities = [
-    ...(card.renderRules().length > 0 ? [{ cost: '', content: card.renderRules() }] : []),
-    ...card.loyaltyAbilities().map(({ cost, content }) => ({ cost: loyaltyCostAsString(cost), content })),
+    ...(renderable.hasRules ? [{ cost: '', content: renderable.rules }] : []),
+    ...(renderable.loyaltyAbilities ?? []).map(({ cost, content }) => ({ cost: loyaltyCostAsString(cost), content })),
   ];
-  const rulesFontSize = -18 + (card.getTagAsNumber('fs/rules') ?? 0);
+  const rulesFontSize = -18 + (renderable.tags['fs/rules'] ?? 0);
   const heights = abilities.map(({ content }) => {
     const padding = 115 + rulesFontSize;
     const containsNewLine = content.includes('{lns}');

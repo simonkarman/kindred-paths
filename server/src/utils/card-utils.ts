@@ -3,18 +3,21 @@ import { SerializedCard } from 'kindred-paths';
 export const computeCardId = (card: SerializedCard) => {
   const set = typeof card.tags?.set === 'string' ? `${card.tags.set}-` : '';
   const prefix = set + `${card.collectorNumber}-`;
-  const sanitize = (str: string) => (prefix + str).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-');
+  const faceParts = card.faces.map(face => {
+    if (card.isToken) {
+      const supertype = face.supertype ? `${face.supertype}-` : '';
+      const pt = face.pt ? `${face.pt.power}-${face.pt.toughness}-` : '';
+      const colors = face.tokenColors
+        ? (face.tokenColors.length === 0 ? 'colorless-' : face.tokenColors.map(tc => `${tc}-`).join(''))
+        : 'colorless-';
+      return `${supertype}${pt}${colors}${face.name}-${face.types.join('-')}-token`;
+    }
+    if (face.supertype === 'basic') {
+      return `basic-${face.name}`;
+    }
+    return face.name;
+  });
 
-  if (card.isToken) {
-    const supertype = card.supertype ? `${card.supertype}-` : '';
-    const pt = card.pt ? `${card.pt.power}-${card.pt.toughness}-` : '';
-    const colors = card.tokenColors
-      ? (card.tokenColors.length === 0 ? 'colorless-' : card.tokenColors.map(tc => `${tc}-`).join(''))
-      : 'colorless-';
-    return sanitize(`${supertype}${pt}${colors}${card.name}-${card.types.join('-')}-token`);
-  }
-  if (card.supertype === 'basic') {
-    return sanitize(`basic-${card.name}`);
-  }
-  return sanitize(card.name);
+  const sanitize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-');
+  return sanitize([prefix, ...faceParts].join('-'));
 };

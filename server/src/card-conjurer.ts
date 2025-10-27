@@ -1,8 +1,38 @@
 import { Browser, chromium, Page } from 'playwright';
 import { setTimeout as sleep } from 'timers/promises';
-import { capitalize, Card, CardColor, colorToShort, landSubtypeToColor, TokenCardType } from 'kindred-paths';
-import { SetMetadata } from './services/render-service';
+import { capitalize, CardColor, CardSuperType, CardType, colorToShort, landSubtypeToColor, LoyaltyCost, TokenCardType } from 'kindred-paths';
 import { computePlaneswalkerData } from './utils/compute-planeswalker-data';
+
+export type Renderable = {
+  name: string,
+  isToken?: true,
+  manaCost: string,
+  color: CardColor[],
+  predefinedColors?: CardColor[],
+  typeLine: string,
+  types: [CardType, ...CardType[]],
+  subtypes: string[],
+  supertype: CardSuperType,
+  hasRules: boolean,
+  rules: string,
+  pt?: { power: number, toughness: number },
+  loyalty?: number,
+  loyaltyAbilities?: { cost: LoyaltyCost, content: string }[],
+  art?: string,
+  tags: {
+    borderless?: boolean,
+    'fs/rules'?: number,
+    'art/focus'?: string,
+  },
+  rarity: string,
+  collectorNumber: number,
+  set: {
+    author: string,
+    symbol?: string,
+    collectorNumberOffset?: number,
+    shortName: string,
+  },
+}
 
 export class CardConjurer {
   private browser: Browser | null;
@@ -31,7 +61,7 @@ export class CardConjurer {
     });
   }
 
-  async renderCard(card: Card, set: SetMetadata): Promise<Buffer> {
+  async renderCard(renderable: Renderable): Promise<Buffer> {
     if (!this.browser) {
       throw new Error('Browser is not started. Call start() first.');
     }
@@ -47,19 +77,20 @@ export class CardConjurer {
       await page.reload({ waitUntil: 'networkidle' });
 
       // Compute planeswalker data (if applicable)
-      const planeswalkerData = computePlaneswalkerData(card);
+      const planeswalkerData = computePlaneswalkerData(renderable);
 
       // Handle the frame section
       let forceTitleColorToBlack = false;
       let isFullArt = false;
-      if (card.isToken) {
+      if (renderable.isToken) {
         // Gather token information
-        const tokenType = card.rules.length > 0 ? 'Regular' : 'Textless';
-        const numberOfColors = (card.tokenColors ?? []).length;
-        const dominantCardType = (card.types[card.types.length - 1]) as TokenCardType;
+        const tokenType = renderable.hasRules ? 'Regular' : 'Textless';
+        const predefinedColors = renderable.predefinedColors ?? [];
+        const numberOfColors = predefinedColors.length;
+        const dominantCardType = (renderable.types[renderable.types.length - 1]) as TokenCardType;
         const frameColor = numberOfColors === 0
           ? ({ 'creature': 'C', 'artifact': 'A', 'enchantment': 'C', 'land': 'L' }[dominantCardType])
-          : (numberOfColors > 1 ? 'M' : colorToShort(card.tokenColors![0]).toUpperCase());
+          : (numberOfColors > 1 ? 'M' : colorToShort(predefinedColors[0]).toUpperCase());
         const frameName = frameColor === 'C' ? 'frameCThumb' : `tokenFrame${frameColor}${tokenType}Thumb`;
         if (frameColor === 'W') {
           forceTitleColorToBlack = true;
@@ -81,7 +112,7 @@ export class CardConjurer {
         await sleep(50);
 
         // Select PT image
-        if (card.pt) {
+        if (renderable.pt) {
           const ptImage = `/img/frames/m15/regular/m15PT${frameColor}Thumb.png`;
           await page.click(`div.frame-option:has(img[src="${ptImage}"])`);
           await page.click('#addToFull');
@@ -102,7 +133,7 @@ export class CardConjurer {
           if (cardColor.length === 2) return [colorToShort(cardColor[0]).toUpperCase(), colorToShort(cardColor[1]).toUpperCase()];
           return ['M'];
         };
-        const [frameColorLeft, frameColorRight] = getFrameColors(card.color());
+        const [frameColorLeft, frameColorRight] = getFrameColors(renderable.color);
         const addFrame = async (frameColor: string, placement: 'addToFull' | 'addToRightHalf' = 'addToFull') => {
           const frameName = planeswalkerData.size === 'tall' ? 'Tall' : 'Frame';
           const frameImage = `/img/frames/planeswalker/${planeswalkerData.size}/planeswalker${frameName}${frameColor}Thumb.png`;
@@ -117,7 +148,7 @@ export class CardConjurer {
         isFullArt = true;
       } else {
         // Enable autoFrame
-        await page.selectOption('#autoFrame', card.tags.borderless ? 'Borderless' : 'M15Regular-1');
+        await page.selectOption('#autoFrame', renderable.tags.borderless ? 'Borderless' : 'M15Regular-1');
       }
 
       // Click on text section
@@ -125,13 +156,13 @@ export class CardConjurer {
 
       // Set the mana cost
       await page.click('#text-options h4:has-text("Mana Cost")');
-      await page.fill('#text-editor', card.renderManaCost());
+      await page.fill('#text-editor', renderable.manaCost);
       await page.waitForLoadState('networkidle');
 
       // Set the name
       await page.click('#text-options h4:has-text("Title")', { force: true });
       const text_editor_name = page.locator('#text-editor');
-      const title = (forceTitleColorToBlack ? '{fontcolor#000000}' : '') + card.name;
+      const title = (forceTitleColorToBlack ? '{fontcolor#000000}' : '') + renderable.name;
       await text_editor_name.fill(title.slice(0, -1));
       await sleep(500);
       await text_editor_name.focus();
@@ -141,7 +172,7 @@ export class CardConjurer {
       // Set the type line
       await page.click('#text-options h4:has-text("Type")');
       const text_editor_type_line = page.locator('#text-editor');
-      const typeLine = card.renderTypeLine();
+      const typeLine = renderable.typeLine;
       await text_editor_type_line.fill(typeLine.slice(0, -1));
       await sleep(500);
       await text_editor_type_line.focus();
@@ -160,7 +191,7 @@ export class CardConjurer {
         // Set the loyalty text
         await page.click('#text-options h4:has-text("Loyalty")');
         const text_editor_loyalty = page.locator('#text-editor');
-        await text_editor_loyalty.fill(card.loyalty!.toString());
+        await text_editor_loyalty.fill(renderable.loyalty!.toString());
         await sleep(50);
         await page.waitForLoadState('networkidle');
 
@@ -207,7 +238,7 @@ export class CardConjurer {
         }
       } else {
         // Set the rules text
-        const rules_text = card.renderRules();
+        const rules_text = renderable.rules;
         if (rules_text.length > 0) {
           await page.click('#text-options h4:has-text("Rules Text")');
           const text_editor_rules = page.locator('#text-editor');
@@ -218,7 +249,7 @@ export class CardConjurer {
           await page.waitForLoadState('networkidle');
 
           // Adjust the rules text box size
-          if (!card.isToken) {
+          if (!renderable.isToken) {
             await page.click('#text-options h4:has-text("Rules Text")');
             await page.click('#creator-menu-text button:has-text("Edit Bounds")');
             await sleep(20);
@@ -230,23 +261,24 @@ export class CardConjurer {
           }
 
           // Adjust the font size if specified
-          const rulesFontSize = typeof card.tags?.['fs/rules'] === 'number' ? card.tags['fs/rules'] : 0;
+          const rulesFontSize = typeof renderable.tags?.['fs/rules'] === 'number' ? renderable.tags['fs/rules'] : 0;
           if (rulesFontSize !== 0) {
             await page.fill('#text-editor-font-size', rulesFontSize.toString());
           }
         }
 
         // Set the power and toughness text
-        if (card.pt !== undefined) {
+        if (renderable.pt !== undefined) {
           await page.click('#text-options h4:has-text("Power/Toughness")');
-          const isArtifactVehicle = card.types.includes('artifact') && card.subtypes.includes('vehicle');
-          await page.fill('#text-editor', (!card.isToken && isArtifactVehicle ? '{fontcolor#fff}' : '') + card.pt.power + '/' + card.pt.toughness);
+          const isArtifactVehicle = renderable.types.includes('artifact') && renderable.subtypes.includes('vehicle');
+          const prefix = !renderable.isToken && isArtifactVehicle ? '{fontcolor#fff}' : '';
+          await page.fill('#text-editor', prefix + renderable.pt.power + '/' + renderable.pt.toughness);
           await page.waitForLoadState('networkidle');
         }
       }
 
       // If basic land, add the icon for the land type to the frame
-      if (card.supertype === 'basic' && card.types.includes('land') && card.rules.length === 0) {
+      if (renderable.supertype === 'basic' && renderable.types.includes('land') && renderable.rules.length === 0) {
         await page.click('#creator-menu-tabs h3:has-text("Frame")');
         await page.waitForLoadState('networkidle');
 
@@ -255,7 +287,7 @@ export class CardConjurer {
         await page.selectOption('#selectFramePack', 'Lands');
         await sleep(500);
 
-        const landColor = colorToShort(landSubtypeToColor(card.subtypes[0]) ?? 'white');
+        const landColor = colorToShort(landSubtypeToColor(renderable.subtypes[0]) ?? 'white');
         const landIconImage = `/img/frames/m15/basics/${landColor}Thumb.png`;
         await page.click(`div.frame-option:has(img[src="${landIconImage}"])`);
         await page.click('#addToFull');
@@ -264,11 +296,11 @@ export class CardConjurer {
       }
 
       // Handle art section
-      if (card.art !== undefined) {
+      if (renderable.art) {
         await page.click('#creator-menu-tabs h3:has-text("Art")');
         await page.waitForLoadState('networkidle');
-        await page.fill('#creator-menu-art input[placeholder="Via URL"]', card.art);
-        await page.fill('#creator-menu-art #art-artist', set.author);
+        await page.fill('#creator-menu-art input[placeholder="Via URL"]', renderable.art);
+        await page.fill('#creator-menu-art #art-artist', renderable.set.author);
         await page.waitForLoadState('networkidle');
 
         // Set card x,y,zoom,rotate when full art
@@ -285,7 +317,7 @@ export class CardConjurer {
             'zoom-1': { x: -300, y: 60, zoom: 170 },
             'zoom-2': { x: -503, y: -50, zoom: 200 },
           };
-          const _focus = card.getTagAsString('art/focus') ?? 'zoom-0';
+          const _focus = renderable.tags['art/focus'] ?? 'zoom-0';
           const focusAreaName = _focus in focusAreas ? _focus as keyof typeof focusAreas : 'zoom-0';
           const focusArea = focusAreas[focusAreaName];
           await page.fill('#art-x', focusArea.x.toFixed());
@@ -296,24 +328,24 @@ export class CardConjurer {
       }
 
       // Handle symbol section
-      if (set.symbol) {
+      if (renderable.set.symbol) {
         await page.click('#creator-menu-tabs h3:has-text("Set Symbol")');
         await page.waitForLoadState('networkidle');
-        await page.fill('#creator-menu-setSymbol #set-symbol-code', set.symbol);
-        await page.fill('#creator-menu-setSymbol #set-symbol-rarity', card.rarity);
+        await page.fill('#creator-menu-setSymbol #set-symbol-code', renderable.set.symbol);
+        await page.fill('#creator-menu-setSymbol #set-symbol-rarity', renderable.rarity);
         await page.waitForLoadState('networkidle');
       }
 
       // Handle collector section
       await page.click('#creator-menu-tabs h3:has-text("Collector")');
       await page.waitForLoadState('networkidle');
-      const collectorNumber = card.collectorNumber - (set.collectorNumberOffset ?? 0);
+      const collectorNumber = renderable.collectorNumber - (renderable.set.collectorNumberOffset ?? 0);
       await page.fill('#creator-menu-bottomInfo #info-number', ('0000' + collectorNumber.toString()).slice(-4));
-      await page.fill('#creator-menu-bottomInfo #info-rarity', card.rarity[0].toUpperCase());
-      await page.fill('#creator-menu-bottomInfo #info-set', set.shortName);
+      await page.fill('#creator-menu-bottomInfo #info-rarity', renderable.rarity[0].toUpperCase());
+      await page.fill('#creator-menu-bottomInfo #info-set', renderable.set.shortName);
       await page.fill('#creator-menu-bottomInfo #info-note', new Date().toISOString().split('T')[0]);
       await page.fill('#creator-menu-bottomInfo #info-language', 'EN');
-      await page.fill('#creator-menu-bottomInfo #info-artist', set.author);
+      await page.fill('#creator-menu-bottomInfo #info-artist', renderable.set.author);
       await page.fill('#creator-menu-bottomInfo #info-year', new Date().getFullYear().toString());
       await page.click('label:has(#enableNewCollectorStyle)');
       await page.waitForLoadState('networkidle');

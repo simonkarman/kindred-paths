@@ -243,7 +243,7 @@ export class CardFace {
     }
 
     // Validate that land cards do not have a mana cost
-    if (this.types.includes('land') && this.manaCost === undefined) {
+    if (this.types.includes('land') && this.manaCost !== undefined) {
       throw new Error('land cards cannot have a mana cost');
     }
 

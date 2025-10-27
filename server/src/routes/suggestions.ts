@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { SerializedCardSchema } from 'kindred-paths';
+import { Card, SerializedCardSchema } from 'kindred-paths';
 import { aiService } from '../services/ai-service';
 import { cardService } from '../services/card-service';
 import fs from 'fs/promises';
@@ -93,7 +93,9 @@ suggestionsRouter.post('/art', async (req, res) => {
   }
 
   try {
-    const suggestions = await aiService.generateCardArt(body.data);
+    const card = new Card(body.data);
+    const faceIndex = 0; // TODO: support multi-face cards
+    const suggestions = await aiService.generateCardArt(card.faces[faceIndex]);
     res.json(suggestions);
   } catch (error) {
     console.error('Error generating art suggestions:', error);

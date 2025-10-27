@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import { z } from 'zod';
-import { Card, hash, SerializedCard } from 'kindred-paths';
-import { CardConjurer } from '../card-conjurer';
+import { Card, CardFace, hash, SerializedCard } from 'kindred-paths';
+import { CardConjurer, Renderable } from '../card-conjurer';
 import { computeCardId } from '../utils/card-utils';
 import { configuration } from '../configuration';
 
@@ -52,33 +52,52 @@ export class RenderService {
     await fs.writeFile(path, render);
   }
 
-  async getRender(card: Card, force: boolean): Promise<{ fromCache: boolean, render: Buffer }> {
+  async getRender(cardFace: CardFace, force: boolean): Promise<{ fromCache: boolean, render: Buffer }> {
     // If there is card art, use a hash of the image as the art property
     // This ensures the card will be rendered only if the art itself changes
     let artHash: string | undefined = undefined;
-    if (card.art) {
+    if (cardFace.art) {
       try {
-        const artBuffer = await fs.readFile(`${configuration.artDir}/${card.art}`);
+        const artBuffer = await fs.readFile(`${configuration.artDir}/${cardFace.art}`);
         artHash = hash(artBuffer.toString('base64'));
       } catch (error) {
-        console.error(`Error reading art file ${card.art}:`, error);
+        console.error(`Error reading art file ${cardFace.art}:`, error);
       }
     }
 
     // Get the set for the card
-    const set = this.getSetMetadataForCard(card);
+    const set = this.getSetMetadataForCard(cardFace.card);
 
-    // Create a unique key for the render based on card properties and art
-    const key = hash(JSON.stringify({
-      ...card.toJson(),
-      id: undefined,
-      tags: undefined,
-      collectorNumber: card.collectorNumber - (set.collectorNumberOffset || 0),
-      fontSizeTags: Object.entries(card.tags).filter(([k]) => k.startsWith('fs/')),
-      artTags: Object.entries(card.tags).filter(([k]) => k.startsWith('art/')),
-
-      // Include other properties that might affect the render
+    // Prepare renderable object
+    const renderable: Renderable = {
+      name: cardFace.name,
+      isToken: cardFace.card.isToken,
+      manaCost: cardFace.renderManaCost(),
+      color: cardFace.color(),
+      predefinedColors: cardFace.tokenColors,
+      typeLine: cardFace.renderTypeLine(),
+      types: cardFace.types,
+      subtypes: cardFace.subtypes,
+      supertype: cardFace.supertype,
+      hasRules: cardFace.rules.length > 0,
+      rules: cardFace.renderRules(),
+      pt: cardFace.pt,
+      loyalty: cardFace.loyalty,
+      loyaltyAbilities: cardFace.loyaltyAbilities(),
+      art: cardFace.art,
+      tags: {
+        borderless: cardFace.card.getTagAsString('borderless') === 'true' || cardFace.card.tags['borderless'] === true,
+        'fs/rules': cardFace.card.getTagAsNumber('fs/rules'),
+        'art/focus': cardFace.card.getTagAsString('art/focus'),
+      },
+      rarity: cardFace.card.rarity,
+      collectorNumber: cardFace.card.collectorNumber,
       set,
+    };
+
+    // Create a unique key for the renderable object and the content of the art file
+    const key = hash(JSON.stringify({
+      ...renderable,
       art: artHash,
     }));
 
@@ -91,14 +110,14 @@ export class RenderService {
     }
 
     // If not, render the card using Card Conjurer
-    const render = await this.cardConjurer.renderCard(card, set);
+    const render = await this.cardConjurer.renderCard(renderable);
     await this.saveRender(key, render);
     return { fromCache: false, render };
   }
 
-  async generatePreview(cardData: SerializedCard): Promise<{ render: Buffer, fromCache: boolean }> {
+  async generatePreview(cardData: SerializedCard, faceIndex: number): Promise<{ render: Buffer, fromCache: boolean }> {
     const card = new Card(cardData);
-    const { render, fromCache } = await this.getRender(card, false);
+    const { render, fromCache } = await this.getRender(card.faces[faceIndex], false);
 
     // Save the card json to the previews directory
     if (!fromCache) {

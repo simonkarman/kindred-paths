@@ -66,6 +66,14 @@ export class Card {
     this.faces.forEach(face => face.validate());
   }
 
+  explain(props?: { withoutName?: boolean }) {
+    if (this.faces.length === 1) {
+      return this.faces[0].explain(props);
+    }
+    // TODO: Improve explanation for multi-face cards
+    return this.faces.map(face => face.explain(props)).join(' // ');
+  }
+
   /**
    * Get a tag value as a string.
    *

@@ -6,9 +6,11 @@ import sharp from 'sharp';
 
 export const renderRouter = Router();
 
-renderRouter.get('/render/:id', async (req, res) => {
+renderRouter.get('/render/:id/:faceIndex', async (req, res) => {
   // Get information from request
   const cardId = req.params.id;
+  const faceIndex = Number.parseInt(req.params.faceIndex);
+
   const force = [1, true, '1', 'true', 'yes', 'y', 'on'].includes(req.query.force as string);
   const quality = req.query.quality ? parseInt(req.query.quality as string) : 100;
   const scale = req.query.scale ? parseFloat(req.query.scale as string) : 1;
@@ -20,12 +22,18 @@ renderRouter.get('/render/:id', async (req, res) => {
     return;
   }
 
+  if (isNaN(faceIndex) || faceIndex < 0 || faceIndex >= card.faces.length) {
+    res.status(400).json({ error: `Invalid face index ${faceIndex}` });
+    return;
+  }
+  const cardFace = card.faces[faceIndex];
+
   res.setHeader('Content-Type', 'image/png');
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
-  res.setHeader('Content-Disposition', `inline; filename="${card.collectorNumber}-${card.id}.png"`);
-  let { render } = await renderService.getRender(card, force);
+  res.setHeader('Content-Disposition', `inline; filename="${card.id}-${faceIndex}.png"`);
+  let { render } = await renderService.getRender(cardFace, force);
   if (quality < 0 || quality > 100) {
     res.status(400).json({ error: 'Quality must be between 0 and 100' });
     return;
@@ -47,15 +55,21 @@ renderRouter.get('/render/:id', async (req, res) => {
   res.send(render);
 });
 
-renderRouter.post('/preview', async (req, res) => {
+renderRouter.post('/preview/:faceIndex', async (req, res) => {
   const body = SerializedCardSchema.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
     return;
   }
 
+  const faceIndex = Number.parseInt(req.params.faceIndex);
+  if (isNaN(faceIndex) || faceIndex < 0 || faceIndex >= body.data.faces.length) {
+    res.status(400).json({ error: `Invalid face index ${faceIndex}` });
+    return;
+  }
+
   try {
-    const result = await renderService.generatePreview(body.data);
+    const result = await renderService.generatePreview(body.data, faceIndex);
     res.setHeader('Content-Type', 'image/png');
     res.send(result.render);
   } catch (error) {
