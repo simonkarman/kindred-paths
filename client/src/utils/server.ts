@@ -84,8 +84,8 @@ export async function updateCard(serializedCard: SerializedCard): Promise<Serial
   return responseJson;
 }
 
-export async function previewCard(serializedCard: SerializedCard) {
-  const response = await fetch(`${serverUrl}/preview`, {
+export async function previewCard(serializedCard: SerializedCard, faceIndex: number) {
+  const response = await fetch(`${serverUrl}/preview/${faceIndex}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -105,13 +105,12 @@ export interface NameSuggestion {
 }
 
 export async function getNameSuggestions(card: Card): Promise<NameSuggestion[]> {
-  const cardJson = card.toJson();
   const response = await fetch(`${serverUrl}/suggest/name`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(cardJson),
+    body: JSON.stringify(card.toJson()),
   });
 
   if (!response.ok) {
@@ -126,13 +125,12 @@ export interface SettingSuggestion {
 }
 
 export async function getArtSettingSuggestions(card: Card): Promise<SettingSuggestion[]> {
-  const cardJson = card.toJson();
   const response = await fetch(`${serverUrl}/suggest/art-setting`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(cardJson),
+    body: JSON.stringify(card.toJson()),
   });
 
   if (!response.ok) {
@@ -147,13 +145,12 @@ export interface ArtSuggestion {
 }
 
 export async function getArtSuggestions(card: Card): Promise<ArtSuggestion[]> {
-  const cardJson = card.toJson();
   const response = await fetch(`${serverUrl}/suggest/art`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(cardJson),
+    body: JSON.stringify(card.toJson()),
   });
 
   if (!response.ok) {

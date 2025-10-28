@@ -1,7 +1,52 @@
 import { Browser, chromium, Page } from 'playwright';
 import { setTimeout as sleep } from 'timers/promises';
-import { capitalize, CardColor, CardSuperType, CardType, colorToShort, landSubtypeToColor, LoyaltyCost, TokenCardType } from 'kindred-paths';
+import {
+  capitalize,
+  CardColor,
+  CardColorCharacter,
+  CardSuperType,
+  CardType,
+  colorToShort,
+  landSubtypeToColor,
+  LoyaltyCost,
+  TokenCardType,
+} from 'kindred-paths';
 import { computePlaneswalkerData } from './utils/compute-planeswalker-data';
+
+export type FrameColor = CardColorCharacter | 'a' | 'l' | 'm';
+type ModalFrameColor = CardColorCharacter | `${CardColorCharacter}l` | 'l' | 'm' | 'ml' | 'a' | 'v';
+type PowerToughnessColor = CardColorCharacter | 'm' | 'a' | 'v';
+
+const getModalFrameColors = (_color: CardColor[], isLand: boolean): [ModalFrameColor, ModalFrameColor | undefined] => {
+  const color = _color.map(c => colorToShort(c));
+
+  // Colorless
+  if (color.length === 0) return [isLand ? 'l' : 'a', undefined];
+
+  // Single color
+  const leftColor: ModalFrameColor = isLand ? `${color[0]}l` : color[0];
+  if (color.length === 1) {
+    return [leftColor, undefined];
+  }
+
+  // Dual color
+  if (color.length === 2) {
+    const rightColor: ModalFrameColor = isLand ? `${color[0]}l` : color[0];
+    return [leftColor, rightColor];
+  }
+
+  // Multi color
+  return [isLand ? 'ml' : 'm', undefined];
+};
+
+const getPowerToughnessColor = (color: CardColor[], isVehicle: boolean): PowerToughnessColor => {
+  if (isVehicle) {
+    return 'v';
+  }
+  if (color.length === 0) return 'a';
+  if (color.length === 1) return colorToShort(color[0]);
+  return 'm';
+};
 
 export type Renderable = {
   name: string,
@@ -32,6 +77,12 @@ export type Renderable = {
     collectorNumberOffset?: number,
     shortName: string,
   },
+  mdfc?: {
+    side: 'front' | 'back',
+    otherFrameColor: FrameColor,
+    otherCardType: string,
+    otherText: string,
+  }
 }
 
 export class CardConjurer {
@@ -82,7 +133,61 @@ export class CardConjurer {
       // Handle the frame section
       let forceTitleColorToBlack = false;
       let isFullArt = false;
-      if (renderable.isToken) {
+      if (renderable.mdfc) {
+        // Select frame pack
+        await page.selectOption('#autoFrame', 'false');
+        await page.selectOption('#selectFrameGroup', 'Modal-1');
+        const framePack = 'ModalRegular';
+        await page.selectOption('#selectFramePack', framePack);
+        await sleep(50);
+        await page.click('#loadFrameVersion');
+
+        // Gather MDFC information
+        const side = renderable.mdfc.side;
+        const [left, right] = getModalFrameColors(renderable.color, renderable.types.includes('land'));
+        const overlayMulticolor = right !== undefined;
+        const overlayVehicleFrame = renderable.subtypes.includes('vehicle');
+        const ptColor: PowerToughnessColor | undefined = renderable.pt
+          ? getPowerToughnessColor(renderable.color, renderable.subtypes.includes('vehicle'))
+          : undefined;
+        const otherFrameColor: FrameColor = renderable.mdfc.otherFrameColor;
+
+        const addFrameImage = async (
+          image: string,
+          options?: {
+            mask?: string,
+            placement?: 'addToFull' | 'addToRightHalf',
+          },
+        ) => {
+          await page.click(`div.frame-option:has(img[src="/img/frames/${image}Thumb.png"])`);
+          if (options?.mask) {
+            await page.click(`div.mask-option:has-text("${options.mask}")`);
+          }
+          const placement = options?.placement ?? 'addToFull';
+          await page.click(`#${placement}`);
+          await sleep(50);
+        };
+
+        // Add frames
+        await addFrameImage(`modal/regular/${side === 'back' ? 'back/' : ''}${left}`);
+        if (right) {
+          await addFrameImage(`modal/regular/${side === 'back' ? 'back/' : ''}${right}`, { placement: 'addToRightHalf' });
+        }
+        if (overlayMulticolor) {
+          const m = `modal/regular/${side === 'back' ? 'back/' : ''}${renderable.types.includes('land') ? 'ml' : 'm'}`;
+          await addFrameImage(m, { mask: 'Title' });
+          await addFrameImage(m, { mask: 'Type' });
+          await addFrameImage(m, { mask: 'Frame' });
+        }
+        if (overlayVehicleFrame) {
+          await addFrameImage(`modal/regular/${side === 'back' ? 'back/' : ''}v`, { mask: 'Frame' });
+        }
+        if (ptColor) {
+          await addFrameImage(`m15/${side === 'back' ? 'transform/regular/pt' : 'regular/m15PT'}${ptColor.toUpperCase()}`);
+        }
+        await addFrameImage(`modal/regular/${side === 'back' ? 'back/' : ''}${otherFrameColor}`, { mask: 'Flipside' });
+
+      } else if (renderable.isToken) {
         // Gather token information
         const tokenType = renderable.hasRules ? 'Regular' : 'Textless';
         const predefinedColors = renderable.predefinedColors ?? [];
@@ -148,7 +253,7 @@ export class CardConjurer {
         isFullArt = true;
       } else {
         // Enable autoFrame
-        await page.selectOption('#autoFrame', renderable.tags.borderless ? 'Borderless' : 'M15Regular-1');
+        await page.selectOption('#autoFrame', renderable.tags.borderless ? 'Borderless' : 'M15RegularNew');
       }
 
       // Click on text section
@@ -168,6 +273,17 @@ export class CardConjurer {
       await text_editor_name.focus();
       await text_editor_name.pressSequentially(title.slice(-1));
       await page.waitForLoadState('networkidle');
+
+      // Set MDFC text if applicable
+      if (renderable.mdfc) {
+        await page.click('#text-options h4:has-text("Flipside Type")', { force: true });
+        await page.fill('#text-editor', renderable.mdfc.otherCardType);
+        await page.waitForLoadState('networkidle');
+
+        await page.click('#text-options h4:has-text("Flipside Text")', { force: true });
+        await page.fill('#text-editor', renderable.mdfc.otherText);
+        await page.waitForLoadState('networkidle');
+      }
 
       // Set the type line
       await page.click('#text-options h4:has-text("Type")');
@@ -254,7 +370,7 @@ export class CardConjurer {
             await page.click('#creator-menu-text button:has-text("Edit Bounds")');
             await sleep(20);
             await page.fill('#textbox-editor-y', '1782');
-            await page.fill('#textbox-editor-height', '798');
+            await page.fill('#textbox-editor-height', renderable.mdfc ? '705' : '798');
             await sleep(20);
             await page.click('#textbox-editor h2.textbox-editor-close');
             await page.waitForLoadState('networkidle');

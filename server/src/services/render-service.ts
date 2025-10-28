@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import { z } from 'zod';
-import { Card, CardFace, hash, SerializedCard } from 'kindred-paths';
+import { capitalize, Card, CardColor, CardFace, colorToShort, hash, SerializedCard } from 'kindred-paths';
 import { CardConjurer, Renderable } from '../card-conjurer';
 import { computeCardId } from '../utils/card-utils';
 import { configuration } from '../configuration';
@@ -68,6 +68,42 @@ export class RenderService {
     // Get the set for the card
     const set = this.getSetMetadataForCard(cardFace.card);
 
+    // Get layout info for MDFC cards
+    let mdfc: Renderable['mdfc'] = undefined;
+    if (cardFace.card.layout === 'modal_dfc') {
+      const faceIndex = cardFace.card.faces.indexOf(cardFace);
+      const otherFace = cardFace.card.faces[faceIndex === 0 ? 1 : 0];
+      const side = faceIndex === 0 ? 'front' : 'back';
+
+      if (otherFace.types.includes('land')) {
+        const colorIdentity = otherFace.colorIdentity();
+        mdfc = {
+          side,
+          otherFrameColor: 'l',
+          otherCardType: 'Land',
+          otherText: `{t}: Add ${colorIdentity.map(c => `{${c}}`).join('')}`,
+        };
+      } else {
+        const ptPrefix = otherFace.pt ? `${otherFace.pt.power}/${otherFace.pt.toughness} ` : '';
+        const otherFrameColor = [
+          () => (otherFace.types.includes('artifact')
+            ? 'a' as const
+            : 'l' as const
+          ),
+          (c: CardColor[]) => colorToShort(c[0]),
+          () => 'm' as const,
+        ][Math.min(otherFace.color().length, 2)](otherFace.color());
+        mdfc = {
+          side,
+          otherFrameColor: otherFrameColor,
+          otherCardType: ptPrefix + (otherFace.subtypes.length > 0
+            ? capitalize(otherFace.subtypes[0])
+            : capitalize(otherFace.types[otherFace.types.length - 1])),
+          otherText: otherFace.renderManaCost(),
+        };
+      }
+    }
+
     // Prepare renderable object
     const renderable: Renderable = {
       name: cardFace.name,
@@ -92,7 +128,8 @@ export class RenderService {
       },
       rarity: cardFace.card.rarity,
       collectorNumber: cardFace.card.collectorNumber,
-      set,
+      set, // TODO: Add set symbol art hash, to rerender if set symbol changes
+      mdfc,
     };
 
     // Create a unique key for the renderable object and the content of the art file

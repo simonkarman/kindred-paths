@@ -1,6 +1,9 @@
 import { SerializedCard } from './serialized-card';
 import { CardFace } from './card-face';
 
+export type CardLayout = 'normal' | 'modal_dfc';
+export const cardLayouts = ['normal', 'modal_dfc'] as const;
+
 export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
 
@@ -10,6 +13,7 @@ export class Card {
   public readonly rarity: CardRarity;
   public readonly collectorNumber: number;
   public readonly tags: { [key: string]: string | number | boolean | undefined };
+  public readonly layout: CardLayout;
   public readonly faces: CardFace[];
 
   static new(): SerializedCard {
@@ -32,6 +36,7 @@ export class Card {
     this.rarity = props.rarity;
     this.collectorNumber = props.collectorNumber;
     this.tags = props.tags ?? {};
+    this.layout = props.layout ?? 'normal';
     this.faces = props.faces.map((face, index) => new CardFace(face, this, index));
 
     this.validate();
@@ -44,6 +49,7 @@ export class Card {
       isToken: this.isToken,
       collectorNumber: this.collectorNumber,
       tags: this.tags,
+      layout: this.layout,
       faces: this.faces.map(f => f.toJson()),
     });
   }
@@ -60,6 +66,19 @@ export class Card {
     // If the card is a token, ensure it has only one face
     if (this.isToken && this.faces.length !== 1) {
       throw new Error('token cards can only have one face');
+    }
+
+    // Check the layouts with the faces
+    if (this.layout === 'normal' && this.faces.length !== 1) {
+      throw new Error('normal layout cards must have exactly one face');
+    }
+    if (this.layout === 'modal_dfc') {
+      if (this.faces.length !== 2) {
+        throw new Error('modal_dfc layout cards must have exactly two faces');
+      }
+      if (this.faces.flatMap(f => f.types).includes('planeswalker')) {
+        throw new Error('modal_dfc layout cards cannot have planeswalker types');
+      }
     }
 
     // Validate each face
