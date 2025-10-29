@@ -10,6 +10,12 @@ import { configuration } from '../configuration';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+function getCardInfo(card: Card) {
+  return `a card with a ${card.layout} layout with the following faces:\n` + card.faces
+    .map((f, index) => `face-${index + 1}: ${f.explain({ withoutName: true })}`)
+    .join('\n');
+}
+
 interface NameSuggestion {
   name: string;
   reason: string;
@@ -40,7 +46,7 @@ export class AIService {
 
   async getCardNameSuggestions(cardData: SerializedCard): Promise<NameSuggestion[]> {
     const card = new Card(cardData);
-
+    const cardInfo = getCardInfo(card);
     const msg = await this.anthropic.messages.create({
       model: 'claude-opus-4-20250514',
       max_tokens: 1000,
@@ -59,6 +65,7 @@ export class AIService {
         "For creatures use names like 'Arabho, The Great', that have a given name and a title. " +
         'For noncreature permanents use names of places, objects, or concepts. That describe the context within what happens on the card could ' +
         'happen. ' +
+        'For cards with multiple faces, please suggest a name for each face. For example: "Agadeem\'s Awakening // Agadeem, the Undercrypt". ' +
         'In general, use different styles and approaches to naming the cards.',
       messages: [
         {
@@ -66,7 +73,7 @@ export class AIService {
           content: [
             {
               type: 'text',
-              text: `Could you suggest some card names for ${card.explain({ withoutName: true })}`,
+              text: `Could you suggest some card names for ${cardInfo}`,
             },
           ],
         },
@@ -90,6 +97,7 @@ export class AIService {
   async getCardArtSettingSuggestions(cardData: SerializedCard): Promise<ArtSettingSuggestion[]> {
     const card = new Card(cardData);
 
+    const cardInfo = getCardInfo(card);
     const msg = await this.anthropic.messages.create({
       model: 'claude-opus-4-20250514',
       max_tokens: 1000,
@@ -118,7 +126,7 @@ export class AIService {
           content: [
             {
               type: 'text',
-              text: `Could you suggest some card settings for ${card.explain()}`,
+              text: `Could you suggest some card settings for ${cardInfo}`,
             },
           ],
         },

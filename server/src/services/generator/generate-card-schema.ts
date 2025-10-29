@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+// TODO: Expand this to allow for multi face cards
 export const GenerateCardSchema = z.object({
   name: z.string().min(1),
   rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']),

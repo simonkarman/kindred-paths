@@ -113,7 +113,7 @@ Make sure to align the mana cost and name with the rules you choose.`;
           }],
         });
       },
-      summarizer: (card: Card) => card.explain(),
+      summarizer: (card: Card) => card.faces[0].explain(),
       statistics: (samples: Card[]) => {
         const {
           totalCount, nonlandCount, landCount,
