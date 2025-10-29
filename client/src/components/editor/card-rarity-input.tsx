@@ -1,5 +1,5 @@
-import { cardRarities, CardRarity } from 'kindred-paths';
-import { capitalize, typographyRarityColors } from '@/utils/typography';
+import { capitalize, cardRarities, CardRarity } from 'kindred-paths';
+import { typographyRarityColors } from '@/utils/typography';
 import { InputHeader } from '@/components/editor/input-header';
 
 export const CardRarityInput = (props: {

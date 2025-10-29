@@ -7,11 +7,15 @@ import { useState } from 'react';
 import { CardRender } from '@/components/card-render';
 import { CardExplanation } from '@/components/card-explanation';
 import { SerializedCard } from 'kindred-paths';
+import { useSearchParams } from 'next/navigation';
+import { z } from 'zod';
 
 export const CardView = (props: { serializedCard: SerializedCard }) => {
   const { serializedCard } = props;
   const [forceRender, setForceRender] = useState(false);
-  const [faceIndex, setFaceIndex] = useState(0);
+
+  const queryFaceIndex = z.number({ coerce: true }).min(0).max(1).safeParse(useSearchParams().get('faceIndex'));
+  const [faceIndex, setFaceIndex] = useState(queryFaceIndex.success ? queryFaceIndex.data : 0);
   const dualFaced = serializedCard.layout === 'modal_dfc';
 
   return <div className="flex lg:flex-row justify-center items-center lg:items-start flex-col gap-8">
@@ -47,7 +51,13 @@ export const CardView = (props: { serializedCard: SerializedCard }) => {
         {/* Flip Card Button */}
         {dualFaced && <div>
           <button
-            onClick={() => setFaceIndex(i => (i + 1) % serializedCard.faces.length)}
+            onClick={() => {
+              setFaceIndex(i => (i + 1) % serializedCard.faces.length);
+              // Update query parameter faceIndex
+              const url = new URL(window.location.href);
+              url.searchParams.set('faceIndex', ((faceIndex + 1) % serializedCard.faces.length).toString());
+              window.history.replaceState({}, '', url.toString());
+            }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
           >
             <FontAwesomeIcon icon={faArrowsTurnRight} />
@@ -84,7 +94,7 @@ export const CardView = (props: { serializedCard: SerializedCard }) => {
         <h2 className="text-2xl font-bold text-slate-900 mb-4">
           {serializedCard.faces.map(f => f.name).join(' // ')}
         </h2>
-        <CardExplanation serializedCard={serializedCard} />
+        <CardExplanation serializedCard={serializedCard} activeFaceIndex={faceIndex} />
       </div>
 
       {/* Edit Card */}

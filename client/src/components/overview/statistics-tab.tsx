@@ -19,7 +19,7 @@ export function StatisticsTab(props: { cards: SerializedCard[] }) {
       {/* Summary Card */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
         <h3 className="text-lg font-semibold text-slate-900 mb-3">Collection Summary</h3>
-        <div className="flex flex-wrap gap-6 mb-4">
+        <div className="flex flex-wrap items-end gap-6 mb-4">
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-blue-600">{totalCount}</span>
             <span className="text-sm text-slate-600">total cards</span>
@@ -92,7 +92,7 @@ export function StatisticsTab(props: { cards: SerializedCard[] }) {
           <BarDistribution
             title="Creatable Token Name"
             data={tokenDistribution}
-            check={tokens.map(t => t.getTokenReferenceName())}
+            check={tokens.flatMap(t => t.faces.map(f => f.getTokenReferenceName()))}
             sortOnValue
             fullWidth
           />

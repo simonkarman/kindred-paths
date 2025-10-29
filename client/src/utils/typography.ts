@@ -3,8 +3,6 @@ import { CardColor, CardRarity } from 'kindred-paths';
 type Prefix<K> = K extends string ? `mono ${K}` : K;
 type TypographyColor = 'colorless' | Prefix<CardColor> | 'multicolor';
 
-export const capitalize = (str: string): string => str.length === 0 ? '' : str[0].toUpperCase() + str.slice(1);
-
 export const singleCharacterToTypographyColor = (char: string) => {
   switch (char.toLowerCase()) {
     case 'w':

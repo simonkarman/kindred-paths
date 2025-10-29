@@ -1,7 +1,7 @@
 import { TokenExtractor } from './token-extracter';
 import { CardColor, cardColors, Mana, toOrderedColors, wubrg } from './colors';
 import { SerializedCardFace } from './serialized-card-face';
-import { capitalize } from './typography';
+import { capitalize, enumerate } from './typography';
 import {
   Card,
 } from './card';
@@ -322,8 +322,8 @@ export class CardFace {
 
       // Ensure the front face has 'transform' in the rules
       const frontFace = this.card.faces[0];
-      if (!frontFace.rules.some(rule => rule.content.toLowerCase().includes('transform'))) {
-        throw new Error('the back face of a double-faced card can only have no mana cost if the front face has "transform" in the rules');
+      if (!this.types.includes('land') && !frontFace.rules.some(rule => rule.content.toLowerCase().includes('transform'))) {
+        throw new Error('the back face of a non-land double-faced card can only have no mana cost if the front face has "transform" in the rules');
       }
     }
   }
@@ -483,6 +483,32 @@ export class CardFace {
     return CardFace.colorOf(context);
   }
 
+  public producibleColors(): (CardColor | 'colorless')[] {
+    const context = this.rules
+      .filter(v => ['keyword', 'ability'].includes(v.variant))
+      .map(rule => rule.content)
+      .join(' ');
+
+    if (context.toLowerCase().includes('add one mana of any color')) {
+      return [...cardColors];
+    }
+
+    const regex = /[Aa]dd ((?:{[wubrgc]+})+)( or ((?:{[wubrgc]+})+))?/g;
+    const matches = context.matchAll(regex);
+    const result = new Set<CardColor | 'colorless'>();
+    for (const match of matches) {
+      const first = match[1];
+      const second = match[3];
+      const firstColors = CardFace.colorOf(first);
+      firstColors.forEach(c => result.add(c));
+      if (second) {
+        const secondColors = CardFace.colorOf(second);
+        secondColors.forEach(c => result.add(c));
+      }
+    }
+    return [...result];
+  }
+
   private static colorOf = (context: string) => {
     const colorRegex = /{([\w/]+)}/g;
     const matches = context.matchAll(colorRegex);
@@ -508,7 +534,7 @@ export class CardFace {
     }
     const color = this.color();
     if (color.length > 0) {
-      referenceName += `${color.join(' and ')} `;
+      referenceName += `${enumerate(color)} `;
     } else if (!this.types.includes('artifact')) {
       referenceName += 'colorless ';
     }

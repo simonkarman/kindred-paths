@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
-import { CardType } from 'kindred-paths';
+import { CardType, capitalize } from 'kindred-paths';
 import { InputHeader } from '@/components/editor/input-header';
-import { capitalize } from '@/utils/typography';
 
 export const CardSubtypesInput = (props: {
   subtypes: string[] | undefined,

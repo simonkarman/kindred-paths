@@ -24,9 +24,9 @@ export function TextTab(props: { cards: SerializedCard[] }) {
           return (
             <li
               key={card.id}
-              className="group border-b border-slate-100 pb-4 last:border-b-0 hover:bg-slate-50 -mx-2 px-2 py-2 rounded transition-colors"
+              className="group border-b border-slate-100 space-y-2 pb-4 last:border-b-0 hover:bg-slate-50 -mx-2 px-2 py-2 rounded transition-colors"
             >
-              <div className="flex items-baseline gap-2 mb-1">
+              <div className="flex items-baseline gap-2">
                 {deckName && deckCount && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 flex-shrink-0">
                     {deckCount}x
@@ -36,15 +36,17 @@ export function TextTab(props: { cards: SerializedCard[] }) {
                   href={`/card/${card.id}`}
                   className="text-blue-600 hover:text-blue-700 font-semibold hover:underline decoration-blue-300 hover:decoration-blue-500 transition-colors"
                 >
-                  {card.name}
+                  {card.faces.map(f => f.name).join(' // ')}
                 </Link>
                 <span className="text-xs text-slate-500 flex-shrink-0">
                   {setInfo}
                 </span>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                {card.explain({ withoutName: true })}
-              </p>
+              {card.faces.map(face =>
+                <p key={face.name} className="text-sm text-slate-600 leading-relaxed">
+                  {face.explain({ withoutName: true })}
+                </p>
+              )}
             </li>
           );
         })}

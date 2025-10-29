@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import { z } from 'zod';
-import { capitalize, Card, CardColor, CardFace, colorToShort, hash, SerializedCard } from 'kindred-paths';
+import { capitalize, Card, CardColor, CardFace, colorToShort, enumerate, hash, SerializedCard } from 'kindred-paths';
 import { CardConjurer, Renderable } from '../card-conjurer';
 import { computeCardId } from '../utils/card-utils';
 import { configuration } from '../configuration';
@@ -81,7 +81,7 @@ export class RenderService {
           side,
           otherFrameColor: 'l',
           otherCardType: 'Land',
-          otherText: `{t}: Add ${colorIdentity.map(c => `{${c}}`).join('')}`,
+          otherText: `{t}: Add ${enumerate(colorIdentity.map(c => `{${colorToShort(c)}}`), { lastSeparator: 'or' })}`,
         };
       } else {
         const ptPrefix = otherFace.pt ? `${otherFace.pt.power}/${otherFace.pt.toughness} ` : '';
@@ -110,6 +110,7 @@ export class RenderService {
       isToken: cardFace.card.isToken,
       manaCost: cardFace.renderManaCost(),
       color: cardFace.color(),
+      producibleColors: cardFace.producibleColors(),
       predefinedColors: cardFace.tokenColors,
       typeLine: cardFace.renderTypeLine(),
       types: cardFace.types,

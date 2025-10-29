@@ -99,6 +99,8 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchText: st
     const card = new Card(_card);
     const cardFace = card.faces[0]; // TODO: support multi-face cards
     const checks = [
+      check(['layout', 'l'], layoutNeedle => card.layout.startsWith(layoutNeedle)),
+
       check(['type', 't'], typeNeedle => [
           ...(card.isToken ? ['token'] : []),
           ...cardFace.types,

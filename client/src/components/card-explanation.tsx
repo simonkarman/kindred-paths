@@ -1,8 +1,7 @@
-import { capitalize } from '@/utils/typography';
-import { Card, SerializedCard } from 'kindred-paths';
-import { Fragment } from 'react';
+import { capitalize, enumerate, Card, SerializedCard } from 'kindred-paths';
+import { ManaCost } from '@/components/mana-cost';
 
-export function CardExplanation({ serializedCard }: { serializedCard: SerializedCard }) {
+export function CardExplanation({ serializedCard, activeFaceIndex }: { serializedCard: SerializedCard, activeFaceIndex: number }) {
   const card = new Card(serializedCard);
   const front = card.faces[0];
   const back = card.faces.length > 1 ? card.faces[1] : undefined;
@@ -17,9 +16,15 @@ export function CardExplanation({ serializedCard }: { serializedCard: Serialized
   };
 
   return (
-    <div className="space-y-6">
-      {card.faces.map((face, faceIndex) => <Fragment key={faceIndex}>
-        {dualFaced && <h3 className="text-sm font-semibold text-slate-900 mb-3">{face.name}</h3>}
+    <div className="space-y-2">
+      {card.faces.map((face, faceIndex) => <div
+        key={faceIndex}
+        className={`space-y-6 transition-opacity ${dualFaced && faceIndex !== activeFaceIndex ? 'opacity-40' : ''}`}
+      >
+        {dualFaced && <h3 className="text-sm font-semibold text-slate-900 mb-3">
+          {faceIndex === activeFaceIndex && '➤ '}
+          {face.name}
+        </h3>}
 
         {/* Summary */}
         <div className="pb-4 border-b border-slate-200">
@@ -54,8 +59,8 @@ export function CardExplanation({ serializedCard }: { serializedCard: Serialized
           ) : (
             <div className="flex items-start gap-3">
               <span className="text-sm font-medium text-slate-500 w-32 flex-shrink-0">Mana Cost</span>
-              <span className="text-sm text-slate-900 bg-slate-100 px-1 rounded-lg border border-slate-200">
-                {face.renderManaCost() || <span className="italic text-slate-400">None</span>}
+              <span className="text-sm text-slate-900">
+                {<ManaCost cost={face.renderManaCost()} />}
               </span>
             </div>
           )}
@@ -71,6 +76,13 @@ export function CardExplanation({ serializedCard }: { serializedCard: Serialized
               <span className="text-sm font-semibold text-slate-900">
                 {face.pt.power}/{face.pt.toughness}
               </span>
+            </div>
+          )}
+
+          {face.producibleColors().length > 0 && (
+            <div className="flex items-start gap-3">
+              <span className="text-sm font-medium text-slate-500 w-32 flex-shrink-0">Producible Colors</span>
+              <span className="text-sm text-slate-900">{enumerate(face.producibleColors().map(c => capitalize(c)))}</span>
             </div>
           )}
         </div>
@@ -92,7 +104,7 @@ export function CardExplanation({ serializedCard }: { serializedCard: Serialized
             ))}
           </div>
         )}
-      </Fragment>)}
+      </div>)}
 
       {/* Creatable Tokens */}
       {creatableTokenNames.length > 0 && (

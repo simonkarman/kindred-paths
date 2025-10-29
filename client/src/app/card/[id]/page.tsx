@@ -10,7 +10,7 @@ export async function generateMetadata({ params: _params }: PageProps<{ id: stri
   const params = await _params;
   const card = await getCard(params.id);
   return {
-    title: `KPA: #${card?.collectorNumber} - ${card?.name ?? params.id}`,
+    title: `${card?.faces.map(f => f.name).join(' // ') ?? params.id}`,
   }
 }
 

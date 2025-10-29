@@ -17,21 +17,22 @@ export type FrameColor = CardColorCharacter | 'a' | 'l' | 'm';
 type ModalFrameColor = CardColorCharacter | `${CardColorCharacter}l` | 'l' | 'm' | 'ml' | 'a' | 'v';
 type PowerToughnessColor = CardColorCharacter | 'm' | 'a' | 'v';
 
-const getModalFrameColors = (_color: CardColor[], isLand: boolean): [ModalFrameColor, ModalFrameColor | undefined] => {
-  const color = _color.map(c => colorToShort(c));
+const getModalFrameColors = (renderable: Renderable): [ModalFrameColor, ModalFrameColor | undefined] => {
+  const isLand: boolean = renderable.types.includes('land');
+  const color = (isLand ? renderable.producibleColors : renderable.color).map(c => c === 'colorless' ? '' : colorToShort(c));
 
   // Colorless
   if (color.length === 0) return [isLand ? 'l' : 'a', undefined];
 
   // Single color
-  const leftColor: ModalFrameColor = isLand ? `${color[0]}l` : color[0];
+  const leftColor: ModalFrameColor = isLand ? `${color[0]}l` : color[0] as ModalFrameColor;
   if (color.length === 1) {
     return [leftColor, undefined];
   }
 
   // Dual color
   if (color.length === 2) {
-    const rightColor: ModalFrameColor = isLand ? `${color[0]}l` : color[0];
+    const rightColor: ModalFrameColor = isLand ? `${color[1]}l` : color[1] as ModalFrameColor;
     return [leftColor, rightColor];
   }
 
@@ -53,6 +54,7 @@ export type Renderable = {
   isToken?: true,
   manaCost: string,
   color: CardColor[],
+  producibleColors: (CardColor | 'colorless')[],
   predefinedColors?: CardColor[],
   typeLine: string,
   types: [CardType, ...CardType[]],
@@ -137,14 +139,16 @@ export class CardConjurer {
         // Select frame pack
         await page.selectOption('#autoFrame', 'false');
         await page.selectOption('#selectFrameGroup', 'Modal-1');
-        const framePack = 'ModalRegular';
-        await page.selectOption('#selectFramePack', framePack);
+        const defaultFramePack = 'ModalRegular';
+        const legendaryCrownsFramePack = 'ModalLegendCrowns';
+        await page.selectOption('#selectFramePack', defaultFramePack);
         await sleep(50);
         await page.click('#loadFrameVersion');
 
         // Gather MDFC information
         const side = renderable.mdfc.side;
-        const [left, right] = getModalFrameColors(renderable.color, renderable.types.includes('land'));
+        const [left, right] = getModalFrameColors(renderable);
+        const addLegendaryCrown = renderable.supertype === 'legendary';
         const overlayMulticolor = right !== undefined;
         const overlayVehicleFrame = renderable.subtypes.includes('vehicle');
         const ptColor: PowerToughnessColor | undefined = renderable.pt
@@ -152,13 +156,21 @@ export class CardConjurer {
           : undefined;
         const otherFrameColor: FrameColor = renderable.mdfc.otherFrameColor;
 
+        let currentFramePack = defaultFramePack;
         const addFrameImage = async (
           image: string,
           options?: {
             mask?: string,
+            framePack?: string,
             placement?: 'addToFull' | 'addToRightHalf',
           },
         ) => {
+          const framePack = options?.framePack ?? defaultFramePack;
+          if (currentFramePack !== framePack) {
+            await page.selectOption('#selectFramePack', framePack);
+            currentFramePack = framePack;
+            await sleep(50);
+          }
           await page.click(`div.frame-option:has(img[src="/img/frames/${image}Thumb.png"])`);
           if (options?.mask) {
             await page.click(`div.mask-option:has-text("${options.mask}")`);
@@ -174,13 +186,31 @@ export class CardConjurer {
           await addFrameImage(`modal/regular/${side === 'back' ? 'back/' : ''}${right}`, { placement: 'addToRightHalf' });
         }
         if (overlayMulticolor) {
-          const m = `modal/regular/${side === 'back' ? 'back/' : ''}${renderable.types.includes('land') ? 'ml' : 'm'}`;
+          const m = `modal/regular/${side === 'back' ? 'back/' : ''}${renderable.types.includes('land') ? 'l' : 'm'}`;
           await addFrameImage(m, { mask: 'Title' });
           await addFrameImage(m, { mask: 'Type' });
           await addFrameImage(m, { mask: 'Frame' });
         }
         if (overlayVehicleFrame) {
           await addFrameImage(`modal/regular/${side === 'back' ? 'back/' : ''}v`, { mask: 'Frame' });
+        }
+        if (addLegendaryCrown) {
+          const legendaryCrownColorFrom = (color: ModalFrameColor): string => {
+            if (color.length > 1 && color.endsWith('l')) {
+              return color.charAt(0);
+            }
+            if (color === 'v') {
+              return 'a';
+            }
+            return color;
+          };
+          await addFrameImage(`modal/crowns/regular/${legendaryCrownColorFrom(left)}`, { framePack: legendaryCrownsFramePack });
+          if (right) {
+            await addFrameImage(`modal/crowns/regular/${legendaryCrownColorFrom(right)}`, {
+              placement: 'addToRightHalf',
+              framePack: legendaryCrownsFramePack,
+            });
+          }
         }
         if (ptColor) {
           await addFrameImage(`m15/${side === 'back' ? 'transform/regular/pt' : 'regular/m15PT'}${ptColor.toUpperCase()}`);

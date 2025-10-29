@@ -1,6 +1,5 @@
-import { CardColor, cardColors } from 'kindred-paths';
+import { CardColor, cardColors, capitalize } from 'kindred-paths';
 import { InputHeader } from '@/components/editor/input-header';
-import { capitalize } from '@/utils/typography';
 
 export const CardTokenColorsInput = (props: {
   tokenColors: CardColor[],

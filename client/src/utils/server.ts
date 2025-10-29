@@ -14,10 +14,7 @@ export async function getCards(): Promise<SerializedCard[]> {
       .array(SerializedCardSchema)
       .parse(responseJson)
       // Don't show reference or deleted cards
-      .filter(card => card.tags === undefined || (
-        card.tags['reference'] === undefined &&
-        card.tags['deleted'] !== true
-      ));
+      .filter(card => card.tags === undefined || card.tags['deleted'] !== true);
   } catch (error: unknown) {
     console.error('Error getting cards:', error);
     return [];
