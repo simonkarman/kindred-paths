@@ -10,7 +10,7 @@ export async function generateMetadata({ params: _params }: PageProps<{ id: stri
   const params = await _params;
   const card = await getCard(params.id);
   return {
-    title: `KPA: Edit ${card?.name ?? params.id}`,
+    title: `Edit ${card?.faces.map(f => f.name).join(' // ') ?? params.id} - Kindred Paths`,
   }
 }
 
@@ -28,7 +28,7 @@ export default async function CardEdit({ params: _params }: Readonly<{ params: P
           className="mb-6 inline-flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors shadow-sm"
         >
           <FontAwesomeIcon icon={faArrowLeft} />
-          View {serializedCard.name}
+          View {serializedCard.faces.map(f => f.name).join(' // ')}
         </Link>
       </div>
       <CardEditor start={serializedCard} />

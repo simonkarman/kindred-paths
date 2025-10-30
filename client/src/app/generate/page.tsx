@@ -4,7 +4,7 @@ import { getCardSampleGenerators } from '@/utils/server';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: `KPA: Inspire Me!`,
+    title: `Inspire Me! - Kindred Paths`,
   }
 }
 

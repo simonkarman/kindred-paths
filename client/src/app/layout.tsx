@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KPA: Kindred Paths",
+  title: "Kindred Paths",
   description: "A tool for managing a collection of custom Magic the Gathering cards.",
 };
 

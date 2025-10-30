@@ -37,7 +37,7 @@ export function CardInspiration(props: { previousCardGenerators: { generatorId: 
     setPrompt(previousCardGenerators.find(g => g.generatorId === generatorId)?.prompt || 'unknown prompt');
 
     const nextCardImages = await Promise.all(generator.samples.map(async (suggestion) => {
-      const blob = await previewCard(suggestion);
+      const blob = await previewCard(suggestion, 0);
       return URL.createObjectURL(blob);
     }));
     setCardImages(nextCardImages);
@@ -91,7 +91,7 @@ export function CardInspiration(props: { previousCardGenerators: { generatorId: 
       });
 
       const nextCardImages = await Promise.all(samples.map(async (suggestion) => {
-        const blob = await previewCard(suggestion);
+        const blob = await previewCard(suggestion, 0);
         return URL.createObjectURL(blob);
       }));
       setCardImages((i) => [...i, ...nextCardImages]);
