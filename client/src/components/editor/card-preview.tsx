@@ -16,7 +16,7 @@ const getRenderKey = (card: Card) => {
   }))
 }
 
-export function CardPreview({ card }: { card: Card }) {
+export function CardPreview({ card, faceIndex }: { card: Card, faceIndex: number }) {
   const latestRenderIndex = useRef(0);
 
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -40,7 +40,7 @@ export function CardPreview({ card }: { card: Card }) {
     try {
       await sleep(initialWait);
       if (thisRenderIndex === latestRenderIndex.current) {
-        const blob = await previewCard(card.toJson());
+        const blob = await previewCard(card.toJson(), faceIndex);
         if (thisRenderIndex === latestRenderIndex.current) {
           cleanupImage();
           setImage(URL.createObjectURL(blob));
@@ -135,7 +135,7 @@ export function CardPreview({ card }: { card: Card }) {
           <div className="relative">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              alt={`${card.name} preview`}
+              alt={`${card.faces[faceIndex].name} preview`}
               className={`aspect-[63/88] shadow-xl w-full bg-zinc-50 rounded-2xl border transition-all duration-300 ${
                 isOutdated ? 'opacity-40 ring-2 ring-amber-300' : ''
               }`}
