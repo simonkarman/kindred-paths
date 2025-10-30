@@ -68,7 +68,7 @@ export function CardSelector(props: CardSelectorProps) {
           className="cursor-pointer rounded-2xl border-3 border-transparent hover:border-black transition-colors"
           onClick={() => props.onSelect(card)}
         >
-          <CardRender serializedCard={card} hideBorder />
+          <CardRender serializedCard={card} faceIndex={0} hideBorder />
         </button>
       </div>)}
     </div>
