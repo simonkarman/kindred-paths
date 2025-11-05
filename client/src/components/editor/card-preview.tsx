@@ -55,7 +55,7 @@ export function CardPreview({ card, faceIndex }: { card: Card, faceIndex: number
         setIsRendering(false);
       }
     }
-  }, [card, cleanupImage]);
+  }, [card, cleanupImage, faceIndex]);
 
   const isOutdated = latestRenderKey !== getRenderKey(card);
   useEffect(() => {

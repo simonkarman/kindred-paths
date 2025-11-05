@@ -1,8 +1,8 @@
-import { BlueprintValidator, SerializableBlueprintWithSource, SerializedCard } from 'kindred-paths';
+import { BlueprintValidator, filterCardsBasedOnSearch, SerializableBlueprintWithSource, SerializedCard } from 'kindred-paths';
 import { useState } from 'react';
 import { CardRender } from '@/components/card-render';
 import SearchBar from '@/components/search-bar';
-import { filterCardsBasedOnSearch, useSearch } from '@/utils/use-search';
+import { useSearch } from '@/utils/use-search';
 
 type CardSelectorProps = {
   cards: SerializedCard[],

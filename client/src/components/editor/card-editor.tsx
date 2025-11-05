@@ -354,6 +354,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
           <CardCollectorNumberInput collectorNumber={collectorNumber} setCollectorNumber={setCollectorNumber}
                                     getErrorMessage={() => getErrorMessage('collectorNumber')}
                                     isChanged={!isCreate && JSON.stringify(start.collectorNumber) !== JSON.stringify(collectorNumber)} revert={() => setCollectorNumber(start.collectorNumber)}
+                                    renderedTypeLine={card?.faces[0].renderTypeLine() ?? ''} cardId={start.id}
           />
           <CardArtInput art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card}
                         isChanged={!isCreate && JSON.stringify(startFace.art) !== JSON.stringify(art)} revert={() => setArt(startFace.art)}
@@ -408,10 +409,6 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
             {isCreate ? 'Cancel Card Creation' : 'Discard changes'}
           </button>
         </div>
-        {isChanged && <div className="flex justify-center w-full text-sm italic">
-          <pre className="max-w-1/2 overflow-x-scroll border">{JSON.stringify(start, undefined, 2)}</pre>
-          <pre className="max-w-1/2 overflow-x-scroll border">{JSON.stringify(serializedCard, undefined, 2)}</pre>
-        </div>}
       </div>
     </div>
   </>);

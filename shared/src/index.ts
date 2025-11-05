@@ -1,6 +1,7 @@
 export * from './card';
 export * from './card-face';
 export * from './card-art-prompt-creator';
+export * from './card-filterer';
 export * from './collection';
 export * from './colors';
 export * from './hash';

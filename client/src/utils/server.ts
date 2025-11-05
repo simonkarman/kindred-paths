@@ -96,6 +96,22 @@ export async function previewCard(serializedCard: SerializedCard, faceIndex: num
   return await response.blob();
 }
 
+export type CollectorNumberInfo = { collectorNumber: number, cardId: string, faces: { name: string, renderedTypeLine: string }[] };
+export async function getOrganizeCollectorNumbers(searchQuery: string): Promise<CollectorNumberInfo[]> {
+  const response = await fetch(`${serverUrl}/organize/collector-numbers`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: searchQuery }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch next collector numbers');
+  }
+  return await response.json();
+}
+
 export interface NameSuggestion {
   name: string;
   reason: string;
