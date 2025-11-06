@@ -2,7 +2,8 @@ import { SerializedCard } from 'kindred-paths';
 
 export const computeCardId = (card: SerializedCard) => {
   const set = typeof card.tags?.set === 'string' ? `${card.tags.set}-` : '';
-  const prefix = set + `${card.collectorNumber}-`;
+  const collectorNumberAsString = ('0000' + card.collectorNumber).slice(-4);
+  const prefix = set + `${collectorNumberAsString}-`;
   const faceParts = card.faces.map(face => {
     if (card.isToken) {
       const supertype = face.supertype ? `${face.supertype}-` : '';

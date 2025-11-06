@@ -85,7 +85,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
   // If card has basic supertype or is a token, reset mana cost
   useEffect(() => {
     if (supertype === 'basic' || isToken) {
-      setManaCost({});
+      setManaCost(undefined);
     }
   }, [supertype, isToken]);
 

@@ -147,7 +147,7 @@ export const CardCollectorNumberInput = (props: {
     {showCollectorNumbers && collectorNumbers.length > 0 && (
       <div>
         <div className="mt-2 border border-zinc-300 rounded-md p-3">
-          <div className="max-h-60 overflow-y-scroll flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1">
             {Array.from(
               { length: Math.max(collectorNumber, ...collectorNumbers.map(c => c.collectorNumber)) + 10 },
               (_, i) => i + 1
