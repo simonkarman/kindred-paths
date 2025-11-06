@@ -15,7 +15,7 @@ export const permanentTypes = ['creature', 'enchantment', 'artifact', 'land', 'p
 
 export type TokenCardType = Exclude<CardType, 'instant' | 'sorcery' | 'planeswalker'>;
 export const tokenCardTypes = ['enchantment', 'artifact', 'creature', 'land'] as const;
-export const predefinedTokenNames = ['Blood', 'Clue', 'Food', 'Gold', 'Incubator', 'Junk', 'Map', 'Powerstone', 'Treasure'];
+export const predefinedTokenNames = ['Blood', 'Clue', 'Food', 'Fuel', 'Gold', 'Incubator', 'Junk', 'Map', 'Powerstone', 'Treasure'];
 
 export const landSubtypes = ['plains', 'island', 'swamp', 'mountain', 'forest'] as const;
 export const landSubtypeToColor = (type: typeof landSubtypes[number] | string): CardColor | undefined => ({
