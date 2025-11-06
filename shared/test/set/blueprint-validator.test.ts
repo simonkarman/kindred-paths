@@ -5,40 +5,42 @@ import { expect, test } from 'vitest';
 test('blueprint validator', async () => {
   const serializedCard: SerializedCard = {
     id: 'mfy-401',
-    'name': 'Miffy, The Kind',
     'rarity': 'mythic',
-    'supertype': 'legendary',
-    'types': [
-      'creature',
-    ],
-    'subtypes': [
-      'rabbit',
-      'advisor',
-    ],
-    'manaCost': {
-      'colorless': 1,
-      'white': 2,
-    },
-    'rules': [
-      {
-        'variant': 'ability',
-        'content': "~ can't be blocked by creatures with power 3 or greater.",
+    faces: [{
+      'name': 'Miffy, The Kind',
+      'supertype': 'legendary',
+      'types': [
+        'creature',
+      ],
+      'subtypes': [
+        'rabbit',
+        'advisor',
+      ],
+      'manaCost': {
+        'colorless': 1,
+        'white': 2,
       },
-      {
-        'variant': 'ability',
-        'content': 'Whenever ~ attacks, exile target creature an opponent controls with mana value X or less, where X is the number of creatures you control with power 2 or less.',
+      'rules': [
+        {
+          'variant': 'ability',
+          'content': "~ can't be blocked by creatures with power 3 or greater.",
+        },
+        {
+          'variant': 'ability',
+          'content': 'Whenever ~ attacks, exile target creature an opponent controls with mana value X or less, where X is the number of creatures you control with power 2 or less.',
+        },
+        {
+          'variant': 'ability',
+          'content': "When ~ leaves the battlefield, return the exiled cards to their owners' hands and create that many 1/1 white Rabbit creature tokens.{lns}",
+        },
+      ],
+      'pt': {
+        'power': 2,
+        'toughness': 3,
       },
-      {
-        'variant': 'ability',
-        'content': "When ~ leaves the battlefield, return the exiled cards to their owners' hands and create that many 1/1 white Rabbit creature tokens.{lns}",
-      },
-    ],
-    'pt': {
-      'power': 2,
-      'toughness': 3,
-    },
+      'art': 'mfy/miffy-the-kind.jpg',
+    }],
     'collectorNumber': 401,
-    'art': 'mfy/miffy-the-kind.jpg',
     'tags': {
       'status': 'concept',
       'createdAt': '2025-07-29',

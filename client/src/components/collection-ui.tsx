@@ -3,7 +3,7 @@
 import { Collection, SyncResult } from 'kindred-paths';
 import { useLocalStorageState } from '@/utils/use-local-storage-state';
 import { commitCollection, getCollection, syncCollection } from '@/utils/server';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 type CachedCollection = {
   data: Collection;
@@ -15,29 +15,38 @@ export function CollectionUI() {
     'collection-cache',
     null
   );
+  const [autoRefresh, setAutoRefresh] = useLocalStorageState<boolean>(
+    'collection-cache/auto-refresh',
+    false,
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [commitMessage, setCommitMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [operationResult, setOperationResult] = useState<SyncResult | null>(null);
+
+  const refresh = useCallback(() => {
+    getCollection().then((data) => {
+      setCached({ data, timestamp: Date.now() });
+    }).catch(console.error);
+  }, [setCached]);
 
   // Revalidate every 60 seconds, but only if the cache is older than 15 seconds
   useEffect(() => {
     const shouldRevalidate = !cached || Date.now() - cached.timestamp > 15000;
 
     if (shouldRevalidate) {
-      getCollection().then((data) => {
-        setCached({ data, timestamp: Date.now() });
-      }).catch(console.error);
+      refresh();
     }
 
-    const interval = setInterval(() => {
-      getCollection().then((data) => {
-        setCached({ data, timestamp: Date.now() });
-      }).catch(console.error);
-    }, 60000);
+    let interval: NodeJS.Timeout | undefined;
+    if (autoRefresh) {
+      interval = setInterval(() => {
+        refresh();
+      }, 60000);
+    }
 
     return () => clearInterval(interval);
-  }, [cached, setCached]);
+  }, [autoRefresh, cached, refresh]);
 
   if (!cached) {
     return (
@@ -168,6 +177,17 @@ export function CollectionUI() {
               {/* Local Status */}
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-2">Local Changes</h3>
+                <div className="px-4 text-sm text-gray-500 text-right mt-2">
+                  <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={autoRefresh}
+                      onChange={(e) => setAutoRefresh(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    Auto-refresh
+                  </label>
+                </div>
                 {hasLocalChanges ? (
                   <div className="space-y-2">
                     <p className="text-sm text-gray-600">

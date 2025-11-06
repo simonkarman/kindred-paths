@@ -95,9 +95,25 @@ Make sure to align the mana cost and name with the rules you choose.`;
       transformer: (text: string) => {
         const jsonObject = JSON.parse(text);
         const validatedData = GenerateCardSchema.parse(jsonObject);
-        return new Card({ ...validatedData, id: `ai-${crypto.randomUUID()}`, collectorNumber: 1, tags: { count: 1 } });
+        return new Card({
+          id: `ai-${crypto.randomUUID()}`,
+          isToken: validatedData.isToken,
+          collectorNumber: 1,
+          tags: { count: 1 },
+          rarity: validatedData.rarity,
+          faces: [{
+            name: validatedData.name,
+            supertype: validatedData.supertype,
+            types: validatedData.types,
+            subtypes: validatedData.subtypes ?? [],
+            manaCost: validatedData.manaCost,
+            rules: validatedData.rules ?? [],
+            pt: validatedData.pt,
+            loyalty: validatedData.loyalty,
+          }],
+        });
       },
-      summarizer: (card: Card) => card.explain(),
+      summarizer: (card: Card) => card.faces[0].explain(),
       statistics: (samples: Card[]) => {
         const {
           totalCount, nonlandCount, landCount,
@@ -114,7 +130,10 @@ Make sure to align the mana cost and name with the rules you choose.`;
       },
       immediatelyAfterGenerateHook: sample => {
         // Create a preview render in parallel, to ensure the card can be shown quickly
-        renderService.generatePreview(sample.toJson()).catch(e => console.error('Skip render of ai generated card, because of error:', e));
+        for (let faceIndex = 0; faceIndex < sample.faces.length; faceIndex++) {
+          renderService.generatePreview(sample.toJson(), faceIndex)
+            .catch(e => console.error('Skip render of ai generated card, because of error:', e));
+        }
       },
     });
   };

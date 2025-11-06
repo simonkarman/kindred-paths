@@ -8,7 +8,7 @@ export async function generateMetadata({ params: _params }: PageProps<{ name: st
   const params = await _params;
   const set = await getSet(params.name);
   return {
-    title: `KPA: Edit ${set?.name ?? params.name}`,
+    title: `${set?.name ?? params.name} Set Editor - Kindred Paths`,
   }
 }
 

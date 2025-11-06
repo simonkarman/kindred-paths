@@ -1,8 +1,7 @@
 import { ChangeEvent, ReactNode, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClose, faEye, faSpinner, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
-import { Card } from 'kindred-paths';
-import { capitalize } from '@/utils/typography';
+import { Card, capitalize } from 'kindred-paths';
 import { InputHeader } from '@/components/editor/input-header';
 
 export function AiSuggestionsInput<Suggestion>(props: {

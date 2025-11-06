@@ -1,5 +1,4 @@
-import { RuleVariant, ruleVariants } from 'kindred-paths';
-import { capitalize } from '@/utils/typography';
+import { RuleVariant, ruleVariants, capitalize } from 'kindred-paths';
 import { InputHeader } from '@/components/editor/input-header';
 
 export const CardRulesInput = (props: {

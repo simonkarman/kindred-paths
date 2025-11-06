@@ -8,6 +8,7 @@ import { renderService } from './services/render-service';
 import { setsRouter } from './routes/sets';
 import { collectionRouter } from './routes/collection';
 import { configuration } from './configuration';
+import { organizeRouter } from './routes/organize';
 
 export const app = express();
 app.use(express.json());
@@ -19,6 +20,7 @@ app.use('/set', setsRouter);
 app.use('/', renderRouter);
 app.use('/suggest', suggestionsRouter);
 app.use('/', maintenanceRouter);
+app.use('/organize', organizeRouter);
 app.use('/collection', collectionRouter);
 
 // Start server only if not in test mode

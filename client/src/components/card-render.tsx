@@ -1,23 +1,26 @@
 import { serverUrl } from '@/utils/server';
-import { Card as _Card, SerializedCard } from 'kindred-paths';
+import { Card, SerializedCard } from 'kindred-paths';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 
-export function CardRender({ serializedCard, forceRender, hoverControls = false, quality, scale, hideBorder }: {
+export function CardRender({ serializedCard, faceIndex, shown = true, forceRender, hoverControls = false, quality, scale, hideBorder }: {
   serializedCard: SerializedCard,
+  faceIndex: number,
+  shown?: boolean,
   forceRender?: boolean,
   hoverControls?: boolean,
   quality?: number,
   scale?: number,
   hideBorder?: boolean,
 }) {
-  const card = new _Card(serializedCard);
+  const card = new Card(serializedCard);
+  const cardFace = card.faces[faceIndex];
 
   const hoverStyle = "flex w-full rounded-2xl text-3xl hover:text-6xl items-center justify-center absolute inset-0 cursor-pointer z-5 transition-all duration-150 group-hover:bg-black/20 hover:bg-black/40 text-white/0 group-hover:text-white";
   const hoverAreaSizes: [string, string] = card.isToken
     ? (
-      card.rules.length === 0
+      cardFace.rules.length === 0
         ? ['bottom-[20%]', 'top-[80%]']
         : ['bottom-[37%]', 'top-[63%]']
       )
@@ -28,9 +31,9 @@ export function CardRender({ serializedCard, forceRender, hoverControls = false,
       {/* Image */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        alt={card.name + " image"}
-        className={`aspect-[63/88] w-120 print:w-100 not-print:rounded-2xl border ${hideBorder ? 'bg-transparent border-transparent' : 'bg-zinc-400'}`}
-        src={`${serverUrl}/render/${card.id}?force=${forceRender ? 'true' : 'false'}&scale=${scale || 1}&quality=${quality || 100}`}
+        alt={cardFace.name + " image"}
+        className={`${shown ? 'scale-x-100' : 'scale-x-0'} transition-all aspect-[63/88] w-120 print:w-100 not-print:rounded-2xl border ${hideBorder ? 'bg-transparent border-transparent' : 'bg-zinc-400'}`}
+        src={`${serverUrl}/render/${card.id}/${faceIndex}?force=${forceRender ? 'true' : 'false'}&scale=${scale || 1}&quality=${quality || 100}`}
       />
       {hoverControls && <>
         {/* Clickable areas */}
@@ -38,7 +41,7 @@ export function CardRender({ serializedCard, forceRender, hoverControls = false,
         <Link
           href={`/card/${card.id}`}
           className={`${hoverAreaSizes[0]} ${hoverStyle}`}
-          title={`View ${card.name}`}
+          title={`View ${cardFace.name}`}
         >
           <FontAwesomeIcon icon={faEye} />
         </Link>
@@ -47,7 +50,7 @@ export function CardRender({ serializedCard, forceRender, hoverControls = false,
         <Link
           href={`/edit/${card.id}?t=/`}
           className={`${hoverAreaSizes[1]} ${hoverStyle}`}
-          title={`Edit ${card.name}`}
+          title={`Edit ${cardFace.name}`}
         >
           <FontAwesomeIcon icon={faPenToSquare} />
         </Link>

@@ -1,7 +1,13 @@
 import { singleCharacterToTypographyColor, typographyColors } from '@/utils/typography';
 
 export function ManaCost(props: { cost: string }) {
-  return props.cost.replace(/[^a-z0-9]/g, '').split('').map((c, index) => {
+  const colors = props.cost.replace(/[^a-z0-9]/g, '').split('');
+
+  if (colors.length === 0) {
+    return <span className="text-gray-400">No mana cost</span>;
+  }
+
+  return colors.map((c, index) => {
     const backgroundColor = typographyColors.get(singleCharacterToTypographyColor(c))!;
     return (
       <span

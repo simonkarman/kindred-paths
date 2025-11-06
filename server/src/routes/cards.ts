@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { SerializedCardSchema } from 'kindred-paths';
+import { SerializedCard, SerializedCardSchema } from 'kindred-paths';
 import { cardService } from '../services/card-service';
 
 export const cardsRouter = Router();
@@ -9,7 +9,7 @@ cardsRouter.get('/', async (req, res) => {
   if (cards.length === 0) {
     res.status(404).json({ error: 'No cards found' });
   } else {
-    res.json(cards);
+    res.json(cards.sort((a: SerializedCard, b: SerializedCard) => a.id.localeCompare(b.id)));
   }
 });
 
@@ -32,22 +32,12 @@ cardsRouter.delete('/:id', async (req, res) => {
       return;
     }
     card.tags['deleted'] = true;
-    await cardService.saveCard(card);
+    await cardService.saveCard(card.toJson());
     res.status(204).send();
   } catch (error) {
     console.error(`Error deleting card ${cardId}:`, error);
     res.status(500).json({ error: `Failed to delete card with ID ${cardId}` });
   }
-});
-
-cardsRouter.get('/:id/explain', async (req, res) => {
-  const card = await cardService.getCardById(req.params.id);
-  if (!card) {
-    res.status(404).json({ error: `Card with ID ${req.params.id} not found` });
-    return;
-  }
-  res.setHeader('Content-Type', 'text/plain');
-  res.send(card.explain());
 });
 
 cardsRouter.post('/', async (req, res) => {

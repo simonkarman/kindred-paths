@@ -75,13 +75,6 @@ export class BlueprintValidator {
   ): CriteriaFailureReason[] {
     const card = new Card(_card);
     const reasons: Omit<CriteriaFailureReason, 'source'>[] = [];
-    if (blueprint.name) {
-      blueprint.name.forEach(c => {
-        if (!checkStringCriteria(c, card.name)) {
-          reasons.push({ location: 'name', criteria: c, value: card.name });
-        }
-      });
-    }
     if (blueprint.rarity) {
       blueprint.rarity.forEach(c => {
         if (!checkStringCriteria(c, card.rarity)) {
@@ -96,120 +89,130 @@ export class BlueprintValidator {
         }
       });
     }
-    if (blueprint.supertype) {
-      blueprint.supertype.forEach(c => {
-        if (c.key === 'optional/present' || c.key === 'optional/absent') {
-          if (!checkOptionalCriteria(c, card.supertype)) {
-            reasons.push({ location: 'supertype', criteria: c, value: card.supertype });
+    // TODO: for now only checking the first face for single-faced cards, improve later if needed
+    card.faces.slice(1).forEach(cardFace => {
+      if (blueprint.name) {
+        blueprint.name.forEach(c => {
+          if (!checkStringCriteria(c, cardFace.name)) {
+            reasons.push({ location: 'name', criteria: c, value: cardFace.name });
           }
-        } else {
-          if (!checkStringCriteria(c, card.supertype ?? '')) {
-            reasons.push({ location: 'supertype', criteria: c, value: card.supertype });
+        });
+      }
+      if (blueprint.supertype) {
+        blueprint.supertype.forEach(c => {
+          if (c.key === 'optional/present' || c.key === 'optional/absent') {
+            if (!checkOptionalCriteria(c, cardFace.supertype)) {
+              reasons.push({ location: 'supertype', criteria: c, value: cardFace.supertype });
+            }
+          } else {
+            if (!checkStringCriteria(c, cardFace.supertype ?? '')) {
+              reasons.push({ location: 'supertype', criteria: c, value: cardFace.supertype });
+            }
           }
-        }
-      });
-    }
-    if (blueprint.tokenColors) {
-      blueprint.tokenColors.forEach(c => {
-        if (!checkStringArrayCriteria(c, card.tokenColors)) {
-          reasons.push({ location: 'tokenColors', criteria: c, value: card.tokenColors });
-        }
-      });
-    }
-    if (blueprint.types) {
-      blueprint.types.forEach(c => {
-        if (!checkStringArrayCriteria(c, card.types)) {
-          reasons.push({ location: 'types', criteria: c, value: card.types });
-        }
-      });
-    }
-    if (blueprint.subtypes) {
-      blueprint.subtypes.forEach(c => {
-        if (!checkStringArrayCriteria(c, card.subtypes)) {
-          reasons.push({ location: 'subtypes', criteria: c, value: card.subtypes });
-        }
-      });
-    }
-    if (blueprint.manaValue) {
-      const manaValue = card.manaValue();
-      blueprint.manaValue.forEach(c => {
-        if (!checkNumberCriteria(c, manaValue)) {
-          reasons.push({ location: 'manaValue', criteria: c, value: manaValue });
-        }
-      });
-    }
-    if (blueprint.color) {
-      const color = card.color();
-      blueprint.color.forEach(c => {
-        if (!checkStringArrayCriteria(c, color)) {
-          reasons.push({ location: 'color', criteria: c, value: color });
-        }
-      });
-    }
-    if (blueprint.colorIdentity) {
-      const colorIdentity = card.colorIdentity();
-      blueprint.colorIdentity.forEach(c => {
-        if (!checkStringArrayCriteria(c, colorIdentity)) {
-          reasons.push({ location: 'colorIdentity', criteria: c, value: colorIdentity });
-        }
-      });
-    }
-    if (blueprint.rules) {
-      const rulesText = card.rules.filter(r => r.variant === 'keyword' || r.variant === 'ability').map(r => r.content).join('\n').toLowerCase();
-      blueprint.rules.forEach(c => {
-        if (!checkStringCriteria(c, rulesText)) {
-          reasons.push({ location: 'rules', criteria: c, value: rulesText });
-        }
-      });
-    }
-    if (blueprint.pt) {
-      blueprint.pt.forEach(c => {
-        if (!checkOptionalCriteria(c, card.pt)) {
-          reasons.push({ location: 'pt', criteria: c, value: card.pt });
-        }
-      });
-    }
-    if (blueprint.power) {
-      blueprint.power.forEach(c => {
-        if (!checkNumberCriteria(c, card.pt?.power)) {
-          reasons.push({ location: 'pt.power', criteria: c, value: card.pt?.power });
-        }
-      });
-    }
-    if (blueprint.toughness) {
-      blueprint.toughness.forEach(c => {
-        if (!checkNumberCriteria(c, card.pt?.toughness)) {
-          reasons.push({ location: 'pt.toughness', criteria: c, value: card.pt?.toughness });
-        }
-      });
-    }
-    if (blueprint.powerToughnessDiff) {
-      const powerToughnessDiff = (card.pt?.power ?? 0) - (card.pt?.toughness ?? 0);
-      blueprint.powerToughnessDiff.forEach(c => {
-        if (!checkNumberCriteria(c, powerToughnessDiff)) {
-          reasons.push({ location: 'pt.power - pt.toughness', criteria: c, value: powerToughnessDiff });
-        }
-      });
-    }
-    if (blueprint.loyalty) {
-      blueprint.loyalty.forEach(c => {
-        if (!checkNumberCriteria(c, card.loyalty)) {
-          reasons.push({ location: 'loyalty', criteria: c, value: card.loyalty });
-        }
-      });
-    }
+        });
+      }
+      if (blueprint.tokenColors) {
+        blueprint.tokenColors.forEach(c => {
+          if (!checkStringArrayCriteria(c, cardFace.tokenColors)) {
+            reasons.push({ location: 'tokenColors', criteria: c, value: cardFace.tokenColors });
+          }
+        });
+      }
+      if (blueprint.types) {
+        blueprint.types.forEach(c => {
+          if (!checkStringArrayCriteria(c, cardFace.types)) {
+            reasons.push({ location: 'types', criteria: c, value: cardFace.types });
+          }
+        });
+      }
+      if (blueprint.subtypes) {
+        blueprint.subtypes.forEach(c => {
+          if (!checkStringArrayCriteria(c, cardFace.subtypes)) {
+            reasons.push({ location: 'subtypes', criteria: c, value: cardFace.subtypes });
+          }
+        });
+      }
+      if (blueprint.manaValue) {
+        const manaValue = cardFace.manaValue();
+        blueprint.manaValue.forEach(c => {
+          if (!checkNumberCriteria(c, manaValue)) {
+            reasons.push({ location: 'manaValue', criteria: c, value: manaValue });
+          }
+        });
+      }
+      if (blueprint.color) {
+        const color = cardFace.color();
+        blueprint.color.forEach(c => {
+          if (!checkStringArrayCriteria(c, color)) {
+            reasons.push({ location: 'color', criteria: c, value: color });
+          }
+        });
+      }
+      if (blueprint.colorIdentity) {
+        const colorIdentity = cardFace.colorIdentity();
+        blueprint.colorIdentity.forEach(c => {
+          if (!checkStringArrayCriteria(c, colorIdentity)) {
+            reasons.push({ location: 'colorIdentity', criteria: c, value: colorIdentity });
+          }
+        });
+      }
+      if (blueprint.rules) {
+        const rulesText = cardFace.rules.filter(r => r.variant === 'keyword' || r.variant === 'ability').map(r => r.content).join('\n').toLowerCase();
+        blueprint.rules.forEach(c => {
+          if (!checkStringCriteria(c, rulesText)) {
+            reasons.push({ location: 'rules', criteria: c, value: rulesText });
+          }
+        });
+      }
+      if (blueprint.pt) {
+        blueprint.pt.forEach(c => {
+          if (!checkOptionalCriteria(c, cardFace.pt)) {
+            reasons.push({ location: 'pt', criteria: c, value: cardFace.pt });
+          }
+        });
+      }
+      if (blueprint.power) {
+        blueprint.power.forEach(c => {
+          if (!checkNumberCriteria(c, cardFace.pt?.power)) {
+            reasons.push({ location: 'pt.power', criteria: c, value: cardFace.pt?.power });
+          }
+        });
+      }
+      if (blueprint.toughness) {
+        blueprint.toughness.forEach(c => {
+          if (!checkNumberCriteria(c, cardFace.pt?.toughness)) {
+            reasons.push({ location: 'pt.toughness', criteria: c, value: cardFace.pt?.toughness });
+          }
+        });
+      }
+      if (blueprint.powerToughnessDiff) {
+        const powerToughnessDiff = (cardFace.pt?.power ?? 0) - (cardFace.pt?.toughness ?? 0);
+        blueprint.powerToughnessDiff.forEach(c => {
+          if (!checkNumberCriteria(c, powerToughnessDiff)) {
+            reasons.push({ location: 'pt.power - pt.toughness', criteria: c, value: powerToughnessDiff });
+          }
+        });
+      }
+      if (blueprint.loyalty) {
+        blueprint.loyalty.forEach(c => {
+          if (!checkNumberCriteria(c, cardFace.loyalty)) {
+            reasons.push({ location: 'loyalty', criteria: c, value: cardFace.loyalty });
+          }
+        });
+      }
+      if (blueprint.creatableTokens) {
+        const tokens = cardFace.getCreatableTokenNames();
+        blueprint.creatableTokens.forEach(c => {
+          if (!checkStringArrayCriteria(c, tokens)) {
+            reasons.push({ location: 'creatableTokens', criteria: c, value: tokens });
+          }
+        });
+      }
+    });
     if (blueprint.tags) {
       blueprint.tags.forEach(c => {
         if (!checkObjectCriteria(c, card.tags)) {
           reasons.push({ location: 'tags', criteria: c, value: card.tags });
-        }
-      });
-    }
-    if (blueprint.creatableTokens) {
-      const tokens = card.getCreatableTokenNames();
-      blueprint.creatableTokens.forEach(c => {
-        if (!checkStringArrayCriteria(c, tokens)) {
-          reasons.push({ location: 'creatableTokens', criteria: c, value: tokens });
         }
       });
     }

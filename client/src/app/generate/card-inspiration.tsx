@@ -3,9 +3,9 @@
 import { CardEditor } from '@/components/editor/card-editor';
 import { getCardSampleGeneratorById, getCardSamples, previewCard } from '@/utils/server';
 import { useCallback, useEffect, useState } from 'react';
-import { SerializedCard } from 'kindred-paths';
+import { SerializedCard, filterCardsBasedOnSearch } from 'kindred-paths';
 import SearchBar from '@/components/search-bar';
-import { filterCardsBasedOnSearch, useSearch } from '@/utils/use-search';
+import { useSearch } from '@/utils/use-search';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleDown, faAngleUp, faArrowLeft, faPlus, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 
@@ -37,7 +37,7 @@ export function CardInspiration(props: { previousCardGenerators: { generatorId: 
     setPrompt(previousCardGenerators.find(g => g.generatorId === generatorId)?.prompt || 'unknown prompt');
 
     const nextCardImages = await Promise.all(generator.samples.map(async (suggestion) => {
-      const blob = await previewCard(suggestion);
+      const blob = await previewCard(suggestion, 0);
       return URL.createObjectURL(blob);
     }));
     setCardImages(nextCardImages);
@@ -91,7 +91,7 @@ export function CardInspiration(props: { previousCardGenerators: { generatorId: 
       });
 
       const nextCardImages = await Promise.all(samples.map(async (suggestion) => {
-        const blob = await previewCard(suggestion);
+        const blob = await previewCard(suggestion, 0);
         return URL.createObjectURL(blob);
       }));
       setCardImages((i) => [...i, ...nextCardImages]);

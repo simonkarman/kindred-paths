@@ -1,5 +1,5 @@
 import React, { RefObject, useCallback, useEffect, useState } from 'react';
-import { cardColors, cardRarities, wubrg } from 'kindred-paths';
+import { cardColors, cardLayouts, cardRarities, wubrg } from 'kindred-paths';
 
 interface ColorCodedSearchInputProps {
   ref: RefObject<HTMLDivElement | null>;
@@ -30,6 +30,7 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
 
     // Define keys and their corresponding values
     const validations: { keys: string[], value?: readonly string[] | RegExp | RegExp[] }[] = [
+      { keys: ['layout', 'l'], value: cardLayouts },
       { keys: ['type', 't'] },
       { keys: ['rarity', 'r'], value: [...cardRarities, ...cardRarities.map(r => r[0])] },
       { keys: ['color', 'c'], value: [...cardColors, ...wubrg, 'colorless', 'c', 'multicolor', 'm'] },

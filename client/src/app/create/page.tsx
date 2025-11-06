@@ -4,7 +4,7 @@ import { Card } from 'kindred-paths';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: `KPA: Create Card`,
+    title: `Create Card - Kindred Paths`,
   }
 }
 

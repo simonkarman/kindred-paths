@@ -684,7 +684,7 @@ export function SetEditor(props: SetEditorProps) {
                     return (
                       <SetEditorCell
                         key={archetype.name}
-                        cardName={card ? `(#${card.collectorNumber}) ${card.name}` : 'Unknown Card'}
+                        cardName={card ? `(#${card.collectorNumber}) ${card.faces.map(f => f.name).join(' // ')}` : 'Unknown Card'}
                         status={status}
                         statusReasons={reasons ?? []}
                         onMarkSkip={() => markSkip(archetypeIndex, cycleKey)}
@@ -696,7 +696,7 @@ export function SetEditor(props: SetEditorProps) {
                         hasBlueprint={hasSlotBlueprint}
                         onEditBlueprint={() => onEditSlotBlueprint(archetypeIndex, cycleKey)}
                         onRemoveBlueprint={() => onRemoveSlotBlueprint(archetypeIndex, cycleKey)}
-                        cardPreviewUrl={cardRef === undefined ? undefined : `${serverUrl}/render/${cardRef.cardId}`}
+                        cardPreviewUrl={cardRef === undefined ? undefined : `${serverUrl}/render/${cardRef.cardId}/0`}
                       />
                     );
                   })}

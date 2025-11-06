@@ -1,5 +1,4 @@
-import { CardType, cardTypes, TokenCardType, tokenCardTypes } from 'kindred-paths';
-import { capitalize } from '@/utils/typography';
+import { capitalize, CardType, cardTypes, TokenCardType, tokenCardTypes } from 'kindred-paths';
 import { InputHeader } from '@/components/editor/input-header';
 import { useState } from 'react';
 

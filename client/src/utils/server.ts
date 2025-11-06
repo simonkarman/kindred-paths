@@ -14,10 +14,7 @@ export async function getCards(): Promise<SerializedCard[]> {
       .array(SerializedCardSchema)
       .parse(responseJson)
       // Don't show reference or deleted cards
-      .filter(card => card.tags === undefined || (
-        card.tags['reference'] === undefined &&
-        card.tags['deleted'] !== true
-      ));
+      .filter(card => card.tags === undefined || card.tags['deleted'] !== true);
   } catch (error: unknown) {
     console.error('Error getting cards:', error);
     return [];
@@ -84,8 +81,8 @@ export async function updateCard(serializedCard: SerializedCard): Promise<Serial
   return responseJson;
 }
 
-export async function previewCard(serializedCard: SerializedCard) {
-  const response = await fetch(`${serverUrl}/preview`, {
+export async function previewCard(serializedCard: SerializedCard, faceIndex: number) {
+  const response = await fetch(`${serverUrl}/preview/${faceIndex}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -99,19 +96,34 @@ export async function previewCard(serializedCard: SerializedCard) {
   return await response.blob();
 }
 
+export type CollectorNumberInfo = { collectorNumber: number, cardId: string, faces: { name: string, renderedTypeLine: string }[] };
+export async function getOrganizeCollectorNumbers(searchQuery: string): Promise<CollectorNumberInfo[]> {
+  const response = await fetch(`${serverUrl}/organize/collector-numbers`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: searchQuery }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch next collector numbers');
+  }
+  return await response.json();
+}
+
 export interface NameSuggestion {
   name: string;
   reason: string;
 }
 
 export async function getNameSuggestions(card: Card): Promise<NameSuggestion[]> {
-  const cardJson = card.toJson();
   const response = await fetch(`${serverUrl}/suggest/name`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(cardJson),
+    body: JSON.stringify(card.toJson()),
   });
 
   if (!response.ok) {
@@ -126,13 +138,12 @@ export interface SettingSuggestion {
 }
 
 export async function getArtSettingSuggestions(card: Card): Promise<SettingSuggestion[]> {
-  const cardJson = card.toJson();
   const response = await fetch(`${serverUrl}/suggest/art-setting`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(cardJson),
+    body: JSON.stringify(card.toJson()),
   });
 
   if (!response.ok) {
@@ -147,13 +158,12 @@ export interface ArtSuggestion {
 }
 
 export async function getArtSuggestions(card: Card): Promise<ArtSuggestion[]> {
-  const cardJson = card.toJson();
   const response = await fetch(`${serverUrl}/suggest/art`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(cardJson),
+    body: JSON.stringify(card.toJson()),
   });
 
   if (!response.ok) {

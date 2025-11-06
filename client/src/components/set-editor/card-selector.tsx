@@ -1,8 +1,8 @@
-import { BlueprintValidator, SerializableBlueprintWithSource, SerializedCard } from 'kindred-paths';
+import { BlueprintValidator, filterCardsBasedOnSearch, SerializableBlueprintWithSource, SerializedCard } from 'kindred-paths';
 import { useState } from 'react';
 import { CardRender } from '@/components/card-render';
 import SearchBar from '@/components/search-bar';
-import { filterCardsBasedOnSearch, useSearch } from '@/utils/use-search';
+import { useSearch } from '@/utils/use-search';
 
 type CardSelectorProps = {
   cards: SerializedCard[],
@@ -68,7 +68,7 @@ export function CardSelector(props: CardSelectorProps) {
           className="cursor-pointer rounded-2xl border-3 border-transparent hover:border-black transition-colors"
           onClick={() => props.onSelect(card)}
         >
-          <CardRender serializedCard={card} hideBorder />
+          <CardRender serializedCard={card} faceIndex={0} hideBorder />
         </button>
       </div>)}
     </div>

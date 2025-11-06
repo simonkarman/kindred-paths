@@ -1,4 +1,4 @@
-import { capitalize } from '@/utils/typography';
+import { capitalize } from 'kindred-paths';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPencilSquare, faSquare } from '@fortawesome/free-solid-svg-icons';
 

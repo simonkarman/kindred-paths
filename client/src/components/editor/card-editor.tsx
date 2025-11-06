@@ -15,10 +15,10 @@ import {
   SerializedCard,
   SerializedCardSchema,
   tryParseLoyaltyAbility,
+  capitalize, SerializedCardFace,
 } from 'kindred-paths';
 import { useEffect, useState } from 'react';
 import { createCard, updateCard } from '@/utils/server';
-import { capitalize } from '@/utils/typography';
 import { CardNameInput } from '@/components/editor/card-name-input';
 import { CardTypesInput } from '@/components/editor/card-types-input';
 import { CardPTInput } from '@/components/editor/card-pt-input';
@@ -51,22 +51,26 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
   const deck = useDeckNameFromSearch();
 
   // Properties State
-  const [name, setName] = useState(start.name);
   const [rarity, setRarity] = useState<CardRarity>(start.rarity);
   const [isToken, setIsToken] = useState(start.isToken);
-  const [supertype, setSupertype] = useState<CardSuperType>(start.supertype);
-  const [tokenColors, setTokenColors] = useState<CardColor[] | undefined>(start.tokenColors);
-  const [subtypes, setSubtypes] = useState<string[] | undefined>(start.subtypes);
-  const [types, setTypes] = useState<[CardType, ...CardType[]]>(start.types);
-  const [manaCost, setManaCost] = useState<{ [type in Mana]?: number }>(start.manaCost);
-  const [rules, setRules] = useState<{ variant: RuleVariant, content: string }[] | undefined>(start.rules);
-  const [pt, setPt] = useState<{ power: number, toughness: number } | undefined>(start.pt);
-  const [loyalty, setLoyalty] = useState<number | undefined>(start.loyalty);
   const [collectorNumber, setCollectorNumber] = useState(start.collectorNumber);
-  const [art, setArt] = useState<string | undefined>(start.art);
   const [tags, setTags] = useState<{ [key: string]: string | number | boolean } | undefined>(
     start.tags as { [key: string]: string | number | boolean } | undefined
   );
+
+  // Face 0
+  const faceIndex = 0; // TODO: handle other faces for double-faced cards
+  const startFace = start.faces[faceIndex] as SerializedCardFace;
+  const [name, setName] = useState(startFace.name);
+  const [supertype, setSupertype] = useState<CardSuperType>(startFace.supertype);
+  const [tokenColors, setTokenColors] = useState<CardColor[] | undefined>(startFace.tokenColors);
+  const [subtypes, setSubtypes] = useState<string[] | undefined>(startFace.subtypes);
+  const [types, setTypes] = useState<[CardType, ...CardType[]]>(startFace.types);
+  const [manaCost, setManaCost] = useState<{ [type in Mana]?: number } | undefined>(startFace.manaCost);
+  const [rules, setRules] = useState<{ variant: RuleVariant, content: string }[] | undefined>(startFace.rules);
+  const [pt, setPt] = useState<{ power: number, toughness: number } | undefined>(startFace.pt);
+  const [loyalty, setLoyalty] = useState<number | undefined>(startFace.loyalty);
+  const [art, setArt] = useState<string | undefined>(startFace.art);
 
   // If isToken changes
   useEffect(() => {
@@ -81,7 +85,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
   // If card has basic supertype or is a token, reset mana cost
   useEffect(() => {
     if (supertype === 'basic' || isToken) {
-      setManaCost({});
+      setManaCost(undefined);
     }
   }, [supertype, isToken]);
 
@@ -96,7 +100,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
     // Update info on planeswalker
     if (types.includes('planeswalker')) {
       setSupertype('legendary');
-      setLoyalty(start.loyalty ?? 3);
+      setLoyalty(startFace.loyalty ?? 3);
       if (!name.includes(',')) {
         setName(name + ', Planeswalker');
       }
@@ -112,12 +116,12 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
       setSubtypes(undefined);
     } else if (subtypes === undefined) {
       // for any other type, if subtypes is undefined, set it to the start value
-      setSubtypes(start.subtypes);
+      setSubtypes(startFace.subtypes);
     }
 
     // reset pt if it no longer applies
     if (canHavePT && !pt) {
-      setPt(start.pt ?? { power: 2, toughness: 2 });
+      setPt(startFace.pt ?? { power: 2, toughness: 2 });
     } else if (!canHavePT && pt) {
       setPt(undefined);
     }
@@ -137,23 +141,31 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
 
   const serializedCard: SerializedCard = {
     id: start.id,
-    name,
     rarity,
     isToken,
-    supertype,
-    tokenColors,
-    types,
-    subtypes: subtypes ?? [],
-    manaCost,
-    rules,
-    pt,
-    loyalty,
     collectorNumber,
-    art,
     tags,
+    layout: start.layout,
+    faces: start.faces.map((face, i) => {
+      if (i !== faceIndex) {
+        return face;
+      }
+      return {
+        name,
+        tokenColors,
+        manaCost,
+        types,
+        subtypes: subtypes ?? [],
+        supertype,
+        rules,
+        pt,
+        loyalty,
+        art,
+      };
+    }),
   };
   const isChanged = isCreate || (JSON.stringify(serializedCard) !== JSON.stringify(start));
-  const canSave = isChanged && (!isCreate || name !== Card.new().name);
+  const canSave = isChanged && (!isCreate || name !== Card.new().faces[faceIndex].name);
 
   // Form State
   const [isLoading, setIsLoading] = useState(false);
@@ -278,44 +290,50 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
 
   return (<>
     <div className={`mx-auto max-w-[1400px] space-y-6 ${isChanged ? 'border-2 border-orange-200' : 'border border-zinc-200'} bg-white rounded-lg p-6 shadow-md`}>
-      <h2 className="text-2xl font-bold mt-2 mb-4 text-center">{isCreate ? 'Create Card' : `Update ${serializedCard.name}`}</h2>
+      <h2 className="text-2xl font-bold mt-2 mb-4 text-center">
+        {
+          isCreate
+            ? 'Create Card'
+            : `Update ${serializedCard.faces.map(f => f.name).join(' // ')}`
+        }
+      </h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4 border-r border-zinc-100 pr-6">
           <CardTypesInput types={types} setTypes={setTypes} getErrorMessage={() => getErrorMessage('types')}
                           isToken={isToken} setIsToken={setIsToken}
-                          isChanged={!isCreate && JSON.stringify({ isToken: start.isToken, types: start.types }) !== JSON.stringify({ isToken, types })}
+                          isChanged={!isCreate && JSON.stringify({ isToken: start.isToken, types: startFace.types }) !== JSON.stringify({ isToken, types })}
                           revert={() => {
-                            setTypes(start.types);
+                            setTypes(startFace.types);
                             setIsToken(start.isToken);
                           }}
           />
           {types.some(s => ['land', 'creature', 'artifact', 'enchantment'].includes(s))
             && <CardSubtypesInput subtypes={subtypes} setSubtypes={setSubtypes} getErrorMessage={() => getErrorMessage('subtypes')}
                                   types={types}
-                                  isChanged={!isCreate && JSON.stringify(start.subtypes) !== JSON.stringify(subtypes)} revert={() => setSubtypes(start.subtypes)}
+                                  isChanged={!isCreate && JSON.stringify(startFace.subtypes) !== JSON.stringify(subtypes)} revert={() => setSubtypes(startFace.subtypes)}
             />}
           {pt
             && <CardPTInput pt={pt} setPt={setPt} getErrorMessage={() => getErrorMessage('pt')}
-                            isChanged={!isCreate && start.pt !== undefined && JSON.stringify(start.pt) !== JSON.stringify(pt)} revert={() => setPt(start.pt)}
+                            isChanged={!isCreate && startFace.pt !== undefined && JSON.stringify(startFace.pt) !== JSON.stringify(pt)} revert={() => setPt(startFace.pt)}
             />}
           {loyalty
             && <CardLoyaltyInput loyalty={loyalty} setLoyalty={setLoyalty} getErrorMessage={() => getErrorMessage('loyalty')}
-                                 isChanged={!isCreate && start.loyalty !== undefined && JSON.stringify(start.loyalty) !== JSON.stringify(loyalty)} revert={() => setLoyalty(start.loyalty)}
+                                 isChanged={!isCreate && startFace.loyalty !== undefined && JSON.stringify(startFace.loyalty) !== JSON.stringify(loyalty)} revert={() => setLoyalty(startFace.loyalty)}
             />}
           {(supertype !== 'basic' && !isToken)
             && <CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}
                                   getErrorMessage={() => getErrorMessage('manaCost')}
-                                  isChanged={!isCreate && JSON.stringify(start.manaCost) !== JSON.stringify(manaCost)} revert={() => setManaCost(start.manaCost)}
+                                  isChanged={!isCreate && JSON.stringify(startFace.manaCost) !== JSON.stringify(manaCost)} revert={() => setManaCost(startFace.manaCost)}
             />}
           {tokenColors !== undefined
             && <CardTokenColorsInput tokenColors={tokenColors} setTokenColors={setTokenColors} getErrorMessage={() => getErrorMessage('tokenColors')}
-                                     isChanged={!isCreate && start.tokenColors !== undefined && JSON.stringify(start.tokenColors) !== JSON.stringify(tokenColors)} revert={() => setTokenColors(start.tokenColors)}
+                                     isChanged={!isCreate && startFace.tokenColors !== undefined && JSON.stringify(startFace.tokenColors) !== JSON.stringify(tokenColors)} revert={() => setTokenColors(startFace.tokenColors)}
             />}
           <CardRulesInput rules={rules} setRules={setRules} getErrorMessage={() => getErrorMessage('rules')}
-                          isChanged={!isCreate && JSON.stringify(start.rules) !== JSON.stringify(rules)} revert={() => setRules(start.rules)}
+                          isChanged={!isCreate && JSON.stringify(startFace.rules) !== JSON.stringify(rules)} revert={() => setRules(startFace.rules)}
           />
           <CardSupertypeInput supertype={supertype} setSupertype={setSupertype} types={types} getErrorMessage={() => getErrorMessage('supertype')}
-                              isChanged={!isCreate && JSON.stringify(start.supertype) !== JSON.stringify(supertype)} revert={() => setSupertype(start.supertype)}
+                              isChanged={!isCreate && JSON.stringify(startFace.supertype) !== JSON.stringify(supertype)} revert={() => setSupertype(startFace.supertype)}
           />
           <CardTagsInput tags={tags} setTags={setTags} getErrorMessage={() => getErrorMessage('tags')}
                          isChanged={!isCreate && JSON.stringify(start.tags) !== JSON.stringify(tags)} revert={() => setTags(start.tags as { [key: string]: string | number | boolean } | undefined)}
@@ -326,19 +344,20 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
                            isChanged={!isCreate && JSON.stringify(start.rarity) !== JSON.stringify(rarity)} revert={() => setRarity(start.rarity)}
           />
           <CardNameInput name={name} setName={setName} getErrorMessage={() => getErrorMessage('name')} card={card}
-                         isChanged={!isCreate && JSON.stringify(start.name) !== JSON.stringify(name)} revert={() => setName(start.name)}
+                         isChanged={!isCreate && JSON.stringify(startFace.name) !== JSON.stringify(name)} revert={() => setName(startFace.name)}
           />
           {card && <p>
             <span className="text-zinc-600 text-sm italic">
-              {card.explain()}
+              {card.faces[faceIndex].explain()}
             </span>
           </p>}
           <CardCollectorNumberInput collectorNumber={collectorNumber} setCollectorNumber={setCollectorNumber}
                                     getErrorMessage={() => getErrorMessage('collectorNumber')}
                                     isChanged={!isCreate && JSON.stringify(start.collectorNumber) !== JSON.stringify(collectorNumber)} revert={() => setCollectorNumber(start.collectorNumber)}
+                                    renderedTypeLine={card?.faces[0].renderTypeLine() ?? ''} cardId={start.id}
           />
           <CardArtInput art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card}
-                        isChanged={!isCreate && JSON.stringify(start.art) !== JSON.stringify(art)} revert={() => setArt(start.art)}
+                        isChanged={!isCreate && JSON.stringify(startFace.art) !== JSON.stringify(art)} revert={() => setArt(startFace.art)}
 
                         artSetting={getStringTagOrEmptyString("setting")} setArtSetting={setArtSetting}
                         artSettingIsChanged={!isCreate && JSON.stringify(start.tags?.setting) !== JSON.stringify(tags?.["setting"])} revertArtSetting={() => setArtSetting(start.tags?.setting)}
@@ -361,7 +380,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
               </li>
             )}
           </ul>
-          {card && errors.length === 0 && !validationError && <CardPreview card={card} />}
+          {card && errors.length === 0 && !validationError && <CardPreview card={card} faceIndex={faceIndex} />}
         </div>
       </div>
 

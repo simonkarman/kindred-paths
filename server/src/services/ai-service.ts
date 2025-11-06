@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import { Card, CardArtPromptCreator, SerializedCard, SerializedCardSchema } from 'kindred-paths';
+import { Card, CardArtPromptCreator, CardFace, SerializedCard, SerializedCardSchema } from 'kindred-paths';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { Leonardo } from '@leonardo-ai/sdk';
 import { z } from 'zod';
@@ -9,6 +9,12 @@ import { CardGenerator } from './generator/card-generator';
 import { configuration } from '../configuration';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+function getCardInfo(card: Card) {
+  return `a card with a ${card.layout} layout with the following faces:\n` + card.faces
+    .map((f, index) => `face-${index + 1}: ${f.explain({ withoutName: true })}`)
+    .join('\n');
+}
 
 interface NameSuggestion {
   name: string;
@@ -40,7 +46,7 @@ export class AIService {
 
   async getCardNameSuggestions(cardData: SerializedCard): Promise<NameSuggestion[]> {
     const card = new Card(cardData);
-
+    const cardInfo = getCardInfo(card);
     const msg = await this.anthropic.messages.create({
       model: 'claude-opus-4-20250514',
       max_tokens: 1000,
@@ -59,6 +65,7 @@ export class AIService {
         "For creatures use names like 'Arabho, The Great', that have a given name and a title. " +
         'For noncreature permanents use names of places, objects, or concepts. That describe the context within what happens on the card could ' +
         'happen. ' +
+        'For cards with multiple faces, please suggest a name for each face. For example: "Agadeem\'s Awakening // Agadeem, the Undercrypt". ' +
         'In general, use different styles and approaches to naming the cards.',
       messages: [
         {
@@ -66,7 +73,7 @@ export class AIService {
           content: [
             {
               type: 'text',
-              text: `Could you suggest some card names for ${card.explain({ withoutName: true })}`,
+              text: `Could you suggest some card names for ${cardInfo}`,
             },
           ],
         },
@@ -90,6 +97,7 @@ export class AIService {
   async getCardArtSettingSuggestions(cardData: SerializedCard): Promise<ArtSettingSuggestion[]> {
     const card = new Card(cardData);
 
+    const cardInfo = getCardInfo(card);
     const msg = await this.anthropic.messages.create({
       model: 'claude-opus-4-20250514',
       max_tokens: 1000,
@@ -118,7 +126,7 @@ export class AIService {
           content: [
             {
               type: 'text',
-              text: `Could you suggest some card settings for ${card.explain()}`,
+              text: `Could you suggest some card settings for ${cardInfo}`,
             },
           ],
         },
@@ -139,11 +147,9 @@ export class AIService {
     }
   }
 
-  async generateCardArt(cardData: SerializedCard): Promise<ArtSuggestion[]> {
-    const card = new Card(cardData);
-
-    const prompt = this.cardArtPromptCreator.createPrompt(card);
-    const isTallCard = card.types.includes('planeswalker') || card.isToken;
+  async generateCardArt(cardFace: CardFace): Promise<ArtSuggestion[]> {
+    const prompt = this.cardArtPromptCreator.createPrompt(cardFace);
+    const isTallCard = cardFace.types.includes('planeswalker') || cardFace.card.isToken;
     const dimensions = isTallCard
       ? { width: 1024, height: 1024 }
       : { width: 1024, height: 768 };
@@ -156,7 +162,7 @@ export class AIService {
     });
 
     const generationId = result.object?.sdGenerationJob?.generationId;
-    console.info(`Card art suggestions for ${card.name} at generation: ${generationId}`);
+    console.info(`Card art suggestions for ${cardFace.name} at generation: ${generationId}`);
     console.info('Prompt:', prompt);
 
     if (!generationId) {
@@ -200,7 +206,7 @@ export class AIService {
         return;
       }
       const buffer = await imageResponse.arrayBuffer();
-      const cardId = computeCardId(card);
+      const cardId = computeCardId(cardFace.card.toJson()); // TODO: Verify multi-face cards
       const fileName = `${cardId}-${image.id}.png`;
       await fs.writeFile(`${configuration.artSuggestionsDir}/${fileName}`, Buffer.from(buffer));
       console.log(`Saved art suggestion for ${cardId} (for image ${image.id}): ${fileName}`);

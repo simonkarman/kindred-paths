@@ -110,7 +110,7 @@ export function VisualTab(props: {
                       href={props.dynamicLink ? props.dynamicLink(card) : `/card/${card.id}`}
                       className="text-sm text-amber-900 hover:text-amber-700 underline decoration-amber-300 hover:decoration-amber-500 transition-colors font-medium"
                     >
-                      {card.name}
+                      {card.faces.map(f => f.name).join(' // ')}
                     </Link>
                   </li>
                 ))}
@@ -128,17 +128,18 @@ export function VisualTab(props: {
               : 1
             )
               .map(i => (
-                <div
-                  key={card.id + i}
-                  className="print:border-3 print:bg-zinc-500"
-                >
-                  <div className="hidden print:block">
-                    <CardRender serializedCard={card} scale={0.6} quality={80} />
-                  </div>
-                  <div className="block print:hidden">
-                    <CardRender serializedCard={card} hoverControls />
-                  </div>
-                </div>
+                card.faces.map((_, faceIndex) =>
+                  <div
+                    key={card.id + i + faceIndex.toString()}
+                    className="print:border-3 print:bg-zinc-500"
+                  >
+                    <div className="hidden print:block">
+                      <CardRender faceIndex={faceIndex} serializedCard={card} scale={0.6} quality={80} />
+                    </div>
+                    <div className="block print:hidden">
+                      <CardRender faceIndex={faceIndex} serializedCard={card} hoverControls />
+                    </div>
+                  </div>)
               ))
           ))}
       </div>

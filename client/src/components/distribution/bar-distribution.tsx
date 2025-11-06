@@ -17,17 +17,17 @@ export const BarDistribution = (props: {
         {Object.entries(data)
           .sort(([a, an], [b, bn]) => sortOnValue ? (bn - an) : a.localeCompare(b))
           .map(([key, value]) => (
-            <div key={key} className="flex items-center gap-2 text-sm bg-zinc-50 rounded-l-full border-zinc-200 border">
-              <div className="block h-6 w-120 bg-zinc-200/80 rounded-full">
+            <div key={key} className="flex items-stretch gap-2 text-sm bg-slate-50 rounded-l-full border-slate-400 border">
+              <div className="block w-120 bg-slate-200/80 rounded-full">
                 <div
-                  className={`${value === 0 ? 'bg-blue-200' : 'bg-blue-500'} h-6 rounded-full flex items-center justify-end pr-3`}
+                  className={`${value === 0 ? 'bg-blue-200' : 'bg-blue-500'} h-full rounded-full flex items-center justify-end pr-3`}
                   style={{ width: `${(value / maxValue) * 75 + 25}%` }}
                 >
                   <span className="text-xs text-white font-bold">{value}x</span>
                 </div>
               </div>
               <span className="inline-block font-mono text-right whitespace-nowrap overflow-x-auto w-full pr-2 py-0.5">
-                {key.substring(0, 70)}{key.length > 70 && '...'}
+                {key}
               </span>
               {props.check && <span className="pr-2">
                 {check.includes(key) && value !== 0 && <span className="text-green-500"> ✔</span>}
