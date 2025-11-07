@@ -90,7 +90,7 @@ export class BlueprintValidator {
       });
     }
     // TODO: for now only checking the first face for single-faced cards, improve later if needed
-    card.faces.slice(1).forEach(cardFace => {
+    card.faces.slice(0, 1).forEach(cardFace => {
       if (blueprint.name) {
         blueprint.name.forEach(c => {
           if (!checkStringCriteria(c, cardFace.name)) {
