@@ -65,7 +65,7 @@ type CardSelectorSettings = {
 export function SetEditor(props: SetEditorProps) {
   const [cards, setAllCards] = useState<SerializedCard[]>(props.cards);
   const [serializableSet, setSerializableSet] = useState(props.set);
-  const [validationMessages, setValidationMessages] = useState<string[]>([]);
+  const [setValidationMessages, setSetValidationMessages] = useState<string[]>([]);
   const [blueprintEditorLocation, setBlueprintEditorLocation] = useState<SetLocation>();
   const [cardEditorSettings, setCardEditorSettings] = useState<CardEditorSettings>();
   const [cardSelectorSettings, setCardSelectorSettings] = useState<CardSelectorSettings>();
@@ -74,10 +74,12 @@ export function SetEditor(props: SetEditorProps) {
   const [draggedItem, setDraggedItem] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
 
   const set = useMemo(() => new Set(serializableSet), [serializableSet]);
-  const statusCounts = set.getSlotStats(cards);
+  const [matrixIndex, setMatrixIndex] = useState(0);
+  const matrix = set.getMatrix(matrixIndex);
+  const statusCounts = matrix.getSlotStats(cards);
 
   const saveChanges = (props?: { newCards?: SerializedCard[] }) => {
-    setValidationMessages(set.validateAndCorrect(props?.newCards ?? cards));
+    setSetValidationMessages(set.validateAndCorrect(props?.newCards ?? cards));
     const serializableSet = set.toJson();
     setSerializableSet(serializableSet);
     putSet(serializableSet).catch(e => console.error('Error saving set:', e));
@@ -94,139 +96,145 @@ export function SetEditor(props: SetEditorProps) {
     saveChanges();
   };
 
+  const addMatrix = () => {
+    set.addMatrix();
+    saveChanges();
+    setMatrixIndex(set.getMatrixCount() - 1);
+  }
+
   // Archetype
   const updateArchetypeName = (archetypeIndex: number, newName: string) => {
-    set.updateArchetypeName(archetypeIndex, newName);
+    matrix.updateArchetypeName(archetypeIndex, newName);
     saveChanges();
   };
 
   const addArchetype = () => {
     const newName = prompt('Enter new archetype name:');
     if (newName) {
-      set.addArchetype(newName);
+      matrix.addArchetype(newName);
       saveChanges();
     }
   };
 
   const deleteArchetype = (archetypeIndex: number) => {
-    if (confirm(`Are you sure you want to delete archetype "${set.getArchetype(archetypeIndex).name}"? This action cannot be undone.`)) {
-      set.deleteArchetype(archetypeIndex);
+    if (confirm(`Are you sure you want to delete archetype "${matrix.getArchetype(archetypeIndex).name}"? This action cannot be undone.`)) {
+      matrix.deleteArchetype(archetypeIndex);
       saveChanges();
     }
   };
 
   // Metadata
   const updateMetadataValue = (archetypeIndex: number, metadataKey: string, value: string) => {
-    set.updateMetadataValue(archetypeIndex, metadataKey, value);
+    matrix.updateMetadataValue(archetypeIndex, metadataKey, value);
     saveChanges();
   };
 
   const reorderMetadataKeys = (fromIndex: number, toIndex: number) => {
-    set.reorderMetadataKeys(fromIndex, toIndex);
+    matrix.reorderMetadataKeys(fromIndex, toIndex);
     saveChanges();
   };
 
   const addMetadataKey = (atIndex: number) => {
     const newKey = prompt(`Enter metadata key name:`);
     if (newKey) {
-      set.addMetadataKey(atIndex, newKey);
+      matrix.addMetadataKey(atIndex, newKey);
       saveChanges();
     }
   };
 
   const updateMetadataKey = (metadataIndex: number, newKey: string) => {
-    set.updateMetadataKey(metadataIndex, newKey);
+    matrix.updateMetadataKey(metadataIndex, newKey);
     saveChanges();
   };
 
   const deleteMetadataKey = (metadataIndex: number) => {
-    const keyToDelete = set.getMetadataKey(metadataIndex);
+    const keyToDelete = matrix.getMetadataKey(metadataIndex);
     if (confirm(`Are you sure you want to delete metadata key "${keyToDelete}"? This will also remove associated metadata from all archetypes. This action cannot be undone.`)) {
-      set.deleteMetadataKey(metadataIndex);
+      matrix.deleteMetadataKey(metadataIndex);
       saveChanges();
     }
   };
 
   // Cycle
   const reorderCycles = (fromIndex: number, toIndex: number) => {
-    set.reorderCycles(fromIndex, toIndex);
+    matrix.reorderCycles(fromIndex, toIndex);
     saveChanges();
   };
 
   const addCycle = (atIndex: number) => {
     const newKey = prompt(`Enter cycle key name:`);
     if (newKey) {
-      set.addCycle(atIndex, newKey);
+      matrix.addCycle(atIndex, newKey);
       saveChanges();
     }
   };
 
   const updateCycleKey = (cycleIndex: number, _newKey: string) => {
-    set.updateCycleKey(cycleIndex, _newKey);
+    matrix.updateCycleKey(cycleIndex, _newKey);
     saveChanges();
   };
 
   const deleteCycle = (cycleIndex: number) => {
-    const keyToDelete = set.getCycleKey(cycleIndex);
+    const keyToDelete = matrix.getCycleKey(cycleIndex);
     if (confirm(`Are you sure you want to delete cycle key "${keyToDelete}"? This will also remove associated cycle slots from all archetypes. This action cannot be undone.`)) {
-      set.deleteCycle(cycleIndex);
+      matrix.deleteCycle(cycleIndex);
       saveChanges();
     }
   };
 
   const markSkip = (archetypeIndex: number, cycleKey: string) => {
-    set.markSlotAsSkip(archetypeIndex, cycleKey);
+    matrix.markSlotAsSkip(archetypeIndex, cycleKey);
     saveChanges();
   }
 
   const markNotSkip = (archetypeIndex: number, cycleKey: string) => {
-    set.clearSlot(archetypeIndex, cycleKey);
+    matrix.clearSlot(archetypeIndex, cycleKey);
     saveChanges();
   }
 
   const unlinkCard = (archetypeIndex: number, cycleKey: string) => {
-    set.unlinkCardFromSlot(archetypeIndex, cycleKey);
+    matrix.unlinkCardFromSlot(archetypeIndex, cycleKey);
     saveChanges();
   };
 
-  const onRemoveSetBlueprint = () => {
-    set.removeSetBlueprint();
+  const onRemoveMatrixBlueprint = () => {
+    matrix.removeMatrixBlueprint();
     saveChanges();
   };
 
   const onRemoveArchetypeBlueprint = (archetypeIndex: number) => {
-    set.removeArchetypeBlueprint(archetypeIndex);
+    matrix.removeArchetypeBlueprint(archetypeIndex);
     saveChanges();
   }
 
   const onRemoveCycleBlueprint = (cycleIndex: number) => {
-    set.removeCycleBlueprint(cycleIndex);
+    matrix.removeCycleBlueprint(cycleIndex);
     saveChanges();
   };
 
   const onRemoveSlotBlueprint = (archetypeIndex: number, cycleKey: string) => {
-    set.removeSlotBlueprint(archetypeIndex, cycleKey);
+    matrix.removeSlotBlueprint(archetypeIndex, cycleKey);
     saveChanges();
   }
 
-  const onEditSetBlueprint = () => {
-    setBlueprintEditorLocation({ type: 'set' });
+  const onEditMatrixBlueprint = () => {
+    setBlueprintEditorLocation({ matrixIndex, matrixLocation: { type: 'matrix' } });
   };
 
   const onEditArchetypeBlueprint = (archetypeIndex: number) => {
-    setBlueprintEditorLocation({ type: 'archetype', index: archetypeIndex });
+    setBlueprintEditorLocation({ matrixIndex, matrixLocation: { type: 'archetype', index: archetypeIndex } });
   };
 
   const onEditCycleBlueprint = (cycleIndex: number) => {
-    setBlueprintEditorLocation({ type: 'cycle', index: cycleIndex });
+    setBlueprintEditorLocation({ matrixIndex, matrixLocation: { type: 'cycle', index: cycleIndex } });
   };
 
   const onEditSlotBlueprint = (archetypeIndex: number, cycleKey: string) => {
-    setBlueprintEditorLocation({ type: 'slot', archetypeIndex, cycleKey });
+    setBlueprintEditorLocation({ matrixIndex, matrixLocation: { type: 'slot', archetypeIndex, cycleKey } });
   };
 
   const editCard = (archetypeIndex: number, cycleKey: string) => {
-    const slot = set.getArchetype(archetypeIndex).cycles[cycleKey];
+    const slot = matrix.getArchetype(archetypeIndex).cycles[cycleKey];
     if (slot && typeof slot !== 'string' && "cardRef" in slot && slot.cardRef) {
       const card = cards.filter(c => c.id === slot.cardRef?.cardId).pop();
       if (card) {
@@ -234,7 +242,7 @@ export function SetEditor(props: SetEditorProps) {
           archetypeIndex,
           cycleKey,
           card,
-          blueprints: set.getBlueprintsForSlot(archetypeIndex, cycleKey),
+          blueprints: matrix.getBlueprintsForSlot(archetypeIndex, cycleKey),
         });
       }
     }
@@ -245,7 +253,7 @@ export function SetEditor(props: SetEditorProps) {
       archetypeIndex,
       cycleKey,
       card: Card.new(),
-      blueprints: set.getBlueprintsForSlot(archetypeIndex, cycleKey),
+      blueprints: matrix.getBlueprintsForSlot(archetypeIndex, cycleKey),
     });
   }
 
@@ -253,11 +261,11 @@ export function SetEditor(props: SetEditorProps) {
     setCardSelectorSettings({
       archetypeIndex,
       cycleKey,
-      blueprints: set.getBlueprintsForSlot(archetypeIndex, cycleKey),
+      blueprints: matrix.getBlueprintsForSlot(archetypeIndex, cycleKey),
     });
   }
 
-  const setBlueprint = set.getBlueprintAt({ type: 'set' });
+  const matrixBlueprint = matrix.getBlueprintAt({ type: 'matrix' });
 
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
@@ -270,7 +278,7 @@ export function SetEditor(props: SetEditorProps) {
                 start={cardEditorSettings.card}
                 validate={{
                   blueprints: cardEditorSettings.blueprints,
-                  metadata: set.getArchetype(cardEditorSettings.archetypeIndex).metadata,
+                  metadata: matrix.getArchetype(cardEditorSettings.archetypeIndex).metadata,
                 }}
                 onSave={(updatedCard) => {
                   const cardIndex = cards.findIndex(c => c.id === updatedCard.id);
@@ -285,7 +293,7 @@ export function SetEditor(props: SetEditorProps) {
                     ];
                   }
                   setAllCards(newCards);
-                  set.linkCardToSlot(cardEditorSettings.archetypeIndex, cardEditorSettings.cycleKey, { cardId: updatedCard.id });
+                  matrix.linkCardToSlot(cardEditorSettings.archetypeIndex, cardEditorSettings.cycleKey, { cardId: updatedCard.id });
                   saveChanges({ newCards });
                   setCardEditorSettings(undefined);
                 }}
@@ -299,11 +307,11 @@ export function SetEditor(props: SetEditorProps) {
           <Modal onClose={() => setBlueprintEditorLocation(undefined)}>
             <div className="w-full max-w-[900px] rounded-xl shadow-2xl overflow-hidden">
               <BlueprintEditor
-                title={set.getLocationName(blueprintEditorLocation)}
-                metadataKeys={set.getMetadataKeys()}
-                blueprint={set.getBlueprintAt(blueprintEditorLocation) ?? {}}
+                title={matrix.getLocationName(blueprintEditorLocation.matrixLocation)}
+                metadataKeys={matrix.getMetadataKeys()}
+                blueprint={matrix.getBlueprintAt(blueprintEditorLocation.matrixLocation) ?? {}}
                 onSave={(blueprint) => {
-                  set.setBlueprintAt(blueprintEditorLocation, blueprint);
+                  matrix.setBlueprintAt(blueprintEditorLocation?.matrixLocation, blueprint);
                   saveChanges();
                   setBlueprintEditorLocation(undefined);
                 }}
@@ -324,10 +332,10 @@ export function SetEditor(props: SetEditorProps) {
                 cards={cards}
                 validation={{
                   blueprints: cardSelectorSettings.blueprints,
-                  metadata: set.getArchetype(cardSelectorSettings.archetypeIndex).metadata,
+                  metadata: matrix.getArchetype(cardSelectorSettings.archetypeIndex).metadata,
                 }}
                 onSelect={(card) => {
-                  set.linkCardToSlot(cardSelectorSettings.archetypeIndex, cardSelectorSettings.cycleKey, { cardId: card.id });
+                  matrix.linkCardToSlot(cardSelectorSettings.archetypeIndex, cardSelectorSettings.cycleKey, { cardId: card.id });
                   saveChanges();
                   setCardSelectorSettings(undefined);
                 }}
@@ -337,88 +345,44 @@ export function SetEditor(props: SetEditorProps) {
           </Modal>
         )}
 
-        {/* Header Section */}
-        <div className="mx-auto max-w-[1600px] bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <input
-                type="text"
-                value={serializableSet.name}
-                onChange={(e) => updateSetName(e.target.value)}
-                className="field-sizing-content text-2xl font-bold border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-                placeholder="Enter set name..."
-              />
-              <p className="hidden text-xs text-slate-400 mt-1 px-2">ID: {set.getId()}</p>
-            </div>
-            <div className="flex flex-col items-end">
-              <div className="flex gap-2">
-                {serializableSet.blueprint && (
-                  <IconButton
-                    onClick={() => onRemoveSetBlueprint()}
-                    icon={faCancel}
-                    title="Clear Blueprint"
-                    variant="default"
-                  />
-                )}
-                <IconButton
-                  onClick={() => onEditSetBlueprint()}
-                  icon={faPenToSquare}
-                  title="Add/Edit Blueprint"
-                  variant="primary"
-                />
-              </div>
-            </div>
-          </div>
-
-          {setBlueprint && (
-            <div className="mb-6 px-2 text-slate-400 text-xs">
-              <div>
-                Cards in this set {explainAllCriteria(setBlueprint).map(({ field, explanations }) =>  `must have ${field} that must ${explanations.join(' and ')}`).join(' and ')}.
-              </div>
-            </div>
-          )}
-
-          {/* Status Legend */}
-          <div className="flex flex-wrap justify-end gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faExclamationTriangle} className="text-yellow-600" />
-              <span className="text-slate-700">
-                Missing: <span className="font-semibold text-slate-900">{statusCounts.missing}</span>
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faCircle} className="text-slate-400" />
-              <span className="text-slate-700">
-                Skip: <span className="font-semibold text-slate-900">{statusCounts.skip}</span>
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faTimes} className="text-red-600" />
-              <span className="text-slate-700">
-                Invalid: <span className="font-semibold text-slate-900">{statusCounts.invalid}</span>
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faCheck} className="text-green-600" />
-              <span className="text-slate-700">
-                Valid: <span className="font-semibold text-slate-900">{statusCounts.valid}</span>
-                <span className="text-slate-500 ml-1">
-                  / {statusCounts.missing + statusCounts.invalid + statusCounts.valid}
-                </span>
-              </span>
+        {/* Set Header Section */}
+        <div className="mx-auto max-w-[1600px] px-6 mb-6">
+          <div className="flex items-center justify-between gap-4 space-y-2">
+            <input
+              type="text"
+              value={serializableSet.name}
+              onChange={(e) => updateSetName(e.target.value)}
+              className="field-sizing-content text-2xl font-bold border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+              placeholder="Enter set name..."
+            />
+            <div className="flex flex-wrap gap-2 px-2">
+              {set.getMatrices().map((m, index) => <button
+                key={index}
+                className={`cursor-pointer px-3 py-1 rounded-lg text-sm font-medium border ${index === matrixIndex ? 'bg-blue-100 border-blue-300 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'}`}
+                onClick={() => setMatrixIndex(index)}
+              >
+                #{index} ({m.getArchetypeCount()}x{m.getCycleCount()})
+              </button>)}
+              <button
+                onClick={() => addMatrix()}
+                className="cursor-pointer px-3 py-1 rounded-lg text-sm font-medium border border-green-300 bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400 active:bg-green-200 transition-colors"
+              >
+                <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                Add Matrix
+              </button>
             </div>
           </div>
         </div>
 
         {/* Validation Messages */}
-        {validationMessages.length > 0 && (
+        {setValidationMessages.length > 0 && (
           <div className="mx-auto max-w-[1600px] bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
             <div className="flex gap-3">
               <FontAwesomeIcon icon={faWarning} className="text-amber-600 text-lg mt-0.5 flex-shrink-0" />
               <div className="flex-1">
                 <h3 className="font-semibold text-amber-900 mb-2">Validation Warnings</h3>
                 <ul className="space-y-1">
-                  {validationMessages.map(validationMessage => (
+                  {setValidationMessages.map(validationMessage => (
                     <li key={validationMessage} className="text-sm text-amber-800">
                       {validationMessage}
                     </li>
@@ -429,6 +393,70 @@ export function SetEditor(props: SetEditorProps) {
           </div>
         )}
 
+        {/* Matrix Header Section */}
+        <div className="mx-auto max-w-[1600px] bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
+          <div className="text-2xl font-bold">
+            #{matrixIndex} ({matrix.getArchetypeCount()}x{matrix.getCycleCount()})
+          </div>
+          <div className="flex flex-col items-end">
+            <div className="flex gap-2">
+              {matrix.getMatrixBlueprint() && (
+                <IconButton
+                  onClick={() => onRemoveMatrixBlueprint()}
+                  icon={faCancel}
+                  title="Clear Blueprint"
+                  variant="default"
+                />
+              )}
+              <IconButton
+                onClick={() => onEditMatrixBlueprint()}
+                icon={faPenToSquare}
+                title="Add/Edit Blueprint"
+                variant="primary"
+              />
+            </div>
+          </div>
+
+          {matrixBlueprint && (
+            <div className="mb-6 px-2 text-slate-400 text-xs">
+              <div>
+                Cards in this matrix {explainAllCriteria(matrixBlueprint).map(({ field, explanations }) =>  `must have ${field} that must ${explanations.join(' and ')}`).join(' and ')}.
+              </div>
+            </div>
+          )}
+
+          {/* Status Legend */}
+          <div className="flex flex-wrap justify-end gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faExclamationTriangle} className="text-yellow-600" />
+              <span className="text-slate-700">
+                  Missing: <span className="font-semibold text-slate-900">{statusCounts.missing}</span>
+                </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faCircle} className="text-slate-400" />
+              <span className="text-slate-700">
+                  Skip: <span className="font-semibold text-slate-900">{statusCounts.skip}</span>
+                </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faTimes} className="text-red-600" />
+              <span className="text-slate-700">
+                  Invalid: <span className="font-semibold text-slate-900">{statusCounts.invalid}</span>
+                </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faCheck} className="text-green-600" />
+              <span className="text-slate-700">
+                  Valid: <span className="font-semibold text-slate-900">{statusCounts.valid}</span>
+                  <span className="text-slate-500 ml-1">
+                    / {statusCounts.missing + statusCounts.invalid + statusCounts.valid}
+                  </span>
+                </span>
+            </div>
+          </div>
+        </div>
+
         {/* Main Table Container */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto overflow-y-hidden">
@@ -438,7 +466,7 @@ export function SetEditor(props: SetEditorProps) {
                 <th className="sticky z-10 left-0 bg-slate-100 text-left p-3 font-semibold text-slate-900 border-b-2 border-slate-300">
                   Archetypes
                 </th>
-                {serializableSet.archetypes.map((archetype, archetypeIndex) => (
+                {matrix.getArchetypes().map((archetype, archetypeIndex) => (
                   <th key={archetypeIndex} className="group border-b-2 border-slate-300 border-l p-2 bg-slate-50 min-w-[250px] text-center font-medium">
                     <div className="flex gap-1 px-1 items-center justify-center">
                       <div className="opacity-10 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all">
@@ -496,11 +524,11 @@ export function SetEditor(props: SetEditorProps) {
                 <th className="sticky z-10 left-0 bg-slate-100 p-3 pt-4 text-left font-semibold text-slate-900 border-b border-slate-200">
                   Metadata
                 </th>
-                <th colSpan={serializableSet.archetypes.length + 1} className="bg-slate-100" />
+                <th colSpan={matrix.getArchetypeCount() + 1} className="bg-slate-100" />
               </tr>
 
               {/* Metadata Rows */}
-              {serializableSet.metadataKeys.map((metadataKey, rowIndex) => (
+              {matrix.getMetadataKeys().map((metadataKey, rowIndex) => (
                 <tr key={rowIndex}>
                   <td
                     className={`group sticky z-10 left-0 px-3 py-2 border border-slate-200 bg-slate-50 text-slate-700 ${
@@ -551,7 +579,7 @@ export function SetEditor(props: SetEditorProps) {
                       />
                     </div>
                   </td>
-                  {serializableSet.archetypes.map((archetype, archetypeIndex) => {
+                  {matrix.getArchetypes().map((archetype, archetypeIndex) => {
                     const hasValue = metadataKey in archetype.metadata && archetype.metadata[metadataKey] !== undefined;
                     return (
                       <td key={archetypeIndex} className={`border border-slate-200 p-1 ${hasValue ? 'bg-white' : 'bg-yellow-50 hover:bg-yellow-100'}`}>
@@ -572,13 +600,13 @@ export function SetEditor(props: SetEditorProps) {
               <tr>
                 <td className="sticky z-10 left-0 p-3 bg-slate-100">
                   <button
-                    onClick={() => addMetadataKey(serializableSet.metadataKeys.length)}
+                    onClick={() => addMetadataKey(matrix.getMetadataKeyCount())}
                     className="px-4 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400 active:bg-green-200 transition-colors text-xs flex items-center gap-2"
                   >
                     <FontAwesomeIcon icon={faPlus} /> Add Metadata Key
                   </button>
                 </td>
-                <td colSpan={serializableSet.archetypes.length + 1} className="bg-slate-100" />
+                <td colSpan={matrix.getArchetypeCount() + 1} className="bg-slate-100" />
               </tr>
 
               {/* Cycles Section Header */}
@@ -586,11 +614,11 @@ export function SetEditor(props: SetEditorProps) {
                 <th className="sticky z-10 left-0 bg-slate-100 p-3 pt-8 text-left font-semibold text-slate-900 border-b border-slate-200">
                   Cycles
                 </th>
-                <th colSpan={serializableSet.archetypes.length + 1} className="bg-slate-100" />
+                <th colSpan={matrix.getArchetypeCount() + 1} className="bg-slate-100" />
               </tr>
 
               {/* Cycle Rows */}
-              {serializableSet.cycles.map(({ key: cycleKey, blueprint }, rowIndex) => (
+              {matrix.getCycles().map(({ key: cycleKey, blueprint }, rowIndex) => (
                 <tr key={rowIndex}>
                   <td
                     className={`group sticky z-10 left-0 px-3 py-2 border border-slate-200 bg-slate-50 text-slate-800 ${
@@ -663,7 +691,7 @@ export function SetEditor(props: SetEditorProps) {
                   </td>
                   {!blueprint && (
                     <td
-                      colSpan={serializableSet.archetypes.length}
+                      colSpan={matrix.getArchetypeCount()}
                       className="border border-slate-200 p-3 bg-blue-50"
                     >
                       <div className="flex gap-3 items-center">
@@ -675,9 +703,9 @@ export function SetEditor(props: SetEditorProps) {
                       </div>
                     </td>
                   )}
-                  {blueprint && serializableSet.archetypes.map((archetype, archetypeIndex) => {
-                    const { status, reasons } = set.getSlotStatus(cards, archetypeIndex, cycleKey);
-                    const slot = serializableSet.archetypes[archetypeIndex].cycles[cycleKey];
+                  {blueprint && matrix.getArchetypes().map((archetype, archetypeIndex) => {
+                    const { status, reasons } = matrix.getSlotStatus(cards, archetypeIndex, cycleKey);
+                    const slot = matrix.getArchetype(archetypeIndex).cycles[cycleKey];
                     const cardRef = slot && typeof slot !== 'string' && "cardRef" in slot ? slot.cardRef : undefined;
                     const card = cardRef ? cards.filter(c => c.id === cardRef.cardId).pop() : undefined;
                     const hasSlotBlueprint = (slot && typeof slot !== 'string' && "blueprint" in slot ? slot.blueprint : undefined) !== undefined;
@@ -707,13 +735,13 @@ export function SetEditor(props: SetEditorProps) {
               <tr>
                 <td className="sticky z-10 left-0 p-3 pb-80 bg-slate-100">
                   <button
-                    onClick={() => addCycle(serializableSet.cycles.length)}
+                    onClick={() => addCycle(matrix.getCycleCount())}
                     className="px-4 py-2 border border-green-300 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-400 active:bg-green-200 transition-colors text-xs flex items-center gap-2"
                   >
                     <FontAwesomeIcon icon={faPlus} /> Add Cycle
                   </button>
                 </td>
-                <td colSpan={serializableSet.archetypes.length + 1} className="bg-slate-100" />
+                <td colSpan={matrix.getArchetypeCount() + 1} className="bg-slate-100" />
               </tr>
               </tbody>
             </table>

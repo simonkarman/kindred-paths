@@ -26,12 +26,17 @@ const SerializableCycleSchema = z.object({
 });
 export type SerializableCycle = z.infer<typeof SerializableCycleSchema>;
 
-export const SerializableSetSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string(),
+export const SerializableMatrixSchema = z.object({
   blueprint: SerializableBlueprintSchema.optional(),
   metadataKeys: z.array(z.string()),
   cycles: z.array(SerializableCycleSchema),
   archetypes: z.array(SerializableArchetypeSchema),
+});
+export type SerializableMatrix = z.infer<typeof SerializableMatrixSchema>;
+
+export const SerializableSetSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  matrices: z.array(SerializableMatrixSchema),
 });
 export type SerializableSet = z.infer<typeof SerializableSetSchema>;

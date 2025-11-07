@@ -9,8 +9,9 @@ setsRouter.get('/', async (_, res) => {
   const sets: Set[] = await setService.getAll();
   res.json(sets.map(s => ({
     name: s.getName(),
-    validCardCount: s.getValidCardCount(),
-    cardCount: s.getTotalNonSkippedCardCount(),
+    matricesCount: s.getMatrixCount(),
+    validCardCount: s.getMatrices().map(m => m.getValidCardCount()).reduce((a, b) => a + b, 0),
+    cardCount: s.getMatrices().map(m => m.getTotalNonSkippedCardCount()).reduce((a, b) => a + b, 0),
   })));
 });
 
