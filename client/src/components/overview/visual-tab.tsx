@@ -24,6 +24,12 @@ export function VisualTab(props: {
   const [renderTokens, setRenderTokens] = useState(true);
   const [renderBasicLands, setRenderBasicLands] = useState(true);
   const [respectDeckCount, setRespectDeckCount] = useState(true);
+  const zoomLevels = [
+    'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4',
+    'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3',
+    'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2',
+  ];
+  const [zoomLevel, setZoomLevel] = useState(zoomLevels[0]);
 
   const cardGroups = [cardsWithoutTokensAndBasicLands];
   if (renderBasicLands) {
@@ -85,6 +91,19 @@ export function VisualTab(props: {
               </span>
             </label>
           )}
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-700">Zoom:</span>
+            <select
+              value={zoomLevel}
+              onChange={(e) => setZoomLevel(e.target.value)}
+              className="rounded border border-slate-300 bg-white py-1 px-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+            >
+              <option value={zoomLevels[0]}>100%</option>
+              <option value={zoomLevels[1]}>75%</option>
+              <option value={zoomLevels[2]}>50%</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -121,7 +140,7 @@ export function VisualTab(props: {
       )}
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 print:gap-0 print:grid-cols-3">
+      <div className={`grid ${zoomLevel} print:gap-0 print:grid-cols-3`}>
         {cardGroups.map((group) => group
           .map(card => n(respectDeckCount && deckName && typeof card.tags?.[`deck/${deckName}`] === 'number'
               ? card.tags[`deck/${deckName}`] as number
