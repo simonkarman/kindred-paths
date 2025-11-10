@@ -8,8 +8,8 @@ export const computeCardId = (card: SerializedCard) => {
     if (card.isToken) {
       const supertype = face.supertype ? `${face.supertype}-` : '';
       const pt = face.pt ? `${face.pt.power}-${face.pt.toughness}-` : '';
-      const colors = face.tokenColors
-        ? (face.tokenColors.length === 0 ? 'colorless-' : face.tokenColors.map(tc => `${tc}-`).join(''))
+      const colors = face.givenColors
+        ? (face.givenColors.length === 0 ? 'colorless-' : face.givenColors.map(tc => `${tc}-`).join(''))
         : 'colorless-';
       return `${supertype}${pt}${colors}${face.name}-${face.types.join('-')}-token`;
     }

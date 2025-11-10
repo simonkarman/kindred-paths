@@ -111,10 +111,10 @@ export class BlueprintValidator {
           }
         });
       }
-      if (blueprint.tokenColors) {
-        blueprint.tokenColors.forEach(c => {
-          if (!checkStringArrayCriteria(c, cardFace.tokenColors)) {
-            reasons.push({ location: 'tokenColors', criteria: c, value: cardFace.tokenColors });
+      if (blueprint.givenColors) {
+        blueprint.givenColors.forEach(c => {
+          if (!checkStringArrayCriteria(c, cardFace.givenColors)) {
+            reasons.push({ location: 'tokenColors', criteria: c, value: cardFace.givenColors });
           }
         });
       }

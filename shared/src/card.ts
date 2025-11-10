@@ -1,8 +1,9 @@
 import { SerializedCard } from './serialized-card';
-import { CardFace } from './card-face';
+import { CardFace, permanentTypes } from './card-face';
 
-export type CardLayout = 'normal' | 'modal_dfc';
-export const cardLayouts = ['normal', 'modal_dfc'] as const;
+export type CardLayout = 'normal' | 'modal_dfc' | 'adventure' | 'transform';
+export const cardLayouts = ['normal', 'modal_dfc', 'adventure', 'transform'] as const;
+export const dualRenderLayouts = ['modal_dfc', 'transform'] as const;
 
 export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
@@ -24,7 +25,7 @@ export class Card {
       tags: { status: 'concept', createdAt: new Date().toISOString().substring(0, 10) },
       faces: [{
         name: 'New Card',
-        manaCost: { colorless: 1 },
+        manaCost: { generic: 1 },
         types: ['creature'],
       }],
     };
@@ -77,7 +78,43 @@ export class Card {
         throw new Error('modal_dfc layout cards must have exactly two faces');
       }
       if (this.faces.flatMap(f => f.types).includes('planeswalker')) {
-        throw new Error('modal_dfc layout cards cannot have planeswalker types');
+        throw new Error('modal_dfc layout cards cannot be planeswalkers');
+      }
+    }
+    if (this.layout === 'adventure') {
+      if (this.faces.length !== 2) {
+        throw new Error('adventure layout cards must have exactly two faces');
+      }
+      if (this.faces.flatMap(f => f.types).includes('planeswalker')) {
+        throw new Error('adventure layout cards cannot be planeswalkers');
+      }
+      if (this.faces[1].supertype !== undefined) {
+        throw new Error('the adventure face of an adventure layout card cannot have a supertype');
+      }
+      if (permanentTypes.some(permanentType => this.faces[1].types.includes(permanentType))) {
+        throw new Error('the adventure face of an adventure layout card cannot be a permanent');
+      }
+      if (this.faces[1].manaCost === undefined) {
+        throw new Error('the adventure face of an adventure layout card must have a mana cost');
+      }
+      if (this.faces[1].subtypes.length !== 1 || this.faces[1].subtypes[0] !== 'adventure') {
+        throw new Error('the adventure face of an adventure layout card must have the subtype "Adventure"');
+      }
+      if (!permanentTypes.some(permanentType => this.faces[0].types.includes(permanentType))) {
+        throw new Error('the main face of an adventure layout card must be a permanent');
+      }
+    }
+    if (this.layout === 'transform') {
+      if (this.faces.length !== 2) {
+        throw new Error('transform layout cards must have exactly two faces');
+      }
+      const face0IsPermanent = permanentTypes.some(permanentType => this.faces[0].types.includes(permanentType));
+      const face1IsPermanent = permanentTypes.some(permanentType => this.faces[1].types.includes(permanentType));
+      if (!face0IsPermanent || !face1IsPermanent) {
+        throw new Error('both faces of a transform layout card must be permanents');
+      }
+      if (this.faces[1].manaCost !== undefined) {
+        throw new Error('the back face of a transform layout card cannot have a mana cost');
       }
     }
 

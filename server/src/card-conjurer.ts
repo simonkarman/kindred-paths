@@ -14,8 +14,24 @@ import {
 import { computePlaneswalkerData } from './utils/compute-planeswalker-data';
 
 export type FrameColor = CardColorCharacter | 'a' | 'l' | 'm';
+type PowerToughnessColor = CardColorCharacter | 'm' | 'a' | 'c';
+
 type ModalFrameColor = CardColorCharacter | `${CardColorCharacter}l` | 'l' | 'm' | 'ml' | 'a' | 'v';
-type PowerToughnessColor = CardColorCharacter | 'm' | 'a' | 'v';
+type ModalPowerToughnessColor = CardColorCharacter | 'm' | 'a' | 'v';
+
+const getFrameColors = (isLand: boolean, color: CardColor[]): [FrameColor, FrameColor | undefined] => {
+  const c = color.map(colorToShort);
+  if (c.length === 0) return [isLand ? 'l' : 'a', undefined];
+  if (c.length === 1) return [c[0], undefined];
+  if (c.length === 2) return [c[0], c[1]];
+  return ['m', undefined];
+};
+
+const getPowerToughnessColor = (isLand: boolean, color: CardColor[]): PowerToughnessColor => {
+  if (color.length === 0) return isLand ? 'c' : 'a';
+  if (color.length === 1) return colorToShort(color[0]);
+  return 'm';
+};
 
 const getModalFrameColors = (renderable: Renderable): [ModalFrameColor, ModalFrameColor | undefined] => {
   const isLand: boolean = renderable.types.includes('land');
@@ -40,7 +56,7 @@ const getModalFrameColors = (renderable: Renderable): [ModalFrameColor, ModalFra
   return [isLand ? 'ml' : 'm', undefined];
 };
 
-const getPowerToughnessColor = (color: CardColor[], isVehicle: boolean): PowerToughnessColor => {
+const getModalPowerToughnessColor = (color: CardColor[], isVehicle: boolean): ModalPowerToughnessColor => {
   if (isVehicle) {
     return 'v';
   }
@@ -49,13 +65,22 @@ const getPowerToughnessColor = (color: CardColor[], isVehicle: boolean): PowerTo
   return 'm';
 };
 
+const getModalLegendaryCrownColor = (color: ModalFrameColor): string => {
+  if (color.length > 1 && color.endsWith('l')) {
+    return color.charAt(0);
+  }
+  if (color === 'v') {
+    return 'a';
+  }
+  return color;
+};
+
 export type Renderable = {
   name: string,
   isToken?: true,
   manaCost: string,
   color: CardColor[],
   producibleColors: (CardColor | 'colorless')[],
-  predefinedColors?: CardColor[],
   typeLine: string,
   types: [CardType, ...CardType[]],
   subtypes: string[],
@@ -84,6 +109,19 @@ export type Renderable = {
     otherFrameColor: FrameColor,
     otherCardType: string,
     otherText: string,
+  },
+  adventure?: {
+    manaCost: string,
+    title: string,
+    type: string,
+    rules: string,
+    color: CardColor[],
+  },
+  transform?: {
+    side: 'front',
+    flipText: string,
+  } | {
+    side: 'back',
   }
 }
 
@@ -129,21 +167,97 @@ export class CardConjurer {
       await page.waitForLoadState('networkidle');
       await page.reload({ waitUntil: 'networkidle' });
 
+      // Disabled auto frame and auto load frame version
+      await page.selectOption('#autoFrame', 'false');
+
+      // Setup frame image functions
+      let defaultFramePack = 'M15Regular-1';
+      let legendaryCrownsFramePack = 'M15LegendCrowns';
+      let currentFramePack = defaultFramePack;
+      const addFrameImage = async (
+        image: string,
+        options?: {
+          framePack?: string,
+          mask?: string,
+          placement?: 'addToFull' | 'addToRightHalf',
+        },
+      ) => {
+        const framePack = options?.framePack ?? defaultFramePack;
+        if (currentFramePack !== framePack) {
+          await page.selectOption('#selectFramePack', framePack);
+          currentFramePack = framePack;
+          await sleep(50);
+        }
+        await page.click(`div.frame-option:has(img[src="/img/frames/${image}Thumb.png"])`);
+        if (options?.mask) {
+          await page.click(`div.mask-option:has-text("${options.mask}")`);
+        }
+        const placement = options?.placement ?? 'addToFull';
+        await page.click(`#${placement}`);
+        await sleep(50);
+      };
+
       // Compute planeswalker data (if applicable)
       const planeswalkerData = computePlaneswalkerData(renderable);
 
       // Handle the frame section
       let forceTitleColorToBlack = false;
       let isFullArt = false;
-      if (renderable.mdfc) {
+      let rulesTextHeaderTitle = 'Rules Text';
+      if (renderable.adventure) {
+        rulesTextHeaderTitle = 'Rules Text (Right)';
+        defaultFramePack = 'Adventure';
+
+        // Gather adventure information
+        const isLand = renderable.types.includes('land');
+        const colors = isLand ? renderable.producibleColors.filter(c => c !== 'colorless') : renderable.color;
+        const [left, right] = getFrameColors(isLand, colors);
+        const [adventureLeft, adventureRight] = getFrameColors(false, renderable.adventure.color);
+        const ptColor = renderable.pt ? getPowerToughnessColor(isLand, colors) : undefined;
+        const addLegendaryCrown = renderable.supertype === 'legendary';
+
+        // Add frames
+        if (!right) {
+          await addFrameImage(`adventure/regular/${left}`);
+        } else {
+          await addFrameImage('adventure/regular/m');
+          await addFrameImage(`adventure/regular/${left}`, { mask: 'Pinline' });
+          await addFrameImage(`adventure/regular/${right}`, { placement: 'addToRightHalf', mask: 'Pinline' });
+        }
+        if (isLand) {
+          await addFrameImage('adventure/regular/l', { mask: 'Title' });
+          await addFrameImage('adventure/regular/l', { mask: 'Type' });
+        }
+        if (right) {
+          await addFrameImage(`adventure/regular/${left}`, { mask: 'Rules (Right)' });
+          await addFrameImage(`adventure/regular/${right}`, { mask: 'Rules (Right, Multicolor)' });
+        }
+        await addFrameImage(`adventure/regular/${adventureLeft}`, { mask: 'Rules (Left)' });
+        if (adventureRight) {
+          await addFrameImage(`adventure/regular/${adventureRight}`, { mask: 'Rules (Left, Multicolor)' });
+        }
+        if (ptColor) {
+          await addFrameImage(`m15/regular/m15PT${ptColor.toUpperCase()}`);
+        }
+        if (addLegendaryCrown) {
+          await addFrameImage(`m15/crowns/m15Crown${left.toUpperCase()}`, { framePack: legendaryCrownsFramePack });
+          if (right) {
+            await addFrameImage(`m15/crowns/m15Crown${right.toUpperCase()}`, {
+              framePack: legendaryCrownsFramePack,
+              placement: 'addToRightHalf',
+            });
+          }
+        }
+      } else if (renderable.transform) {
+        console.info('Rendering a transform frame is not yet supported.');
+      } else if (renderable.mdfc) {
         // Select frame pack
-        await page.selectOption('#autoFrame', 'false');
         await page.selectOption('#selectFrameGroup', 'Modal-1');
-        const defaultFramePack = 'ModalRegular';
-        const legendaryCrownsFramePack = 'ModalLegendCrowns';
+        defaultFramePack = 'ModalRegular';
+        legendaryCrownsFramePack = 'ModalLegendCrowns';
         await page.selectOption('#selectFramePack', defaultFramePack);
         await sleep(50);
-        await page.click('#loadFrameVersion');
+        await page.click('#loadFrameVersion', { force: true });
 
         // Gather MDFC information
         const side = renderable.mdfc.side;
@@ -151,34 +265,10 @@ export class CardConjurer {
         const addLegendaryCrown = renderable.supertype === 'legendary';
         const overlayMulticolor = right !== undefined;
         const overlayVehicleFrame = renderable.subtypes.includes('vehicle');
-        const ptColor: PowerToughnessColor | undefined = renderable.pt
-          ? getPowerToughnessColor(renderable.color, renderable.subtypes.includes('vehicle'))
+        const ptColor: ModalPowerToughnessColor | undefined = renderable.pt
+          ? getModalPowerToughnessColor(renderable.color, renderable.subtypes.includes('vehicle'))
           : undefined;
         const otherFrameColor: FrameColor = renderable.mdfc.otherFrameColor;
-
-        let currentFramePack = defaultFramePack;
-        const addFrameImage = async (
-          image: string,
-          options?: {
-            mask?: string,
-            framePack?: string,
-            placement?: 'addToFull' | 'addToRightHalf',
-          },
-        ) => {
-          const framePack = options?.framePack ?? defaultFramePack;
-          if (currentFramePack !== framePack) {
-            await page.selectOption('#selectFramePack', framePack);
-            currentFramePack = framePack;
-            await sleep(50);
-          }
-          await page.click(`div.frame-option:has(img[src="/img/frames/${image}Thumb.png"])`);
-          if (options?.mask) {
-            await page.click(`div.mask-option:has-text("${options.mask}")`);
-          }
-          const placement = options?.placement ?? 'addToFull';
-          await page.click(`#${placement}`);
-          await sleep(50);
-        };
 
         // Add frames
         await addFrameImage(`modal/regular/${side === 'back' ? 'back/' : ''}${left}`);
@@ -195,18 +285,9 @@ export class CardConjurer {
           await addFrameImage(`modal/regular/${side === 'back' ? 'back/' : ''}v`, { mask: 'Frame' });
         }
         if (addLegendaryCrown) {
-          const legendaryCrownColorFrom = (color: ModalFrameColor): string => {
-            if (color.length > 1 && color.endsWith('l')) {
-              return color.charAt(0);
-            }
-            if (color === 'v') {
-              return 'a';
-            }
-            return color;
-          };
-          await addFrameImage(`modal/crowns/regular/${legendaryCrownColorFrom(left)}`, { framePack: legendaryCrownsFramePack });
+          await addFrameImage(`modal/crowns/regular/${getModalLegendaryCrownColor(left)}`, { framePack: legendaryCrownsFramePack });
           if (right) {
-            await addFrameImage(`modal/crowns/regular/${legendaryCrownColorFrom(right)}`, {
+            await addFrameImage(`modal/crowns/regular/${getModalLegendaryCrownColor(right)}`, {
               placement: 'addToRightHalf',
               framePack: legendaryCrownsFramePack,
             });
@@ -220,12 +301,12 @@ export class CardConjurer {
       } else if (renderable.isToken) {
         // Gather token information
         const tokenType = renderable.hasRules ? 'Regular' : 'Textless';
-        const predefinedColors = renderable.predefinedColors ?? [];
-        const numberOfColors = predefinedColors.length;
+        const tokenColors = renderable.color;
+        const numberOfColors = tokenColors.length;
         const dominantCardType = (renderable.types[renderable.types.length - 1]) as TokenCardType;
         const frameColor = numberOfColors === 0
           ? ({ 'creature': 'C', 'artifact': 'A', 'enchantment': 'C', 'land': 'L' }[dominantCardType])
-          : (numberOfColors > 1 ? 'M' : colorToShort(predefinedColors[0]).toUpperCase());
+          : (numberOfColors > 1 ? 'M' : colorToShort(tokenColors[0]).toUpperCase());
         const frameName = frameColor === 'C' ? 'frameCThumb' : `tokenFrame${frameColor}${tokenType}Thumb`;
         if (frameColor === 'W') {
           forceTitleColorToBlack = true;
@@ -233,7 +314,6 @@ export class CardConjurer {
         isFullArt = true;
 
         // Select frame pack
-        await page.selectOption('#autoFrame', 'false');
         await page.selectOption('#selectFrameGroup', 'Token-2');
         const framePack = `Token${tokenType}-1`;
         await page.selectOption('#selectFramePack', framePack);
@@ -255,7 +335,6 @@ export class CardConjurer {
         }
       } else if (planeswalkerData) {
         // Select frame pack
-        await page.selectOption('#autoFrame', 'false');
         await page.selectOption('#selectFrameGroup', 'Planeswalker');
         await page.selectOption('#selectFramePack', `Planeswalker${capitalize(planeswalkerData.size)}`);
         await sleep(50);
@@ -313,6 +392,27 @@ export class CardConjurer {
         await page.click('#text-options h4:has-text("Flipside Text")', { force: true });
         await page.fill('#text-editor', renderable.mdfc.otherText);
         await page.waitForLoadState('networkidle');
+      }
+
+      // Set Adventure text if applicable
+      if (renderable.adventure) {
+        await page.click('#text-options h4:has-text("Adventure Mana Cost")', { force: true });
+        await page.fill('#text-editor', renderable.adventure.manaCost);
+        await page.waitForLoadState('networkidle');
+
+        await page.click('#text-options h4:has-text("Adventure Title")', { force: true });
+        await page.fill('#text-editor', renderable.adventure.title);
+        await page.waitForLoadState('networkidle');
+
+        await page.click('#text-options h4:has-text("Adventure Type")', { force: true });
+        await page.fill('#text-editor', renderable.adventure.type);
+        await page.waitForLoadState('networkidle');
+
+        await sleep(100);
+        await page.click('#text-options h4:text-is("Rules Text")', { force: true });
+        await page.fill('#text-editor', renderable.adventure.rules);
+        await page.waitForLoadState('networkidle');
+        await sleep(100);
       }
 
       // Set the type line
@@ -386,7 +486,7 @@ export class CardConjurer {
         // Set the rules text
         const rules_text = renderable.rules;
         if (rules_text.length > 0) {
-          await page.click('#text-options h4:has-text("Rules Text")');
+          await page.click(`#text-options h4:has-text("${rulesTextHeaderTitle}")`);
           const text_editor_rules = page.locator('#text-editor');
           await text_editor_rules.fill(rules_text.slice(0, -1));
           await sleep(1000);
@@ -396,7 +496,7 @@ export class CardConjurer {
 
           // Adjust the rules text box size
           if (!renderable.isToken) {
-            await page.click('#text-options h4:has-text("Rules Text")');
+            await page.click(`#text-options h4:has-text("${rulesTextHeaderTitle}")`);
             await page.click('#creator-menu-text button:has-text("Edit Bounds")');
             await sleep(20);
             await page.fill('#textbox-editor-y', '1782');

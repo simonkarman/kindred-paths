@@ -3,7 +3,8 @@ import { InputHeader } from '@/components/editor/input-header';
 
 // Color mapping for mana types
 const manaTypeColors: Record<Mana, { bg: string; border: string; text: string; symbol: string }> = {
-  colorless: { bg: '', border: 'border-stone-100', text: 'text-stone-800', symbol: 'C' },
+  generic: { bg: '', border: 'border-stone-300', text: 'text-stone-800', symbol: '' },
+  colorless: { bg: '', border: 'border-stone-100', text: 'text-stone-800', symbol: '◇' },
   x: { bg: '', border: 'border-zinc-100', text: 'text-zinc-800', symbol: 'X' },
   white: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800', symbol: 'W' },
   blue: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800', symbol: 'U' },
@@ -56,7 +57,7 @@ export const CardManaCostInput = (props: {
           Switch to not have a mana cost
         </button>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-          {(['colorless', 'x', undefined, ...cardColors] as const).map((manaType, i) => {
+          {(['generic', 'colorless', 'x', ...cardColors] as const).map((manaType, i) => {
             if (manaType === undefined) {
               return <div key={i} />; // Leave empty space for undefined mana types
             }

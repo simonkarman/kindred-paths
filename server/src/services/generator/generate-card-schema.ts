@@ -6,10 +6,10 @@ export const GenerateCardSchema = z.object({
   rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']),
   isToken: z.literal(true).optional(),
   supertype: z.enum(['basic', 'legendary']).optional(),
-  tokenColors: z.array(z.enum(['white', 'blue', 'black', 'red', 'green'])).optional(),
+  givenColors: z.array(z.enum(['white', 'blue', 'black', 'red', 'green'])).optional(),
   types: z.array(z.enum(['creature', 'enchantment', 'artifact', 'instant', 'sorcery', 'land', 'planeswalker'])).nonempty(),
   subtypes: z.array(z.string().min(1)).optional(),
-  manaCost: z.record(z.enum(['white', 'blue', 'black', 'red', 'green', 'colorless', 'x']), z.number().int().nonnegative()).default({}),
+  manaCost: z.record(z.enum(['white', 'blue', 'black', 'red', 'green', 'generic', 'x']), z.number().int().nonnegative()).default({}),
   rules: z.array(z.object({
     variant: z.enum(['keyword', 'ability', 'flavor']),
     content: z.string().min(1),

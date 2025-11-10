@@ -66,16 +66,17 @@ test('creature card', () => {
   const serializedCreatureCard: SerializedCard = {
     id: 'creature',
     isToken: undefined,
+    layout: 'normal',
     rarity: 'rare',
     collectorNumber: 1,
     tags: { 'test': true },
     faces: [{
       name: 'Sam, The Great',
-      tokenColors: undefined,
+      givenColors: undefined,
       supertype: undefined,
       types: ['creature'],
       subtypes: ['human', 'warrior'],
-      manaCost: { x: 2, colorless: 2, white: 1, blue: 0 },
+      manaCost: { x: 2, generic: 2, white: 1, blue: 0 },
       rules: [
         {
           variant: 'card-type-reminder',
@@ -132,9 +133,10 @@ test('token card', () => {
     id: '821-1-1-white-mouse-token',
     'rarity': 'common',
     'isToken': true,
+    layout: 'normal',
     faces: [{
       'name': 'Mouse',
-      'tokenColors': [
+      'givenColors': [
         'white',
       ],
       manaCost: undefined,
@@ -181,6 +183,7 @@ test('planeswalker card', () => {
   const serializedPlaneswalkerCard: SerializedCard = {
     id: 'farock-the-damned-doctor',
     isToken: undefined,
+    layout: 'normal',
     'rarity': 'rare',
     faces: [{
       'name': 'Farock, The Damned Doctor',
@@ -190,7 +193,8 @@ test('planeswalker card', () => {
       ],
       'subtypes': [],
       'manaCost': {
-        'colorless': 1,
+        'generic': 1,
+        'colorless': 3,
         'black': 2,
       },
       'rules': [
@@ -222,7 +226,7 @@ test('planeswalker card', () => {
       'loyalty': 3,
       art: undefined,
       pt: undefined,
-      tokenColors: undefined,
+      givenColors: undefined,
     }],
     'collectorNumber': 822,
     tags: {},
@@ -231,8 +235,8 @@ test('planeswalker card', () => {
   expect(planeswalkerCard.toJson()).toStrictEqual(serializedPlaneswalkerCard);
 
   const frontFace = planeswalkerCard.faces[0];
-  expect(frontFace.manaValue()).toBe(3);
-  expect(frontFace.renderManaCost()).toBe('{1}{b}{b}');
+  expect(frontFace.manaValue()).toBe(6);
+  expect(frontFace.renderManaCost()).toBe('{1}{c}{c}{c}{b}{b}');
   expect(frontFace.renderTypeLine()).toBe('Legendary Planeswalker — Farock');
   expect(frontFace.renderRules()).toBe('Deathtouch, lifelink\nWhen Farock enters, you gain 2 life.');
   expect(frontFace.loyaltyAbilities()).toStrictEqual([
@@ -243,6 +247,6 @@ test('planeswalker card', () => {
   expect(frontFace.color()).toStrictEqual(['black']);
   expect(frontFace.colorIdentity()).toStrictEqual(['black']);
   expect(frontFace.getReferenceName()).toBe('legendary black planeswalker');
-  expect(frontFace.explain()).toBe('"Farock, The Damned Doctor" (#822) is a rare legendary black planeswalker for {1}{b}{b} mana with 3 starting loyalty, with: "deathtouch", "lifelink" and "When ~ enters, you gain 2 life." and "+1: Create a 1/1 black Zombie creature token with menace." and "-4: Deal 1 damage to any target. Create a Treasure token." and "-X: Deal 1 damage to up to X targets.".');
+  expect(frontFace.explain()).toBe('"Farock, The Damned Doctor" (#822) is a rare legendary black planeswalker for {1}{c}{c}{c}{b}{b} mana with 3 starting loyalty, with: "deathtouch", "lifelink" and "When ~ enters, you gain 2 life." and "+1: Create a 1/1 black Zombie creature token with menace." and "-4: Deal 1 damage to any target. Create a Treasure token." and "-X: Deal 1 damage to up to X targets.".');
   expect(frontFace.getCreatableTokenNames()).toStrictEqual(['1/1 black Zombie creature token with menace', 'Treasure token']);
 });

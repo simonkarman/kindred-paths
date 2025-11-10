@@ -2,8 +2,11 @@ import { z } from 'zod';
 
 export const SerializedCardFaceSchema = z.object({
   name: z.string().min(1),
-  tokenColors: z.array(z.enum(['white', 'blue', 'black', 'red', 'green'])).optional(),
-  manaCost: z.record(z.enum(['white', 'blue', 'black', 'red', 'green', 'colorless', 'x']), z.number().int().nonnegative()).default({}).optional(),
+  givenColors: z.array(z.enum(['white', 'blue', 'black', 'red', 'green'])).optional(),
+  manaCost: z.record(
+    z.enum(['white', 'blue', 'black', 'red', 'green', 'generic', 'colorless', 'x']),
+    z.number().int().nonnegative(),
+  ).default({}).optional(),
   types: z.array(z.enum(['creature', 'enchantment', 'artifact', 'instant', 'sorcery', 'land', 'planeswalker'])).nonempty(),
   subtypes: z.array(z.string().min(1)).optional(),
   supertype: z.enum(['basic', 'legendary']).optional(),

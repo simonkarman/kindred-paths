@@ -11,7 +11,7 @@ export const cardSuperTypes = [undefined, 'basic', 'legendary'] as const;
 
 export type CardType = 'enchantment' | 'artifact' | 'instant' | 'sorcery' | 'creature' | 'land' | 'planeswalker';
 export const cardTypes = ['enchantment', 'artifact', 'creature', 'land', 'instant', 'sorcery', 'planeswalker'] as const;
-export const permanentTypes = ['creature', 'enchantment', 'artifact', 'land', 'planeswalker'] as const;
+export const permanentTypes = ['enchantment', 'artifact', 'creature', 'land', 'planeswalker'] as const;
 
 export type TokenCardType = Exclude<CardType, 'instant' | 'sorcery' | 'planeswalker'>;
 export const tokenCardTypes = ['enchantment', 'artifact', 'creature', 'land'] as const;
@@ -69,7 +69,7 @@ export class CardFace {
   public readonly faceIndex: number;
 
   public readonly name: string;
-  public readonly tokenColors?: CardColor[];
+  public readonly givenColors?: CardColor[];
   public readonly manaCost?: { [type in Mana]?: number };
   public readonly types: [CardType, ...CardType[]];
   public readonly subtypes: string[];
@@ -84,7 +84,7 @@ export class CardFace {
     this.faceIndex = faceIndex;
 
     this.name = props.name;
-    this.tokenColors = props.tokenColors;
+    this.givenColors = props.givenColors;
     this.manaCost = props.manaCost;
     this.types = props.types;
     this.subtypes = props.subtypes ?? [];
@@ -98,7 +98,7 @@ export class CardFace {
   public toJson(): SerializedCardFace {
     return structuredClone({
       name: this.name,
-      tokenColors: this.tokenColors,
+      givenColors: this.givenColors,
       manaCost: this.manaCost,
       types: this.types,
       subtypes: this.subtypes,
@@ -138,17 +138,12 @@ export class CardFace {
       if (!tokenCardTypes.some(pct => this.types.includes(pct))) {
         throw new Error(`super type token must be associated with a tokenable type (${tokenCardTypes.join(', ')})`);
       }
-      if (this.tokenColors === undefined) {
-        throw new Error('super type token must have token colors defined');
-      }
       if (this.manaCost !== undefined) {
         throw new Error('token cards cannot have a mana cost');
       }
       if (this.rules.some(rule => rule.content.includes('~'))) {
         throw new Error('a token cannot reference itself, please use this creature/this artifact/etc. instead of ~ in the rules');
       }
-    } else if (this.tokenColors) {
-      throw new Error('token colors can only be defined for token cards');
     }
 
     // Check that card has at least one type
@@ -179,7 +174,10 @@ export class CardFace {
 
     // Validate instant and sorceries don't have subtypes
     if ((this.types.includes('instant') || this.types.includes('sorcery')) && this.subtypes.length > 0) {
-      throw new Error('instants and sorceries cannot have subtypes');
+      const isAdventureFace = this.faceIndex === 1 && this.card.layout === 'adventure' && this.types.length === 1 && this.subtypes[0] === 'adventure';
+      if (!isAdventureFace) {
+        throw new Error('instants and sorceries cannot have subtypes');
+      }
     }
 
     // Validate rules
@@ -308,23 +306,19 @@ export class CardFace {
       }
     }
 
-    // If there is no mana cost, ensure the card is a land or a token or the back face of a double-faced card
-    if (!this.manaCost && !this.types.includes('land') && !this.card.isToken && this.faceIndex !== 1) {
-      throw new Error('only land cards, token cards and back faces of double-faced cards can have no mana cost');
+    // If there is no mana cost, ensure the card is a land or a token card or the back face of a transform card
+    const allowNoManaCost = this.types.includes('land') || this.card.isToken || (this.card.layout === 'transform' && this.faceIndex === 1);
+    if (!this.manaCost && !allowNoManaCost) {
+      throw new Error('only land cards, token cards, and back faces of transform cards can have no mana cost');
     }
 
-    // Check transform cards (with a back face of a double-faced card that has no mana cost)
-    if (!this.manaCost && this.faceIndex === 1) {
-      // Ensure the back face is a permanent type
-      if (!this.types.some(t => permanentTypes.includes(t as typeof permanentTypes[number]))) {
-        throw new Error('the back face of a double-faced card without a mana cost must be a permanent type');
-      }
-
-      // Ensure the front face has 'transform' in the rules
-      const frontFace = this.card.faces[0];
-      if (!this.types.includes('land') && !frontFace.rules.some(rule => rule.content.toLowerCase().includes('transform'))) {
-        throw new Error('the back face of a non-land double-faced card can only have no mana cost if the front face has "transform" in the rules');
-      }
+    // Check given colors consistency
+    const allowNoGivenColors = this.types.includes('land');
+    if (this.manaCost === undefined && this.givenColors === undefined && !allowNoGivenColors) {
+      throw new Error('given colors must be provided if there is no mana cost');
+    }
+    if (this.manaCost !== undefined && this.givenColors !== undefined) {
+      throw new Error('given colors cannot be provided if there is a mana cost');
     }
   }
 
@@ -349,10 +343,13 @@ export class CardFace {
     if (this.manaCost['x'] !== undefined && this.manaCost['x'] > 0) {
       result += '{x}'.repeat(this.manaCost['x']);
     }
-    if (this.manaCost['colorless'] !== undefined && this.manaCost['colorless'] > 0) {
-      result += '{' + this.manaCost['colorless'] + '}';
+    if (this.manaCost['generic'] !== undefined && this.manaCost['generic'] > 0) {
+      result += '{' + this.manaCost['generic'] + '}';
     }
-    const colors = toOrderedColors(Object.keys(this.manaCost).filter(c => !['colorless', 'x'].includes(c)) as CardColor[]);
+    if (this.manaCost['colorless'] !== undefined && this.manaCost['colorless'] > 0) {
+      result += '{c}'.repeat(this.manaCost['colorless']);
+    }
+    const colors = toOrderedColors(Object.keys(this.manaCost).filter(c => !['generic', 'colorless', 'x'].includes(c)) as CardColor[]);
     for (const color of colors) {
       const amount = this.manaCost[color];
       if (amount !== undefined && amount > 0) {
@@ -465,15 +462,15 @@ export class CardFace {
   }
 
   public color(): CardColor[] {
-    if (this.card.isToken) {
-      return toOrderedColors(this.tokenColors ?? []);
+    if (this.manaCost === undefined) {
+      return toOrderedColors(this.givenColors ?? []);
     }
     return CardFace.colorOf(this.renderManaCost());
   }
 
   public colorIdentity(): CardColor[] {
-    if (this.card.isToken) {
-      return toOrderedColors(this.tokenColors ?? []);
+    if (this.manaCost === undefined) {
+      return toOrderedColors(this.givenColors ?? []);
     }
     const context = this.renderManaCost() + ' ' + this.rules
       .filter(v => ['keyword', 'ability'].includes(v.variant))
@@ -485,7 +482,7 @@ export class CardFace {
 
   public producibleColors(): (CardColor | 'colorless')[] {
     const context = this.rules
-      .filter(v => ['keyword', 'ability'].includes(v.variant))
+      .filter(v => ['keyword', 'ability', 'card-type-reminder'].includes(v.variant))
       .map(rule => rule.content)
       .join(' ');
 

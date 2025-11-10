@@ -448,7 +448,7 @@ export function BlueprintEditor(props: BlueprintEditorProps) {
       <CriteriaEditor {...editorPropsFor('rarity')} />
       <CriteriaEditor {...editorPropsFor('isToken')} />
       <CriteriaEditor {...editorPropsFor('supertype')} />
-      <CriteriaEditor {...editorPropsFor('tokenColors')} />
+      <CriteriaEditor {...editorPropsFor('givenColors')} />
       <CriteriaEditor {...editorPropsFor('types')} />
       <CriteriaEditor {...editorPropsFor('subtypes')} />
       <CriteriaEditor {...editorPropsFor('manaValue')} />

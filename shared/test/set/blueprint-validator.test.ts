@@ -17,7 +17,7 @@ test('blueprint validator', async () => {
         'advisor',
       ],
       'manaCost': {
-        'colorless': 1,
+        'generic': 1,
         'white': 2,
       },
       'rules': [

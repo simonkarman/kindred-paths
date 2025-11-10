@@ -31,7 +31,7 @@ import { CardCollectorNumberInput } from '@/components/editor/card-collector-num
 import { CardTagsInput } from '@/components/editor/card-tags-input';
 import { CardPreview } from '@/components/editor/card-preview';
 import { CardArtInput } from '@/components/editor/card-art-input';
-import { CardTokenColorsInput } from '@/components/editor/card-token-colors-input';
+import { CardGivenColorsInput } from '@/components/editor/card-given-colors-input';
 import { CardLoyaltyInput } from '@/components/editor/card-loyalty-input';
 import { useDeckNameFromSearch, useSetNameFromSearch } from '@/utils/use-search';
 
@@ -63,7 +63,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
   const startFace = start.faces[faceIndex] as SerializedCardFace;
   const [name, setName] = useState(startFace.name);
   const [supertype, setSupertype] = useState<CardSuperType>(startFace.supertype);
-  const [tokenColors, setTokenColors] = useState<CardColor[] | undefined>(startFace.tokenColors);
+  const [givenColors, setGivenColors] = useState<CardColor[] | undefined>(startFace.givenColors);
   const [subtypes, setSubtypes] = useState<string[] | undefined>(startFace.subtypes);
   const [types, setTypes] = useState<[CardType, ...CardType[]]>(startFace.types);
   const [manaCost, setManaCost] = useState<{ [type in Mana]?: number } | undefined>(startFace.manaCost);
@@ -72,15 +72,16 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
   const [loyalty, setLoyalty] = useState<number | undefined>(startFace.loyalty);
   const [art, setArt] = useState<string | undefined>(startFace.art);
 
-  // If isToken changes
+  // If manaCost changes
+  const hasManaCost = manaCost !== undefined;
   useEffect(() => {
     // Update tokenColors
-    if (isToken) {
-      setTokenColors(tokenColors => tokenColors ?? []);
+    if (hasManaCost) {
+      setGivenColors(undefined);
     } else {
-      setTokenColors(undefined);
+      setGivenColors(givenColors => givenColors ?? []);
     }
-  }, [isToken]);
+  }, [hasManaCost]);
 
   // If card has basic supertype or is a token, reset mana cost
   useEffect(() => {
@@ -152,7 +153,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
       }
       return {
         name,
-        tokenColors,
+        givenColors,
         manaCost,
         types,
         subtypes: subtypes ?? [],
@@ -325,9 +326,9 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
                                   getErrorMessage={() => getErrorMessage('manaCost')}
                                   isChanged={!isCreate && JSON.stringify(startFace.manaCost) !== JSON.stringify(manaCost)} revert={() => setManaCost(startFace.manaCost)}
             />}
-          {tokenColors !== undefined
-            && <CardTokenColorsInput tokenColors={tokenColors} setTokenColors={setTokenColors} getErrorMessage={() => getErrorMessage('tokenColors')}
-                                     isChanged={!isCreate && startFace.tokenColors !== undefined && JSON.stringify(startFace.tokenColors) !== JSON.stringify(tokenColors)} revert={() => setTokenColors(startFace.tokenColors)}
+          {givenColors !== undefined
+            && <CardGivenColorsInput givenColors={givenColors} setGivenColors={setGivenColors} getErrorMessage={() => getErrorMessage('givenColors')}
+                                     isChanged={!isCreate && startFace.givenColors !== undefined && JSON.stringify(startFace.givenColors) !== JSON.stringify(givenColors)} revert={() => setGivenColors(startFace.givenColors)}
             />}
           <CardRulesInput rules={rules} setRules={setRules} getErrorMessage={() => getErrorMessage('rules')}
                           isChanged={!isCreate && JSON.stringify(startFace.rules) !== JSON.stringify(rules)} revert={() => setRules(startFace.rules)}

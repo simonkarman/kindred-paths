@@ -103,6 +103,29 @@ export class RenderService {
         };
       }
     }
+    let adventure: Renderable['adventure'] = undefined;
+    if (cardFace.card.layout === 'adventure') {
+      if (cardFace.faceIndex === 1) {
+        throw new Error('adventure back faces cannot be rendered alone');
+      }
+      const adventureFace = cardFace.card.faces[1];
+      adventure = {
+        manaCost: adventureFace.renderManaCost(),
+        title: adventureFace.name,
+        type: adventureFace.renderTypeLine(),
+        rules: adventureFace.renderRules(),
+        color: adventureFace.color(),
+      };
+    }
+    let transform: Renderable['transform'] = undefined;
+    if (cardFace.card.layout === 'transform') {
+      if (cardFace.faceIndex === 0) {
+        const otherPt = cardFace.card.faces[1].pt;
+        transform = { side: 'front', flipText: otherPt ? `${otherPt.power}/${otherPt.toughness}` : '' };
+      } else {
+        transform = { side: 'back' };
+      }
+    }
 
     // Prepare renderable object
     const renderable: Renderable = {
@@ -111,7 +134,6 @@ export class RenderService {
       manaCost: cardFace.renderManaCost(),
       color: cardFace.color(),
       producibleColors: cardFace.producibleColors(),
-      predefinedColors: cardFace.tokenColors,
       typeLine: cardFace.renderTypeLine(),
       types: cardFace.types,
       subtypes: cardFace.subtypes,
@@ -129,8 +151,10 @@ export class RenderService {
       },
       rarity: cardFace.card.rarity,
       collectorNumber: cardFace.card.collectorNumber,
-      set, // TODO: Add set symbol art hash, to rerender if set symbol changes
+      set, // TODO: Add 'set-symbol art' hash, to rerender if 'set-symbol art' changes
       mdfc,
+      adventure,
+      transform,
     };
 
     // Create a unique key for the renderable object and the content of the art file

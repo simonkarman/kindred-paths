@@ -42,7 +42,7 @@ Example valid JSON objects:
   "rarity": "uncommon",
   "types": ["creature"],
   "subtypes": ["Angel"],
-  "manaCost": {"white": 3, "colorless": 2},
+  "manaCost": {"white": 3, "generic": 2},
   "rules": [
     {
       "variant": "keyword",
@@ -65,7 +65,7 @@ Example valid JSON objects:
   "supertype": "legendary",
   "types": ["planeswalker"],
   "subtypes" [],
-  "manaCost": {"blue": 2, "colorless": 2},
+  "manaCost": {"blue": 2, "generic": 2},
   "rules": [
     {
       "variant": "ability",
@@ -106,6 +106,7 @@ Make sure to align the mana cost and name with the rules you choose.`;
             supertype: validatedData.supertype,
             types: validatedData.types,
             subtypes: validatedData.subtypes ?? [],
+            givenColors: validatedData.givenColors,
             manaCost: validatedData.manaCost,
             rules: validatedData.rules ?? [],
             pt: validatedData.pt,
