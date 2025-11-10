@@ -72,16 +72,16 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
   const [loyalty, setLoyalty] = useState<number | undefined>(startFace.loyalty);
   const [art, setArt] = useState<string | undefined>(startFace.art);
 
-  // If manaCost changes
+  // Keep track of giving colors based on mana cost and land status
   const hasManaCost = manaCost !== undefined;
+  const isLand = types.includes('land');
   useEffect(() => {
-    // Update tokenColors
-    if (hasManaCost) {
+    if (hasManaCost || isLand) {
       setGivenColors(undefined);
     } else {
       setGivenColors(givenColors => givenColors ?? []);
     }
-  }, [hasManaCost]);
+  }, [hasManaCost, isLand]);
 
   // If card has basic supertype or is a token, reset mana cost
   useEffect(() => {

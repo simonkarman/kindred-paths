@@ -1,9 +1,9 @@
 import { SerializedCard } from './serialized-card';
 import { CardFace, permanentTypes } from './card-face';
 
-export type CardLayout = 'normal' | 'modal_dfc' | 'adventure' | 'transform';
-export const cardLayouts = ['normal', 'modal_dfc', 'adventure', 'transform'] as const;
-export const dualRenderLayouts = ['modal_dfc', 'transform'] as const;
+export type CardLayout = 'normal' | 'modal' | 'adventure' | 'transform';
+export const cardLayouts = ['normal', 'modal', 'adventure', 'transform'] as const;
+export const dualRenderLayouts = ['modal', 'transform'] as const;
 
 export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
@@ -73,12 +73,12 @@ export class Card {
     if (this.layout === 'normal' && this.faces.length !== 1) {
       throw new Error('normal layout cards must have exactly one face');
     }
-    if (this.layout === 'modal_dfc') {
+    if (this.layout === 'modal') {
       if (this.faces.length !== 2) {
-        throw new Error('modal_dfc layout cards must have exactly two faces');
+        throw new Error('modal layout cards must have exactly two faces');
       }
       if (this.faces.flatMap(f => f.types).includes('planeswalker')) {
-        throw new Error('modal_dfc layout cards cannot be planeswalkers');
+        throw new Error('modal layout cards cannot be planeswalkers');
       }
     }
     if (this.layout === 'adventure') {

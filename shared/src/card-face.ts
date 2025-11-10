@@ -503,6 +503,24 @@ export class CardFace {
         secondColors.forEach(c => result.add(c));
       }
     }
+
+    if (this.types.includes('land')) {
+      if (this.subtypes.includes('plains')) {
+        result.add('white');
+      }
+      if (this.subtypes.includes('island')) {
+        result.add('blue');
+      }
+      if (this.subtypes.includes('swamp')) {
+        result.add('black');
+      }
+      if (this.subtypes.includes('mountain')) {
+        result.add('red');
+      }
+      if (this.subtypes.includes('forest')) {
+        result.add('green');
+      }
+    }
     return [...result];
   }
 

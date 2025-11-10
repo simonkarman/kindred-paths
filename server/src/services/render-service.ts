@@ -70,7 +70,7 @@ export class RenderService {
 
     // Get layout info for MDFC cards
     let mdfc: Renderable['mdfc'] = undefined;
-    if (cardFace.card.layout === 'modal_dfc') {
+    if (cardFace.card.layout === 'modal') {
       const faceIndex = cardFace.card.faces.indexOf(cardFace);
       const otherFace = cardFace.card.faces[faceIndex === 0 ? 1 : 0];
       const side = faceIndex === 0 ? 'front' : 'back';

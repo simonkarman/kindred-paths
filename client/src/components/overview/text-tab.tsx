@@ -1,4 +1,4 @@
-import { Card, SerializedCard } from 'kindred-paths';
+import { capitalize, Card, SerializedCard } from 'kindred-paths';
 import Link from 'next/link';
 import { useDeckNameFromSearch } from '@/utils/use-search';
 
@@ -42,6 +42,11 @@ export function TextTab(props: { cards: SerializedCard[] }) {
                   {setInfo}
                 </span>
               </div>
+              {card.faces.length > 1 && (
+                <div className="text-xs text-slate-400">
+                  {capitalize(card.layout)} Layout
+                </div>
+              )}
               {card.faces.map(face =>
                 <p key={face.name} className="text-sm text-slate-600 leading-relaxed">
                   {face.explain({ withoutName: true })}

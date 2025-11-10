@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, getStatistics, SerializedCard } from 'kindred-paths';
+import { Card, dualRenderLayouts, getStatistics, SerializedCard } from 'kindred-paths';
 import Link from 'next/link';
 import { CardRender } from '@/components/card-render';
 import { useState } from 'react';
@@ -148,18 +148,20 @@ export function VisualTab(props: {
               : 1
             )
               .map(i => (
-                card.faces.map((_, faceIndex) =>
-                  <div
-                    key={card.id + i + faceIndex.toString()}
-                    className="print:border-3 print:bg-zinc-500"
-                  >
-                    <div className="hidden print:block">
-                      <CardRender faceIndex={faceIndex} serializedCard={card} scale={0.6} quality={80} />
+                (dualRenderLayouts.includes(card.layout as typeof dualRenderLayouts[number]) ? card.faces : card.faces.slice(0, 1))
+                  .map((_, faceIndex) =>
+                    <div
+                      key={card.id + i + faceIndex.toString()}
+                      className="print:border-3 print:bg-zinc-500"
+                    >
+                      <div className="hidden print:block">
+                        <CardRender faceIndex={faceIndex} serializedCard={card} scale={0.6} quality={80} />
+                      </div>
+                      <div className="block print:hidden">
+                        <CardRender faceIndex={faceIndex} serializedCard={card} hoverControls />
+                      </div>
                     </div>
-                    <div className="block print:hidden">
-                      <CardRender faceIndex={faceIndex} serializedCard={card} hoverControls />
-                    </div>
-                  </div>)
+                  )
               ))
           ))}
       </div>

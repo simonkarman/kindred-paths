@@ -204,6 +204,7 @@ export class CardConjurer {
       let forceTitleColorToBlack = false;
       let isFullArt = false;
       let rulesTextHeaderTitle = 'Rules Text';
+      let typeLinePrefix = '';
       if (renderable.adventure) {
         rulesTextHeaderTitle = 'Rules Text (Right)';
         defaultFramePack = 'Adventure';
@@ -249,7 +250,77 @@ export class CardConjurer {
           }
         }
       } else if (renderable.transform) {
-        console.info('Rendering a transform frame is not yet supported.');
+        await page.selectOption('#selectFrameGroup', 'DFC');
+        const isFront = renderable.transform.side === 'front';
+        defaultFramePack = isFront ? 'M15TransformFront' : 'M15TransformBackNew';
+        legendaryCrownsFramePack = 'TransformLegendCrowns';
+        const framePrefix = isFront ? 'm15/transform/regular/front' : 'm15/transform/regular/new/back';
+
+        const isLand = renderable.types.includes('land');
+        const isVehicle = renderable.subtypes.includes('vehicle');
+        const colors = isLand ? renderable.producibleColors.filter(c => c !== 'colorless') : renderable.color;
+        const [left, right] = getFrameColors(isLand, colors);
+        const ptColor = renderable.pt ? getPowerToughnessColor(isLand, colors) : undefined;
+        const addLegendaryCrown = renderable.supertype === 'legendary';
+
+        // Add frames
+        if (!right) {
+          await addFrameImage(`${framePrefix}${left.toUpperCase()}`);
+        } else {
+          if (isLand) {
+            await addFrameImage(`${framePrefix}L`);
+            await addFrameImage(`${framePrefix}${left.toUpperCase()}`, { mask: 'Rules' });
+            await addFrameImage(`${framePrefix}${right.toUpperCase()}`, { placement: 'addToRightHalf', mask: 'Rules' });
+          } else if (isVehicle) {
+            await addFrameImage(`${framePrefix}V`);
+          } else {
+            await addFrameImage(`${framePrefix}M`);
+          }
+          await addFrameImage(`${framePrefix}${left.toUpperCase()}`, { mask: 'Pinline' });
+          await addFrameImage(`${framePrefix}${right.toUpperCase()}`, { placement: 'addToRightHalf', mask: 'Pinline' });
+        }
+        if (isLand) {
+          await addFrameImage(`${framePrefix}L`, { mask: 'Title' });
+          await addFrameImage(`${framePrefix}L`, { mask: 'Type' });
+        }
+        if (ptColor) {
+          const ptPrefix = isFront
+            ? 'm15/regular/m15PT'
+            : 'm15/transform/regular/pt';
+          await addFrameImage(`${ptPrefix}${ptColor.toUpperCase()}`);
+        }
+        if (addLegendaryCrown) {
+          const legendaryFramePrefix = isFront
+            ? 'm15/transform/crowns/regular/'
+            : 'm15/transform/crowns/regular/new/';
+          await addFrameImage(
+            `${legendaryFramePrefix}${left}`,
+            { framePack: legendaryCrownsFramePack },
+          );
+          if (right) {
+            await addFrameImage(
+              `${legendaryFramePrefix}${right}`,
+              { framePack: legendaryCrownsFramePack, placement: 'addToRightHalf' },
+            );
+          }
+        }
+        // Add colors pips for back face
+        if (renderable.transform.side === 'back' && renderable.color.length >= 1 && renderable.color.length <= 3) {
+          typeLinePrefix = '{right88}';
+          const pipsPack = 'M15CIPips';
+          const pipsPrefix = 'm15/ciPips/';
+          const [a, b, c] = renderable.color.map(c => colorToShort(c));
+          await addFrameImage(`${pipsPrefix}${a}`, { framePack: pipsPack });
+          if (b) {
+            if (c) {
+              await addFrameImage(`${pipsPrefix}${b}`, { framePack: pipsPack, mask: 'Second Third' });
+              await addFrameImage(`${pipsPrefix}${c}`, { framePack: pipsPack, mask: 'Third Third' });
+            } else {
+              await addFrameImage(`${pipsPrefix}${b}`, { framePack: pipsPack, mask: 'Second Half' });
+            }
+          }
+        }
+
       } else if (renderable.mdfc) {
         // Select frame pack
         await page.selectOption('#selectFrameGroup', 'Modal-1');
@@ -418,7 +489,7 @@ export class CardConjurer {
       // Set the type line
       await page.click('#text-options h4:has-text("Type")');
       const text_editor_type_line = page.locator('#text-editor');
-      const typeLine = renderable.typeLine;
+      const typeLine = typeLinePrefix + renderable.typeLine;
       await text_editor_type_line.fill(typeLine.slice(0, -1));
       await sleep(500);
       await text_editor_type_line.focus();
@@ -521,6 +592,11 @@ export class CardConjurer {
           await page.fill('#text-editor', prefix + renderable.pt.power + '/' + renderable.pt.toughness);
           await page.waitForLoadState('networkidle');
         }
+        if (renderable.transform && renderable.transform.side === 'front') {
+          await page.click('#text-options h4:has-text("Reverse PT")');
+          await page.fill('#text-editor', renderable.transform.flipText);
+          await page.waitForLoadState('networkidle');
+        }
       }
 
       // If basic land, add the icon for the land type to the frame
@@ -595,6 +671,12 @@ export class CardConjurer {
       await page.fill('#creator-menu-bottomInfo #info-year', new Date().getFullYear().toString());
       await page.click('label:has(#enableNewCollectorStyle)');
       await page.waitForLoadState('networkidle');
+
+      // Close any open notifications
+      const notifications = page.locator('.notification-container h3');
+      for (const notification of await notifications.all()) {
+        await notification.click();
+      }
 
       // Wait in debugging mode
       if (this.isDebuggingMode) {

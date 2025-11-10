@@ -14,9 +14,10 @@ export const CardView = (props: { serializedCard: SerializedCard }) => {
   const { serializedCard } = props;
   const [forceRender, setForceRender] = useState(false);
 
-  const queryFaceIndex = z.number({ coerce: true }).min(0).max(1).safeParse(useSearchParams().get('faceIndex'));
-  const [faceIndex, setFaceIndex] = useState(queryFaceIndex.success ? queryFaceIndex.data : 0);
   const isDualRenderLayout = dualRenderLayouts.includes(serializedCard.layout as typeof dualRenderLayouts[number]);
+  const queryFaceIndex = z.number({ coerce: true }).min(0).max(1).safeParse(useSearchParams().get('faceIndex'));
+  const [_faceIndex, setFaceIndex] = useState(queryFaceIndex.success ? queryFaceIndex.data : 0);
+  const faceIndex = Math.min(isDualRenderLayout ? 1 : 0, _faceIndex);
 
   return <div className="flex lg:flex-row justify-center items-center lg:items-start flex-col gap-8">
     {/* Card Render Section */}
