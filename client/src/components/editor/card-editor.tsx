@@ -58,9 +58,9 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
     start.tags as { [key: string]: string | number | boolean } | undefined
   );
 
-  // Face 0
-  const faceIndex = 0; // TODO: handle other faces for double-faced cards
-  const startFace = start.faces[faceIndex] as SerializedCardFace;
+  // Face
+  const [faceIndex] = useState(0);
+  const startFace: SerializedCardFace = start.faces[faceIndex] ?? Card.new().faces[0];
   const [name, setName] = useState(startFace.name);
   const [supertype, setSupertype] = useState<CardSuperType>(startFace.supertype);
   const [givenColors, setGivenColors] = useState<CardColor[] | undefined>(startFace.givenColors);
