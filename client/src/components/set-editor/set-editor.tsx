@@ -252,7 +252,7 @@ export function SetEditor(props: SetEditorProps) {
     setCardEditorSettings({
       archetypeIndex,
       cycleKey,
-      card: Card.new(),
+      card: Card.new('normal'),
       blueprints: matrix.getBlueprintsForSlot(archetypeIndex, cycleKey),
     });
   }

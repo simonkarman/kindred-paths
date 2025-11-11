@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { CardRender } from '@/components/card-render';
 import { CardExplanation } from '@/components/card-explanation';
-import { dualRenderLayouts, SerializedCard } from 'kindred-paths';
+import { Layout, SerializedCard } from 'kindred-paths';
 import { useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 
@@ -14,10 +14,10 @@ export const CardView = (props: { serializedCard: SerializedCard }) => {
   const { serializedCard } = props;
   const [forceRender, setForceRender] = useState(false);
 
-  const isDualRenderLayout = dualRenderLayouts.includes(serializedCard.layout as typeof dualRenderLayouts[number]);
+  const layout = new Layout(serializedCard.layout);
   const queryFaceIndex = z.number({ coerce: true }).min(0).max(1).safeParse(useSearchParams().get('faceIndex'));
   const [_faceIndex, setFaceIndex] = useState(queryFaceIndex.success ? queryFaceIndex.data : 0);
-  const faceIndex = Math.min(isDualRenderLayout ? 1 : 0, _faceIndex);
+  const faceIndex = Math.min(layout.isDualRenderLayout() ? 1 : 0, _faceIndex);
 
   return <div className="flex lg:flex-row justify-center items-center lg:items-start flex-col gap-8">
     {/* Card Render Section */}
@@ -25,7 +25,7 @@ export const CardView = (props: { serializedCard: SerializedCard }) => {
       {/* Card Render */}
       <div className="bg-white rounded-2xl shadow-lg">
         <div className="absolute">
-          {isDualRenderLayout && <CardRender serializedCard={serializedCard} forceRender={forceRender} faceIndex={1} shown={faceIndex === 1} />}
+          {layout.isDualRenderLayout() && <CardRender serializedCard={serializedCard} forceRender={forceRender} faceIndex={1} shown={faceIndex === 1} />}
         </div>
         <CardRender serializedCard={serializedCard} forceRender={forceRender} faceIndex={0} shown={faceIndex === 0} />
       </div>
@@ -50,7 +50,7 @@ export const CardView = (props: { serializedCard: SerializedCard }) => {
         </Link>
 
         {/* Flip Card Button */}
-        {isDualRenderLayout && <div>
+        {layout.isDualRenderLayout() && <div>
           <button
             onClick={() => {
               setFaceIndex(i => (i + 1) % serializedCard.faces.length);

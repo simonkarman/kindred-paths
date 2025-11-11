@@ -70,7 +70,7 @@ export class RenderService {
 
     // Get layout info for MDFC cards
     let mdfc: Renderable['mdfc'] = undefined;
-    if (cardFace.card.layout === 'modal') {
+    if (cardFace.card.layout.id === 'modal') {
       const faceIndex = cardFace.card.faces.indexOf(cardFace);
       const otherFace = cardFace.card.faces[faceIndex === 0 ? 1 : 0];
       const side = faceIndex === 0 ? 'front' : 'back';
@@ -104,7 +104,7 @@ export class RenderService {
       }
     }
     let adventure: Renderable['adventure'] = undefined;
-    if (cardFace.card.layout === 'adventure') {
+    if (cardFace.card.layout.id === 'adventure') {
       if (cardFace.faceIndex === 1) {
         throw new Error('adventure back faces cannot be rendered alone');
       }
@@ -118,7 +118,7 @@ export class RenderService {
       };
     }
     let transform: Renderable['transform'] = undefined;
-    if (cardFace.card.layout === 'transform') {
+    if (cardFace.card.layout.id === 'transform') {
       if (cardFace.faceIndex === 0) {
         const otherPt = cardFace.card.faces[1].pt;
         transform = { side: 'front', flipText: otherPt ? `${otherPt.power}/${otherPt.toughness}` : '' };
@@ -183,7 +183,7 @@ export class RenderService {
 
     // Save the card json to the previews directory
     if (!fromCache) {
-      const previewId = `${new Date().toISOString()}-${computeCardId(card)}`;
+      const previewId = `${new Date().toISOString()}-${computeCardId(card.toJson())}`;
       const previewPath = `${configuration.previewsCacheDir}/${previewId}.json`;
       await fs.mkdir(configuration.previewsCacheDir, { recursive: true });
       await fs.writeFile(previewPath, JSON.stringify(card.toJson(), null, 2), 'utf-8');

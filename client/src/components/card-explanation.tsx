@@ -1,11 +1,10 @@
-import { capitalize, enumerate, Card, SerializedCard, dualRenderLayouts } from 'kindred-paths';
+import { capitalize, enumerate, Card, SerializedCard } from 'kindred-paths';
 import { ManaCost } from '@/components/mana-cost';
 
 export function CardExplanation({ serializedCard, activeFaceIndex }: { serializedCard: SerializedCard, activeFaceIndex: number }) {
   const card = new Card(serializedCard);
   const face0 = card.faces[0];
   const face1 = card.faces.length > 1 ? card.faces[1] : undefined;
-  const isDualRenderLayout = dualRenderLayouts.includes(serializedCard.layout as typeof dualRenderLayouts[number]);
   const creatableTokenNames = card.faces.flatMap(f => f.getCreatableTokenNames());
 
   const rarityColors = {
@@ -19,10 +18,10 @@ export function CardExplanation({ serializedCard, activeFaceIndex }: { serialize
     <div className="space-y-2">
       {card.faces.map((face, faceIndex) => <div
         key={faceIndex}
-        className={`space-y-6 my-8 transition-opacity ${isDualRenderLayout && faceIndex !== activeFaceIndex ? 'opacity-60' : ''}`}
+        className={`space-y-6 my-8 transition-opacity ${card.layout.isDualRenderLayout() && faceIndex !== activeFaceIndex ? 'opacity-60' : ''}`}
       >
         {card.faces.length > 1 && <h3 className="text-lg font-semibold text-slate-900 mb-2">
-          {isDualRenderLayout && faceIndex === activeFaceIndex && '➤ '}
+          {card.layout.isDualRenderLayout() && faceIndex === activeFaceIndex && '➤ '}
           {face.name}
         </h3>}
 
@@ -127,7 +126,7 @@ export function CardExplanation({ serializedCard, activeFaceIndex }: { serialize
       <div className="pt-6 border-t border-slate-200 space-y-3">
         <div className="flex items-start gap-3">
           <span className="text-sm font-medium text-slate-500 w-32 flex-shrink-0">Layout</span>
-          <span className="text-sm text-slate-900">{card.layout}</span>
+          <span className="text-sm text-slate-900">{capitalize(card.layout.id)}</span>
         </div>
 
         <div className="flex items-start gap-3">
@@ -143,14 +142,14 @@ export function CardExplanation({ serializedCard, activeFaceIndex }: { serialize
         </div>
 
         <div className="flex items-start gap-3">
-          <span className="text-sm font-medium text-slate-500 w-32 flex-shrink-0">Artwork{isDualRenderLayout ? ' (front)' : ''}</span>
+          <span className="text-sm font-medium text-slate-500 w-32 flex-shrink-0">Artwork{card.layout.isDualRenderLayout() ? ' (front)' : ''}</span>
           {face0.art ? (
             <span className="text-sm text-slate-900 break-all">{face0.art}</span>
           ) : (
             <span className="text-sm italic text-slate-400">Not set</span>
           )}
         </div>
-        {face1 && isDualRenderLayout && <div className="flex items-start gap-3">
+        {face1 && card.layout.isDualRenderLayout() && <div className="flex items-start gap-3">
           <span className="text-sm font-medium text-slate-500 w-32 flex-shrink-0">Artwork (back)</span>
           {face1.art ? (
             <span className="text-sm text-slate-900 break-all">{face1.art}</span>

@@ -8,6 +8,7 @@ import {
   CardSuperType,
   CardType,
   CriteriaFailureReason,
+  Layout,
   explainCriteria,
   Mana,
   RuleVariant,
@@ -59,8 +60,9 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
   );
 
   // Face
+  const layout = new Layout('normal');
   const [faceIndex] = useState(0);
-  const startFace: SerializedCardFace = start.faces[faceIndex] ?? Card.new().faces[0];
+  const startFace: SerializedCardFace = start.faces[faceIndex];
   const [name, setName] = useState(startFace.name);
   const [supertype, setSupertype] = useState<CardSuperType>(startFace.supertype);
   const [givenColors, setGivenColors] = useState<CardColor[] | undefined>(startFace.givenColors);
@@ -166,7 +168,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
     }),
   };
   const isChanged = isCreate || (JSON.stringify(serializedCard) !== JSON.stringify(start));
-  const canSave = isChanged && (!isCreate || name !== Card.new().faces[faceIndex].name);
+  const canSave = isChanged && (!isCreate || name !== layout.defaultFaces()[faceIndex].name);
 
   // Form State
   const [isLoading, setIsLoading] = useState(false);

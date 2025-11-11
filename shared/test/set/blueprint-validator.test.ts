@@ -6,6 +6,7 @@ test('blueprint validator', async () => {
   const serializedCard: SerializedCard = {
     id: 'mfy-401',
     'rarity': 'mythic',
+    layout: 'normal',
     faces: [{
       'name': 'Miffy, The Kind',
       'supertype': 'legendary',
@@ -95,7 +96,7 @@ test('blueprint validator', async () => {
   const result = validator.validate({
     metadata: exampleMetadata,
     blueprints: [exampleSetBlueprint, exampleArchetypeBlueprint, exampleCycleBlueprint],
-    card: exampleCard,
+    card: exampleCard.toJson(),
   });
   expect(result).toStrictEqual({ success: true });
 });

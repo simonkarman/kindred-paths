@@ -1,9 +1,9 @@
 import { SerializedCard } from './serialized-card';
 import { CardFace, permanentTypes } from './card-face';
+import { Layout } from './layout';
 
 export type CardLayout = 'normal' | 'modal' | 'adventure' | 'transform';
 export const cardLayouts = ['normal', 'modal', 'adventure', 'transform'] as const;
-export const dualRenderLayouts = ['modal', 'transform'] as const;
 
 export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
@@ -14,20 +14,17 @@ export class Card {
   public readonly rarity: CardRarity;
   public readonly collectorNumber: number;
   public readonly tags: { [key: string]: string | number | boolean | undefined };
-  public readonly layout: CardLayout;
+  public readonly layout: Layout;
   public readonly faces: CardFace[];
 
-  static new(): SerializedCard {
+  static new(layout: CardLayout): SerializedCard {
     return {
       id: '<new>',
+      layout: layout,
       rarity: 'common',
       collectorNumber: 1,
       tags: { status: 'concept', createdAt: new Date().toISOString().substring(0, 10) },
-      faces: [{
-        name: 'New Card',
-        manaCost: { generic: 1 },
-        types: ['creature'],
-      }],
+      faces: new Layout(layout).defaultFaces(),
     };
   }
 
@@ -37,7 +34,7 @@ export class Card {
     this.rarity = props.rarity;
     this.collectorNumber = props.collectorNumber;
     this.tags = props.tags ?? {};
-    this.layout = props.layout ?? 'normal';
+    this.layout = new Layout(props.layout);
     this.faces = props.faces.map((face, index) => new CardFace(face, this, index));
 
     this.validate();
@@ -50,7 +47,7 @@ export class Card {
       isToken: this.isToken,
       collectorNumber: this.collectorNumber,
       tags: this.tags,
-      layout: this.layout,
+      layout: this.layout.toJson(),
       faces: this.faces.map(f => f.toJson()),
     });
   }
@@ -70,10 +67,10 @@ export class Card {
     }
 
     // Check the layouts with the faces
-    if (this.layout === 'normal' && this.faces.length !== 1) {
+    if (this.layout.id === 'normal' && this.faces.length !== 1) {
       throw new Error('normal layout cards must have exactly one face');
     }
-    if (this.layout === 'modal') {
+    if (this.layout.id === 'modal') {
       if (this.faces.length !== 2) {
         throw new Error('modal layout cards must have exactly two faces');
       }
@@ -81,7 +78,7 @@ export class Card {
         throw new Error('modal layout cards cannot be planeswalkers');
       }
     }
-    if (this.layout === 'adventure') {
+    if (this.layout.id === 'adventure') {
       if (this.faces.length !== 2) {
         throw new Error('adventure layout cards must have exactly two faces');
       }
@@ -104,7 +101,7 @@ export class Card {
         throw new Error('the main face of an adventure layout card must be a permanent');
       }
     }
-    if (this.layout === 'transform') {
+    if (this.layout.id === 'transform') {
       if (this.faces.length !== 2) {
         throw new Error('transform layout cards must have exactly two faces');
       }

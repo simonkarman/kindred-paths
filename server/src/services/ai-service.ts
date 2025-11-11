@@ -221,7 +221,7 @@ export class AIService {
     samples: SerializedCard[],
   }> {
     let generatorId, prompt, createdAt, updatedAt;
-    let preexistingSamples: Card[] = [];
+    let preexistingSamples: SerializedCard[] = [];
     let iterationBudget = 3;
     const getFilePath = (generatorId: string) => {
       return `${configuration.generatorsCacheDir}/${generatorId}.json`;
@@ -250,16 +250,15 @@ export class AIService {
     const generator = new CardGenerator(this.anthropic, prompt);
     generator.prepopulateSamples(preexistingSamples);
     const samples = await generator.sample(iterationBudget);
-    const serializedSamples = samples.map(s => s.toJson());
     await fs.writeFile(getFilePath(generatorId), JSON.stringify({
       createdAt,
       updatedAt,
       prompt,
-      samples: [...preexistingSamples.map(s => s.toJson()), ...serializedSamples],
+      samples: [...preexistingSamples, ...samples],
     }, null, 2), 'utf-8');
     return {
       generatorId,
-      samples: serializedSamples,
+      samples,
     };
   }
 

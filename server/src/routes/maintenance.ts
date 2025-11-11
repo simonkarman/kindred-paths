@@ -1,35 +1,9 @@
 import { Router } from 'express';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
-import { z } from 'zod';
 import { cardService } from '../services/card-service';
 import { computeCardId } from '../utils/card-utils';
 import { configuration } from '../configuration';
-import { Card } from 'kindred-paths';
-
-export const LegacySerializedCardSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']),
-  isToken: z.literal(true).optional(),
-  supertype: z.enum(['basic', 'legendary']).optional(),
-  tokenColors: z.array(z.enum(['white', 'blue', 'black', 'red', 'green'])).optional(),
-  types: z.array(z.enum(['creature', 'enchantment', 'artifact', 'instant', 'sorcery', 'land', 'planeswalker'])).nonempty(),
-  subtypes: z.array(z.string().min(1)).optional(),
-  manaCost: z.record(z.enum(['white', 'blue', 'black', 'red', 'green', 'colorless', 'x']), z.number().int().nonnegative()).default({}),
-  rules: z.array(z.object({
-    variant: z.enum(['card-type-reminder', 'keyword', 'ability', 'inline-reminder', 'flavor']),
-    content: z.string().min(1),
-  })).optional(),
-  pt: z.object({
-    power: z.number().int().nonnegative(),
-    toughness: z.number().int().nonnegative(),
-  }).optional(),
-  loyalty: z.number().int().nonnegative().optional(),
-  collectorNumber: z.number().int().min(1),
-  art: z.string().min(5).regex(/.+\.(jpeg|jpg|png)$/i).optional(),
-  tags: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.undefined()])).optional(),
-});
 
 export const maintenanceRouter = Router();
 
@@ -40,67 +14,6 @@ maintenanceRouter.get('/health', (_, res) => {
 maintenanceRouter.post('/cleanup', async (_, res) => {
   const messages: string[] = [];
   console.info('Cleanup requested...');
-
-  // Check if any cards are using legacy serialization and transform them
-  await cardService.forEachCardFile(async (id) => {
-    const fileContent = await cardService.getCardFileContent(id);
-    let legacyCard;
-    try {
-      legacyCard = LegacySerializedCardSchema.parse(fileContent);
-    } catch {
-      return;
-    }
-
-    // Transform legacy card mana cost to new format
-    const manaCost = (legacyCard.isToken || legacyCard.supertype === 'basic' || (legacyCard.types.length === 1 && legacyCard.types[0] === 'land'))
-      ? undefined
-      : legacyCard.manaCost;
-
-    let card;
-    try {
-      console.info(`Transforming legacy serialized card ${legacyCard.id}...`);
-      console.info('From:', legacyCard);
-      const cardData = {
-        id: legacyCard.id,
-        isToken: legacyCard.isToken,
-        rarity: legacyCard.rarity,
-        collectorNumber: legacyCard.collectorNumber,
-        tags: legacyCard.tags,
-        faces: [{
-          name: legacyCard.name,
-          tokenColors: legacyCard.tokenColors,
-          manaCost,
-          types: legacyCard.types,
-          subtypes: legacyCard.subtypes,
-          supertype: legacyCard.supertype,
-          rules: legacyCard.rules,
-          pt: legacyCard.pt,
-          loyalty: legacyCard.loyalty,
-          art: legacyCard.art,
-        }],
-      };
-      console.info('To:', cardData);
-      card = new Card(cardData);
-    }
-    catch (e) {
-      console.error(
-        `\n\ncard failure ${id}:\n`,
-        e,
-        legacyCard.isToken,
-        legacyCard.supertype === 'basic',
-        legacyCard.types.length === 1,
-        legacyCard.types[0] === 'land',
-        manaCost,
-      );
-      throw e;
-    }
-
-    // If parsing succeeds, the card is in legacy format and needs to be transformed
-    const message = `transformed legacy serialized card ${legacyCard.id} to new format`;
-    messages.push(message);
-    await cardService.saveCard(card.toJson());
-    console.log(message);
-  });
 
   // Rename cards that have an ID different from the computed ID based on their name
   for (const card of await cardService.getAllCards()) {

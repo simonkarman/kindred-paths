@@ -1,10 +1,10 @@
 import { AISampleGenerator } from './ai-sample-generator';
-import { Card, getStatistics } from 'kindred-paths';
+import { Card, getStatistics, SerializedCard } from 'kindred-paths';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { GenerateCardSchema } from './generate-card-schema';
 import { renderService } from '../render-service';
 
-export class CardGenerator extends AISampleGenerator<Card> {
+export class CardGenerator extends AISampleGenerator<SerializedCard> {
   constructor(
     anthropic: Anthropic,
     prompt: string,
@@ -98,6 +98,7 @@ Make sure to align the mana cost and name with the rules you choose.`;
         return new Card({
           id: `ai-${crypto.randomUUID()}`,
           isToken: validatedData.isToken,
+          layout: 'normal',
           collectorNumber: 1,
           tags: { count: 1 },
           rarity: validatedData.rarity,
@@ -112,10 +113,10 @@ Make sure to align the mana cost and name with the rules you choose.`;
             pt: validatedData.pt,
             loyalty: validatedData.loyalty,
           }],
-        });
+        }).toJson();
       },
-      summarizer: (card: Card) => card.faces[0].explain(),
-      statistics: (samples: Card[]) => {
+      summarizer: (card: SerializedCard) => new Card(card).faces[0].explain(),
+      statistics: (samples: SerializedCard[]) => {
         const {
           totalCount, nonlandCount, landCount,
           cardColorDistribution, cardTypeDistribution,
@@ -132,7 +133,7 @@ Make sure to align the mana cost and name with the rules you choose.`;
       immediatelyAfterGenerateHook: sample => {
         // Create a preview render in parallel, to ensure the card can be shown quickly
         for (let faceIndex = 0; faceIndex < sample.faces.length; faceIndex++) {
-          renderService.generatePreview(sample.toJson(), faceIndex)
+          renderService.generatePreview(sample, faceIndex)
             .catch(e => console.error('Skip render of ai generated card, because of error:', e));
         }
       },

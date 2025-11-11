@@ -73,7 +73,7 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: s
     return new Card(_card).faces.some(cardFace => {
       const card = cardFace.card;
       const checks = [
-        check(['layout', 'l'], layoutNeedle => card.layout.startsWith(layoutNeedle)),
+        check(['layout', 'l'], layoutNeedle => card.layout.id.startsWith(layoutNeedle)),
 
         check(['type', 't'], typeNeedle => [
           ...(card.isToken ? ['token'] : []),

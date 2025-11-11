@@ -7,7 +7,7 @@ export const SerializedCardSchema = z.object({
   rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']),
   collectorNumber: z.number().int().min(1),
   tags: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.undefined()])).optional(),
-  layout: z.enum(['normal', 'modal', 'adventure', 'transform']).optional(),
+  layout: z.enum(['normal', 'modal', 'adventure', 'transform']),
   faces: z.array(SerializedCardFaceSchema).min(1).max(2),
 });
 

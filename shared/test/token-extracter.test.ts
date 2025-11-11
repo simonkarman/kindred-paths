@@ -103,6 +103,7 @@ test('token extracter', () => {
     const card = new Card({
       id: `test-card-${index}`,
       rarity: 'common',
+      layout: 'normal',
       faces: [{
         name: `Test Card ${index}`,
         types: ['creature'],

@@ -174,7 +174,10 @@ export class CardFace {
 
     // Validate instant and sorceries don't have subtypes
     if ((this.types.includes('instant') || this.types.includes('sorcery')) && this.subtypes.length > 0) {
-      const isAdventureFace = this.faceIndex === 1 && this.card.layout === 'adventure' && this.types.length === 1 && this.subtypes[0] === 'adventure';
+      const isAdventureFace = this.faceIndex === 1
+        && this.card.layout.id === 'adventure'
+        && this.types.length === 1
+        && this.subtypes[0] === 'adventure';
       if (!isAdventureFace) {
         throw new Error('instants and sorceries cannot have subtypes');
       }
@@ -307,7 +310,7 @@ export class CardFace {
     }
 
     // If there is no mana cost, ensure the card is a land or a token card or the back face of a transform card
-    const allowNoManaCost = this.types.includes('land') || this.card.isToken || (this.card.layout === 'transform' && this.faceIndex === 1);
+    const allowNoManaCost = this.types.includes('land') || this.card.isToken || (this.card.layout.id === 'transform' && this.faceIndex === 1);
     if (!this.manaCost && !allowNoManaCost) {
       throw new Error('only land cards, token cards, and back faces of transform cards can have no mana cost');
     }

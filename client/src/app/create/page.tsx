@@ -10,6 +10,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CardCreate() {
   return <>
-    <CardEditor start={Card.new()} />
+    <CardEditor start={Card.new('normal')} />
   </>;
 };
