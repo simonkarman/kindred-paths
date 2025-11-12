@@ -61,27 +61,31 @@ export class Card {
       throw new Error('card cannot have more than two faces');
     }
 
-    // If the card is a token, ensure it has only one face
-    if (this.isToken && this.faces.length !== 1) {
-      throw new Error('token cards can only have one face');
+    // If the card is a token, ensure it uses the normal layout
+    if (this.isToken && this.layout.id === 'normal') {
+      throw new Error('token cards must use the normal layout');
     }
 
-    // Check the layouts with the faces
-    if (this.layout.id === 'normal' && this.faces.length !== 1) {
-      throw new Error('normal layout cards must have exactly one face');
-    }
-    if (this.layout.id === 'modal') {
+    // Check the number of faces per layout
+    if (this.layout.isDualFaceLayout()) {
       if (this.faces.length !== 2) {
-        throw new Error('modal layout cards must have exactly two faces');
+        throw new Error(`${this.layout.id} layout cards must have exactly two faces`);
       }
+    } else {
+      if (this.faces.length !== 1) {
+        throw new Error(`${this.layout.id} layout cards must have exactly one face`);
+      }
+    }
+
+    // Modal Layout
+    if (this.layout.id === 'modal') {
       if (this.faces.flatMap(f => f.types).includes('planeswalker')) {
         throw new Error('modal layout cards cannot be planeswalkers');
       }
     }
+
+    // Adventure Layout
     if (this.layout.id === 'adventure') {
-      if (this.faces.length !== 2) {
-        throw new Error('adventure layout cards must have exactly two faces');
-      }
       if (this.faces.flatMap(f => f.types).includes('planeswalker')) {
         throw new Error('adventure layout cards cannot be planeswalkers');
       }
@@ -101,10 +105,9 @@ export class Card {
         throw new Error('the main face of an adventure layout card must be a permanent');
       }
     }
+
+    // Transform Layout
     if (this.layout.id === 'transform') {
-      if (this.faces.length !== 2) {
-        throw new Error('transform layout cards must have exactly two faces');
-      }
       const face0IsPermanent = permanentTypes.some(permanentType => this.faces[0].types.includes(permanentType));
       const face1IsPermanent = permanentTypes.some(permanentType => this.faces[1].types.includes(permanentType));
       if (!face0IsPermanent || !face1IsPermanent) {

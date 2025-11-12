@@ -1,6 +1,13 @@
 import { CardLayout } from './card';
 import { SerializedCardFace } from './serialized-card-face';
 
+export const layoutDescriptions: { [key in CardLayout]: string } = {
+  normal: 'A standard card with a single face.',
+  modal: 'A card with two faces that can be played as either one.',
+  adventure: 'A card with a main face and an adventure face that can be cast as a spell.',
+  transform: 'A card with two faces that can transform from one to the other.',
+};
+
 export class Layout {
   public readonly id: CardLayout;
 
@@ -25,12 +32,7 @@ export class Layout {
   }
 
   public description(): string {
-    return {
-      normal: 'A standard card with a single face.',
-      modal: 'A card with two faces that can be played as either one.',
-      adventure: 'A card with a main face and an adventure face that can be cast as a spell.',
-      transform: 'A card with two faces that can transform from one to the other.',
-    }[this.id];
+    return layoutDescriptions[this.id];
   }
 
   public defaultFaces(): SerializedCardFace[] {
