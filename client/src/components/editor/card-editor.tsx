@@ -35,6 +35,7 @@ import { CardArtInput } from '@/components/editor/card-art-input';
 import { CardGivenColorsInput } from '@/components/editor/card-given-colors-input';
 import { CardLoyaltyInput } from '@/components/editor/card-loyalty-input';
 import { useDeckNameFromSearch, useSetNameFromSearch } from '@/utils/use-search';
+import { CardLayoutInput } from '@/components/editor/card-layout-input';
 
 type CardEditorProps = {
   start: SerializedCard,
@@ -60,7 +61,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
   );
 
   // Face
-  const layout = new Layout('normal');
+  const [layout, setLayout] = useState(start.layout);
   const [faceIndex] = useState(0);
   const startFace: SerializedCardFace = start.faces[faceIndex];
   const [name, setName] = useState(startFace.name);
@@ -148,7 +149,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
     isToken,
     collectorNumber,
     tags,
-    layout: start.layout,
+    layout,
     faces: start.faces.map((face, i) => {
       if (i !== faceIndex) {
         return face;
@@ -168,7 +169,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
     }),
   };
   const isChanged = isCreate || (JSON.stringify(serializedCard) !== JSON.stringify(start));
-  const canSave = isChanged && (!isCreate || name !== layout.defaultFaces()[faceIndex].name);
+  const canSave = isChanged && (!isCreate || name !== new Layout(layout).defaultFaces()[faceIndex].name);
 
   // Form State
   const [isLoading, setIsLoading] = useState(false);
@@ -343,6 +344,9 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
           />
         </div>
         <div className="space-y-4 border-r border-zinc-100 pr-3">
+          <CardLayoutInput layout={layout} setLayout={setLayout} getErrorMessage={() => getErrorMessage('layout')}
+                           isChanged={!isCreate && JSON.stringify(start.layout) !== JSON.stringify(layout)} revert={() => setLayout(start.layout)}
+          />
           <CardRarityInput rarity={rarity} setRarity={setRarity} getErrorMessage={() => getErrorMessage('rarity')}
                            isChanged={!isCreate && JSON.stringify(start.rarity) !== JSON.stringify(rarity)} revert={() => setRarity(start.rarity)}
           />

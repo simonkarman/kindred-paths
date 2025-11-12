@@ -10,6 +10,7 @@ import {
 
 export const SerializableBlueprintSchema = z.object({
   name: z.array(StringCriteriaSchema),
+  layout: z.array(StringCriteriaSchema),
   rarity: z.array(StringCriteriaSchema),
   isToken: z.array(BooleanCriteriaSchema),
   supertype: z.array(z.union([OptionalCriteriaSchema, StringCriteriaSchema])),
@@ -37,6 +38,7 @@ export type BlueprintCriteriaType = 'string' | 'boolean' | 'optional' | 'string-
 export function getCriteriaTypesForSerializableBlueprintField(field: keyof SerializableBlueprint): BlueprintCriteriaType[] {
   switch (field) {
   case 'name': return ['string'];
+  case 'layout': return ['string'];
   case 'rarity': return ['string'];
   case 'isToken': return ['boolean'];
   case 'supertype': return ['optional', 'string'];

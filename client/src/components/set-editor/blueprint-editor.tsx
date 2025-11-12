@@ -445,6 +445,7 @@ export function BlueprintEditor(props: BlueprintEditorProps) {
     </div>
     <ul className="space-y-2">
       <CriteriaEditor {...editorPropsFor('name')} />
+      <CriteriaEditor {...editorPropsFor('layout')} />
       <CriteriaEditor {...editorPropsFor('rarity')} />
       <CriteriaEditor {...editorPropsFor('isToken')} />
       <CriteriaEditor {...editorPropsFor('supertype')} />
