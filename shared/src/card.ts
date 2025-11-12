@@ -62,7 +62,7 @@ export class Card {
     }
 
     // If the card is a token, ensure it uses the normal layout
-    if (this.isToken && this.layout.id === 'normal') {
+    if (this.isToken && this.layout.id !== 'normal') {
       throw new Error('token cards must use the normal layout');
     }
 
