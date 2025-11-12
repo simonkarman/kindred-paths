@@ -10,7 +10,7 @@ import {
   faExclamationTriangle,
   faPenToSquare,
   faPlus,
-  faTimes,
+  faTimes, faTrash,
   faTrashCan,
   faWarning,
 } from '@fortawesome/free-solid-svg-icons';
@@ -111,9 +111,25 @@ export function SetEditor(props: SetEditorProps) {
   };
 
   const addMatrix = () => {
-    set.addMatrix();
+    const name = prompt('Enter a new matrix name:');
+    if (name) {
+      set.addMatrix(name);
+      saveChanges();
+      setMatrixIndex(set.getMatrixCount() - 1);
+    }
+  }
+
+  const updateMatrixName = (matrixIndexToUpdate: number, newName: string) => {
+    set.getMatrix(matrixIndexToUpdate).setName(newName);
     saveChanges();
-    setMatrixIndex(set.getMatrixCount() - 1);
+  }
+
+  const removeMatrix = (matrixIndexToDelete: number) => {
+    if (confirm(`Are you sure you want to delete matrix "#${matrixIndexToDelete} ${set.getMatrix(matrixIndexToDelete).getName()}"? This action cannot be undone.`)) {
+      set.removeMatrix(matrixIndexToDelete);
+      saveChanges();
+      setMatrixIndex(Math.max(0, matrixIndexToDelete - 1));
+    }
   }
 
   // Archetype
@@ -382,7 +398,7 @@ export function SetEditor(props: SetEditorProps) {
                 className={`cursor-pointer px-3 py-1 rounded-lg text-sm font-medium border ${index === matrixIndex ? 'bg-blue-100 border-blue-300 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'}`}
                 onClick={() => setMatrixIndex(index)}
               >
-                #{index} ({m.getArchetypeCount()}x{m.getCycleCount()})
+                #{index} {m.getName()} {m.getArchetypeCount()}x{m.getCycleCount()})
               </button>)}
               <button
                 onClick={() => addMatrix()}
@@ -435,7 +451,15 @@ export function SetEditor(props: SetEditorProps) {
         {/* Matrix Header Section */}
         <div className="mx-auto max-w-[1600px] bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
           <div className="text-2xl font-bold">
-            #{matrixIndex} ({matrix.getArchetypeCount()}x{matrix.getCycleCount()})
+            #{matrixIndex}
+            <input
+              type="text"
+              value={matrix.getName()}
+              onChange={(e) => updateMatrixName(matrixIndex, e.target.value)}
+              className="field-sizing-content text-2xl font-bold border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+              placeholder="Enter matrix name..."
+            />
+            ({matrix.getArchetypeCount()}x{matrix.getCycleCount()})
           </div>
           <div className="flex flex-col items-end">
             <div className="flex gap-2">
@@ -452,6 +476,12 @@ export function SetEditor(props: SetEditorProps) {
                 icon={faPenToSquare}
                 title="Add/Edit Blueprint"
                 variant="primary"
+              />
+              <IconButton
+                onClick={() => removeMatrix(matrixIndex)}
+                icon={faTrash}
+                title="Delete Matrix"
+                variant="danger"
               />
             </div>
           </div>

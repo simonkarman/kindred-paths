@@ -26,6 +26,7 @@ export class Matrix {
   private static readonly blueprintValidator = new BlueprintValidator();
 
   private set: Set;
+  private name: string;
   private blueprint?: SerializableBlueprint;
   private metadataKeys: string[];
   private cycles: SerializableCycle[];
@@ -33,14 +34,16 @@ export class Matrix {
 
   constructor(set: Set, serializableMatrix: SerializableMatrix) {
     this.set = set;
+    this.name = serializableMatrix.name;
     this.blueprint = serializableMatrix.blueprint;
     this.metadataKeys = serializableMatrix.metadataKeys;
     this.cycles = serializableMatrix.cycles;
     this.archetypes = serializableMatrix.archetypes;
   }
 
-  static new(set: Set): Matrix {
+  static new(name: string, set: Set): Matrix {
     return new Matrix(set, {
+      name,
       metadataKeys: [],
       cycles: [],
       archetypes: [],
@@ -49,6 +52,7 @@ export class Matrix {
 
   toJson(): SerializableMatrix {
     return structuredClone({
+      name: this.name,
       blueprint: this.blueprint,
       metadataKeys: this.metadataKeys,
       cycles: this.cycles,
@@ -58,6 +62,15 @@ export class Matrix {
 
   getSet(): Set {
     return this.set;
+  }
+
+  // Name
+  getName(): string {
+    return this.name;
+  }
+
+  setName(name: string) {
+    this.name = name;
   }
 
   // Matrix
@@ -424,6 +437,8 @@ export class Matrix {
     } else if (location.type === 'slot') {
       const archetype = this.getArchetype(location.archetypeIndex);
       name = `"${capitalize(archetype.name)}"."${capitalize(location.cycleKey)}"`;
+    } else {
+      name = this.name;
     }
     return (name.length > 0 ? `${name} ` : '') + `${capitalize(location.type)} Blueprint`;
   }

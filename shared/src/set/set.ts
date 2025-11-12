@@ -23,6 +23,7 @@ export class Set {
       id: crypto.randomUUID(),
       name,
       matrices: [{
+        name: 'Main',
         metadataKeys: [],
         cycles: [],
         archetypes: [],
@@ -58,8 +59,15 @@ export class Set {
     return this.matrices[matrixIndex];
   }
 
-  addMatrix() {
-    this.matrices.push(Matrix.new(this));
+  addMatrix(name: string) {
+    this.matrices.push(Matrix.new(name, this));
+  }
+
+  removeMatrix(matrixIndex: number) {
+    this.matrices.splice(matrixIndex, 1);
+    if (this.matrices.length === 0) {
+      this.addMatrix('Main');
+    }
   }
 
   getMatrices(): Matrix[] {

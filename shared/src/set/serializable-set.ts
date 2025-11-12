@@ -27,6 +27,7 @@ const SerializableCycleSchema = z.object({
 export type SerializableCycle = z.infer<typeof SerializableCycleSchema>;
 
 export const SerializableMatrixSchema = z.object({
+  name: z.string(),
   blueprint: SerializableBlueprintSchema.optional(),
   metadataKeys: z.array(z.string()),
   cycles: z.array(SerializableCycleSchema),
