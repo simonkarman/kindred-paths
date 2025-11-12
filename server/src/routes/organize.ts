@@ -15,10 +15,14 @@ organizeRouter.post('/collector-numbers', async (req, res) => {
   }
 
   const cards = filterCardsBasedOnSearch(await cardService.getAllCards(), searchQuery.data);
-  const response: CollectorNumberInfo[] = cards.map(c => new Card(c)).map(card => ({
-    collectorNumber: card.collectorNumber,
-    cardId: card.id,
-    faces: card.faces.map(face => ({ name: face.name, renderedTypeLine: face.renderTypeLine() })),
-  }));
+  const response: CollectorNumberInfo[] = cards
+    .map(c => new Card(c))
+    .filter(card => card.tags.deleted !== true)
+    .map(card => ({
+      collectorNumber: card.collectorNumber,
+      cardId: card.id,
+      faces: card.faces.map(face => ({ name: face.name, renderedTypeLine: face.renderTypeLine() })),
+    }),
+    );
   res.json(response);
 });

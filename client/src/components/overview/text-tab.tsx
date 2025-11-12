@@ -42,9 +42,9 @@ export function TextTab(props: { cards: SerializedCard[] }) {
                   {setInfo}
                 </span>
               </div>
-              {card.faces.length > 1 && (
+              {card.layout.id !== 'normal' && (
                 <div className="text-xs text-slate-400">
-                  {capitalize(card.layout)} Layout
+                  {capitalize(card.layout.id)} Layout
                 </div>
               )}
               {card.faces.map(face =>

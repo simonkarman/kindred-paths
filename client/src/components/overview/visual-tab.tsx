@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, dualRenderLayouts, getStatistics, SerializedCard } from 'kindred-paths';
+import { getStatistics, Layout, SerializedCard } from 'kindred-paths';
 import Link from 'next/link';
 import { CardRender } from '@/components/card-render';
 import { useState } from 'react';
@@ -40,8 +40,8 @@ export function VisualTab(props: {
     cardGroups.push(tokens);
   }
 
-  const totalTokens = tokens.reduce((a, c) => a + (new Card(c).getTagAsNumber(`deck/${deckName}`) ?? 0), 0);
-  const totalBasicLands = basicLands.reduce((a, c) => a + (new Card(c).getTagAsNumber(`deck/${deckName}`) ?? 0), 0);
+  const totalTokens = tokens.reduce((a, c) => a + (c.getTagAsNumber(`deck/${deckName}`) ?? 0), 0);
+  const totalBasicLands = basicLands.reduce((a, c) => a + (c.getTagAsNumber(`deck/${deckName}`) ?? 0), 0);
 
   return (
     <div className="space-y-6">
@@ -127,7 +127,7 @@ export function VisualTab(props: {
                 {cardsWithZeroCount.map(card => (
                   <li key={card.id}>
                     <Link
-                      href={props.dynamicLink ? props.dynamicLink(card) : `/card/${card.id}`}
+                      href={props.dynamicLink ? props.dynamicLink(card.toJson()) : `/card/${card.id}`}
                       className="text-sm text-amber-900 hover:text-amber-700 underline decoration-amber-300 hover:decoration-amber-500 transition-colors font-medium"
                     >
                       {card.faces.map(f => f.name).join(' // ')}
@@ -148,17 +148,17 @@ export function VisualTab(props: {
               : 1
             )
               .map(i => (
-                (dualRenderLayouts.includes(card.layout as typeof dualRenderLayouts[number]) ? card.faces : card.faces.slice(0, 1))
+                (new Layout(card.layout.id).isDualRenderLayout() ? card.faces : card.faces.slice(0, 1))
                   .map((_, faceIndex) =>
                     <div
                       key={card.id + i + faceIndex.toString()}
                       className="print:border-3 print:bg-zinc-500"
                     >
                       <div className="hidden print:block">
-                        <CardRender faceIndex={faceIndex} serializedCard={card} scale={0.6} quality={80} />
+                        <CardRender faceIndex={faceIndex} serializedCard={card.toJson()} scale={0.6} quality={80} />
                       </div>
                       <div className="block print:hidden">
-                        <CardRender faceIndex={faceIndex} serializedCard={card} hoverControls />
+                        <CardRender faceIndex={faceIndex} serializedCard={card.toJson()} hoverControls />
                       </div>
                     </div>
                   )

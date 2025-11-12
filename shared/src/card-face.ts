@@ -599,7 +599,9 @@ export class CardFace {
   }
 
   public explain(props?: { withoutName?: boolean }): string {
-    const faceInformation = this.card.faces.length === 1 ? '' : (this.faceIndex === 0 ? ' front' : ' back');
+    const faceInformation = this.card.layout.isDualRenderLayout()
+      ? (this.faceIndex === 0 ? '/front' : '/back')
+      : (this.faceIndex === 1 && this.card.layout.id !== 'normal') ? `/${this.card.layout.id}` : '';
     let readable = props?.withoutName ? '' : `"${this.name}" (#${this.card.collectorNumber}${faceInformation}) is `;
     readable += `a ${this.card.rarity} `;
     readable += this.getReferenceName();
