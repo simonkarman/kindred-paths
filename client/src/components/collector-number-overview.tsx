@@ -3,22 +3,25 @@ import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import { CollectorNumberInfo } from '@/utils/server';
 
 type CollectorNumberOverviewProps = {
-  selectedCollectorNumber: number;
-  setSelectedCollectorNumber: (num: number) => void;
+  selectedCollectorNumber?: number;
+  setSelectedCollectorNumber?: (num: number) => void;
   collectorNumbers: CollectorNumberInfo[];
 }
 
 export function CollectorNumberOverview(props: CollectorNumberOverviewProps) {
   const { selectedCollectorNumber, setSelectedCollectorNumber, collectorNumbers } = props;
+  const minNumber = Math.min(...collectorNumbers.map(c => c.collectorNumber), selectedCollectorNumber ?? Infinity);
+  const maxNumber = Math.max(...collectorNumbers.map(c => c.collectorNumber), selectedCollectorNumber ?? -Infinity);
   return <div className="mt-2 border border-zinc-300 rounded-md p-3">
     <div className="flex flex-wrap gap-1">
       {Array.from(
-        { length: Math.max(selectedCollectorNumber, ...collectorNumbers.map(c => c.collectorNumber)) + 10 },
-        (_, i) => i + 1
+        { length: maxNumber - minNumber + 10 },
+        (_, i) => i + minNumber
       ).map(num => {
         const occupiedInfo = collectorNumbers.filter(c => c.collectorNumber === num);
         const isOccupied = occupiedInfo.length > 0;
         const isSelected = num === selectedCollectorNumber;
+        const clickable = !isOccupied && setSelectedCollectorNumber !== undefined;
 
         return (
           <div
@@ -27,16 +30,17 @@ export function CollectorNumberOverview(props: CollectorNumberOverviewProps) {
                 relative group w-8 h-8 flex items-center justify-center rounded
                 border font-medium transition-all
                 ${isOccupied
-              ? isSelected
-                ? 'border-red-300 bg-red-100 text-red-700 hover:bg-red-100 hover:border-red-500 cursor-pointer'
-                : 'border-zinc-300 bg-zinc-100 text-zinc-400 cursor-default'
-              : isSelected
-                ? 'border-blue-500 bg-blue-100 text-blue-700 cursor-pointer'
-                : 'border-zinc-300 bg-white text-zinc-700 hover:bg-green-100 hover:border-green-500 hover:text-green-600 cursor-pointer'
-            }
+                  ? isSelected
+                    ? 'border-red-300 bg-red-100 text-red-700 hover:bg-red-100 hover:border-red-500'
+                    : 'border-zinc-300 bg-zinc-100 text-zinc-400'
+                  : isSelected
+                    ? 'border-blue-500 bg-blue-100 text-blue-700'
+                    : 'border-zinc-300 bg-white text-zinc-700 hover:bg-green-100 hover:border-green-500 hover:text-green-600'
+                }
+                ${clickable ? 'cursor-pointer' : 'cursor-default'}
               `}
             onClick={() => {
-              if (!isOccupied) {
+              if (!isOccupied && setSelectedCollectorNumber) {
                 setSelectedCollectorNumber(num);
               }
             }}

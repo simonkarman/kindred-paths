@@ -1,6 +1,6 @@
 'use client';
 
-import React, { PropsWithChildren, useEffect, useMemo, useState } from 'react';
+import React, { PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
@@ -23,13 +23,14 @@ import {
   Set,
   SetLocation,
 } from 'kindred-paths';
-import { putSet, serverUrl } from '@/utils/server';
+import { CollectorNumberInfo, getOrganizeCollectorNumbers, putSet, serverUrl } from '@/utils/server';
 import { IconButton } from '@/components/icon-button';
 import { DragHandle } from '@/components/set-editor/drag-handle';
 import { SetEditorCell } from '@/components/set-editor/set-editor-cell';
 import { BlueprintEditor } from '@/components/set-editor/blueprint-editor';
 import { CardEditor } from '@/components/editor/card-editor';
 import { CardSelector } from '@/components/set-editor/card-selector';
+import { CollectorNumberOverview } from '@/components/collector-number-overview';
 
 function Modal(props: PropsWithChildren<{ onClose: () => void }>) {
   return (
@@ -77,6 +78,19 @@ export function SetEditor(props: SetEditorProps) {
   const [matrixIndex, setMatrixIndex] = useState(0);
   const matrix = set.getMatrix(matrixIndex);
   const statusCounts = matrix.getSlotStats(cards);
+
+  const [showCollectorNumbers, setShowCollectorNumbers] = useState(false);
+  const [collectorNumbers, setCollectorNumbers] = useState<CollectorNumberInfo[]>([]);
+  const [fetchingCollectorNumbers, setFetchingCollectorNumbers] = useState(false);
+  const fetchCollectorNumbers = useCallback(async () => {
+    setFetchingCollectorNumbers(true);
+    try {
+      setCollectorNumbers(await getOrganizeCollectorNumbers(`set:${props.set.name}`));
+      setShowCollectorNumbers(true);
+    } finally {
+      setFetchingCollectorNumbers(false);
+    }
+  }, [props.set.name]);
 
   const saveChanges = (props?: { newCards?: SerializedCard[] }) => {
     setSetValidationMessages(set.validateAndCorrect(props?.newCards ?? cards));
@@ -356,6 +370,13 @@ export function SetEditor(props: SetEditorProps) {
               placeholder="Enter set name..."
             />
             <div className="flex flex-wrap gap-2 px-2">
+              {!showCollectorNumbers && <button
+                onClick={() => fetchCollectorNumbers()}
+                className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                disabled={fetchingCollectorNumbers}
+              >
+                {fetchingCollectorNumbers ? 'Fetching collector numbers...' : 'Organize Collector Numbers'}
+              </button>}
               {set.getMatrices().map((m, index) => <button
                 key={index}
                 className={`cursor-pointer px-3 py-1 rounded-lg text-sm font-medium border ${index === matrixIndex ? 'bg-blue-100 border-blue-300 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'}`}
@@ -373,6 +394,24 @@ export function SetEditor(props: SetEditorProps) {
             </div>
           </div>
         </div>
+
+        {/* Set Collector Number Section */}
+        {showCollectorNumbers && (<div
+          className="mx-auto max-w-[1600px] bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6"
+        >
+          <div className="flex w-full justify-between mt-2 gap-2">
+            <h2 className="text-lg font-bold">Collector Numbers</h2>
+            <button
+              onClick={() => setShowCollectorNumbers(false)}
+              className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              Hide Collector Numbers
+            </button>
+          </div>
+          <div className="pl-10">
+          <CollectorNumberOverview collectorNumbers={collectorNumbers} />
+          </div>
+        </div>)}
 
         {/* Validation Messages */}
         {setValidationMessages.length > 0 && (
