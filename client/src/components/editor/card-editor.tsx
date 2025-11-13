@@ -62,18 +62,67 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
 
   // Face
   const [layout, setLayout] = useState(start.layout);
-  const [faceIndex] = useState(0);
+  const [faceIndex, setFaceIndex] = useState(0);
+
+  // Store state for all faces
+  const [faceStates, setFaceStates] = useState(() => {
+    return start.faces.map(face => ({
+      name: face.name,
+      supertype: face.supertype,
+      givenColors: face.givenColors,
+      subtypes: face.subtypes,
+      types: face.types,
+      manaCost: face.manaCost,
+      rules: face.rules,
+      pt: face.pt,
+      loyalty: face.loyalty,
+      art: face.art,
+    }));
+  });
+
+  // Current face state (derived from faceStates)
+  const currentFace = faceStates[faceIndex];
   const startFace: SerializedCardFace = start.faces[faceIndex];
-  const [name, setName] = useState(startFace.name);
-  const [supertype, setSupertype] = useState<CardSuperType>(startFace.supertype);
-  const [givenColors, setGivenColors] = useState<CardColor[] | undefined>(startFace.givenColors);
-  const [subtypes, setSubtypes] = useState<string[] | undefined>(startFace.subtypes);
-  const [types, setTypes] = useState<[CardType, ...CardType[]]>(startFace.types);
-  const [manaCost, setManaCost] = useState<{ [type in Mana]?: number } | undefined>(startFace.manaCost);
-  const [rules, setRules] = useState<{ variant: RuleVariant, content: string }[] | undefined>(startFace.rules);
-  const [pt, setPt] = useState<{ power: number, toughness: number } | undefined>(startFace.pt);
-  const [loyalty, setLoyalty] = useState<number | undefined>(startFace.loyalty);
-  const [art, setArt] = useState<string | undefined>(startFace.art);
+  const name = currentFace.name;
+  const setName = (value: string) => {
+    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, name: value } : face));
+  };
+  const supertype = currentFace.supertype;
+  const setSupertype = (value: CardSuperType | undefined) => {
+    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, supertype: value } : face));
+  };
+  const givenColors = currentFace.givenColors;
+  const setGivenColors = (value: CardColor[] | undefined) => {
+    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, givenColors: value } : face));
+  };
+  const subtypes = currentFace.subtypes;
+  const setSubtypes = (value: string[] | undefined) => {
+    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, subtypes: value } : face));
+  };
+  const types = currentFace.types;
+  const setTypes = (value: [CardType, ...CardType[]]) => {
+    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, types: value } : face));
+  };
+  const manaCost = currentFace.manaCost;
+  const setManaCost = (value: { [type in Mana]?: number } | undefined) => {
+    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, manaCost: value } : face));
+  };
+  const rules = currentFace.rules;
+  const setRules = (value: { variant: RuleVariant, content: string }[] | undefined) => {
+    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, rules: value } : face));
+  };
+  const pt = currentFace.pt;
+  const setPt = (value: { power: number, toughness: number } | undefined) => {
+    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, pt: value } : face));
+  };
+  const loyalty = currentFace.loyalty;
+  const setLoyalty = (value: number | undefined) => {
+    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, loyalty: value } : face));
+  };
+  const art = currentFace.art;
+  const setArt = (value: string | undefined) => {
+    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, art: value } : face));
+  };
 
   // Keep track of giving colors based on mana cost and land status
   const hasManaCost = manaCost !== undefined;
@@ -143,6 +192,39 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
     }
   }, [isCreate, deck, set]);
 
+  // When layout changes, ensure we have the correct number of faces
+  useEffect(() => {
+    const layoutObj = new Layout(layout);
+    const defaultFaces = layoutObj.defaultFaces();
+
+    // If we need more faces than we have, add default faces
+    if (defaultFaces.length > faceStates.length) {
+      setFaceStates(prev => {
+        const newFaces = [...prev];
+        for (let i = prev.length; i < defaultFaces.length; i++) {
+          newFaces.push({
+            name: defaultFaces[i].name,
+            supertype: defaultFaces[i].supertype,
+            givenColors: defaultFaces[i].givenColors,
+            subtypes: defaultFaces[i].subtypes,
+            types: defaultFaces[i].types,
+            manaCost: defaultFaces[i].manaCost,
+            rules: defaultFaces[i].rules,
+            pt: defaultFaces[i].pt,
+            loyalty: defaultFaces[i].loyalty,
+            art: defaultFaces[i].art,
+          });
+        }
+        return newFaces;
+      });
+    }
+
+    // If we're viewing a face that no longer exists, switch to face 0
+    if (faceIndex >= defaultFaces.length) {
+      setFaceIndex(0);
+    }
+  }, [layout, faceIndex, faceStates.length]);
+
   const serializedCard: SerializedCard = {
     id: start.id,
     rarity,
@@ -150,23 +232,18 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
     collectorNumber,
     tags,
     layout,
-    faces: start.faces.map((face, i) => {
-      if (i !== faceIndex) {
-        return face;
-      }
-      return {
-        name,
-        givenColors,
-        manaCost,
-        types,
-        subtypes: subtypes ?? [],
-        supertype,
-        rules,
-        pt,
-        loyalty,
-        art,
-      };
-    }),
+    faces: faceStates.map(face => ({
+      name: face.name,
+      givenColors: face.givenColors,
+      manaCost: face.manaCost,
+      types: face.types,
+      subtypes: face.subtypes ?? [],
+      supertype: face.supertype,
+      rules: face.rules,
+      pt: face.pt,
+      loyalty: face.loyalty,
+      art: face.art,
+    })),
   };
   const isChanged = isCreate || (JSON.stringify(serializedCard) !== JSON.stringify(start));
   const canSave = isChanged && (!isCreate || name !== new Layout(layout).defaultFaces()[faceIndex].name);
@@ -347,6 +424,40 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
           <CardLayoutInput layout={layout} setLayout={setLayout} getErrorMessage={() => getErrorMessage('layout')}
                            isChanged={!isCreate && JSON.stringify(start.layout) !== JSON.stringify(layout)} revert={() => setLayout(start.layout)}
           />
+          {new Layout(layout).isDualFaceLayout() && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Editing Face
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFaceIndex(0)}
+                  className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    faceIndex === 0
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Primary Face
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFaceIndex(1)}
+                  className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    faceIndex === 1
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Secondary Face
+                </button>
+              </div>
+              <p className="text-xs text-gray-500">
+                Editing: {faceStates[faceIndex]?.name || 'Unnamed'}
+              </p>
+            </div>
+          )}
           <CardRarityInput rarity={rarity} setRarity={setRarity} getErrorMessage={() => getErrorMessage('rarity')}
                            isChanged={!isCreate && JSON.stringify(start.rarity) !== JSON.stringify(rarity)} revert={() => setRarity(start.rarity)}
           />
@@ -387,7 +498,7 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
               </li>
             )}
           </ul>
-          {card && errors.length === 0 && !validationError && <CardPreview card={card} faceIndex={faceIndex} />}
+          {card && errors.length === 0 && !validationError && <CardPreview card={card} faceIndex={faceIndex} showDualRender={new Layout(layout).isDualRenderLayout()} />}
         </div>
       </div>
 

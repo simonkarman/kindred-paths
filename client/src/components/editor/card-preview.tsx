@@ -16,18 +16,20 @@ const getRenderKey = (card: Card) => {
   }))
 }
 
-export function CardPreview({ card, faceIndex }: { card: Card, faceIndex: number }) {
+export function CardPreview({ card, faceIndex, showDualRender = false }: { card: Card, faceIndex: number, showDualRender?: boolean }) {
   const latestRenderIndex = useRef(0);
 
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [latestRenderKey, setLatestRenderKey] = useState('');
   const [isRendering, setIsRendering] = useState(false);
   const [image, setImage] = useState<string>();
+  const [image2, setImage2] = useState<string>();
   const [error, setError] = useState<string>();
 
   const cleanupImage = useCallback(() => {
     if (image) { URL.revokeObjectURL(image); }
-  }, [image]);
+    if (image2) { URL.revokeObjectURL(image2); }
+  }, [image, image2]);
   useEffect(() => cleanupImage, [cleanupImage]);
 
   const handleRefresh = useCallback(async (initialWait = 0) => {
@@ -40,10 +42,22 @@ export function CardPreview({ card, faceIndex }: { card: Card, faceIndex: number
     try {
       await sleep(initialWait);
       if (thisRenderIndex === latestRenderIndex.current) {
+        // Render the primary face
         const blob = await previewCard(card.toJson(), faceIndex);
         if (thisRenderIndex === latestRenderIndex.current) {
           cleanupImage();
           setImage(URL.createObjectURL(blob));
+
+          // If dual render is needed, also render the second face
+          if (showDualRender && card.faces.length > 1) {
+            const secondFaceIndex = faceIndex === 0 ? 1 : 0;
+            const blob2 = await previewCard(card.toJson(), secondFaceIndex);
+            if (thisRenderIndex === latestRenderIndex.current) {
+              setImage2(URL.createObjectURL(blob2));
+            }
+          } else {
+            setImage2(undefined);
+          }
         }
       }
     } catch (error) {
@@ -55,7 +69,7 @@ export function CardPreview({ card, faceIndex }: { card: Card, faceIndex: number
         setIsRendering(false);
       }
     }
-  }, [card, cleanupImage, faceIndex]);
+  }, [card, cleanupImage, faceIndex, showDualRender]);
 
   const isOutdated = latestRenderKey !== getRenderKey(card);
   useEffect(() => {
@@ -120,9 +134,9 @@ export function CardPreview({ card, faceIndex }: { card: Card, faceIndex: number
       )}
 
       {/* Preview area */}
-      <div className="flex justify-center">
+      <div className={`flex justify-center ${showDualRender ? 'gap-3' : ''}`}>
         {isRendering ? (
-          <div className="aspect-[63/88] w-full bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center space-y-3">
+          <div className={`aspect-[63/88] ${showDualRender ? 'w-1/2' : 'w-full'} bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center space-y-3`}>
             <svg className="w-8 h-8 text-gray-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -132,23 +146,42 @@ export function CardPreview({ card, faceIndex }: { card: Card, faceIndex: number
             </div>
           </div>
         ) : image ? (
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              alt={`${card.faces[faceIndex].name} preview`}
-              className={`aspect-[63/88] shadow-xl w-full bg-zinc-50 rounded-2xl border transition-all duration-300 ${
-                isOutdated ? 'opacity-40 ring-2 ring-amber-300' : ''
-              }`}
-              src={image}
-            />
-            {isOutdated && (
-              <div className="absolute top-17 right-10 px-3 py-0.5 bg-amber-100 border border-amber-300 rounded">
-                <span className="text-xs font-medium text-amber-800">Outdated</span>
+          <>
+            <div className={`relative ${showDualRender ? 'w-1/2' : 'w-full'}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                alt={`${card.faces[faceIndex].name} preview`}
+                className={`aspect-[63/88] shadow-xl w-full bg-zinc-50 rounded-2xl border transition-all duration-300 ${
+                  isOutdated ? 'opacity-40 ring-2 ring-amber-300' : ''
+                }`}
+                src={image}
+              />
+              {isOutdated && (
+                <div className="absolute top-17 right-10 px-3 py-0.5 bg-amber-100 border border-amber-300 rounded">
+                  <span className="text-xs font-medium text-amber-800">Outdated</span>
+                </div>
+              )}
+            </div>
+            {showDualRender && image2 && (
+              <div className="relative w-1/2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  alt={`${card.faces[faceIndex === 0 ? 1 : 0].name} preview`}
+                  className={`aspect-[63/88] shadow-xl w-full bg-zinc-50 rounded-2xl border transition-all duration-300 ${
+                    isOutdated ? 'opacity-40 ring-2 ring-amber-300' : ''
+                  }`}
+                  src={image2}
+                />
+                {isOutdated && (
+                  <div className="absolute top-17 right-10 px-3 py-0.5 bg-amber-100 border border-amber-300 rounded">
+                    <span className="text-xs font-medium text-amber-800">Outdated</span>
+                  </div>
+                )}
               </div>
             )}
-          </div>
+          </>
         ) : !error ? (
-          <div className="aspect-[63/88] w-full bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center">
+          <div className={`aspect-[63/88] ${showDualRender ? 'w-1/2' : 'w-full'} bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center`}>
             <div className="text-center space-y-2">
               <svg className="w-12 h-12 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
