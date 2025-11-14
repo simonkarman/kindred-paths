@@ -100,47 +100,6 @@ export function CardEditor2({ initialCard, validate, onSave, onCancel, defaultTa
   const [state, setState] = useState<EditorState>(() => initializeEditorState(initialCard, defaultTags));
   const [selectedFaceIndex, setSelectedFaceIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [layoutSelected, setLayoutSelected] = useState(isEditMode);
-
-  // Layout selection screen for new cards
-  if (!layoutSelected) {
-    return (
-      <div className="mx-auto max-w-2xl space-y-6 border-2 border-blue-200 bg-white rounded-lg p-8 shadow-md">
-        <h2 className="text-2xl font-bold text-center">Select Card Layout</h2>
-        <div className="grid grid-cols-1 gap-4">
-          {(['normal', 'modal', 'adventure', 'transform'] as CardLayout[]).map((layoutType) => {
-            const layoutObj = new Layout(layoutType);
-            return (
-              <button
-                key={layoutType}
-                onClick={() => {
-                  const defaultFaces = layoutObj.defaultFaces();
-                  setState(prev => ({
-                    ...prev,
-                    layout: layoutType,
-                    faces: defaultFaces,
-                  }));
-                  setLayoutSelected(true);
-                }}
-                className="p-6 border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
-              >
-                <h3 className="text-lg font-semibold capitalize mb-2">{layoutType}</h3>
-                <p className="text-sm text-gray-600">{layoutObj.description()}</p>
-              </button>
-            );
-          })}
-        </div>
-        {onCancel && (
-          <button
-            onClick={onCancel}
-            className="w-full py-2 px-4 bg-zinc-200 text-zinc-800 font-medium rounded-md hover:bg-zinc-300"
-          >
-            Cancel
-          </button>
-        )}
-      </div>
-    );
-  }
 
   // Helper functions for state updates
   const updateCardProperty = <K extends keyof Omit<EditorState, 'faces'>>(
@@ -506,13 +465,18 @@ export function CardEditor2({ initialCard, validate, onSave, onCancel, defaultTa
         <div className="space-y-4 border-r border-zinc-100 pr-3">
           <h3 className="font-semibold text-lg">Card Properties</h3>
 
-          <CardLayoutInput
-            layout={state.layout}
-            setLayout={handleLayoutChange}
-            getErrorMessage={() => getErrorMessage('layout')}
-            isChanged={isEditMode && initialCard.layout !== state.layout}
-            revert={() => initialCard && updateCardProperty('layout', initialCard.layout)}
-          />
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <CardLayoutInput
+              layout={state.layout}
+              setLayout={handleLayoutChange}
+              getErrorMessage={() => getErrorMessage('layout')}
+              isChanged={isEditMode && initialCard.layout !== state.layout}
+              revert={() => initialCard && updateCardProperty('layout', initialCard.layout)}
+            />
+            <p className="text-xs text-blue-700 mt-2">
+              💡 Changing the layout will reset faces to defaults for that layout
+            </p>
+          </div>
 
           <CardRarityInput
             rarity={state.rarity}
