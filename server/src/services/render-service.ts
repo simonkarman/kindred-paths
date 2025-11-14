@@ -76,12 +76,12 @@ export class RenderService {
       const side = faceIndex === 0 ? 'front' : 'back';
 
       if (otherFace.types.includes('land')) {
-        const colorIdentity = otherFace.colorIdentity();
+        const producibleColors = otherFace.producibleColors();
         mdfc = {
           side,
           otherFrameColor: 'l',
           otherCardType: 'Land',
-          otherText: `{t}: Add ${enumerate(colorIdentity.map(c => `{${colorToShort(c)}}`), { lastSeparator: 'or' })}`,
+          otherText: `{t}: Add ${enumerate(producibleColors.map(c => c === 'colorless' ? '{c}' : `{${colorToShort(c)}}`), { lastSeparator: 'or' })}`,
         };
       } else {
         const ptPrefix = otherFace.pt ? `${otherFace.pt.power}/${otherFace.pt.toughness} ` : '';

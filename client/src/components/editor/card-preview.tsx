@@ -11,12 +11,12 @@ const getRenderKey = (card: Card) => {
     tags: Object.entries(card.tags).filter(([k]) =>
       k.startsWith('fs/') // Include all font size tags
       || k.startsWith('art/') // Include all art tags
-      || k === 'set' // Include deck and set tags
+      || k === 'set' // Include set tag
     ),
   }))
 }
 
-export function CardPreview({ card, faceIndex, showDualRender = false }: { card: Card, faceIndex: number, showDualRender?: boolean }) {
+export function CardPreview({ card }: { card: Card }) {
   const latestRenderIndex = useRef(0);
 
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -26,11 +26,14 @@ export function CardPreview({ card, faceIndex, showDualRender = false }: { card:
   const [image2, setImage2] = useState<string>();
   const [error, setError] = useState<string>();
 
-  const cleanupImage = useCallback(() => {
+  const cleanupImageOne = useCallback(() => {
     if (image) { URL.revokeObjectURL(image); }
+  }, [image]);
+  const cleanupImageTwo = useCallback(() => {
     if (image2) { URL.revokeObjectURL(image2); }
-  }, [image, image2]);
-  useEffect(() => cleanupImage, [cleanupImage]);
+  }, [image2]);
+  useEffect(() => cleanupImageOne, [cleanupImageOne]);
+  useEffect(() => cleanupImageTwo, [cleanupImageTwo]);
 
   const handleRefresh = useCallback(async (initialWait = 0) => {
     const thisRenderIndex: number = latestRenderIndex.current + 1;
@@ -43,18 +46,18 @@ export function CardPreview({ card, faceIndex, showDualRender = false }: { card:
       await sleep(initialWait);
       if (thisRenderIndex === latestRenderIndex.current) {
         // Render the primary face
-        const blob = await previewCard(card.toJson(), faceIndex);
+        const cardJson = card.toJson();
+        const [blobOne, blobTwo] = await Promise.all(card.layout.isDualRenderLayout()
+          ? [previewCard(cardJson, 0), previewCard(cardJson, 1)]
+          : [previewCard(cardJson, 0)]
+        );
         if (thisRenderIndex === latestRenderIndex.current) {
-          cleanupImage();
-          setImage(URL.createObjectURL(blob));
+          cleanupImageOne();
+          setImage(URL.createObjectURL(blobOne));
 
-          // If dual render is needed, also render the second face
-          if (showDualRender && card.faces.length > 1) {
-            const secondFaceIndex = faceIndex === 0 ? 1 : 0;
-            const blob2 = await previewCard(card.toJson(), secondFaceIndex);
-            if (thisRenderIndex === latestRenderIndex.current) {
-              setImage2(URL.createObjectURL(blob2));
-            }
+          cleanupImageTwo();
+          if (blobTwo) {
+            setImage2(URL.createObjectURL(blobTwo));
           } else {
             setImage2(undefined);
           }
@@ -69,7 +72,7 @@ export function CardPreview({ card, faceIndex, showDualRender = false }: { card:
         setIsRendering(false);
       }
     }
-  }, [card, cleanupImage, faceIndex, showDualRender]);
+  }, [card, cleanupImageOne, cleanupImageTwo]);
 
   const isOutdated = latestRenderKey !== getRenderKey(card);
   useEffect(() => {
@@ -79,7 +82,7 @@ export function CardPreview({ card, faceIndex, showDualRender = false }: { card:
   }, [card, autoRefresh, isOutdated, handleRefresh]);
 
   return (
-    <div className="w-full max-w-90 mx-auto space-y-3">
+    <div className={`w-full ${card.layout.isDualRenderLayout() ? 'max-w-180' : 'max-w-90'} mx-auto space-y-3`}>
       {/* Controls */}
       <div className="flex items-center justify-center gap-3">
         <button
@@ -134,9 +137,13 @@ export function CardPreview({ card, faceIndex, showDualRender = false }: { card:
       )}
 
       {/* Preview area */}
-      <div className={`flex justify-center ${showDualRender ? 'gap-3' : ''}`}>
-        {isRendering ? (
-          <div className={`aspect-[63/88] ${showDualRender ? 'w-1/2' : 'w-full'} bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center space-y-3`}>
+      <div className={`flex justify-center gap-3`}>
+        {isRendering ? (<>
+          {(card.layout.isDualRenderLayout() ? [0, 1] : [0]).map((_, index) => (
+          <div
+            key={index}
+            className={`aspect-[63/88] w-full bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center space-y-3`}
+          >
             <svg className="w-8 h-8 text-gray-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -145,35 +152,36 @@ export function CardPreview({ card, faceIndex, showDualRender = false }: { card:
               <p className="text-xs text-gray-500">This may take a few seconds</p>
             </div>
           </div>
-        ) : image ? (
+          ))}
+        </>) : image ? (
           <>
-            <div className={`relative ${showDualRender ? 'w-1/2' : 'w-full'}`}>
+            <div className={`relative w-full`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                alt={`${card.faces[faceIndex].name} preview`}
+                alt={`${card.faces[0].name} preview`}
                 className={`aspect-[63/88] shadow-xl w-full bg-zinc-50 rounded-2xl border transition-all duration-300 ${
                   isOutdated ? 'opacity-40 ring-2 ring-amber-300' : ''
                 }`}
                 src={image}
               />
               {isOutdated && (
-                <div className="absolute top-17 right-10 px-3 py-0.5 bg-amber-100 border border-amber-300 rounded">
+                <div className="absolute top-[13%] right-[10%] px-3 py-0.5 bg-amber-100 border border-amber-300 rounded">
                   <span className="text-xs font-medium text-amber-800">Outdated</span>
                 </div>
               )}
             </div>
-            {showDualRender && image2 && (
-              <div className="relative w-1/2">
+            {card.faces[1] && image2 && (
+              <div className="relative w-full">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  alt={`${card.faces[faceIndex === 0 ? 1 : 0].name} preview`}
+                  alt={`${card.faces[1].name} preview`}
                   className={`aspect-[63/88] shadow-xl w-full bg-zinc-50 rounded-2xl border transition-all duration-300 ${
                     isOutdated ? 'opacity-40 ring-2 ring-amber-300' : ''
                   }`}
                   src={image2}
                 />
                 {isOutdated && (
-                  <div className="absolute top-17 right-10 px-3 py-0.5 bg-amber-100 border border-amber-300 rounded">
+                  <div className="absolute top-[13%] right-[10%] px-3 py-0.5 bg-amber-100 border border-amber-300 rounded">
                     <span className="text-xs font-medium text-amber-800">Outdated</span>
                   </div>
                 )}
@@ -181,7 +189,7 @@ export function CardPreview({ card, faceIndex, showDualRender = false }: { card:
             )}
           </>
         ) : !error ? (
-          <div className={`aspect-[63/88] ${showDualRender ? 'w-1/2' : 'w-full'} bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center`}>
+          <div className={`aspect-[63/88] w-full bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center`}>
             <div className="text-center space-y-2">
               <svg className="w-12 h-12 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />

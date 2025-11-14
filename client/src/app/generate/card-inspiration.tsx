@@ -128,7 +128,7 @@ export function CardInspiration(props: { previousCardGenerators: { generatorId: 
             Back to Suggestions
           </button>
         </div>
-        <CardEditor start={selectedCard} />
+        <CardEditor initialCard={selectedCard} />
       </div>
     );
   }

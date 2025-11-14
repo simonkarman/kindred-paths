@@ -1,6 +1,5 @@
 import { Metadata } from 'next';
 import { CardEditor } from '@/components/editor/card-editor';
-import { Card } from 'kindred-paths';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -9,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CardCreate() {
-  return <>
-    <CardEditor start={Card.new('normal')} />
-  </>;
+  return <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <CardEditor />
+  </div>;
 };

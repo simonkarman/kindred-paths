@@ -39,6 +39,8 @@ export const CardSubtypesInput = (props: {
       return ['aura', 'curse'];
     } else if (cardType === 'land') {
       return ['plains', 'island', 'swamp', 'mountain', 'forest'];
+    } else if (cardType === 'sorcery' || cardType === 'instant') {
+      return ['adventure'];
     }
     return [];
   };
@@ -49,7 +51,7 @@ export const CardSubtypesInput = (props: {
     const subtype = (subtypeToAdd || newSubtype.trim()).toLowerCase();
     if (subtype && !subtypes.some(existing => existing === subtype)) {
       const updated = [...subtypes, subtype];
-      props.setSubtypes(updated.length > 0 ? updated : undefined);
+      props.setSubtypes(updated);
       setNewSubtype('');
       setShowSuggestions(false);
     }
@@ -57,7 +59,7 @@ export const CardSubtypesInput = (props: {
 
   const removeSubtype = (index: number) => {
     const updated = subtypes.filter((_, i) => i !== index);
-    props.setSubtypes(updated.length > 0 ? updated : undefined);
+    props.setSubtypes(updated);
   };
 
   const moveSubtype = (fromIndex: number, toIndex: number) => {
@@ -180,7 +182,10 @@ export const CardSubtypesInput = (props: {
                 <button
                   key={suggestion}
                   type="button"
-                  onClick={() => addSubtype(suggestion)}
+                  onClick={() => {
+                    alert(`yes! ${suggestion}`);
+                    addSubtype(suggestion)
+                  }}
                   className="w-full text-left px-3 py-1 hover:bg-blue-50 text-sm border-b border-zinc-100 last:border-b-0"
                 >
                   {capitalize(suggestion)}

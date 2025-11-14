@@ -68,6 +68,7 @@ export class Layout {
         name: 'Other Side',
         types: ['creature'],
         pt: { power: 2, toughness: 2 },
+        givenColors: [],
       }];
     }
   }

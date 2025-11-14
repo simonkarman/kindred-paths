@@ -31,7 +31,7 @@ export default async function CardEdit({ params: _params }: Readonly<{ params: P
           View {serializedCard.faces.map(f => f.name).join(' // ')}
         </Link>
       </div>
-      <CardEditor start={serializedCard} />
+      <CardEditor initialCard={serializedCard} />
     </div>
   </>);
 }

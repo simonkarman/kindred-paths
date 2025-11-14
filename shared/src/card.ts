@@ -17,15 +17,15 @@ export class Card {
   public readonly layout: Layout;
   public readonly faces: CardFace[];
 
-  static new(layout: CardLayout): SerializedCard {
-    return {
+  static new(layout: CardLayout): Card {
+    return new Card({
       id: '<new>',
       layout: layout,
       rarity: 'common',
       collectorNumber: 1,
       tags: { status: 'concept', createdAt: new Date().toISOString().substring(0, 10) },
       faces: new Layout(layout).defaultFaces(),
-    };
+    });
   }
 
   constructor(props: SerializedCard) {
@@ -108,6 +108,10 @@ export class Card {
 
     // Transform Layout
     if (this.layout.id === 'transform') {
+      if (this.faces.flatMap(f => f.types).includes('planeswalker')) {
+        throw new Error('transform layout cards cannot be planeswalkers');
+      }
+
       const face0IsPermanent = permanentTypes.some(permanentType => this.faces[0].types.includes(permanentType));
       const face1IsPermanent = permanentTypes.some(permanentType => this.faces[1].types.includes(permanentType));
       if (!face0IsPermanent || !face1IsPermanent) {

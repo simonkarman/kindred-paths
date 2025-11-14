@@ -21,8 +21,11 @@ export default async function CardClone({ params: _params }: Readonly<{ params: 
     return <h1 className="text-red-500">Card not found</h1>;
   }
 
-  const start = { ...serializedCard, id: '<new>' };
-  start.faces.forEach(f => f.name = `${f.name} (clone)`);
+  const start = {
+    ...serializedCard,
+    id: '<new>',
+    faces: serializedCard.faces.map(f => ({ ...f, name: `${f.name} (clone)` }) ),
+  };
 
   return (<>
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
@@ -35,7 +38,7 @@ export default async function CardClone({ params: _params }: Readonly<{ params: 
           View Original {serializedCard.faces.map(f => f.name).join(' // ')}
         </Link>
       </div>
-      <CardEditor start={start} />
+      <CardEditor initialCard={start} />
     </div>
   </>);
 }

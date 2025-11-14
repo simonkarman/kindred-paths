@@ -3,22 +3,20 @@
 import {
   BlueprintValidator,
   Card,
-  CardColor,
+  CardLayout,
   CardRarity,
-  CardSuperType,
-  CardType,
   CriteriaFailureReason,
   Layout,
   explainCriteria,
-  Mana,
   RuleVariant,
   SerializableBlueprintWithSource,
   SerializedCard,
   SerializedCardSchema,
   tryParseLoyaltyAbility,
-  capitalize, SerializedCardFace,
+  capitalize,
+  SerializedCardFace, tokenCardTypes, TokenCardType, permanentTypes,
 } from 'kindred-paths';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createCard, updateCard } from '@/utils/server';
 import { CardNameInput } from '@/components/editor/card-name-input';
 import { CardTypesInput } from '@/components/editor/card-types-input';
@@ -34,257 +32,270 @@ import { CardPreview } from '@/components/editor/card-preview';
 import { CardArtInput } from '@/components/editor/card-art-input';
 import { CardGivenColorsInput } from '@/components/editor/card-given-colors-input';
 import { CardLoyaltyInput } from '@/components/editor/card-loyalty-input';
-import { useDeckNameFromSearch, useSetNameFromSearch } from '@/utils/use-search';
 import { CardLayoutInput } from '@/components/editor/card-layout-input';
 
 type CardEditorProps = {
-  start: SerializedCard,
+  initialCard?: SerializedCard;
   validate?: {
-    blueprints: SerializableBlueprintWithSource[],
-    metadata: { [key: string]: string | undefined },
-  }
-  onSave?: (card: SerializedCard) => void,
-  onCancel?: () => void,
+    blueprints: SerializableBlueprintWithSource[];
+    metadata: { [key: string]: string | undefined };
+  };
+  onSave?: (card: SerializedCard) => void;
+  onCancel?: () => void;
+  defaultTags?: { [key: string]: string | number | boolean };
+  redirectTo?: string;
 };
 
-export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProps) {
-  const isCreate = start.id === "<new>" || start.id.startsWith('ai-');
-  const set = useSetNameFromSearch();
-  const deck = useDeckNameFromSearch();
+type EditorState = {
+  id: string;
+  layout: CardLayout;
+  rarity: CardRarity;
+  isToken?: true;
+  collectorNumber: number;
+  tags: { [key: string]: string | number | boolean } | undefined;
+  faces: SerializedCardFace[];
+};
 
-  // Properties State
-  const [rarity, setRarity] = useState<CardRarity>(start.rarity);
-  const [isToken, setIsToken] = useState(start.isToken);
-  const [collectorNumber, setCollectorNumber] = useState(start.collectorNumber);
-  const [tags, setTags] = useState<{ [key: string]: string | number | boolean } | undefined>(
-    start.tags as { [key: string]: string | number | boolean } | undefined
-  );
+function initializeEditorState(initialCard?: SerializedCard, defaultTags?: { [key: string]: string | number | boolean }): EditorState {
+  if (initialCard) {
+    return {
+      ...initialCard,
+      tags: initialCard?.tags as { [key: string]: string | number | boolean } | undefined,
+    };
+  }
+  return {
+    ...Card.new('normal').toJson(),
+    tags: defaultTags,
+  };
+}
 
-  // Face
-  const [layout, setLayout] = useState(start.layout);
-  const [faceIndex, setFaceIndex] = useState(0);
+// Auto-adjust face properties based on updates
+const autoAdjustCardProperties = (props: {
+  base: EditorState,
+  cardUpdates?: Partial<Omit<SerializedCard, 'faces'>>,
+  face0Updates?: Partial<SerializedCardFace>,
+  face1Updates?: Partial<SerializedCardFace>,
+}): EditorState => {
+  // Validate face1Updates can only be applied to dual-face layouts
+  const isTargetDualFace = new Layout(props.cardUpdates?.layout ?? props.base.layout).isDualFaceLayout();
+  if (!isTargetDualFace && ('face1Updates' in props && props.face1Updates !== undefined)) {
+    throw new Error('Cannot apply face1Updates to a single-face layout');
+  }
 
-  // Store state for all faces
-  const [faceStates, setFaceStates] = useState(() => {
-    return start.faces.map(face => ({
-      name: face.name,
-      supertype: face.supertype,
-      givenColors: face.givenColors,
-      subtypes: face.subtypes,
-      types: face.types,
-      manaCost: face.manaCost,
-      rules: face.rules,
-      pt: face.pt,
-      loyalty: face.loyalty,
-      art: face.art,
-    }));
-  });
-
-  // Current face state (derived from faceStates)
-  const currentFace = faceStates[faceIndex];
-  const startFace: SerializedCardFace = start.faces[faceIndex];
-  const name = currentFace.name;
-  const setName = (value: string) => {
-    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, name: value } : face));
-  };
-  const supertype = currentFace.supertype;
-  const setSupertype = (value: CardSuperType | undefined) => {
-    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, supertype: value } : face));
-  };
-  const givenColors = currentFace.givenColors;
-  const setGivenColors = (value: CardColor[] | undefined) => {
-    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, givenColors: value } : face));
-  };
-  const subtypes = currentFace.subtypes;
-  const setSubtypes = (value: string[] | undefined) => {
-    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, subtypes: value } : face));
-  };
-  const types = currentFace.types;
-  const setTypes = (value: [CardType, ...CardType[]]) => {
-    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, types: value } : face));
-  };
-  const manaCost = currentFace.manaCost;
-  const setManaCost = (value: { [type in Mana]?: number } | undefined) => {
-    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, manaCost: value } : face));
-  };
-  const rules = currentFace.rules;
-  const setRules = (value: { variant: RuleVariant, content: string }[] | undefined) => {
-    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, rules: value } : face));
-  };
-  const pt = currentFace.pt;
-  const setPt = (value: { power: number, toughness: number } | undefined) => {
-    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, pt: value } : face));
-  };
-  const loyalty = currentFace.loyalty;
-  const setLoyalty = (value: number | undefined) => {
-    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, loyalty: value } : face));
-  };
-  const art = currentFace.art;
-  const setArt = (value: string | undefined) => {
-    setFaceStates(prev => prev.map((face, i) => i === faceIndex ? { ...face, art: value } : face));
-  };
-
-  // Keep track of giving colors based on mana cost and land status
-  const hasManaCost = manaCost !== undefined;
-  const isLand = types.includes('land');
-  useEffect(() => {
-    if (hasManaCost || isLand) {
-      setGivenColors(undefined);
+  const canHavePT = (serializedCardFace: SerializedCardFace) => {
+    return serializedCardFace.types.includes('creature') || (serializedCardFace.types.includes('artifact') && serializedCardFace.subtypes?.includes('vehicle'));
+  }
+  const facePostTypeChangeValidation = (face: SerializedCardFace) => {
+    if (canHavePT(face)) {
+      face.pt = face.pt ?? { power: 2, toughness: 2 };
     } else {
-      setGivenColors(givenColors => givenColors ?? []);
+      face.pt = undefined;
     }
-  }, [hasManaCost, isLand]);
-
-  // If card has basic supertype or is a token, reset mana cost
-  useEffect(() => {
-    if (supertype === 'basic' || isToken) {
-      setManaCost(undefined);
+    if (face.types.includes('land')) {
+      face.manaCost = undefined;
     }
-  }, [supertype, isToken]);
-
-  // If types changes
-  const canHavePT = types.includes('creature') || (types.includes('artifact') && subtypes?.includes('vehicle'));
-  useEffect(() => {
-    // reset supertype if it no longer applies
-    if (supertype === 'basic' && (types.length !== 1 || types[0] !== 'land')) {
-      setSupertype(undefined);
+    if (!face.types.includes('land') && face.supertype === 'basic') {
+      face.supertype = undefined;
     }
-
-    // Update info on planeswalker
-    if (types.includes('planeswalker')) {
-      setSupertype('legendary');
-      setLoyalty(startFace.loyalty ?? 3);
-      if (!name.includes(',')) {
-        setName(name + ', Planeswalker');
+    if (face.types.includes('planeswalker')) {
+      face.supertype = 'legendary';
+      face.subtypes = undefined;
+      face.loyalty = face.loyalty ?? 3;
+      if (!face.name.includes(',')) {
+        face.name += ', Planeswalker';
       }
-      if (!rules?.some(r => tryParseLoyaltyAbility(r).success)) {
-        setRules([...(rules ?? []), { variant: 'ability', content: '+1: Add one mana of any color.' }]);
+      if (!face.rules?.some(r => tryParseLoyaltyAbility(r).success)) {
+        face.rules = [
+          ...(face.rules ?? []),
+          { variant: 'ability' as RuleVariant, content: '+1: Add one mana of any color.' },
+        ];
       }
-    } else if (loyalty !== undefined) {
-      setLoyalty(undefined);
+    } else {
+      face.loyalty = undefined;
+      face.name = face.name.replace(/, Planeswalker$/g, '');
+      face.rules = face.rules?.filter(r => !tryParseLoyaltyAbility(r).success);
+    }
+  }
+
+  const next: SerializedCard = ({ ...props.base, ...props.cardUpdates, faces: props.base.faces.map((face, i) => ({
+      ...face,
+      ...([props.face0Updates, props.face1Updates][i] ?? {}),
+    })) });
+
+  if ("cardUpdates" in props) {
+    if (props.cardUpdates === undefined) {
+      throw new Error('Cannot apply cardUpdates that is undefined');
     }
 
-    // Remove subtypes on instant/sorcery/planeswalkers
-    if (types.some(t => ['instant', 'sorcery', 'planeswalker'].includes(t))) {
-      setSubtypes(undefined);
-    } else if (subtypes === undefined) {
-      // for any other type, if subtypes is undefined, set it to the start value
-      setSubtypes(startFace.subtypes);
+    if ("isToken" in props.cardUpdates) {
+      if (props.cardUpdates.isToken !== props.base.isToken) {
+        if (props.cardUpdates.isToken) {
+          // Card changed to a token
+          next.rarity = 'common';
+          next.layout = 'normal';
+          next.faces = next.faces.slice(0, 1);
+          next.faces[0].manaCost = undefined;
+          next.faces[0].givenColors = [];
+          const types = next.faces[0].types.filter(t => tokenCardTypes.includes(t as TokenCardType));
+          next.faces[0].types = types.length === 0 ? ['creature'] : [types[0], ...types.slice(1)];
+          facePostTypeChangeValidation(next.faces[0]);
+        } else {
+          // Card changed to a non-token
+          next.faces[0].manaCost = next.faces[0].types.includes('land') ? undefined : { generic: 1 };
+          next.faces[0].givenColors = undefined;
+        }
+      }
     }
+    if ("layout" in props.cardUpdates) {
+      if (props.cardUpdates.layout === undefined) {
+        throw new Error('Cannot apply layout update that is undefined');
+      }
+      if (props.cardUpdates.layout !== props.base.layout) {
+        if ("isToken" in props.cardUpdates && props.cardUpdates.isToken) {
+          throw new Error('Cannot change layout to a value other than "normal" when changing to a token card');
+        }
 
-    // reset pt if it no longer applies
-    if (canHavePT && !pt) {
-      setPt(startFace.pt ?? { power: 2, toughness: 2 });
-    } else if (!canHavePT && pt) {
-      setPt(undefined);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supertype, subtypes, types]);
+        // Layout changed
+        const layout = new Layout(props.cardUpdates.layout);
+        next.layout = layout.id;
+        if (layout.isDualFaceLayout() && next.faces.length === 1) {
+          next.faces.push(layout.defaultFaces()[1]);
+        }
+        if (!layout.isDualFaceLayout() && next.faces.length === 2) {
+          next.faces = [next.faces[0]];
+        }
 
-  // If setName changes, update tags
-  useEffect(() => {
-    if (isCreate && (set || deck)) {
-      setTags(tags => ({
-        ...tags,
-        ...(set ? { set } : {}),
-        ...(deck ? { [`deck/${deck}`]: 1 } : {}),
-      }));
-    }
-  }, [isCreate, deck, set]);
-
-  // When layout changes, ensure we have the correct number of faces
-  useEffect(() => {
-    const layoutObj = new Layout(layout);
-    const defaultFaces = layoutObj.defaultFaces();
-
-    // If we need more faces than we have, add default faces
-    if (defaultFaces.length > faceStates.length) {
-      setFaceStates(prev => {
-        const newFaces = [...prev];
-        for (let i = prev.length; i < defaultFaces.length; i++) {
-          newFaces.push({
-            name: defaultFaces[i].name,
-            supertype: defaultFaces[i].supertype,
-            givenColors: defaultFaces[i].givenColors,
-            subtypes: defaultFaces[i].subtypes,
-            types: defaultFaces[i].types,
-            manaCost: defaultFaces[i].manaCost,
-            rules: defaultFaces[i].rules,
-            pt: defaultFaces[i].pt,
-            loyalty: defaultFaces[i].loyalty,
-            art: defaultFaces[i].art,
+        // Modal Layout
+        if (layout.id === 'modal') {
+          next.faces.forEach(face => {
+            if (face.types.includes('planeswalker')) {
+              const types = face.types.filter(t => t !== 'planeswalker');
+              face.types = types.length === 0 ? ['creature'] : [types[0], ...types.slice(1)];
+              facePostTypeChangeValidation(face);
+            }
+            face.givenColors = undefined;
+            face.manaCost = face.types.includes('land') ? undefined : (face.manaCost ?? { generic: 1 });
           });
         }
-        return newFaces;
-      });
-    }
 
-    // If we're viewing a face that no longer exists, switch to face 0
-    if (faceIndex >= defaultFaces.length) {
-      setFaceIndex(0);
-    }
-  }, [layout, faceIndex, faceStates.length]);
+        // Adventure Layout
+        if (layout.id === 'adventure') {
+          if (!permanentTypes.includes(next.faces[0].types[0] as typeof permanentTypes[number])) {
+            next.faces[0].types = ['creature'];
+            facePostTypeChangeValidation(next.faces[0]);
+          }
+          if (next.faces[1].types.some(t => permanentTypes.includes(t as typeof permanentTypes[number]))) {
+            next.faces[1].types = ['sorcery'];
+            facePostTypeChangeValidation(next.faces[1]);
+          }
+          next.faces[1].supertype = undefined;
+          next.faces[1].manaCost = next.faces[1].manaCost ?? { generic: 1 };
+          next.faces[1].givenColors = undefined;
+          next.faces[1].subtypes = ['adventure'];
+        }
 
-  const serializedCard: SerializedCard = {
-    id: start.id,
-    rarity,
-    isToken,
-    collectorNumber,
-    tags,
-    layout,
-    faces: faceStates.map(face => ({
-      name: face.name,
-      givenColors: face.givenColors,
-      manaCost: face.manaCost,
-      types: face.types,
+        // Transform Layout
+        if (layout.id === 'transform') {
+          next.faces.forEach(face => {
+            if (!permanentTypes.includes(face.types[0] as typeof permanentTypes[number])) {
+              face.types = ['creature'];
+              facePostTypeChangeValidation(face);
+            }
+          });
+          next.faces[1].manaCost = undefined;
+          next.faces[1].givenColors = [];
+        }
+      }
+    }
+  }
+
+  const applyFaceUpdates = (face: SerializedCardFace, updates: Partial<SerializedCardFace>) => {
+    if ("types" in updates) {
+      facePostTypeChangeValidation(face);
+    }
+  }
+
+  if ("face0Updates" in props) {
+    if (props.face0Updates === undefined) {
+      throw new Error('Cannot apply face0Updates that is undefined');
+    }
+    applyFaceUpdates(next.faces[0], props.face0Updates);
+  }
+  if ("face1Updates" in props) {
+    if (props.face1Updates === undefined) {
+      throw new Error('Cannot apply face1Updates that is undefined');
+    }
+    applyFaceUpdates(next.faces[1], props.face1Updates);
+  }
+
+  return next as EditorState;
+};
+
+export function CardEditor({ initialCard, validate, onSave, onCancel, defaultTags, redirectTo }: CardEditorProps) {
+  const isEditMode = initialCard !== undefined && initialCard.id !== '<new>';
+  const [state, setState] = useState<EditorState>(() => initializeEditorState(initialCard, defaultTags));
+  const [selectedFaceIndex, setSelectedFaceIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Helper functions for state updates
+  const updateCardProperty = <K extends keyof Omit<EditorState, 'faces'>>(
+    key: K,
+    value: EditorState[K],
+  ) => {
+    setState(base => autoAdjustCardProperties(({ base, cardUpdates: { [key]: value } })));
+  };
+  const updateFaceProperty = <K extends keyof SerializedCardFace>(
+    faceIndex: number,
+    key: K,
+    value: SerializedCardFace[K],
+  ) => {
+    setState(base => autoAdjustCardProperties({ base, [`face${faceIndex}Updates`]: { [key]: value } }));
+  };
+  const handleLayoutChange = (layout: CardLayout) => {
+    setState(base => autoAdjustCardProperties({ base, cardUpdates: { layout } }));
+    setSelectedFaceIndex(0);
+  };
+
+  // Build current serialized card
+  const currentCard: SerializedCard = {
+    id: state.id,
+    layout: state.layout,
+    rarity: state.rarity,
+    isToken: state.isToken,
+    collectorNumber: state.collectorNumber,
+    tags: state.tags,
+    faces: state.faces.map(face => ({
+      ...face,
       subtypes: face.subtypes ?? [],
-      supertype: face.supertype,
-      rules: face.rules,
-      pt: face.pt,
-      loyalty: face.loyalty,
-      art: face.art,
     })),
   };
-  const isChanged = isCreate || (JSON.stringify(serializedCard) !== JSON.stringify(start));
-  const canSave = isChanged && (!isCreate || name !== new Layout(layout).defaultFaces()[faceIndex].name);
+  const layout = new Layout(state.layout);
 
-  // Form State
-  const [isLoading, setIsLoading] = useState(false);
-  const parsedCard = SerializedCardSchema.safeParse(serializedCard);
-  const errors: {
-    path: string,
-    message: string,
-  }[] = parsedCard.success ? [] : parsedCard.error.errors.map(e => ({ path: e.path.join('.'), message: e.message }));
-  const getErrorMessage = (field: string) => {
-    const additionalCriteriaFields: { [field: string]: string[] | undefined } = {
-      types: ['isToken'],
-      manaCost: ['manaValue', 'color', 'colorIdentity'],
-      pt: ['power', 'toughness', 'powerToughnessDiff'],
-      rules: ['creatableTokens', 'colorIdentity'],
-    };
-    const criteriaFields = [
-      field,
-      ...(additionalCriteriaFields[field] ?? [])].flatMap(f => criteriaFailureReasonsPerField[f] ?? [],
-    );
-    const messages = [
-      ...errors.filter(e => e.path === field || e.path.startsWith(`${field}.`)).map(e => e.message),
-      ...criteriaFields.map(fe => capitalize(fe.location) + ' must ' + explainCriteria(fe.criteria)),
-    ].filter(m => m !== undefined);
-    return messages.length > 0 ? messages.join(' AND ') : undefined;
-  };
-  let validationError: string | undefined;
+  // Current face being edited
+  const currentFace = state.faces[selectedFaceIndex];
+  const initialFace = initialCard?.faces[selectedFaceIndex];
+  const canHaveManaCost = !state.isToken && !currentFace.types.includes('land');
+
+  // Validation
+  const parsedCard = SerializedCardSchema.safeParse(currentCard);
+  const schemaErrors: { path: string; message: string }[] = parsedCard.success
+    ? []
+    : parsedCard.error.errors.map(e => ({ path: e.path.join('.'), message: e.message }));
+
   let card: Card | undefined;
+  let validationError: string | undefined;
   try {
-    card = new Card(serializedCard);
+    card = new Card(currentCard);
   } catch (e: unknown) {
     validationError = (e as Error).message;
   }
+
   const criteriaFailureReasonsPerField: { [field: string]: CriteriaFailureReason[] | undefined } = {};
   if (card && validate) {
     const validation = new BlueprintValidator().validate({
       metadata: validate.metadata,
       blueprints: validate.blueprints,
-      card: serializedCard,
+      card: currentCard,
     });
     if (!validation.success) {
       validation.reasons.forEach(r => {
@@ -296,56 +307,54 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
     }
   }
 
-  // Handle cancel/discard
-  const handleDiscard = () => {
-    if (onCancel) {
-      onCancel();
-      return;
-    }
-    // If the URL has a 't' parameter, redirect to that location
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('t')) {
-      window.location.href = urlParams.get('t')!;
-    } else {
-      // If no 't' parameter, redirect based on whether it's a create or edit
-      if (isCreate) {
-        // If creating a new card, just redirect to the home page
-        window.location.href = '/';
-      } else {
-        // If editing an existing card, redirect to the card's page
-        window.location.href = `/card/${start.id}`;
-      }
-    }
-  }
+  const getErrorMessage = (field: string) => {
+    const additionalCriteriaFields: { [field: string]: string[] | undefined } = {
+      types: ['isToken'],
+      manaCost: ['manaValue', 'color', 'colorIdentity'],
+      pt: ['power', 'toughness', 'powerToughnessDiff'],
+      rules: ['creatableTokens', 'colorIdentity'],
+    };
+    const criteriaFields = [field, ...(additionalCriteriaFields[field] ?? [])].flatMap(
+      f => criteriaFailureReasonsPerField[f] ?? []
+    );
+    const messages = [
+      ...schemaErrors.filter(e => e.path === field || e.path.startsWith(`${field}.`)).map(e => e.message),
+      ...criteriaFields.map(fe => capitalize(fe.location) + ' must ' + explainCriteria(fe.criteria)),
+    ].filter(m => m !== undefined);
+    return messages.length > 0 ? messages.join(' AND ') : undefined;
+  };
 
-  // Handle form submission
-  const handleCreateCard = async () => {
-    if (!parsedCard.success) {
-      return;
-    }
-    const data = parsedCard.data;
+  // Determine if save is allowed
+  const isChanged = isEditMode
+    ? JSON.stringify(currentCard) !== JSON.stringify(initialCard)
+    : state.faces.every((face, i) => {
+        const defaultFaces = new Layout(state.layout).defaultFaces();
+        return face.name !== defaultFaces[i]?.name;
+      });
+
+  const canSave = isChanged && schemaErrors.length === 0 && !validationError;
+
+  // Handle save
+  const handleSave = async () => {
+    if (!parsedCard.success || !canSave) return;
+
     setIsLoading(true);
-
     try {
-      const result = isCreate
-        ? await createCard(data)
-        : await updateCard(data);
+      const result = isEditMode
+        ? await updateCard(parsedCard.data)
+        : await createCard(parsedCard.data);
+
       if (result) {
         if (onSave) {
           onSave(result);
+        } else if (redirectTo) {
+          window.location.href = redirectTo;
         } else {
-          // if /edit/<id>?t=/a/location is used, we want to get the t from the URL, and navigate to that page
-          const urlParams = new URLSearchParams(window.location.search);
-          if (urlParams.has('t')) {
-            window.location.href = urlParams.get('t')!;
-          } else {
-            // Navigate to the new card's page
-            window.location.href = `/card/${result.id}`;
-          }
+          window.location.href = `/card/${result.id}`;
         }
       }
     } catch (error) {
-      const message = 'Error creating/updating card: ' + ((error instanceof Error) ? error.message : 'Unknown error');
+      const message = 'Error saving card: ' + ((error instanceof Error) ? error.message : 'Unknown error');
       console.error(message);
       alert(message);
     } finally {
@@ -353,141 +362,88 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
     }
   };
 
-  const getStringTagOrEmptyString = (key: string) => typeof tags?.[key] === 'string' ? tags[key] : '';
-  const createSetterFor = (key: string) => (value: string | number | boolean | undefined) => {
-    const _tags = { ...(tags ?? {}) };
-    if (value === undefined || (typeof value === 'string' && value.trim() === '')) {
-      delete _tags[key];
-      setTags(_tags);
+  // Handle cancel
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else if (redirectTo) {
+      window.location.href = redirectTo;
+    } else if (isEditMode) {
+      window.location.href = `/card/${state.id}`;
     } else {
-      setTags({
-        ...tags,
-        [key]: value,
-      });
+      window.location.href = '/';
     }
   };
-  const setArtSetting = createSetterFor("setting");
-  const setArtFocus = createSetterFor("art/focus");
 
-  return (<>
+  // Helper for tag operations
+  const getStringTag = (key: string) => typeof state.tags?.[key] === 'string' ? state.tags[key] as string : '';
+  const setTag = (key: string, value: string | number | boolean | undefined) => {
+    const newTags = { ...(state.tags ?? {}) };
+    if (value === undefined || (typeof value === 'string' && value.trim() === '')) {
+      delete newTags[key];
+    } else {
+      newTags[key] = value;
+    }
+    updateCardProperty('tags', Object.keys(newTags).length > 0 ? newTags : undefined);
+  };
+
+  return (
     <div className={`mx-auto max-w-[1400px] space-y-6 ${isChanged ? 'border-2 border-orange-200' : 'border border-zinc-200'} bg-white rounded-lg p-6 shadow-md`}>
       <h2 className="text-2xl font-bold mt-2 mb-4 text-center">
-        {
-          isCreate
-            ? 'Create Card'
-            : `Update ${serializedCard.faces.map(f => f.name).join(' // ')}`
-        }
+        {isEditMode ? `Edit ${currentCard.faces.map(f => f.name).join(' // ')}` : 'Create Card'}
       </h2>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left column: Card properties and preview */}
         <div className="space-y-4 border-r border-zinc-100 pr-6">
-          <CardTypesInput types={types} setTypes={setTypes} getErrorMessage={() => getErrorMessage('types')}
-                          isToken={isToken} setIsToken={setIsToken}
-                          isChanged={!isCreate && JSON.stringify({ isToken: start.isToken, types: startFace.types }) !== JSON.stringify({ isToken, types })}
-                          revert={() => {
-                            setTypes(startFace.types);
-                            setIsToken(start.isToken);
-                          }}
+          <h3 className="font-semibold text-lg">Card Properties</h3>
+
+          <CardLayoutInput
+            layout={state.layout}
+            setLayout={handleLayoutChange}
+            getErrorMessage={() => getErrorMessage('layout')}
+            isChanged={isEditMode && initialCard.layout !== state.layout}
+            revert={() => initialCard && updateCardProperty('layout', initialCard.layout)}
           />
-          {types.some(s => ['land', 'creature', 'artifact', 'enchantment'].includes(s))
-            && <CardSubtypesInput subtypes={subtypes} setSubtypes={setSubtypes} getErrorMessage={() => getErrorMessage('subtypes')}
-                                  types={types}
-                                  isChanged={!isCreate && JSON.stringify(startFace.subtypes) !== JSON.stringify(subtypes)} revert={() => setSubtypes(startFace.subtypes)}
-            />}
-          {pt
-            && <CardPTInput pt={pt} setPt={setPt} getErrorMessage={() => getErrorMessage('pt')}
-                            isChanged={!isCreate && startFace.pt !== undefined && JSON.stringify(startFace.pt) !== JSON.stringify(pt)} revert={() => setPt(startFace.pt)}
-            />}
-          {loyalty
-            && <CardLoyaltyInput loyalty={loyalty} setLoyalty={setLoyalty} getErrorMessage={() => getErrorMessage('loyalty')}
-                                 isChanged={!isCreate && startFace.loyalty !== undefined && JSON.stringify(startFace.loyalty) !== JSON.stringify(loyalty)} revert={() => setLoyalty(startFace.loyalty)}
-            />}
-          {(supertype !== 'basic' && !isToken)
-            && <CardManaCostInput manaCost={manaCost} setManaCost={setManaCost}
-                                  getErrorMessage={() => getErrorMessage('manaCost')}
-                                  isChanged={!isCreate && JSON.stringify(startFace.manaCost) !== JSON.stringify(manaCost)} revert={() => setManaCost(startFace.manaCost)}
-            />}
-          {givenColors !== undefined
-            && <CardGivenColorsInput givenColors={givenColors} setGivenColors={setGivenColors} getErrorMessage={() => getErrorMessage('givenColors')}
-                                     isChanged={!isCreate && startFace.givenColors !== undefined && JSON.stringify(startFace.givenColors) !== JSON.stringify(givenColors)} revert={() => setGivenColors(startFace.givenColors)}
-            />}
-          <CardRulesInput rules={rules} setRules={setRules} getErrorMessage={() => getErrorMessage('rules')}
-                          isChanged={!isCreate && JSON.stringify(startFace.rules) !== JSON.stringify(rules)} revert={() => setRules(startFace.rules)}
+
+          <CardRarityInput
+            rarity={state.rarity}
+            setRarity={(value) => updateCardProperty('rarity', value)}
+            getErrorMessage={() => getErrorMessage('rarity')}
+            isChanged={isEditMode && initialCard.rarity !== state.rarity}
+            revert={() => initialCard && updateCardProperty('rarity', initialCard.rarity)}
           />
-          <CardSupertypeInput supertype={supertype} setSupertype={setSupertype} types={types} getErrorMessage={() => getErrorMessage('supertype')}
-                              isChanged={!isCreate && JSON.stringify(startFace.supertype) !== JSON.stringify(supertype)} revert={() => setSupertype(startFace.supertype)}
+
+          <CardCollectorNumberInput
+            collectorNumber={state.collectorNumber}
+            setCollectorNumber={(value) => updateCardProperty('collectorNumber', value)}
+            getErrorMessage={() => getErrorMessage('collectorNumber')}
+            isChanged={isEditMode && initialCard.collectorNumber !== state.collectorNumber}
+            revert={() => initialCard && updateCardProperty('collectorNumber', initialCard.collectorNumber)}
+            renderedTypeLine={card?.faces[0].renderTypeLine() ?? ''}
+            cardId={state.id}
           />
-          <CardTagsInput tags={tags} setTags={setTags} getErrorMessage={() => getErrorMessage('tags')}
-                         isChanged={!isCreate && JSON.stringify(start.tags) !== JSON.stringify(tags)} revert={() => setTags(start.tags as { [key: string]: string | number | boolean } | undefined)}
+
+          <CardTagsInput
+            tags={state.tags}
+            setTags={(value) => updateCardProperty('tags', value)}
+            getErrorMessage={() => getErrorMessage('tags')}
+            isChanged={isEditMode && JSON.stringify(initialCard.tags) !== JSON.stringify(state.tags)}
+            revert={() => initialCard && updateCardProperty('tags', initialCard.tags as { [key: string]: string | number | boolean } | undefined)}
           />
-        </div>
-        <div className="space-y-4 border-r border-zinc-100 pr-3">
-          <CardLayoutInput layout={layout} setLayout={setLayout} getErrorMessage={() => getErrorMessage('layout')}
-                           isChanged={!isCreate && JSON.stringify(start.layout) !== JSON.stringify(layout)} revert={() => setLayout(start.layout)}
-          />
-          {new Layout(layout).isDualFaceLayout() && (
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Editing Face
-              </label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setFaceIndex(0)}
-                  className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    faceIndex === 0
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Primary Face
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFaceIndex(1)}
-                  className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    faceIndex === 1
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Secondary Face
-                </button>
-              </div>
-              <p className="text-xs text-gray-500">
-                Editing: {faceStates[faceIndex]?.name || 'Unnamed'}
-              </p>
-            </div>
+
+          {card && schemaErrors.length === 0 && !validationError && (
+            <CardPreview card={card} />
           )}
-          <CardRarityInput rarity={rarity} setRarity={setRarity} getErrorMessage={() => getErrorMessage('rarity')}
-                           isChanged={!isCreate && JSON.stringify(start.rarity) !== JSON.stringify(rarity)} revert={() => setRarity(start.rarity)}
-          />
-          <CardNameInput name={name} setName={setName} getErrorMessage={() => getErrorMessage('name')} card={card}
-                         isChanged={!isCreate && JSON.stringify(startFace.name) !== JSON.stringify(name)} revert={() => setName(startFace.name)}
-          />
-          {card && <p>
+
+          {card && card.faces.map((face, i) => <p key={i}>
             <span className="text-zinc-600 text-sm italic">
-              {card.faces[faceIndex].explain()}
+              {face.explain()}
             </span>
-          </p>}
-          <CardCollectorNumberInput collectorNumber={collectorNumber} setCollectorNumber={setCollectorNumber}
-                                    getErrorMessage={() => getErrorMessage('collectorNumber')}
-                                    isChanged={!isCreate && JSON.stringify(start.collectorNumber) !== JSON.stringify(collectorNumber)} revert={() => setCollectorNumber(start.collectorNumber)}
-                                    renderedTypeLine={card?.faces[0].renderTypeLine() ?? ''} cardId={start.id}
-          />
-          <CardArtInput art={art} setArt={setArt} getErrorMessage={() => getErrorMessage('art')} card={card}
-                        isChanged={!isCreate && JSON.stringify(startFace.art) !== JSON.stringify(art)} revert={() => setArt(startFace.art)}
+          </p>)}
 
-                        artSetting={getStringTagOrEmptyString("setting")} setArtSetting={setArtSetting}
-                        artSettingIsChanged={!isCreate && JSON.stringify(start.tags?.setting) !== JSON.stringify(tags?.["setting"])} revertArtSetting={() => setArtSetting(start.tags?.setting)}
-
-                        showArtFocus={isToken || types.includes('planeswalker')}
-                        artFocus={getStringTagOrEmptyString("art/focus")} setArtFocus={setArtFocus}
-                        artFocusIsChanged={!isCreate && JSON.stringify(start.tags?.['art/focus']) !== JSON.stringify(tags?.["art/focus"])} revertArtFocus={() => setArtFocus(start.tags?.['art/focus'])}
-
-                        // TODO: add fs/rules too
-          />
           <ul className="list-disc pl-5 text-red-600 text-sm">
-            {errors.map((err, index) => (
+            {schemaErrors.map((err, index) => (
               <li key={index}>
                 <strong>{capitalize(err.path)}:</strong> {err.message}
               </li>
@@ -498,36 +454,173 @@ export function CardEditor({ start, validate, onSave, onCancel }: CardEditorProp
               </li>
             )}
           </ul>
-          {card && errors.length === 0 && !validationError && <CardPreview card={card} faceIndex={faceIndex} showDualRender={new Layout(layout).isDualRenderLayout()} />}
+        </div>
+
+        {/* Right column: Face properties */}
+        <div className="space-y-4 border-r border-zinc-100 pr-3">
+          <h3 className="font-semibold text-lg">Face Properties</h3>
+
+          {layout.isDualFaceLayout() && (
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                {state.faces.map((_, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => setSelectedFaceIndex(index)}
+                    className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      selectedFaceIndex === index
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {index === 0 ? 'Primary' : 'Secondary'} Face
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <CardNameInput
+            name={currentFace.name}
+            setName={(value) => updateFaceProperty(selectedFaceIndex, 'name', value)}
+            getErrorMessage={() => getErrorMessage('name')}
+            card={card}
+            isChanged={isEditMode && initialFace?.name !== currentFace.name}
+            revert={() => initialFace && updateFaceProperty(selectedFaceIndex, 'name', initialFace.name)}
+          />
+
+          <CardTypesInput
+            types={currentFace.types}
+            setTypes={(value) => updateFaceProperty(selectedFaceIndex, 'types', value)}
+            getErrorMessage={() => getErrorMessage('types')}
+            isToken={state.isToken}
+            setIsToken={(value) => updateCardProperty('isToken', value)}
+            isChanged={isEditMode && (initialFace?.types !== currentFace.types || initialCard?.isToken !== state.isToken)}
+            revert={() => {
+              if (initialFace) updateFaceProperty(selectedFaceIndex, 'types', initialFace.types);
+              if (initialCard) updateCardProperty('isToken', initialCard.isToken);
+            }}
+          />
+
+          {currentFace.subtypes !== undefined && (
+            <CardSubtypesInput
+              subtypes={currentFace.subtypes}
+              setSubtypes={(value) => updateFaceProperty(selectedFaceIndex, 'subtypes', value)}
+              getErrorMessage={() => getErrorMessage('subtypes')}
+              types={currentFace.types}
+              isChanged={isEditMode && JSON.stringify(initialFace?.subtypes) !== JSON.stringify(currentFace.subtypes)}
+              revert={() => initialFace && updateFaceProperty(selectedFaceIndex, 'subtypes', initialFace.subtypes)}
+            />
+          )}
+
+          {currentFace.pt !== undefined && (
+            <CardPTInput
+              pt={currentFace.pt}
+              setPt={(value) => updateFaceProperty(selectedFaceIndex, 'pt', value)}
+              getErrorMessage={() => getErrorMessage('pt')}
+              isChanged={isEditMode && JSON.stringify(initialFace?.pt) !== JSON.stringify(currentFace.pt)}
+              revert={() => initialFace?.pt && updateFaceProperty(selectedFaceIndex, 'pt', initialFace.pt)}
+            />
+          )}
+
+          {currentFace.loyalty !== undefined && (
+            <CardLoyaltyInput
+              loyalty={currentFace.loyalty}
+              setLoyalty={(value) => updateFaceProperty(selectedFaceIndex, 'loyalty', value)}
+              getErrorMessage={() => getErrorMessage('loyalty')}
+              isChanged={isEditMode && initialFace?.loyalty !== currentFace.loyalty}
+              revert={() => initialFace?.loyalty !== undefined && updateFaceProperty(selectedFaceIndex, 'loyalty', initialFace.loyalty)}
+            />
+          )}
+
+          {canHaveManaCost && (
+            <CardManaCostInput
+              manaCost={currentFace.manaCost}
+              setManaCost={(value) => updateFaceProperty(selectedFaceIndex, 'manaCost', value)}
+              getErrorMessage={() => getErrorMessage('manaCost')}
+              isChanged={isEditMode && JSON.stringify(initialFace?.manaCost) !== JSON.stringify(currentFace.manaCost)}
+              revert={() => updateFaceProperty(selectedFaceIndex, 'manaCost', initialFace?.manaCost)}
+            />
+          )}
+
+          {currentFace.givenColors && (
+            <CardGivenColorsInput
+              givenColors={currentFace.givenColors ?? []}
+              setGivenColors={(value) => updateFaceProperty(selectedFaceIndex, 'givenColors', value)}
+              getErrorMessage={() => getErrorMessage('givenColors')}
+              isChanged={isEditMode && JSON.stringify(initialFace?.givenColors) !== JSON.stringify(currentFace.givenColors)}
+              revert={() => updateFaceProperty(selectedFaceIndex, 'givenColors', initialFace?.givenColors)}
+            />
+          )}
+
+          <CardRulesInput
+            rules={currentFace.rules}
+            setRules={(value) => updateFaceProperty(selectedFaceIndex, 'rules', value)}
+            getErrorMessage={() => getErrorMessage('rules')}
+            isChanged={isEditMode && JSON.stringify(initialFace?.rules) !== JSON.stringify(currentFace.rules)}
+            revert={() => updateFaceProperty(selectedFaceIndex, 'rules', initialFace?.rules)}
+          />
+
+          <CardSupertypeInput
+            supertype={currentFace.supertype}
+            setSupertype={(value) => updateFaceProperty(selectedFaceIndex, 'supertype', value)}
+            types={currentFace.types}
+            getErrorMessage={() => getErrorMessage('supertype')}
+            isChanged={isEditMode && initialFace?.supertype !== currentFace.supertype}
+            revert={() => updateFaceProperty(selectedFaceIndex, 'supertype', initialFace?.supertype)}
+          />
+
+          <CardArtInput
+            art={currentFace.art}
+            setArt={(value) => updateFaceProperty(selectedFaceIndex, 'art', value)}
+            getErrorMessage={() => getErrorMessage('art')}
+            card={card}
+            isChanged={isEditMode && initialFace?.art !== currentFace.art}
+            revert={() => updateFaceProperty(selectedFaceIndex, 'art', initialFace?.art)}
+            artSetting={getStringTag('setting')}
+            setArtSetting={(value) => setTag('setting', value)}
+            artSettingIsChanged={isEditMode && initialCard?.tags?.setting !== state.tags?.setting}
+            revertArtSetting={() => setTag('setting', initialCard?.tags?.setting as string | undefined)}
+            showArtFocus={state.isToken || currentFace.types.includes('planeswalker')}
+            artFocus={getStringTag('art/focus')}
+            setArtFocus={(value) => setTag('art/focus', value)}
+            artFocusIsChanged={isEditMode && initialCard?.tags?.['art/focus'] !== state.tags?.['art/focus']}
+            revertArtFocus={() => setTag('art/focus', initialCard?.tags?.['art/focus'] as string | undefined)}
+          />
         </div>
       </div>
 
-      {/* Create Button */}
+      {/* Action buttons */}
       <div className="space-y-1">
-        {!canSave && <p className="text-center text-zinc-600 text-sm">
-          {isCreate ? "You must first provide a new name for the card." : "You must first make changes, before you can save them."}
-        </p>}
-        {((errors.length > 0) || (validationError !== undefined) || isLoading) && <p className="text-center text-red-600 text-sm">
-          You must fix the above errors before you can {isCreate ? 'create' : 'update'} the card.
-        </p>}
+        {!isChanged && (
+          <p className="text-center text-zinc-600 text-sm">
+            {isEditMode
+              ? "You must make changes before you can save."
+              : "You must change all face names before you can create the card."}
+          </p>
+        )}
+        {(schemaErrors.length > 0 || validationError) && (
+          <p className="text-center text-red-600 text-sm">
+            You must fix the above errors before you can save the card.
+          </p>
+        )}
         <div className="flex gap-4 items-baseline">
           <button
-            onClick={handleCreateCard}
-            disabled={(errors.length > 0) || (validationError !== undefined) || isLoading || !canSave}
+            onClick={handleSave}
+            disabled={!canSave || isLoading}
             className="w-full py-2 px-4 disabled:bg-zinc-500 bg-orange-600 text-white font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading
-              ? `${isCreate ? 'Creating' : 'Updating'}...`
-              : (isCreate ? "Create card" : "Save changes")}
+            {isLoading ? 'Saving...' : isEditMode ? 'Save Changes' : 'Create Card'}
           </button>
           <button
-            onClick={handleDiscard}
+            onClick={handleCancel}
             className="w-60 mt-2 py-2 px-4 bg-zinc-200 text-zinc-800 font-medium rounded-md hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-400"
           >
-            {isCreate ? 'Cancel Card Creation' : 'Discard changes'}
+            {isEditMode ? 'Discard Changes' : 'Cancel'}
           </button>
         </div>
       </div>
     </div>
-  </>);
+  );
 }
