@@ -499,9 +499,15 @@ export class CardFace {
     for (const match of matches) {
       const first = match[1];
       const second = match[3];
+      if (first.includes('{c}')) {
+        result.add('colorless');
+      }
       const firstColors = CardFace.colorOf(first);
       firstColors.forEach(c => result.add(c));
       if (second) {
+        if (second.includes('{c}')) {
+          result.add('colorless');
+        }
         const secondColors = CardFace.colorOf(second);
         secondColors.forEach(c => result.add(c));
       }

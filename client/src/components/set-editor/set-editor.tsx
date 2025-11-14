@@ -282,7 +282,7 @@ export function SetEditor(props: SetEditorProps) {
     setCardEditorSettings({
       archetypeIndex,
       cycleKey,
-      card: Card.new('normal'),
+      card: Card.new('normal').toJson(),
       blueprints: matrix.getBlueprintsForSlot(archetypeIndex, cycleKey),
     });
   }
@@ -305,7 +305,7 @@ export function SetEditor(props: SetEditorProps) {
           <Modal onClose={() => setCardEditorSettings(undefined)}>
             <div className="w-full max-w-[1200px] rounded-xl shadow-2xl overflow-hidden">
               <CardEditor
-                start={cardEditorSettings.card}
+                initialCard={cardEditorSettings.card}
                 validate={{
                   blueprints: cardEditorSettings.blueprints,
                   metadata: matrix.getArchetype(cardEditorSettings.archetypeIndex).metadata,
