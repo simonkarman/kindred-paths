@@ -16,7 +16,7 @@ import {
   capitalize,
   SerializedCardFace, tokenCardTypes, TokenCardType, permanentTypes,
 } from 'kindred-paths';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createCard, updateCard } from '@/utils/server';
 import { CardNameInput } from '@/components/editor/card-name-input';
 import { CardTypesInput } from '@/components/editor/card-types-input';
@@ -33,6 +33,7 @@ import { CardArtInput } from '@/components/editor/card-art-input';
 import { CardGivenColorsInput } from '@/components/editor/card-given-colors-input';
 import { CardLoyaltyInput } from '@/components/editor/card-loyalty-input';
 import { CardLayoutInput } from '@/components/editor/card-layout-input';
+import { useDeckNameFromSearch, useSetNameFromSearch } from '@/utils/use-search';
 
 type CardEditorProps = {
   initialCard?: SerializedCard;
@@ -42,7 +43,6 @@ type CardEditorProps = {
   };
   onSave?: (card: SerializedCard) => void;
   onCancel?: () => void;
-  defaultTags?: { [key: string]: string | number | boolean };
   redirectTo?: string;
 };
 
@@ -56,16 +56,17 @@ type EditorState = {
   faces: SerializedCardFace[];
 };
 
-function initializeEditorState(initialCard?: SerializedCard, defaultTags?: { [key: string]: string | number | boolean }): EditorState {
+function initializeEditorState(initialCard?: SerializedCard): EditorState {
   if (initialCard) {
     return {
       ...initialCard,
       tags: initialCard?.tags as { [key: string]: string | number | boolean } | undefined,
     };
   }
+  const card = Card.new('normal').toJson();
   return {
-    ...Card.new('normal').toJson(),
-    tags: defaultTags,
+    ...card,
+    tags: card.tags as { [key: string]: string | number | boolean },
   };
 }
 
@@ -231,19 +232,23 @@ const autoAdjustCardProperties = (props: {
   return next as EditorState;
 };
 
-export function CardEditor({ initialCard, validate, onSave, onCancel, defaultTags, redirectTo }: CardEditorProps) {
-  const isEditMode = initialCard !== undefined && initialCard.id !== '<new>';
-  const [state, setState] = useState<EditorState>(() => initializeEditorState(initialCard, defaultTags));
+export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo }: CardEditorProps) {
+  const isAiCard = initialCard?.id.startsWith('ai-');
+  const isEditMode = initialCard !== undefined && initialCard.id !== '<new>' && !isAiCard;
+  const [state, setState] = useState<EditorState>(() => initializeEditorState(initialCard));
   const [selectedFaceIndex, setSelectedFaceIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
   // Helper functions for state updates
-  const updateCardProperty = <K extends keyof Omit<EditorState, 'faces'>>(
+  const updateCardProperty = useCallback(<K extends keyof Omit<EditorState, 'faces'>>(
     key: K,
-    value: EditorState[K],
+    value: EditorState[K] | ((currentValue: EditorState[K]) => EditorState[K]),
   ) => {
-    setState(base => autoAdjustCardProperties(({ base, cardUpdates: { [key]: value } })));
-  };
+    setState(base => autoAdjustCardProperties(({
+      base,
+      cardUpdates: { [key]: (typeof value === 'function') ? value(base[key]) : value }
+    })));
+  }, []);
   const updateFaceProperty = <K extends keyof SerializedCardFace>(
     faceIndex: number,
     key: K,
@@ -255,6 +260,19 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, defaultTag
     setState(base => autoAdjustCardProperties({ base, cardUpdates: { layout } }));
     setSelectedFaceIndex(0);
   };
+
+  // Set tags based on set and deck name
+  const set = useSetNameFromSearch();
+  const deck = useDeckNameFromSearch();
+  useEffect(() => {
+    if (!isAiCard && !isEditMode && (set || deck)) {
+      updateCardProperty('tags', tags => ({
+        ...tags,
+        ...(set ? { set } : {}),
+        ...(deck ? { [`deck/${deck}`]: 1 } : {}),
+      }));
+    }
+  }, [isEditMode, deck, set, isAiCard, updateCardProperty]);
 
   // Build current serialized card
   const currentCard: SerializedCard = {

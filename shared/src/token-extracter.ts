@@ -5,7 +5,7 @@ export class TokenExtractor {
     const keywordOrAbility = '(?:(?:\\w+(?: strike)?)|(?:".+?"))';
     this.regex = new RegExp([
       '[cC]reates?',
-      '( [A-Z]\\w*,)?',
+      '( [A-Z][\\w ]*?[a-z],)?',
       ' (?:a(?: number of)?|that many|X|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen)',
       '(?: tapped and attacking)?',
       '(?: tapped)?',
@@ -22,7 +22,7 @@ export class TokenExtractor {
     return Array.from(match).map(m => {
       // return concat of all matches that are not undefined or empty
       const result = m.slice(1).filter(s => s !== undefined && s !== '').join('').trim();
-      if (result === 'token that\'s a copy' || result === 'token that’s a copy') {
+      if (result === 'token that\'s a copy') {
         return 'Copy token';
       }
       return result;
