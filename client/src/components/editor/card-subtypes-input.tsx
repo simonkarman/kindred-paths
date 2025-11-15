@@ -161,7 +161,7 @@ export const CardSubtypesInput = (props: {
               }}
               onKeyUp={handleKeyPress}
               onFocus={() => setShowSuggestions(newSubtype.length > 0)}
-              onBlur={() => setShowSuggestions(false)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 10)} // Delay to allow click on suggestions
               placeholder="Add subtype..."
               className="flex-1 bg-white text-sm px-2 py-0.5 border border-zinc-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -182,10 +182,7 @@ export const CardSubtypesInput = (props: {
                 <button
                   key={suggestion}
                   type="button"
-                  onClick={() => {
-                    alert(`yes! ${suggestion}`);
-                    addSubtype(suggestion)
-                  }}
+                  onClick={() => addSubtype(suggestion)}
                   className="w-full text-left px-3 py-1 hover:bg-blue-50 text-sm border-b border-zinc-100 last:border-b-0"
                 >
                   {capitalize(suggestion)}
