@@ -1,12 +1,12 @@
 import { AISampleGenerator } from './ai-sample-generator';
 import { Card, getStatistics, SerializedCard } from 'kindred-paths';
-import { Anthropic } from '@anthropic-ai/sdk';
+import { LLMProvider } from '../llm';
 import { GenerateCardSchema } from './generate-card-schema';
 import { renderService } from '../render-service';
 
 export class CardGenerator extends AISampleGenerator<SerializedCard> {
   constructor(
-    anthropic: Anthropic,
+    llmProvider: LLMProvider,
     prompt: string,
   ) {
     const systemPrompt = `You are tasked with generating valid JSON objects that conform to the CardSchema for Magic: The Gathering cards.
@@ -89,7 +89,7 @@ You can use different mechanics, themes, or abilities to achieve this.
 Make sure to align the mana cost and name with the rules you choose.`;
 
     super({
-      anthropic,
+      llmProvider,
       systemPrompt,
       userPrompt: prompt,
       transformer: (text: string) => {

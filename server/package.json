@@ -35,6 +35,7 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "kindred-paths": "file:../shared",
+    "openai": "^4.80.0",
     "playwright": "^1.53.2",
     "sharp": "^0.34.3",
     "simple-git": "^3.28.0",

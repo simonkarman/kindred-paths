@@ -1,10 +1,10 @@
-import { Anthropic } from '@anthropic-ai/sdk';
+import { LLMProvider, getConfiguredModel } from '../llm';
 
 /**
  * Configuration for the SampleGenerator
  */
 interface AISampleGeneratorConfiguration<T> {
-  anthropic?: Anthropic;
+  llmProvider?: LLMProvider;
   systemPrompt: string;
   userPrompt: string;
   transformer: (input: string) => T;
@@ -18,7 +18,7 @@ interface AISampleGeneratorConfiguration<T> {
  * Class for generating multiple AI samples with differentiation and error correction
  */
 export class AISampleGenerator<T> {
-  private readonly anthropic: Anthropic;
+  private readonly llmProvider: LLMProvider;
   private readonly transformer: (input: string) => T;
   private readonly summarizer: (sample: T) => string;
   private readonly statistics: (samples: T[]) => string;
@@ -31,7 +31,10 @@ export class AISampleGenerator<T> {
   protected readonly samples: T[] = [];
 
   constructor(configuration: AISampleGeneratorConfiguration<T>) {
-    this.anthropic = configuration.anthropic ?? new Anthropic();
+    if (!configuration.llmProvider) {
+      throw new Error('llmProvider is required in AISampleGeneratorConfiguration');
+    }
+    this.llmProvider = configuration.llmProvider;
     this.systemPrompt = configuration.systemPrompt + `
 
 CRITICAL INSTRUCTIONS:
@@ -116,7 +119,7 @@ Prompt: ${basePrompt}`;
     while (iteration < iterationBudget) {
       try {
         // Build messages array with only current context
-        const messages: Anthropic.Messages.MessageParam[] = [];
+        const messages: { role: 'user' | 'assistant', content: string }[] = [];
         if (previousAttempt) {
           // Include previous attempt and current prompt with error context
           messages.push({
@@ -136,24 +139,16 @@ Prompt: ${basePrompt}`;
           });
         }
 
-        // Call Claude Opus 4
-        const msg = await this.anthropic.messages.create({
-          model: 'claude-opus-4-20250514',
-          max_tokens: this.maxTokens,
+        // Call LLM provider
+        const result = await this.llmProvider.complete({
+          systemPrompt: this.systemPrompt,
+          messages,
+          maxTokens: this.maxTokens,
           temperature: 1,
-          system: this.systemPrompt,
-          messages: messages,
-          // thinking: {
-          //   type: "enabled",
-          //   budget_tokens: this.maxTokens / 2,
-          // },
+          model: getConfiguredModel(this.llmProvider),
         });
 
-        const textBlock = msg.content.filter(c => c.type === 'text').pop();
-        if (!textBlock) {
-          throw new Error('No response received from Claude');
-        }
-        const response = textBlock.text;
+        const response = result.content;
 
         // Apply transformer
         try {

@@ -18,14 +18,20 @@ Make sure you have the following tools installed on your system:
 - **Docker** — Recommend to install [Docker Desktop](https://docs.docker.com/desktop/).
 - Make sure no other applications are running on port `4100`, `4101`, or `4102`.
 
-> Note: If you want to use AI suggestions, you will also need an API key for [Anthropic](https://www.anthropic.com/) and/or [Leonardo AI](https://leonardo.ai/). These require a paid subscription.
+> Note: If you want to use AI suggestions, you will need an API key for an LLM provider (Anthropic or OpenAI) and/or [Leonardo AI](https://leonardo.ai/). These require a paid subscription.
 
 ## Getting Started
 You can start the server and client in development mode. Run these commands in your terminal in the **root directory** of the repository:
 
 ```bash
 # (optional) Set the environment variables if you want to use AI suggestions
-export ANTHROPIC_API_KEY="..."
+# For text generation (card names, art settings, card generation):
+export LLM_PROVIDER="anthropic"  # Options: "anthropic" (default) or "openai"
+export ANTHROPIC_API_KEY="..."   # Required if using Anthropic (default provider)
+# export OPENAI_API_KEY="..."    # Required if using OpenAI
+# export LLM_MODEL="..."          # Optional: Override default model for selected provider
+
+# For image generation (card artwork):
 export LEONARDO_API_KEY="..."
 
 # Make sure you have Docker running...
@@ -37,6 +43,40 @@ git clone https://github.com/simonkarman/kindred-paths-collection.git collection
 # Install and start the application (port 4100)
 npm install
 npm run dev
+```
+
+### LLM Provider Configuration
+
+The application supports multiple LLM providers for text generation. You can configure which provider to use via environment variables:
+
+- **`LLM_PROVIDER`**: Select the LLM provider to use
+  - `anthropic` (default) - Uses Claude models from Anthropic
+  - `openai` - Uses GPT models from OpenAI
+
+- **`LLM_MODEL`**: (Optional) Override the default model for the selected provider
+  - Anthropic default: `claude-opus-4-20250514`
+  - OpenAI default: `gpt-4o`
+
+**Example configurations:**
+
+```bash
+# Use Anthropic (default)
+export LLM_PROVIDER="anthropic"
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# Use OpenAI
+export LLM_PROVIDER="openai"
+export OPENAI_API_KEY="sk-..."
+
+# Use Anthropic with a different model
+export LLM_PROVIDER="anthropic"
+export ANTHROPIC_API_KEY="sk-ant-..."
+export LLM_MODEL="claude-sonnet-4-20250514"
+
+# Use OpenAI with a different model
+export LLM_PROVIDER="openai"
+export OPENAI_API_KEY="sk-..."
+export LLM_MODEL="gpt-4o-mini"
 ```
 
 You can now open the application in your browser on https://localhost:4100.
@@ -54,11 +94,14 @@ You can get this error when trying to run the application and Docker is not runn
 This error indicates that Docker is not running on your system. Make sure you have Docker Desktop running and try again.
 
 ### Could not resolve authentication
-You can get this error when trying to request card name suggestions or card art setting or other text suggestion from Antropic.
+You can get this error when trying to request card name suggestions, card art settings, or other text suggestions from your LLM provider.
 
-> Error `"Error: Could not resolve authentication method. Expected either apiKey or authToken to be set. Or for one of the "X-Api-Key" or "Authorization" headers to be explicitly omitted"?`
+> Error `"Error: Could not resolve authentication method. Expected either apiKey or authToken to be set. Or for one of the "X-Api-Key" or "Authorization" headers to be explicitly omitted"`
 
-This means that you have not set the environment variables for the Anthropic. Make sure you have set the `ANTHROPIC_API_KEY` environment variable in your terminal before starting the application. You can find [your keys in the Anthropic console](https://console.anthropic.com/settings/keys).
+This means that you have not set the API key environment variable for your selected LLM provider. Make sure you have set the appropriate API key before starting the application:
+
+- **For Anthropic** (default): Set `ANTHROPIC_API_KEY` - You can find [your keys in the Anthropic console](https://console.anthropic.com/settings/keys)
+- **For OpenAI**: Set `OPENAI_API_KEY` - You can find [your keys in the OpenAI console](https://platform.openai.com/api-keys)
 
 ### Authentication hook unauthorized
 You can get this error when trying to request art suggestions from Leonardo AI.
