@@ -1,10 +1,10 @@
-import { LLMProvider, getConfiguredModel } from '../llm';
+import { generateText, CoreMessage } from 'ai';
+import { getLanguageModel } from '../llm-config';
 
 /**
  * Configuration for the SampleGenerator
  */
 interface AISampleGeneratorConfiguration<T> {
-  llmProvider?: LLMProvider;
   systemPrompt: string;
   userPrompt: string;
   transformer: (input: string) => T;
@@ -18,7 +18,6 @@ interface AISampleGeneratorConfiguration<T> {
  * Class for generating multiple AI samples with differentiation and error correction
  */
 export class AISampleGenerator<T> {
-  private readonly llmProvider: LLMProvider;
   private readonly transformer: (input: string) => T;
   private readonly summarizer: (sample: T) => string;
   private readonly statistics: (samples: T[]) => string;
@@ -31,10 +30,6 @@ export class AISampleGenerator<T> {
   protected readonly samples: T[] = [];
 
   constructor(configuration: AISampleGeneratorConfiguration<T>) {
-    if (!configuration.llmProvider) {
-      throw new Error('llmProvider is required in AISampleGeneratorConfiguration');
-    }
-    this.llmProvider = configuration.llmProvider;
     this.systemPrompt = configuration.systemPrompt + `
 
 CRITICAL INSTRUCTIONS:
@@ -119,7 +114,7 @@ Prompt: ${basePrompt}`;
     while (iteration < iterationBudget) {
       try {
         // Build messages array with only current context
-        const messages: { role: 'user' | 'assistant', content: string }[] = [];
+        const messages: CoreMessage[] = [];
         if (previousAttempt) {
           // Include previous attempt and current prompt with error context
           messages.push({
@@ -139,16 +134,16 @@ Prompt: ${basePrompt}`;
           });
         }
 
-        // Call LLM provider
-        const result = await this.llmProvider.complete({
-          systemPrompt: this.systemPrompt,
+        // Call LLM via AI SDK
+        const result = await generateText({
+          model: getLanguageModel(),
+          system: this.systemPrompt,
           messages,
           maxTokens: this.maxTokens,
           temperature: 1,
-          model: getConfiguredModel(this.llmProvider),
         });
 
-        const response = result.content;
+        const response = result.text;
 
         // Apply transformer
         try {

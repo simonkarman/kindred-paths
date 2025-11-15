@@ -1,14 +1,10 @@
 import { AISampleGenerator } from './ai-sample-generator';
 import { Card, getStatistics, SerializedCard } from 'kindred-paths';
-import { LLMProvider } from '../llm';
 import { GenerateCardSchema } from './generate-card-schema';
 import { renderService } from '../render-service';
 
 export class CardGenerator extends AISampleGenerator<SerializedCard> {
-  constructor(
-    llmProvider: LLMProvider,
-    prompt: string,
-  ) {
+  constructor(prompt: string) {
     const systemPrompt = `You are tasked with generating valid JSON objects that conform to the CardSchema for Magic: The Gathering cards.
 
 Card Schema definition:
@@ -89,7 +85,6 @@ You can use different mechanics, themes, or abilities to achieve this.
 Make sure to align the mana cost and name with the rules you choose.`;
 
     super({
-      llmProvider,
       systemPrompt,
       userPrompt: prompt,
       transformer: (text: string) => {

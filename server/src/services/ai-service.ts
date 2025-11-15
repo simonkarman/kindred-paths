@@ -3,10 +3,11 @@ import { Card, CardArtPromptCreator, CardFace, SerializedCard, SerializedCardSch
 import { Leonardo } from '@leonardo-ai/sdk';
 import { z } from 'zod';
 import { GetGenerationByIdResponse } from '@leonardo-ai/sdk/sdk/models/operations';
+import { generateText } from 'ai';
 import { computeCardId } from '../utils/card-utils';
 import { CardGenerator } from './generator/card-generator';
 import { configuration } from '../configuration';
-import { LLMProvider, createLLMProvider, getConfiguredModel } from './llm';
+import { getLanguageModel } from './llm-config';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -32,12 +33,10 @@ interface ArtSuggestion {
 }
 
 export class AIService {
-  private llmProvider: LLMProvider;
   private leonardo: Leonardo;
   private cardArtPromptCreator: CardArtPromptCreator;
 
   constructor() {
-    this.llmProvider = createLLMProvider();
     this.leonardo = new Leonardo({
       bearerAuth: process.env.LEONARDO_API_KEY || '',
     });
@@ -47,8 +46,9 @@ export class AIService {
   async getCardNameSuggestions(cardData: SerializedCard): Promise<NameSuggestion[]> {
     const card = new Card(cardData);
     const cardInfo = getCardInfo(card);
-    const response = await this.llmProvider.complete({
-      systemPrompt: "You're an expert in coming up with creative names for custom Magic the Gathering cards. " +
+    const { text } = await generateText({
+      model: getLanguageModel(),
+      system: "You're an expert in coming up with creative names for custom Magic the Gathering cards. " +
         'Always respond with a JSON array where each entry is a suggestion. ' +
         'Generate name suggestions and return ONLY valid JSON without any markdown formatting or code blocks. ' +
         'Return as an array of objects with "name" and "reason" properties. ' +
@@ -64,25 +64,19 @@ export class AIService {
         'happen. ' +
         'For cards with multiple faces, please suggest a name for each face. For example: "Agadeem\'s Awakening // Agadeem, the Undercrypt". ' +
         'In general, use different styles and approaches to naming the cards.',
-      messages: [
-        {
-          role: 'user',
-          content: `Could you suggest some card names for ${cardInfo}`,
-        },
-      ],
+      prompt: `Could you suggest some card names for ${cardInfo}`,
       maxTokens: 1000,
       temperature: 1,
-      model: getConfiguredModel(this.llmProvider),
     });
 
     const respondError = (reason: string): NameSuggestion[] => [{ name: 'No name suggestions available', reason }];
 
-    if (!response.content) {
+    if (!text) {
       return respondError('No text was outputted by the AI model.');
     }
 
     try {
-      return z.array(z.object({ name: z.string().min(1), reason: z.string().min(1) })).parse(JSON.parse(response.content));
+      return z.array(z.object({ name: z.string().min(1), reason: z.string().min(1) })).parse(JSON.parse(text));
     } catch {
       return respondError('The response from the AI model was not valid JSON.');
     }
@@ -92,8 +86,9 @@ export class AIService {
     const card = new Card(cardData);
 
     const cardInfo = getCardInfo(card);
-    const response = await this.llmProvider.complete({
-      systemPrompt: "You're an expert in coming up with creative art settings for custom Magic the Gathering cards based on a given card. " +
+    const { text } = await generateText({
+      model: getLanguageModel(),
+      system: "You're an expert in coming up with creative art settings for custom Magic the Gathering cards based on a given card. " +
         'Always respond with a JSON array where each entry is a suggestion for an art setting. ' +
         'An art setting describes what the card artist that will make the artwork for the card should create. ' +
         'The art setting should describe the location, what happens on the foreground, and what happens on the background. ' +
@@ -111,25 +106,19 @@ export class AIService {
         'For noncreature permanents use the name of the card to describe the location or object and use the rules (keywords and abilities) to ' +
         'describe the setting. ' +
         'In general, use different styles and approaches to naming the cards and describe what you would see in the world if the card would resolve.',
-      messages: [
-        {
-          role: 'user',
-          content: `Could you suggest some card settings for ${cardInfo}`,
-        },
-      ],
+      prompt: `Could you suggest some card settings for ${cardInfo}`,
       maxTokens: 1000,
       temperature: 1,
-      model: getConfiguredModel(this.llmProvider),
     });
 
     const respondError = (reason: string): ArtSettingSuggestion[] => [{ name: 'No art setting suggestions available', setting: reason }];
 
-    if (!response.content) {
+    if (!text) {
       return respondError('No text was outputted by the AI model.');
     }
 
     try {
-      return z.array(z.object({ name: z.string().min(1), setting: z.string().min(1) })).parse(JSON.parse(response.content));
+      return z.array(z.object({ name: z.string().min(1), setting: z.string().min(1) })).parse(JSON.parse(text));
     } catch {
       return respondError('The response from the AI model was not valid JSON.');
     }
@@ -235,7 +224,7 @@ export class AIService {
       createdAt = content.createdAt;
       updatedAt = new Date().toISOString();
     }
-    const generator = new CardGenerator(this.llmProvider, prompt);
+    const generator = new CardGenerator(prompt);
     generator.prepopulateSamples(preexistingSamples);
     const samples = await generator.sample(iterationBudget);
     await fs.writeFile(getFilePath(generatorId), JSON.stringify({

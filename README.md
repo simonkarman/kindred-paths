@@ -47,7 +47,7 @@ npm run dev
 
 ### LLM Provider Configuration
 
-The application supports multiple LLM providers for text generation. You can configure which provider to use via environment variables:
+The application uses the [Vercel AI SDK](https://sdk.vercel.ai/) for text generation, which supports multiple AI providers. You can configure which provider to use via environment variables:
 
 - **`LLM_PROVIDER`**: Select the LLM provider to use
   - `anthropic` (default) - Uses Claude models from Anthropic
@@ -78,6 +78,8 @@ export LLM_PROVIDER="openai"
 export OPENAI_API_KEY="sk-..."
 export LLM_MODEL="gpt-4o-mini"
 ```
+
+The AI SDK provides a unified interface for working with different AI providers, making it easy to switch between them or add support for additional providers in the future.
 
 You can now open the application in your browser on https://localhost:4100.
 

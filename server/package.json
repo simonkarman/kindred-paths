@@ -30,12 +30,13 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.57.0",
+    "@ai-sdk/anthropic": "^1.0.6",
+    "@ai-sdk/openai": "^1.0.9",
     "@leonardo-ai/sdk": "^4.20.0",
+    "ai": "^4.1.7",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "kindred-paths": "file:../shared",
-    "openai": "^4.80.0",
     "playwright": "^1.53.2",
     "sharp": "^0.34.3",
     "simple-git": "^3.28.0",
