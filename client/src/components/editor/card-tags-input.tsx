@@ -68,7 +68,7 @@ export const CardTagsInput = (props: {
   };
 
   const isEditable = (tagKey: string) => {
-    return !['setting', 'createdAt'].includes(tagKey) && !tagKey.startsWith('fs/') && !tagKey.startsWith('art/');
+    return !['setting', 'setting-back', 'createdAt'].includes(tagKey) && !tagKey.startsWith('fs/') && !tagKey.startsWith('art/');
   };
 
   const renderValueInput = (tag: { key: string, value: string | number | boolean | undefined }, index: number) => {

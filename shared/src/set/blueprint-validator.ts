@@ -75,6 +75,13 @@ export class BlueprintValidator {
   ): CriteriaFailureReason[] {
     const card = new Card(_card);
     const reasons: Omit<CriteriaFailureReason, 'source'>[] = [];
+    if (blueprint.layout) {
+      blueprint.layout.forEach(c => {
+        if (!checkStringCriteria(c, card.layout.id)) {
+          reasons.push({ location: 'layout', criteria: c, value: card.layout });
+        }
+      });
+    }
     if (blueprint.rarity) {
       blueprint.rarity.forEach(c => {
         if (!checkStringCriteria(c, card.rarity)) {

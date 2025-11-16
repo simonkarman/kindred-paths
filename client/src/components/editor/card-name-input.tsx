@@ -7,6 +7,7 @@ export const CardNameInput = (props: {
   setName: (value: string) => void,
   getErrorMessage: () => string | undefined,
   card: Card | undefined,
+  faceIndex: number,
   isChanged: boolean,
   revert: () => void,
 }) => {
@@ -16,8 +17,9 @@ export const CardNameInput = (props: {
     setPropertyValue={(v) => props.setName(v ?? '')}
     getPropertyErrorMessage={props.getErrorMessage}
     card={props.card}
+    faceIndex={props.faceIndex}
     selectSuggestion={(suggestion: NameSuggestion) => props.setName(suggestion.name)}
-    getServerSuggestions={getNameSuggestions}
+    getServerSuggestions={(c) => getNameSuggestions(c, props.faceIndex)}
     maxHeight={'max-h-80'}
     renderSuggestion={(suggestion: NameSuggestion) => (<>
       <div className="font-medium text-zinc-800 mb-1">

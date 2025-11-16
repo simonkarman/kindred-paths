@@ -1,5 +1,5 @@
 import { ArtSuggestion, getArtSettingSuggestions, getArtSuggestions, SettingSuggestion } from '@/utils/server';
-import { Card } from 'kindred-paths';
+import { Card, CardArtPromptCreator } from 'kindred-paths';
 import { AiSuggestionsInput } from '@/components/editor/ai-suggestions-input';
 import { InputHeader } from '@/components/editor/input-header';
 
@@ -13,6 +13,7 @@ export const CardArtInput = (props: {
   setArt: (value: string | undefined) => void,
   getErrorMessage: () => string | undefined,
   card: Card | undefined,
+  faceIndex: number,
   isChanged: boolean,
   revert: () => void,
   artSettingIsChanged: boolean,
@@ -22,13 +23,14 @@ export const CardArtInput = (props: {
 }) => {
   return <div className="space-y-2">
     <AiSuggestionsInput
-      propertyName={"Art Setting"}
+      propertyName="Art Setting"
       propertyValue={props.artSetting}
       setPropertyValue={props.setArtSetting}
       getPropertyErrorMessage={() => undefined}
       card={props.card}
+      faceIndex={props.faceIndex}
       selectSuggestion={(suggestion: SettingSuggestion) => props.setArtSetting(suggestion.setting)}
-      getServerSuggestions={getArtSettingSuggestions}
+      getServerSuggestions={(c) => getArtSettingSuggestions(c, props.faceIndex)}
       maxHeight={'max-h-80'}
       renderSuggestion={(suggestion: SettingSuggestion) => (<>
         <div className="text-xs text-zinc-600 mb-1">
@@ -43,13 +45,14 @@ export const CardArtInput = (props: {
       revert={props.revertArtSetting}
     />
     <AiSuggestionsInput
-      propertyName={"Art File Name"}
+      propertyName="Art File Name"
       propertyValue={props.art}
       setPropertyValue={props.setArt}
       getPropertyErrorMessage={props.getErrorMessage}
       card={props.card}
+      faceIndex={props.faceIndex}
       selectSuggestion={(suggestion: ArtSuggestion) => props.setArt(suggestion.fileName)}
-      getServerSuggestions={getArtSuggestions}
+      getServerSuggestions={(c) => getArtSuggestions(c, props.faceIndex)}
       maxHeight={'max-h-200'}
       renderSuggestion={(suggestion: ArtSuggestion) => (
         // eslint-disable-next-line @next/next/no-img-element
@@ -59,6 +62,9 @@ export const CardArtInput = (props: {
       isChanged={props.isChanged}
       revert={props.revert}
     />
+    <p className="text-zinc-600 text-xs">
+      Prompt: {props.card && new CardArtPromptCreator().createPrompt(props.card.faces[props.faceIndex])}
+    </p>
     {props.showArtFocus && <>
       <InputHeader propertyName="Full Art Focus" isChanged={props.artFocusIsChanged} revert={props.revertArtFocus} />
       <div className="flex flex-wrap gap-1">

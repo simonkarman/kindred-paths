@@ -117,8 +117,8 @@ export interface NameSuggestion {
   reason: string;
 }
 
-export async function getNameSuggestions(card: Card): Promise<NameSuggestion[]> {
-  const response = await fetch(`${serverUrl}/suggest/name`, {
+export async function getNameSuggestions(card: Card, faceIndex: number): Promise<NameSuggestion[]> {
+  const response = await fetch(`${serverUrl}/suggest/name/${faceIndex}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -137,8 +137,8 @@ export interface SettingSuggestion {
   setting: string;
 }
 
-export async function getArtSettingSuggestions(card: Card): Promise<SettingSuggestion[]> {
-  const response = await fetch(`${serverUrl}/suggest/art-setting`, {
+export async function getArtSettingSuggestions(card: Card, faceIndex: number): Promise<SettingSuggestion[]> {
+  const response = await fetch(`${serverUrl}/suggest/art-setting/${faceIndex}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -157,8 +157,8 @@ export interface ArtSuggestion {
   base64Image: string;
 }
 
-export async function getArtSuggestions(card: Card): Promise<ArtSuggestion[]> {
-  const response = await fetch(`${serverUrl}/suggest/art`, {
+export async function getArtSuggestions(card: Card, faceIndex: number): Promise<ArtSuggestion[]> {
+  const response = await fetch(`${serverUrl}/suggest/art/${faceIndex}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

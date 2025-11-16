@@ -38,7 +38,7 @@ export class CardArtPromptCreator {
     sections.push(this[`${dominantCardType}Prompt`](cardFace));
 
     // Add tags["setting"] section
-    const setting = cardFace.card.tags['setting'];
+    const setting = cardFace.faceIndex === 0 ? cardFace.card.tags['setting'] : cardFace.card.tags['setting-back'];
     if (typeof setting === 'string' && setting.length > 0) {
       sections.push(setting);
     }

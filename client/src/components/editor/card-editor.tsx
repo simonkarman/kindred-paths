@@ -154,6 +154,11 @@ const autoAdjustCardProperties = (props: {
       if (props.cardUpdates.layout !== props.base.layout) {
         if ("isToken" in props.cardUpdates && props.cardUpdates.isToken) {
           throw new Error('Cannot change layout to a value other than "normal" when changing to a token card');
+        } else if (next.isToken && props.cardUpdates.layout !== 'normal') {
+          // Card changed to a non-token
+          next.isToken = undefined;
+          next.faces[0].manaCost = next.faces[0].types.includes('land') ? undefined : { generic: 1 };
+          next.faces[0].givenColors = undefined;
         }
 
         // Layout changed
@@ -236,7 +241,8 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
   const isAiCard = initialCard?.id.startsWith('ai-');
   const isEditMode = initialCard !== undefined && initialCard.id !== '<new>' && !isAiCard;
   const [state, setState] = useState<EditorState>(() => initializeEditorState(initialCard));
-  const [selectedFaceIndex, setSelectedFaceIndex] = useState(0);
+  const [_selectedFaceIndex, setSelectedFaceIndex] = useState(0);
+  const selectedFaceIndex = Math.min(_selectedFaceIndex, state.faces.length - 1);
   const [isLoading, setIsLoading] = useState(false);
 
   // Helper functions for state updates
@@ -404,6 +410,28 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
     }
     updateCardProperty('tags', Object.keys(newTags).length > 0 ? newTags : undefined);
   };
+  const settingTag = selectedFaceIndex === 0 ? 'setting' : 'setting-back';
+
+  const faceChangeButtons = layout.isDualFaceLayout() && (
+    <div className="space-y-2">
+      <div className="flex gap-3">
+        {state.faces.map((_, index) => (
+          <button
+            key={index}
+            type="button"
+            onClick={() => setSelectedFaceIndex(index)}
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              selectedFaceIndex === index
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            {index === 0 ? 'Primary' : 'Secondary'} Face
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className={`mx-auto max-w-[1400px] space-y-6 ${isChanged ? 'border-2 border-orange-200' : 'border border-zinc-200'} bg-white rounded-lg p-6 shadow-md`}>
@@ -477,36 +505,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
         {/* Right column: Face properties */}
         <div className="space-y-4 border-r border-zinc-100 pr-3">
           <h3 className="font-semibold text-lg">Face Properties</h3>
-
-          {layout.isDualFaceLayout() && (
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                {state.faces.map((_, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => setSelectedFaceIndex(index)}
-                    className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                      selectedFaceIndex === index
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    {index === 0 ? 'Primary' : 'Secondary'} Face
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <CardNameInput
-            name={currentFace.name}
-            setName={(value) => updateFaceProperty(selectedFaceIndex, 'name', value)}
-            getErrorMessage={() => getErrorMessage('name')}
-            card={card}
-            isChanged={isEditMode && initialFace?.name !== currentFace.name}
-            revert={() => initialFace && updateFaceProperty(selectedFaceIndex, 'name', initialFace.name)}
-          />
+          {faceChangeButtons}
 
           <CardTypesInput
             types={currentFace.types}
@@ -589,23 +588,36 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
             revert={() => updateFaceProperty(selectedFaceIndex, 'supertype', initialFace?.supertype)}
           />
 
-          <CardArtInput
+          <CardNameInput
+            name={currentFace.name}
+            setName={(value) => updateFaceProperty(selectedFaceIndex, 'name', value)}
+            getErrorMessage={() => getErrorMessage('name')}
+            card={card}
+            faceIndex={selectedFaceIndex}
+            isChanged={isEditMode && initialFace?.name !== currentFace.name}
+            revert={() => initialFace && updateFaceProperty(selectedFaceIndex, 'name', initialFace.name)}
+          />
+
+          {(selectedFaceIndex === 0 || layout.isDualRenderLayout()) && <CardArtInput
             art={currentFace.art}
             setArt={(value) => updateFaceProperty(selectedFaceIndex, 'art', value)}
             getErrorMessage={() => getErrorMessage('art')}
             card={card}
+            faceIndex={selectedFaceIndex}
             isChanged={isEditMode && initialFace?.art !== currentFace.art}
             revert={() => updateFaceProperty(selectedFaceIndex, 'art', initialFace?.art)}
-            artSetting={getStringTag('setting')}
-            setArtSetting={(value) => setTag('setting', value)}
+            artSetting={getStringTag(settingTag)}
+            setArtSetting={(value) => setTag(settingTag, value)}
             artSettingIsChanged={isEditMode && initialCard?.tags?.setting !== state.tags?.setting}
-            revertArtSetting={() => setTag('setting', initialCard?.tags?.setting as string | undefined)}
+            revertArtSetting={() => setTag(settingTag, initialCard?.tags?.setting as string | undefined)}
             showArtFocus={state.isToken || currentFace.types.includes('planeswalker')}
             artFocus={getStringTag('art/focus')}
             setArtFocus={(value) => setTag('art/focus', value)}
             artFocusIsChanged={isEditMode && initialCard?.tags?.['art/focus'] !== state.tags?.['art/focus']}
             revertArtFocus={() => setTag('art/focus', initialCard?.tags?.['art/focus'] as string | undefined)}
-          />
+          />}
+
+          {faceChangeButtons}
         </div>
       </div>
 

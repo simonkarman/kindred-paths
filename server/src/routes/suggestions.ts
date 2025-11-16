@@ -8,15 +8,22 @@ import { configuration } from '../configuration';
 
 export const suggestionsRouter = Router();
 
-suggestionsRouter.post('/name', async (req, res) => {
+const faceIndexSchema = (max: number) => z.number({ coerce: true }).int().min(0).max(max);
+
+suggestionsRouter.post('/name/:faceIndex', async (req, res) => {
   const body = SerializedCardSchema.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
     return;
   }
+  const faceIndex = faceIndexSchema(body.data.faces.length - 1).safeParse(req.params.faceIndex);
+  if (!faceIndex.success) {
+    res.status(400).json({ error: 'Invalid face index' });
+    return;
+  }
 
   try {
-    const suggestions = await aiService.getCardNameSuggestions(body.data);
+    const suggestions = await aiService.getCardNameSuggestions(body.data, faceIndex.data);
     res.json(suggestions);
   } catch (error) {
     console.error('Error generating name suggestions:', error);
@@ -69,15 +76,20 @@ suggestionsRouter.get('/card-generator/:generatorId', async (req, res) => {
   }
 });
 
-suggestionsRouter.post('/art-setting', async (req, res) => {
+suggestionsRouter.post('/art-setting/:faceIndex', async (req, res) => {
   const body = SerializedCardSchema.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
     return;
   }
+  const faceIndex = faceIndexSchema(body.data.faces.length - 1).safeParse(req.params.faceIndex);
+  if (!faceIndex.success) {
+    res.status(400).json({ error: 'Invalid face index' });
+    return;
+  }
 
   try {
-    const suggestions = await aiService.getCardArtSettingSuggestions(body.data);
+    const suggestions = await aiService.getCardArtSettingSuggestions(body.data, faceIndex.data);
     res.json(suggestions);
   } catch (error) {
     console.error('Error generating art setting suggestions:', error);
@@ -85,17 +97,21 @@ suggestionsRouter.post('/art-setting', async (req, res) => {
   }
 });
 
-suggestionsRouter.post('/art', async (req, res) => {
+suggestionsRouter.post('/art/:faceIndex', async (req, res) => {
   const body = SerializedCardSchema.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
     return;
   }
+  const faceIndex = faceIndexSchema(body.data.faces.length - 1).safeParse(req.params.faceIndex);
+  if (!faceIndex.success) {
+    res.status(400).json({ error: 'Invalid face index' });
+    return;
+  }
 
   try {
     const card = new Card(body.data);
-    const faceIndex = 0; // TODO: support multi-face cards
-    const suggestions = await aiService.generateCardArt(card.faces[faceIndex]);
+    const suggestions = await aiService.generateCardArt(card.faces[faceIndex.data]);
     res.json(suggestions);
   } catch (error) {
     console.error('Error generating art suggestions:', error);

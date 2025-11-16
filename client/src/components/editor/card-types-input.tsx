@@ -1,4 +1,4 @@
-import { capitalize, CardType, cardTypes, TokenCardType, tokenCardTypes } from 'kindred-paths';
+import { capitalize, CardType, cardTypes, tokenCardTypes } from 'kindred-paths';
 import { InputHeader } from '@/components/editor/input-header';
 import { useState } from 'react';
 
@@ -45,21 +45,6 @@ export const CardTypesInput = (props: {
     }
   };
 
-  const handleIsTokenToggle = () => {
-    const nextValue = props.isToken ? undefined : true;
-    props.setIsToken(nextValue);
-    if (nextValue) {
-      // if card types include types not in tokenCardTypes, remove them
-      const newTypes = props.types.filter(t => tokenCardTypes.includes(t as TokenCardType));
-      if (newTypes.length === 0) {
-        // if no types left, set to ['creature']
-        props.setTypes(['creature']);
-      } else {
-        props.setTypes(newTypes as [CardType, ...CardType[]]);
-      }
-    }
-  }
-
   return (
     <div className="space-y-1">
       <InputHeader propertyName="type" isChanged={props.isChanged} revert={props.revert}>
@@ -78,7 +63,7 @@ export const CardTypesInput = (props: {
           )}
           <button
             type="button"
-            onClick={handleIsTokenToggle}
+            onClick={() => props.setIsToken(props.isToken ? undefined : true)}
             className={`
                 flex items-center space-x-2 px-2 py-0.5 rounded border text-left transition-colors
                 ${props.isToken

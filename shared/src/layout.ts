@@ -40,6 +40,7 @@ export class Layout {
       name: 'New Card',
       manaCost: { generic: 1 },
       types: ['creature'],
+      subtypes: [],
       pt: { power: 2, toughness: 2 },
     };
 
@@ -52,6 +53,7 @@ export class Layout {
         name: 'Other Side',
         manaCost: { generic: 2 },
         types: ['creature'],
+        subtypes: [],
         pt: { power: 2, toughness: 2 },
       }];
 
@@ -67,6 +69,7 @@ export class Layout {
       return [defaultFace, {
         name: 'Other Side',
         types: ['creature'],
+        subtypes: [],
         pt: { power: 2, toughness: 2 },
         givenColors: [],
       }];

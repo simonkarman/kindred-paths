@@ -10,6 +10,7 @@ export function AiSuggestionsInput<Suggestion>(props: {
   setPropertyValue: (value: string | undefined) => void,
   getPropertyErrorMessage: () => string | undefined,
   card: Card | undefined,
+  faceIndex: number,
   selectSuggestion: (suggestion: Suggestion) => void,
   getServerSuggestions: (card: Card) => Promise<Suggestion[]>,
   maxHeight: string,
@@ -19,7 +20,8 @@ export function AiSuggestionsInput<Suggestion>(props: {
   isChanged: boolean,
   revert: () => void,
 }) {
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestionsPerFace, setSuggestionsPerFace] = useState<Suggestion[][]>([[],[]]);
+  const suggestions = suggestionsPerFace[props.faceIndex];
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -32,7 +34,9 @@ export function AiSuggestionsInput<Suggestion>(props: {
     setIsLoading(true);
     try {
       const next = await props.getServerSuggestions(props.card!);
-      setSuggestions(prev => [...next, ...prev]);
+      setSuggestionsPerFace(([prev0, prev1]) => props.faceIndex === 0
+        ? [[...next, ...prev0], prev1]
+        : [prev0, [...next, ...prev1]]);
       setShowSuggestions(true);
     } catch (error) {
       console.error(`Error fetching ${props.propertyName} suggestions:`, error);

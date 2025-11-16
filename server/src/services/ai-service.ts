@@ -7,13 +7,17 @@ import { GetGenerationByIdResponse } from '@leonardo-ai/sdk/sdk/models/operation
 import { computeCardId } from '../utils/card-utils';
 import { CardGenerator } from './generator/card-generator';
 import { configuration } from '../configuration';
+import { symbolService } from './symbol-service';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-function getCardInfo(card: Card) {
-  return `a card with a ${card.layout} layout with the following faces:\n` + card.faces
-    .map((f, index) => `face-${index + 1}: ${f.explain({ withoutName: true })}`)
-    .join('\n');
+function getAIReadyCardInfo(card: Card, faceIndex: number): string {
+  const setMetadata = symbolService.getSetMetadataForCard(card);
+  const faceName = (fi: number) => fi === 0 ? 'first' : 'second';
+  return `the ${faceName(faceIndex)} face of a ${setMetadata.theme} themed card with a ${card.layout} layout with the following faces:\n`
+    + card.faces
+      .map((f, index) => `${faceName(index)} face: ${f.explain({ withoutName: true })}`)
+      .join('\n');
 }
 
 interface NameSuggestion {
@@ -44,9 +48,9 @@ export class AIService {
     this.cardArtPromptCreator = new CardArtPromptCreator();
   }
 
-  async getCardNameSuggestions(cardData: SerializedCard): Promise<NameSuggestion[]> {
+  async getCardNameSuggestions(cardData: SerializedCard, faceIndex: number): Promise<NameSuggestion[]> {
     const card = new Card(cardData);
-    const cardInfo = getCardInfo(card);
+    const cardInfo = getAIReadyCardInfo(card, faceIndex);
     const msg = await this.anthropic.messages.create({
       model: 'claude-opus-4-20250514',
       max_tokens: 1000,
@@ -94,10 +98,10 @@ export class AIService {
     }
   }
 
-  async getCardArtSettingSuggestions(cardData: SerializedCard): Promise<ArtSettingSuggestion[]> {
+  async getCardArtSettingSuggestions(cardData: SerializedCard, faceIndex: number): Promise<ArtSettingSuggestion[]> {
     const card = new Card(cardData);
 
-    const cardInfo = getCardInfo(card);
+    const cardInfo = getAIReadyCardInfo(card, faceIndex);
     const msg = await this.anthropic.messages.create({
       model: 'claude-opus-4-20250514',
       max_tokens: 1000,
@@ -143,6 +147,7 @@ export class AIService {
     try {
       return z.array(z.object({ name: z.string().min(1), setting: z.string().min(1) })).parse(JSON.parse(message));
     } catch {
+      console.info('Failed to parse AI response for art setting suggestions:', message);
       return respondError('The response from the AI model was not valid JSON.');
     }
   }
@@ -206,8 +211,8 @@ export class AIService {
         return;
       }
       const buffer = await imageResponse.arrayBuffer();
-      const cardId = computeCardId(cardFace.card.toJson()); // TODO: Verify multi-face cards
-      const fileName = `${cardId}-${image.id}.png`;
+      const cardId = computeCardId(cardFace.card.toJson());
+      const fileName = `${cardId}-f${cardFace.faceIndex}-${image.id}.png`;
       await fs.writeFile(`${configuration.artSuggestionsDir}/${fileName}`, Buffer.from(buffer));
       console.log(`Saved art suggestion for ${cardId} (for image ${image.id}): ${fileName}`);
       return { fileName: `suggestions/${fileName}`, base64Image: Buffer.from(buffer).toString('base64') };
