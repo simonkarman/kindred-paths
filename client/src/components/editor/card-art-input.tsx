@@ -44,6 +44,9 @@ export const CardArtInput = (props: {
       isChanged={props.artSettingIsChanged}
       revert={props.revertArtSetting}
     />
+    <p className="text-zinc-600 text-xs">
+      Prompt: {props.card && new CardArtPromptCreator().createPrompt(props.card.faces[props.faceIndex])}
+    </p>
     <AiSuggestionsInput
       propertyName="Art File Name"
       propertyValue={props.art}
@@ -62,9 +65,6 @@ export const CardArtInput = (props: {
       isChanged={props.isChanged}
       revert={props.revert}
     />
-    <p className="text-zinc-600 text-xs">
-      Prompt: {props.card && new CardArtPromptCreator().createPrompt(props.card.faces[props.faceIndex])}
-    </p>
     {props.showArtFocus && <>
       <InputHeader propertyName="Full Art Focus" isChanged={props.artFocusIsChanged} revert={props.revertArtFocus} />
       <div className="flex flex-wrap gap-1">

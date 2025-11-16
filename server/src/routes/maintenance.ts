@@ -119,7 +119,7 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
 
   // Validate that all art files in the art directory are referenced by at least one card
   const artFiles = await fs.readdir(configuration.artDir);
-  for (const artFile of artFiles.filter(file => file.endsWith('.png'))) {
+  for (const artFile of artFiles.filter(file => ['.png', '.jpg', '.jpeg', '.webp'].some(ext => file.endsWith(ext)))) {
     if (!referencedArt.has(artFile)) {
       const message = `moved unreferenced art file to the suggestions directory: ${artFile}`;
       messages.push(message);

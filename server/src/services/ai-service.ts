@@ -94,6 +94,7 @@ export class AIService {
     try {
       return z.array(z.object({ name: z.string().min(1), reason: z.string().min(1) })).parse(JSON.parse(message));
     } catch {
+      console.info('Failed to parse AI response for name suggestions:', message);
       return respondError('The response from the AI model was not valid JSON.');
     }
   }

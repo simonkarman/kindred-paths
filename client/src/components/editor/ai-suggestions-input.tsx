@@ -103,9 +103,9 @@ export function AiSuggestionsInput<Suggestion>(props: {
       )}
 
       {/* Suggestions Modal/Dropdown */}
-      {showSuggestions && suggestions.length > 0 && (
-        <div className={`absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-zinc-300 rounded-md shadow-lg`}>
-          <div className="p-3 border-b border-zinc-200 bg-zinc-50">
+      {showSuggestions && suggestions.length > 0 && (<>
+        <div className={`mt-1 bg-white border border-zinc-300 rounded-md shadow-lg`}>
+          <div className="p-3 border-b border-zinc-200 rounded-t-md bg-zinc-50">
             <div className="flex justify-between items-center">
               <h3 className="font-medium text-zinc-800">AI {props.propertyName} Suggestions</h3>
               <div className="flex gap-2">
@@ -140,15 +140,7 @@ export function AiSuggestionsInput<Suggestion>(props: {
             ))}
           </div>
         </div>
-      )}
-
-      {/* Backdrop to close suggestions when clicking outside */}
-      {showSuggestions && (
-        <div
-          className="fixed inset-0 z-40 bg-black opacity-10"
-          onClick={() => setShowSuggestions(false)}
-        />
-      )}
+      </>)}
     </div>
   );
 }

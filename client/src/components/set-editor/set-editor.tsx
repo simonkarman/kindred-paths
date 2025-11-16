@@ -37,7 +37,7 @@ function Modal(props: PropsWithChildren<{ onClose: () => void }>) {
     <div
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center p-4 sm:p-10 overflow-auto"
       onClick={(e) => {
-        if (e.target === e.currentTarget) { props.onClose(); }
+        if (e.target === e.currentTarget) { /*props.onClose();*/ }
       }}
     >
       {props.children}
@@ -294,6 +294,16 @@ export function SetEditor(props: SetEditorProps) {
       blueprints: matrix.getBlueprintsForSlot(archetypeIndex, cycleKey),
     });
   }
+
+  const isAnyModalOpen = !!cardEditorSettings || !!blueprintEditorLocation || !!cardSelectorSettings;
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isAnyModalOpen]);
 
   const matrixBlueprint = matrix.getBlueprintAt({ type: 'matrix' });
 
