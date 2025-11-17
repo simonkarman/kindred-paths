@@ -92,7 +92,9 @@ export class AIService {
     }
 
     try {
-      return z.array(z.object({ name: z.string().min(1), reason: z.string().min(1) })).parse(JSON.parse(message));
+      // remove ```json ... ``` if present
+      const messageCleaned = message.replace(/```json\s*([\s\S]*?)\s*```/g, '$1').trim();
+      return z.array(z.object({ name: z.string().min(1), reason: z.string().min(1) })).parse(JSON.parse(messageCleaned));
     } catch {
       console.info('Failed to parse AI response for name suggestions:', message);
       return respondError('The response from the AI model was not valid JSON.');
@@ -146,7 +148,9 @@ export class AIService {
     }
 
     try {
-      return z.array(z.object({ name: z.string().min(1), setting: z.string().min(1) })).parse(JSON.parse(message));
+      // remove ```json ... ``` if present
+      const messageCleaned = message.replace(/```json\s*([\s\S]*?)\s*```/g, '$1').trim();
+      return z.array(z.object({ name: z.string().min(1), setting: z.string().min(1) })).parse(JSON.parse(messageCleaned));
     } catch {
       console.info('Failed to parse AI response for art setting suggestions:', message);
       return respondError('The response from the AI model was not valid JSON.');
