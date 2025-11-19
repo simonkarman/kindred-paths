@@ -6,7 +6,7 @@
   "description": "A tool for managing the cards in Kindred Paths, the custom Magic the Gathering set by Simon Karman",
   "private": true,
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "start": "./card-conjurer.sh && ts-node src/index.ts",
     "precommit": "npm run lint && npm test",
     "dev": "./card-conjurer.sh && nodemon --exec ts-node src/index.ts --watch src --watch package.json",
     "test": "vitest run",
