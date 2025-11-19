@@ -6,6 +6,9 @@
   "scripts": {
     "postinstall": "npm --prefix shared install && npm --prefix server install && npm --prefix client install",
     "precommit": "npm run --prefix shared precommit && npm run --prefix server precommit && npm run --prefix client precommit",
+    "start": "npm --prefix shared run clean && npm --prefix shared run build && npm-run-all --parallel start:*",
+    "start:server": "npm --prefix server start",
+    "start:client": "npm --prefix client run build && npm --prefix client start",
     "dev": "npm-run-all --parallel dev:*",
     "dev:shared": "npm run --prefix shared dev",
     "dev:server": "npm run --prefix server dev",
