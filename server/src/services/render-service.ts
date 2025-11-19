@@ -149,12 +149,17 @@ export class RenderService {
       // Check if the render already exists
       const existingRender = await this.getExistingRender(key);
       if (existingRender) {
+        console.info(`Returning cached render for "${cardFace.name}" (${key})`);
         return { fromCache: true, render: existingRender };
       }
     }
 
     // If not, render the card using Card Conjurer
+    const startTime = Date.now();
+    console.info(`Starting render for "${cardFace.name}" (${key})`);
     const render = await this.cardConjurer.renderCard(renderable);
+    const elapsedTime = Date.now() - startTime;
+    console.info(`Render completed for "${cardFace.name}" (${key}) in ${(elapsedTime / 1000).toFixed(1)} seconds`);
     await this.saveRender(key, render);
     return { fromCache: false, render };
   }
