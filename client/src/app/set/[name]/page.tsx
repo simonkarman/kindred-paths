@@ -1,4 +1,4 @@
-import { getCards, getSet } from '@/utils/server';
+import { getCards, getSet } from '@/utils/api';
 import { SerializableSet } from 'kindred-paths';
 import { SetEditor } from '@/components/set-editor/set-editor';
 import { PageProps } from '@/utils/page-props';

@@ -1,4 +1,4 @@
-import { ArtSuggestion, getArtSettingSuggestions, getArtSuggestions, SettingSuggestion } from '@/utils/server';
+import { ArtSuggestion, getArtSettingSuggestions, getArtSuggestions, SettingSuggestion } from '@/utils/api';
 import { Card, CardArtPromptCreator } from 'kindred-paths';
 import { AiSuggestionsInput } from '@/components/editor/ai-suggestions-input';
 import { InputHeader } from '@/components/editor/input-header';

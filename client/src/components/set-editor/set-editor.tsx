@@ -23,7 +23,7 @@ import {
   Set,
   SetLocation,
 } from 'kindred-paths';
-import { CollectorNumberInfo, getOrganizeCollectorNumbers, putSet, serverUrl } from '@/utils/server';
+import { CollectorNumberInfo, getOrganizeCollectorNumbers, putSet } from '@/utils/api';
 import { IconButton } from '@/components/icon-button';
 import { DragHandle } from '@/components/set-editor/drag-handle';
 import { SetEditorCell } from '@/components/set-editor/set-editor-cell';
@@ -31,6 +31,7 @@ import { BlueprintEditor } from '@/components/set-editor/blueprint-editor';
 import { CardEditor } from '@/components/editor/card-editor';
 import { CardSelector } from '@/components/set-editor/card-selector';
 import { CollectorNumberOverview } from '@/components/collector-number-overview';
+import { publicFacingBackendUrl } from '@/utils/connection';
 
 function Modal(props: PropsWithChildren<{ onClose: () => void }>) {
   return (
@@ -803,7 +804,7 @@ export function SetEditor(props: SetEditorProps) {
                         hasBlueprint={hasSlotBlueprint}
                         onEditBlueprint={() => onEditSlotBlueprint(archetypeIndex, cycleKey)}
                         onRemoveBlueprint={() => onRemoveSlotBlueprint(archetypeIndex, cycleKey)}
-                        cardPreviewUrl={cardRef === undefined ? undefined : `${serverUrl}/render/${cardRef.cardId}/0`}
+                        cardPreviewUrl={cardRef === undefined ? undefined : `${publicFacingBackendUrl}/render/${cardRef.cardId}/0`}
                       />
                     );
                   })}

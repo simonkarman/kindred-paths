@@ -1,4 +1,4 @@
-import { getCard } from '@/utils/server';
+import { getCard } from '@/utils/api';
 import Link from 'next/link';
 import { CardEditor } from '@/components/editor/card-editor';
 import { PageProps } from '@/utils/page-props';

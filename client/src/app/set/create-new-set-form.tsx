@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { createSet } from '@/utils/server';
+import { createSet } from '@/utils/api';
 
 export default function CreateNewSetForm() {
   const [setName, setSetName] = useState("");

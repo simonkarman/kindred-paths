@@ -2,7 +2,7 @@
 
 import { Collection, SyncResult } from 'kindred-paths';
 import { useLocalStorageState } from '@/utils/use-local-storage-state';
-import { commitCollection, getCollection, syncCollection } from '@/utils/server';
+import { commitCollection, getCollection, syncCollection } from '@/utils/api';
 import { useCallback, useEffect, useState } from 'react';
 
 type CachedCollection = {

@@ -1,7 +1,7 @@
 'use client';
 
 import { CardEditor } from '@/components/editor/card-editor';
-import { getCardSampleGeneratorById, getCardSamples, previewCard } from '@/utils/server';
+import { getCardSampleGeneratorById, getCardSamples, previewCard } from '@/utils/api';
 import { useCallback, useEffect, useState } from 'react';
 import { SerializedCard, filterCardsBasedOnSearch } from 'kindred-paths';
 import SearchBar from '@/components/search-bar';

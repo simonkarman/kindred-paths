@@ -1,7 +1,7 @@
 import { InputHeader } from '@/components/editor/input-header';
 import { useCallback, useState } from 'react';
 import { useSetNameFromSearch } from '@/utils/use-search';
-import { CollectorNumberInfo, getOrganizeCollectorNumbers } from '@/utils/server';
+import { CollectorNumberInfo, getOrganizeCollectorNumbers } from '@/utils/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCompass, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { CollectorNumberOverview } from '@/components/collector-number-overview';

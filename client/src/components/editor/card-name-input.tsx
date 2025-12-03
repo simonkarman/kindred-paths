@@ -1,5 +1,5 @@
 import { Card } from 'kindred-paths';
-import { getNameSuggestions, NameSuggestion } from '@/utils/server';
+import { getNameSuggestions, NameSuggestion } from '@/utils/api';
 import { AiSuggestionsInput } from '@/components/editor/ai-suggestions-input';
 
 export const CardNameInput = (props: {

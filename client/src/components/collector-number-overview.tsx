@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
-import { CollectorNumberInfo } from '@/utils/server';
+import { CollectorNumberInfo } from '@/utils/api';
 
 type CollectorNumberOverviewProps = {
   selectedCollectorNumber?: number;

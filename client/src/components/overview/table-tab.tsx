@@ -15,7 +15,7 @@ import {
   faAngleUp,
 } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
-import { deleteCard } from '@/utils/server';
+import { deleteCard } from '@/utils/api';
 import { useDeckNameFromSearch } from '@/utils/use-search';
 
 type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' | 'power' | 'toughness' | 'art' | 'tags' | 'tag:count';

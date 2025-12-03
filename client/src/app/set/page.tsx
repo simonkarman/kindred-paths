@@ -1,4 +1,4 @@
-import { getSets } from '@/utils/server';
+import { getSets } from '@/utils/api';
 import Link from 'next/link';
 import CreateNewSetForm from '@/app/set/create-new-set-form';
 

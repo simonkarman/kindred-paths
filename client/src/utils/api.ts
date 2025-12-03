@@ -1,14 +1,15 @@
+'use server';
+
 import { z } from 'zod';
 import { Card, Collection, SerializableSet, SerializableSetSchema, SerializedCard, SerializedCardSchema, SyncResult } from 'kindred-paths';
-
-const localhostServerUrl = 'http://localhost:4101';
-export const serverUrl = (typeof window === "undefined")
-  ? localhostServerUrl
-  : (process.env.NEXT_PUBLIC_SERVER_URL || localhostServerUrl);
+import { internalBackendUrl } from './connection';
+import { revalidateTag } from 'next/cache';
 
 export async function getCards(): Promise<SerializedCard[]> {
   try {
-    const response = await fetch(`${serverUrl}/card`);
+    const response = await fetch(`${internalBackendUrl}/card`, {
+      next: { tags: ['cards'] }
+    });
     if (!response.ok) {
       throw new Error('fetch failed with status ' + response.status);
     }
@@ -26,7 +27,9 @@ export async function getCards(): Promise<SerializedCard[]> {
 
 export async function getCard(id: string): Promise<SerializedCard | null> {
   try {
-    const response = await fetch(`${serverUrl}/card/${id}`);
+    const response = await fetch(`${internalBackendUrl}/card/${id}`, {
+      next: { tags: [`card-${id}`] }
+    });
     if (!response.ok) {
       throw new Error('fetch failed with status ' + response.status);
     }
@@ -40,12 +43,15 @@ export async function getCard(id: string): Promise<SerializedCard | null> {
 
 export async function deleteCard(id: string): Promise<void> {
   try {
-    const response = await fetch(`${serverUrl}/card/${id}`, {
+    const response = await fetch(`${internalBackendUrl}/card/${id}`, {
       method: 'DELETE',
     });
     if (!response.ok) {
       throw new Error('fetch failed with status ' + response.status);
     }
+
+    revalidateTag('cards');
+    revalidateTag(`card-${id}`);
   } catch (error: unknown) {
     console.error('Error deleting card:', error);
     throw error;
@@ -53,7 +59,7 @@ export async function deleteCard(id: string): Promise<void> {
 }
 
 export async function createCard(serializedCard: SerializedCard): Promise<SerializedCard | null> {
-  const response = await fetch(`${serverUrl}/card`, {
+  const response = await fetch(`${internalBackendUrl}/card`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -65,11 +71,13 @@ export async function createCard(serializedCard: SerializedCard): Promise<Serial
   if (!response.ok) {
     throw new Error(JSON.stringify(responseJson, undefined, 2));
   }
+
+  revalidateTag('cards');
   return responseJson;
 }
 
 export async function updateCard(serializedCard: SerializedCard): Promise<SerializedCard | null> {
-  const response = await fetch(`${serverUrl}/card/${serializedCard.id}`, {
+  const response = await fetch(`${internalBackendUrl}/card/${serializedCard.id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -81,11 +89,14 @@ export async function updateCard(serializedCard: SerializedCard): Promise<Serial
   if (!response.ok) {
     throw new Error(JSON.stringify(responseJson, undefined, 2));
   }
+
+  revalidateTag('cards');
+  revalidateTag(`card-${serializedCard.id}`);
   return responseJson;
 }
 
 export async function previewCard(serializedCard: SerializedCard, faceIndex: number) {
-  const response = await fetch(`${serverUrl}/preview/${faceIndex}`, {
+  const response = await fetch(`${internalBackendUrl}/preview/${faceIndex}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -101,7 +112,7 @@ export async function previewCard(serializedCard: SerializedCard, faceIndex: num
 
 export type CollectorNumberInfo = { collectorNumber: number, cardId: string, faces: { name: string, renderedTypeLine: string }[] };
 export async function getOrganizeCollectorNumbers(searchQuery: string): Promise<CollectorNumberInfo[]> {
-  const response = await fetch(`${serverUrl}/organize/collector-numbers`, {
+  const response = await fetch(`${internalBackendUrl}/organize/collector-numbers`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -121,7 +132,7 @@ export interface NameSuggestion {
 }
 
 export async function getNameSuggestions(card: Card, faceIndex: number): Promise<NameSuggestion[]> {
-  const response = await fetch(`${serverUrl}/suggest/name/${faceIndex}`, {
+  const response = await fetch(`${internalBackendUrl}/suggest/name/${faceIndex}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -141,7 +152,7 @@ export interface SettingSuggestion {
 }
 
 export async function getArtSettingSuggestions(card: Card, faceIndex: number): Promise<SettingSuggestion[]> {
-  const response = await fetch(`${serverUrl}/suggest/art-setting/${faceIndex}`, {
+  const response = await fetch(`${internalBackendUrl}/suggest/art-setting/${faceIndex}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -161,7 +172,7 @@ export interface ArtSuggestion {
 }
 
 export async function getArtSuggestions(card: Card, faceIndex: number): Promise<ArtSuggestion[]> {
-  const response = await fetch(`${serverUrl}/suggest/art/${faceIndex}`, {
+  const response = await fetch(`${internalBackendUrl}/suggest/art/${faceIndex}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -179,7 +190,7 @@ export async function getCardSamples(data: { prompt: string } | { generatorId: s
   generatorId: string,
   samples: SerializedCard[],
 }> {
-  const response = await fetch(`${serverUrl}/suggest/card`, {
+  const response = await fetch(`${internalBackendUrl}/suggest/card`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -190,7 +201,11 @@ export async function getCardSamples(data: { prompt: string } | { generatorId: s
   if (!response.ok) {
     throw new Error('Failed to fetch card suggestions');
   }
-  return await response.json();
+
+  const result = await response.json();
+  revalidateTag('sample-generators');
+  revalidateTag(`sample-generator-${result.generatorId}`);
+  return result;
 }
 
 export async function getCardSampleGenerators(): Promise<{
@@ -200,7 +215,9 @@ export async function getCardSampleGenerators(): Promise<{
   prompt: string;
   sampleCount: number;
 }[]> {
-  const response = await fetch(`${serverUrl}/suggest/card-generator`);
+  const response = await fetch(`${internalBackendUrl}/suggest/card-generator`, {
+    next: { tags: ['sample-generators'] }
+  });
   if (!response.ok) {
     throw new Error('Failed to fetch card generators');
   }
@@ -214,7 +231,9 @@ export async function getCardSampleGeneratorById(generatorId: string): Promise<{
   prompt: string;
   samples: SerializedCard[];
 } | null> {
-  const response = await fetch(`${serverUrl}/suggest/card-generator/${generatorId}`);
+  const response = await fetch(`${internalBackendUrl}/suggest/card-generator/${generatorId}`, {
+    next: { tags: [`sample-generator-${generatorId}`] }
+  });
   if (response.status === 404) {
     return null;
   }
@@ -226,11 +245,12 @@ export async function getCardSampleGeneratorById(generatorId: string): Promise<{
 
 export type SetSummary = { name: string; matricesCount: number; validCardCount: number; cardCount: number; };
 export async function getSets(): Promise<SetSummary[]> {
-  const response = await fetch(`${serverUrl}/set`, {
+  const response = await fetch(`${internalBackendUrl}/set`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
     },
+    next: { tags: ['sets'] },
   });
   if (!response.ok) {
     throw new Error('Failed to fetch sets');
@@ -245,11 +265,12 @@ export async function getSets(): Promise<SetSummary[]> {
 }
 
 export async function getSet(name: string): Promise<SerializableSet | null> {
-  const response = await fetch(`${serverUrl}/set/${name}`, {
+  const response = await fetch(`${internalBackendUrl}/set/${name}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
     },
+    next: { tags: [`set-${name}`] },
   });
   if (response.status === 404) {
     return null;
@@ -267,7 +288,7 @@ export async function getSet(name: string): Promise<SerializableSet | null> {
 }
 
 export async function createSet(name: string): Promise<{ name: string }> {
-  const response = await fetch(`${serverUrl}/set`, {
+  const response = await fetch(`${internalBackendUrl}/set`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -278,11 +299,14 @@ export async function createSet(name: string): Promise<{ name: string }> {
     throw new Error('Failed to create set');
   }
   const data = await response.json();
-  return z.object({ name: z.string() }).parse(data);
+  const result = z.object({ name: z.string() }).parse(data);
+  revalidateTag(`set-${result.name}`);
+  revalidateTag('sets');
+  return result;
 }
 
 export async function putSet(set: SerializableSet): Promise<void> {
-  const response = await fetch(`${serverUrl}/set/${set.name}`, {
+  const response = await fetch(`${internalBackendUrl}/set/${set.name}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -292,14 +316,17 @@ export async function putSet(set: SerializableSet): Promise<void> {
   if (!response.ok) {
     throw new Error('Failed to update set');
   }
+  revalidateTag(`set-${set.name}`);
+  revalidateTag('sets');
 }
 
 export async function getCollection(): Promise<Collection> {
-  const response = await fetch(`${serverUrl}/collection`, {
+  const response = await fetch(`${internalBackendUrl}/collection`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
     },
+    next: { tags: ['collection'] },
   });
   if (!response.ok) {
     throw new Error('Failed to fetch collection');
@@ -308,7 +335,7 @@ export async function getCollection(): Promise<Collection> {
 }
 
 export async function syncCollection(): Promise<SyncResult> {
-  const response = await fetch(`${serverUrl}/collection/sync`, {
+  const response = await fetch(`${internalBackendUrl}/collection/sync`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -318,11 +345,12 @@ export async function syncCollection(): Promise<SyncResult> {
     const errorResponse = await response.json();
     throw new Error(response.status + ' Failed to sync collection: ' + errorResponse.error + ' ' + errorResponse.details);
   }
+  revalidateTag('collection');
   return await response.json();
 }
 
 export async function commitCollection(message: string): Promise<SyncResult> {
-  const response = await fetch(`${serverUrl}/collection/commit`, {
+  const response = await fetch(`${internalBackendUrl}/collection/commit`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -333,5 +361,6 @@ export async function commitCollection(message: string): Promise<SyncResult> {
     const errorResponse = await response.json();
     throw new Error(response.status + ' Failed to commit collection: ' + errorResponse.error + ' ' + errorResponse.details);
   }
+  revalidateTag('collection');
   return await response.json();
 }

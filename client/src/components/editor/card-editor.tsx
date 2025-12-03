@@ -17,7 +17,7 @@ import {
   SerializedCardFace, tokenCardTypes, TokenCardType, permanentTypes,
 } from 'kindred-paths';
 import { useCallback, useEffect, useState } from 'react';
-import { createCard, updateCard } from '@/utils/server';
+import { createCard, updateCard } from '@/utils/api';
 import { CardNameInput } from '@/components/editor/card-name-input';
 import { CardTypesInput } from '@/components/editor/card-types-input';
 import { CardPTInput } from '@/components/editor/card-pt-input';

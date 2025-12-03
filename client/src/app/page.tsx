@@ -1,4 +1,4 @@
-import { getCards } from '@/utils/server';
+import { getCards } from '@/utils/api';
 import { CardOverview } from '@/components/overview/card-overview';
 
 export default async function Home() {

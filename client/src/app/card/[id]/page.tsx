@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { getCard } from '@/utils/server';
+import { getCard } from '@/utils/api';
 import { PageProps } from '@/utils/page-props';
 import { CardView } from '@/app/card/[id]/card-view';
 
