@@ -27,11 +27,7 @@ renderRouter.get('/render/:id/:faceIndex', async (req, res) => {
     return;
   }
   const cardFace = card.faces[faceIndex];
-
   res.setHeader('Content-Type', 'image/png');
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
   res.setHeader('Content-Disposition', `inline; filename="${card.id}-${faceIndex}.png"`);
   let { render } = await renderService.getRender(cardFace, force);
   if (quality < 0 || quality > 100) {

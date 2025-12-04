@@ -3,7 +3,7 @@
 import { getStatistics, Layout, SerializedCard } from 'kindred-paths';
 import Link from 'next/link';
 import { CardRender } from '@/components/card-render';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDeckNameFromSearch } from '@/utils/use-search';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
@@ -42,6 +42,56 @@ export function VisualTab(props: {
 
   const totalTokens = tokens.reduce((a, c) => a + (c.getTagAsNumber(`deck/${deckName}`) ?? 0), 0);
   const totalBasicLands = basicLands.reduce((a, c) => a + (c.getTagAsNumber(`deck/${deckName}`) ?? 0), 0);
+
+  const [isPrint, setIsPrint] = useState(false);
+  useEffect(() => {
+    const handleBeforePrint = () => setIsPrint(true);
+    const handleAfterPrint = () => setIsPrint(false);
+    window.addEventListener('beforeprint', handleBeforePrint);
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => {
+      window.removeEventListener('beforeprint', handleBeforePrint);
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, []);
+
+  const flatMapCards = cardGroups
+    .flatMap(group => group
+      .flatMap(card => {
+        return n(respectDeckCount && deckName && typeof card.tags?.[`deck/${deckName}`] === 'number'
+          ? card.tags[`deck/${deckName}`] as number
+          : 1
+        ).map(() => ({ n, card }));
+      })
+    );
+  const [numberOfCardsToShow, setNumberOfCardsToShow] = useState(12);
+  const cardsToShow = flatMapCards.slice(0, isPrint ? flatMapCards.length : numberOfCardsToShow);
+  const hasMoreCards = flatMapCards.length > numberOfCardsToShow;
+
+  // Load More Button Ref
+  const [autoLoadMore, setAutoLoadMore] = useLocalStorageState('home/visual-auto-load', true);
+  const loadMoreRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || isPrint || !autoLoadMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setNumberOfCardsToShow((n) => n + 12);
+          }
+        });
+      },
+      { threshold: 1.0 }
+    );
+
+    observer.observe(target);
+
+    return () => {
+      if (target) { observer.unobserve(target); }
+    };
+  }, [isPrint, autoLoadMore]);
 
   return (
     <div className="space-y-6">
@@ -93,6 +143,18 @@ export function VisualTab(props: {
             </label>
           )}
 
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={autoLoadMore}
+              onChange={() => setAutoLoadMore(!autoLoadMore)}
+              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+            />
+            <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">
+              Automatically Load More Cards
+            </span>
+          </label>
+
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-700">Zoom:</span>
             <select
@@ -100,9 +162,9 @@ export function VisualTab(props: {
               onChange={(e) => setZoomLevel(e.target.value)}
               className="rounded border border-slate-300 bg-white py-1 px-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
             >
-              <option value={zoomLevels[0]}>100%</option>
-              <option value={zoomLevels[1]}>75%</option>
-              <option value={zoomLevels[2]}>50%</option>
+              <option value={zoomLevels[0]}>Bigger Cards, Less Cards</option>
+              <option value={zoomLevels[1]}>Balanced</option>
+              <option value={zoomLevels[2]}>More Cards, Small Cards</option>
             </select>
           </div>
         </div>
@@ -142,29 +204,37 @@ export function VisualTab(props: {
 
       {/* Cards Grid */}
       <div className={`grid ${zoomLevel} print:gap-0 print:grid-cols-3`}>
-        {cardGroups.map((group) => group
-          .map(card => n(respectDeckCount && deckName && typeof card.tags?.[`deck/${deckName}`] === 'number'
-              ? card.tags[`deck/${deckName}`] as number
-              : 1
+        {cardsToShow.map(({ n, card }) => (
+          (new Layout(card.layout.id).isDualRenderLayout() ? card.faces : card.faces.slice(0, 1))
+            .map((_, faceIndex) =>
+              <div
+                key={card.id + n + faceIndex.toString()}
+                className="print:border-3 print:bg-zinc-500"
+              >
+                <CardRender
+                  faceIndex={faceIndex}
+                  serializedCard={card.toJson()}
+                  scale={isPrint ? 0.6 : undefined}
+                  quality={isPrint ? 80 : undefined}
+                  hoverControls={!isPrint}
+                />
+              </div>
             )
-              .map(i => (
-                (new Layout(card.layout.id).isDualRenderLayout() ? card.faces : card.faces.slice(0, 1))
-                  .map((_, faceIndex) =>
-                    <div
-                      key={card.id + i + faceIndex.toString()}
-                      className="print:border-3 print:bg-zinc-500"
-                    >
-                      <div className="hidden print:block">
-                        <CardRender faceIndex={faceIndex} serializedCard={card.toJson()} scale={0.6} quality={80} />
-                      </div>
-                      <div className="block print:hidden">
-                        <CardRender faceIndex={faceIndex} serializedCard={card.toJson()} hoverControls />
-                      </div>
-                    </div>
-                  )
-              ))
-          ))}
+        ))}
       </div>
+
+      {/* Load More Button */}
+      {!isPrint && hasMoreCards && (
+        <div className="text-center">
+          <button
+            ref={loadMoreRef}
+            onClick={() => setNumberOfCardsToShow(n => n + 12)}
+            className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm"
+          >
+            Load More Cards
+          </button>
+        </div>
+      )}
 
       {/* Empty State */}
       {cardGroups.every(group => group.length === 0) && (

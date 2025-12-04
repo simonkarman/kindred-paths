@@ -2,7 +2,6 @@ import { Card, SerializedCard } from 'kindred-paths';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
-import { publicFacingBackendUrl } from '@/utils/connection';
 
 export function CardRender({ serializedCard, faceIndex, shown = true, forceRender, hoverControls = false, quality, scale, hideBorder }: {
   serializedCard: SerializedCard,
@@ -33,7 +32,7 @@ export function CardRender({ serializedCard, faceIndex, shown = true, forceRende
       <img
         alt={cardFace.name + " image"}
         className={`${shown ? 'scale-x-100' : 'scale-x-0'} transition-all aspect-[63/88] w-120 print:w-100 not-print:rounded-2xl border ${hideBorder ? 'bg-transparent border-transparent' : 'bg-zinc-400'}`}
-        src={`${publicFacingBackendUrl}/render/${card.id}/${faceIndex}?force=${forceRender ? 'true' : 'false'}&scale=${scale || 1}&quality=${quality || 100}`}
+        src={`/api/render/${card.id}/${faceIndex}?force=${forceRender ? 'true' : 'false'}&scale=${scale || 1}&quality=${quality || 100}`}
       />
       {hoverControls && <>
         {/* Clickable areas */}

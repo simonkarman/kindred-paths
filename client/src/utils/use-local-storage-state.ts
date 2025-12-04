@@ -14,6 +14,8 @@ export const useLocalStorageState = <T>(
     if (!isHydrated) {
       try {
         setState(currentValue ? JSON.parse(currentValue) : _initialState);
+      } catch {
+        setState(_initialState);
       } finally {
         setIsHydrated(true);
       }
@@ -26,7 +28,7 @@ export const useLocalStorageState = <T>(
       const currentValue = localStorage.getItem(key);
       setState((prevState) => {
         if (currentValue !== JSON.stringify(prevState)) {
-          return currentValue === null ? _initialState : JSON.parse(currentValue);
+          return currentValue === null || currentValue === undefined ? _initialState : JSON.parse(currentValue);
         }
         return prevState;
       });

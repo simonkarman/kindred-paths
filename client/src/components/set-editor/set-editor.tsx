@@ -31,7 +31,6 @@ import { BlueprintEditor } from '@/components/set-editor/blueprint-editor';
 import { CardEditor } from '@/components/editor/card-editor';
 import { CardSelector } from '@/components/set-editor/card-selector';
 import { CollectorNumberOverview } from '@/components/collector-number-overview';
-import { publicFacingBackendUrl } from '@/utils/connection';
 
 function Modal(props: PropsWithChildren<{ onClose: () => void }>) {
   return (
@@ -804,7 +803,7 @@ export function SetEditor(props: SetEditorProps) {
                         hasBlueprint={hasSlotBlueprint}
                         onEditBlueprint={() => onEditSlotBlueprint(archetypeIndex, cycleKey)}
                         onRemoveBlueprint={() => onRemoveSlotBlueprint(archetypeIndex, cycleKey)}
-                        cardPreviewUrl={cardRef === undefined ? undefined : `${publicFacingBackendUrl}/render/${cardRef.cardId}/0`}
+                        cardPreviewUrl={cardRef === undefined ? undefined : `/api/render/${cardRef.cardId}/0`}
                       />
                     );
                   })}
