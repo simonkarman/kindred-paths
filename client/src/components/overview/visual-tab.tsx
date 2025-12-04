@@ -65,7 +65,11 @@ export function VisualTab(props: {
       })
     );
   const [numberOfCardsToShow, setNumberOfCardsToShow] = useState(12);
-  const cardsToShow = flatMapCards.slice(0, isPrint ? flatMapCards.length : numberOfCardsToShow);
+  const cardsToShow = flatMapCards.slice(
+    0,
+    isPrint
+      ? flatMapCards.length
+      : (flatMapCards.length - numberOfCardsToShow < 3 ? flatMapCards.length : numberOfCardsToShow));
   const hasMoreCards = flatMapCards.length > numberOfCardsToShow;
 
   // Load More Button Ref
@@ -91,7 +95,12 @@ export function VisualTab(props: {
     return () => {
       if (target) { observer.unobserve(target); }
     };
-  }, [isPrint, autoLoadMore]);
+  }, [isPrint, autoLoadMore, numberOfCardsToShow]);
+
+  // When card list changes, reset number of cards to show
+  useEffect(() => {
+    setNumberOfCardsToShow(12);
+  }, [props.cards]);
 
   return (
     <div className="space-y-6">
@@ -221,20 +230,27 @@ export function VisualTab(props: {
               </div>
             )
         ))}
-      </div>
 
-      {/* Load More Button */}
-      {!isPrint && hasMoreCards && (
-        <div className="text-center">
-          <button
-            ref={loadMoreRef}
-            onClick={() => setNumberOfCardsToShow(n => n + 12)}
-            className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm"
+        {/* Load More Placeholders */}
+        {!isPrint && hasMoreCards && (n(6).filter(i => cardsToShow.length + i <= flatMapCards.length ).map(i => (
+          <div
+            key={i}
+            className="text-center rounded-2xl relative overflow-hidden"
           >
-            Load More Cards
-          </button>
-        </div>
-      )}
+            <div className="absolute inset-0 animate-pulse duration-[10s] bg-neutral-300" />
+            {/* Load More Button (only shown on the first placeholder) */}
+            {i === 1 && (<div className="aspect-[63/88] flex items-center justify-center ">
+              <button
+                ref={loadMoreRef}
+                onClick={() => setNumberOfCardsToShow(n => n + 12)}
+                className="relative inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm cursor-pointer"
+              >
+                Load More Cards
+              </button>
+            </div>)}
+          </div>
+        )))}
+      </div>
 
       {/* Empty State */}
       {cardGroups.every(group => group.length === 0) && (
