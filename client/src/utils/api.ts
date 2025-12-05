@@ -1,7 +1,7 @@
 'use server';
 
 import { z } from 'zod';
-import { Card, Collection, SerializableSet, SerializableSetSchema, SerializedCard, SerializedCardSchema, SyncResult } from 'kindred-paths';
+import { Collection, SerializableSet, SerializableSetSchema, SerializedCard, SerializedCardSchema, SyncResult } from 'kindred-paths';
 import { internalBackendUrl } from './connection';
 import { revalidateTag } from 'next/cache';
 
@@ -131,13 +131,13 @@ export interface NameSuggestion {
   reason: string;
 }
 
-export async function getNameSuggestions(card: Card, faceIndex: number): Promise<NameSuggestion[]> {
+export async function getNameSuggestions(card: SerializedCard, faceIndex: number): Promise<NameSuggestion[]> {
   const response = await fetch(`${internalBackendUrl}/suggest/name/${faceIndex}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(card.toJson()),
+    body: JSON.stringify(card),
   });
 
   if (!response.ok) {
@@ -151,13 +151,13 @@ export interface SettingSuggestion {
   setting: string;
 }
 
-export async function getArtSettingSuggestions(card: Card, faceIndex: number): Promise<SettingSuggestion[]> {
+export async function getArtSettingSuggestions(card: SerializedCard, faceIndex: number): Promise<SettingSuggestion[]> {
   const response = await fetch(`${internalBackendUrl}/suggest/art-setting/${faceIndex}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(card.toJson()),
+    body: JSON.stringify(card),
   });
 
   if (!response.ok) {
@@ -171,13 +171,13 @@ export interface ArtSuggestion {
   base64Image: string;
 }
 
-export async function getArtSuggestions(card: Card, faceIndex: number): Promise<ArtSuggestion[]> {
+export async function getArtSuggestions(card: SerializedCard, faceIndex: number): Promise<ArtSuggestion[]> {
   const response = await fetch(`${internalBackendUrl}/suggest/art/${faceIndex}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(card.toJson()),
+    body: JSON.stringify(card),
   });
 
   if (!response.ok) {

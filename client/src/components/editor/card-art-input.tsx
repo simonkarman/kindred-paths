@@ -30,7 +30,7 @@ export const CardArtInput = (props: {
       card={props.card}
       faceIndex={props.faceIndex}
       selectSuggestion={(suggestion: SettingSuggestion) => props.setArtSetting(suggestion.setting)}
-      getServerSuggestions={(c) => getArtSettingSuggestions(c, props.faceIndex)}
+      getServerSuggestions={(c) => getArtSettingSuggestions(c.toJson(), props.faceIndex)}
       maxHeight={'max-h-80'}
       renderSuggestion={(suggestion: SettingSuggestion) => (<>
         <div className="text-xs text-zinc-600 mb-1">
@@ -55,7 +55,7 @@ export const CardArtInput = (props: {
       card={props.card}
       faceIndex={props.faceIndex}
       selectSuggestion={(suggestion: ArtSuggestion) => props.setArt(suggestion.fileName)}
-      getServerSuggestions={(c) => getArtSuggestions(c, props.faceIndex)}
+      getServerSuggestions={(c) => getArtSuggestions(c.toJson(), props.faceIndex)}
       maxHeight={'max-h-200'}
       renderSuggestion={(suggestion: ArtSuggestion) => (
         // eslint-disable-next-line @next/next/no-img-element

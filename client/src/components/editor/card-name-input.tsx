@@ -19,7 +19,7 @@ export const CardNameInput = (props: {
     card={props.card}
     faceIndex={props.faceIndex}
     selectSuggestion={(suggestion: NameSuggestion) => props.setName(suggestion.name)}
-    getServerSuggestions={(c) => getNameSuggestions(c, props.faceIndex)}
+    getServerSuggestions={(c) => getNameSuggestions(c.toJson(), props.faceIndex)}
     maxHeight={'max-h-80'}
     renderSuggestion={(suggestion: NameSuggestion) => (<>
       <div className="font-medium text-zinc-800 mb-1">

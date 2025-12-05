@@ -17,7 +17,14 @@ export async function GET(
 
   const path = `/render/${id}/${faceIndex}${queryString}`;
   const response = await fetch(`${internalBackendUrl}${path}`, {
-    next: { tags: [`card-${id}`] },
+
+    // In development, Next.js runs API routes on a single thread and serializes
+    // fetches that use cache tags. This causes concurrent image requests to queue
+    // up sequentially. We disable caching in dev to allow parallel requests, while
+    // keeping cache tags in production for proper revalidation via server actions.
+    ...(process.env.NODE_ENV === 'production'
+      ? { next: { tags: [`card-${id}`] } }
+      : { cache: 'no-store' }),
   });
 
   if (!response.ok) {

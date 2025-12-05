@@ -227,6 +227,8 @@ type CriteriaEditorProps = {
 
 function defaultStringValueForField(field: keyof SerializableBlueprint): string | undefined {
   switch (field) {
+    case 'layout':
+      return 'normal';
     case 'rarity':
       return 'common';
     case 'supertype':
