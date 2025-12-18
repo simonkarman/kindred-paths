@@ -31,13 +31,14 @@ import { BlueprintEditor } from '@/components/set-editor/blueprint-editor';
 import { CardEditor } from '@/components/editor/card-editor';
 import { CardSelector } from '@/components/set-editor/card-selector';
 import { CollectorNumberOverview } from '@/components/collector-number-overview';
+import { useLocalStorageState } from '@/utils/use-local-storage-state';
 
-function Modal(props: PropsWithChildren<{ onClose: () => void }>) {
+function Modal(props: PropsWithChildren<{ onClose?: () => void }>) {
   return (
     <div
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center p-4 sm:p-10 overflow-auto"
       onClick={(e) => {
-        if (e.target === e.currentTarget) { /*props.onClose();*/ }
+        if (props.onClose && e.target === e.currentTarget) { props.onClose(); }
       }}
     >
       {props.children}
@@ -75,8 +76,8 @@ export function SetEditor(props: SetEditorProps) {
   const [draggedItem, setDraggedItem] = useState<{type: 'metadataKeys' | 'cycleKeys', index: number} | null>(null);
 
   const set = useMemo(() => new Set(serializableSet), [serializableSet]);
-  const [matrixIndex, setMatrixIndex] = useState(0);
-  const matrix = set.getMatrix(matrixIndex);
+  const [matrixIndex, setMatrixIndex] = useLocalStorageState(`set/${set}/matrix`, 0);
+  const matrix = set.getMatrix(Math.min(set.getMatrixCount() - 1, matrixIndex));
   const statusCounts = matrix.getSlotStats(cards);
 
   const [showCollectorNumbers, setShowCollectorNumbers] = useState(false);
@@ -312,7 +313,7 @@ export function SetEditor(props: SetEditorProps) {
       <div className="mx-auto">
         {/* Modals */}
         {cardEditorSettings && (
-          <Modal onClose={() => setCardEditorSettings(undefined)}>
+          <Modal>
             <div className="w-full max-w-[1200px] rounded-xl shadow-2xl overflow-hidden">
               <CardEditor
                 initialCard={cardEditorSettings.card}
@@ -344,7 +345,7 @@ export function SetEditor(props: SetEditorProps) {
         )}
 
         {blueprintEditorLocation && (
-          <Modal onClose={() => setBlueprintEditorLocation(undefined)}>
+          <Modal>
             <div className="w-full max-w-[900px] rounded-xl shadow-2xl overflow-hidden">
               <BlueprintEditor
                 title={matrix.getLocationName(blueprintEditorLocation.matrixLocation)}

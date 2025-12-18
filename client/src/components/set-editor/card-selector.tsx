@@ -34,7 +34,9 @@ export function CardSelector(props: CardSelectorProps) {
   const cards = filterCardsBasedOnSearch(_cards, searchText);
 
   return <div className="p-4">
-    <h2 className="font-bold w-full text-center text-lg">Select a card</h2>
+    <h2 className="font-bold w-full text-center text-lg">
+      Select a card
+    </h2>
     <div
       className={`flex gap-2 justify-center items-stretch mb-4 ${searchText ? 'border-transparent' : 'border-gray-200'}`}
     >
