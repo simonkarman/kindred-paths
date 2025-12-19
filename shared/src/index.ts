@@ -6,6 +6,7 @@ export * from './collection';
 export * from './colors';
 export * from './hash';
 export * from './layout';
+export * from './mechanics';
 export * from './random';
 export * from './serialized-card';
 export * from './serialized-card-face';

@@ -4,6 +4,8 @@ import { existsSync } from 'fs';
 import { cardService } from '../services/card-service';
 import { computeCardId } from '../utils/card-utils';
 import { configuration } from '../configuration';
+import { mechanicsService } from '../services/mechanics-service';
+import { AutoReminderText } from 'kindred-paths';
 
 export const maintenanceRouter = Router();
 
@@ -150,6 +152,31 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
     if (hasChanged) {
       await cardService.saveCard(card);
     }
+  }
+
+  // Validate that all cards that use reminder text for keywords, match their template
+  const mechanics = await mechanicsService.getAllMechanics();
+  const autoReminderText = new AutoReminderText(mechanics.keywords);
+  for (const card of await cardService.getAllCards()) {
+    card.faces.forEach((face, faceIndex) => {
+      face.rules?.forEach((rule, index) => {
+        if (rule.variant === 'inline-reminder') {
+          const previousRule = index === 0 ? undefined : face.rules?.[index - 1];
+          // console.info('Checking inline-reminder', { cardId: card.id, faceIndex, rule, previousRule });
+          if (previousRule?.variant === 'keyword') {
+            const auto = autoReminderText.for(previousRule.content);
+            if (auto) {
+              if (auto !== rule.content) {
+                const message = `inline-reminder for keyword "${previousRule.content}" on card ${card.id} face ${faceIndex} does not` +
+                  `match the template (it is "${rule.content}" but should be "${auto}")`;
+                messages.push(message);
+                console.log(message);
+              }
+            }
+          }
+        }
+      });
+    });
   }
 
   console.info('Cleanup completed!');

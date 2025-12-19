@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { cardService } from '../services/card-service';
+import { mechanicsService } from '../services/mechanics-service';
 import { Card, filterCardsBasedOnSearch } from 'kindred-paths';
 
 export const organizeRouter = Router();
@@ -25,4 +26,8 @@ organizeRouter.post('/collector-numbers', async (req, res) => {
     }),
     );
   res.json(response);
+});
+
+organizeRouter.get('/mechanics', async (_, res) => {
+  res.json(await mechanicsService.getAllMechanics());
 });

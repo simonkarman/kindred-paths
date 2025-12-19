@@ -1,7 +1,15 @@
 'use server';
 
 import { z } from 'zod';
-import { Collection, SerializableSet, SerializableSetSchema, SerializedCard, SerializedCardSchema, SyncResult } from 'kindred-paths';
+import {
+  Collection,
+  SerializableMechanics, SerializableMechanicsSchema,
+  SerializableSet,
+  SerializableSetSchema,
+  SerializedCard,
+  SerializedCardSchema,
+  SyncResult,
+} from 'kindred-paths';
 import { internalBackendUrl } from './connection';
 import { revalidateTag } from 'next/cache';
 
@@ -124,6 +132,21 @@ export async function getOrganizeCollectorNumbers(searchQuery: string): Promise<
     throw new Error('Failed to fetch next collector numbers');
   }
   return await response.json();
+}
+
+export async function getMechanics(): Promise<SerializableMechanics> {
+  const response = await fetch(`${internalBackendUrl}/organize/mechanics`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    next: { tags: ['mechanics'] },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch mechanics');
+  }
+  return SerializableMechanicsSchema.parse(await response.json());
 }
 
 export interface NameSuggestion {

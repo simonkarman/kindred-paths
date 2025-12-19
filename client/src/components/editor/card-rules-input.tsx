@@ -1,9 +1,10 @@
-import { RuleVariant, ruleVariants, capitalize } from 'kindred-paths';
+import { RuleVariant, ruleVariants, capitalize, SerializableMechanics, AutoReminderText } from 'kindred-paths';
 import { InputHeader } from '@/components/editor/input-header';
 
 export const CardRulesInput = (props: {
   rules?: { variant: RuleVariant, content: string }[],
   setRules: (value: { variant: RuleVariant, content: string }[] | undefined) => void,
+  mechanics: SerializableMechanics,
   getErrorMessage: () => string | undefined,
   isChanged: boolean,
   revert: () => void,
@@ -60,8 +61,13 @@ export const CardRulesInput = (props: {
           + Add rule at the top
         </button>}
 
-        {rules.map((rule, index) => (
-          <div key={index} className="flex flex-col gap-1 border-zinc-200 rounded hover:bg-zinc-50">
+        {rules.map((rule, index) => {
+          let auto: string | undefined = undefined;
+          const previousRule = index === 0 ? undefined : rules[index - 1];
+          if (rule.variant === 'inline-reminder' && previousRule?.variant === 'keyword') {
+            auto = new AutoReminderText(props.mechanics.keywords).for(previousRule.content);
+          }
+          return <div key={index} className="flex flex-col gap-1 border-zinc-200 rounded hover:bg-zinc-50">
             <div key={index} className="flex items-center gap-2">
               {/* Variant Selector */}
               <select
@@ -75,6 +81,18 @@ export const CardRulesInput = (props: {
                   </option>
                 ))}
               </select>
+
+              {/* Autofill Button */}
+              {auto && (
+                <button
+                  onClick={() => updateRule(index, 'content', auto)}
+                  disabled={auto === rule.content}
+                  className="px-2 py-1 text-xs font-medium text-green-600 bg-green-50 border border-green-300 disabled:border-gray-300 rounded not-disabled:hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500"
+                  title="Autofill reminder text"
+                >
+                  {auto === rule.content ? 'Autofilled' : 'Autofill'}
+                </button>
+              )}
 
               {/* Move Up Button */}
               <button
@@ -124,8 +142,8 @@ export const CardRulesInput = (props: {
                 className="text-sm px-2 py-1 border border-zinc-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             )}
-          </div>
-        ))}
+          </div>;
+        })}
 
         {/* Add Rule Button */}
         <button

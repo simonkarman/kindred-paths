@@ -14,10 +14,10 @@ import {
   SerializedCardSchema,
   tryParseLoyaltyAbility,
   capitalize,
-  SerializedCardFace, tokenCardTypes, TokenCardType, permanentTypes,
+  SerializedCardFace, tokenCardTypes, TokenCardType, permanentTypes, SerializableMechanics,
 } from 'kindred-paths';
 import { useCallback, useEffect, useState } from 'react';
-import { createCard, updateCard } from '@/utils/api';
+import { createCard, getMechanics, updateCard } from '@/utils/api';
 import { CardNameInput } from '@/components/editor/card-name-input';
 import { CardTypesInput } from '@/components/editor/card-types-input';
 import { CardPTInput } from '@/components/editor/card-pt-input';
@@ -244,6 +244,11 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
   const [_selectedFaceIndex, setSelectedFaceIndex] = useState(0);
   const selectedFaceIndex = Math.min(_selectedFaceIndex, state.faces.length - 1);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [mechanics, setMechanics] = useState<SerializableMechanics>({ keywords: [] });
+  useEffect(() => {
+    getMechanics().then(mechanics => setMechanics(mechanics));
+  }, []);
 
   // Helper functions for state updates
   const updateCardProperty = useCallback(<K extends keyof Omit<EditorState, 'faces'>>(
@@ -574,6 +579,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
           <CardRulesInput
             rules={currentFace.rules}
             setRules={(value) => updateFaceProperty(selectedFaceIndex, 'rules', value)}
+            mechanics={mechanics}
             getErrorMessage={() => getErrorMessage('rules')}
             isChanged={isEditMode && JSON.stringify(initialFace?.rules) !== JSON.stringify(currentFace.rules)}
             revert={() => updateFaceProperty(selectedFaceIndex, 'rules', initialFace?.rules)}

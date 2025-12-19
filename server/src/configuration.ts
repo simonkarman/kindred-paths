@@ -10,6 +10,7 @@ export class Configuration {
   readonly artSuggestionsDir;
   readonly setsDir;
   readonly symbolDir;
+  readonly mechanicsDir;
 
   readonly rendersCacheDir;
   readonly previewsCacheDir;
@@ -25,6 +26,7 @@ export class Configuration {
     this.artSuggestionsDir = `${this.artDir}/suggestions`;
     this.setsDir = `${this.collectionRootDir}/sets`;
     this.symbolDir = `${this.collectionRootDir}/symbols`;
+    this.mechanicsDir = `${this.collectionRootDir}/mechanics`;
 
     // Cache directories
     this.cacheRootDir = process.env.CACHE_ROOT_DIR ?? './.cache';
