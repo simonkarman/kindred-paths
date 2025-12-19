@@ -158,6 +158,7 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
   const mechanics = await mechanicsService.getAllMechanics();
   const autoReminderText = new AutoReminderText(mechanics.keywords);
   for (const card of await cardService.getAllCards()) {
+    let hasChanged = false;
     card.faces.forEach((face, faceIndex) => {
       face.rules?.forEach((rule, index) => {
         if (rule.variant === 'inline-reminder') {
@@ -165,18 +166,27 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
           // console.info('Checking inline-reminder', { cardId: card.id, faceIndex, rule, previousRule });
           if (previousRule?.variant === 'keyword') {
             const auto = autoReminderText.for(previousRule.content);
-            if (auto) {
-              if (auto !== rule.content) {
-                const message = `inline-reminder for keyword "${previousRule.content}" on card ${card.id} face ${faceIndex} does not` +
+            if (auto && auto !== rule.content) {
+              const message = `inline-reminder for keyword "${previousRule.content}" on card ${card.id} face ${faceIndex} does not` +
                   `match the template (it is "${rule.content}" but should be "${auto}")`;
-                messages.push(message);
-                console.log(message);
-              }
+              messages.push(message);
+              console.log(message);
             }
           }
         }
+        if (rule.variant === 'ability' && autoReminderText.for(rule.content) !== undefined) {
+          rule.variant = 'keyword';
+          hasChanged = true;
+          const message = `ability rule on card ${card.id} face ${faceIndex} matches a keyword template ("${rule.content}"), `
+             + 'consider changing it to a keyword rule';
+          messages.push(message);
+          console.log(message);
+        }
       });
     });
+    if (hasChanged) {
+      await cardService.saveCard(card);
+    }
   }
 
   console.info('Cleanup completed!');
