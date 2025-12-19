@@ -50,7 +50,7 @@ export class CardService {
   async saveCard(serializedCard: SerializedCard): Promise<SerializedCard> {
     const path = `${configuration.cardsDir}/${serializedCard.id}.json`;
     await fs.mkdir(configuration.cardsDir, { recursive: true });
-    await fs.writeFile(path, JSON.stringify({ ...serializedCard, id: undefined }, null, 2), 'utf-8');
+    await fs.writeFile(path, JSON.stringify({ ...serializedCard, id: undefined }, null, 2) + '\n', 'utf-8');
     return serializedCard;
   }
 

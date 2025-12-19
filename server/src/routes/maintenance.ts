@@ -17,6 +17,20 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
   const messages: string[] = [];
   console.info('Cleanup requested...');
 
+  // Abort if not cards can be found
+  if ((await cardService.getAllCards()).length === 0) {
+    const message = 'aborting cleanup because no cards could be found';
+    messages.push(message);
+    console.warn(message);
+    res.json({ message: 'Cleanup aborted', details: messages });
+    return;
+  }
+
+  // Save each card to ensure consistent formatting
+  for (const card of await cardService.getAllCards()) {
+    await cardService.saveCard(card);
+  }
+
   // Rename cards that have an ID different from the computed ID based on their name
   for (const card of await cardService.getAllCards()) {
     const computedCardId = computeCardId(card);
@@ -176,6 +190,7 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
         }
         if (rule.variant === 'ability' && autoReminderText.for(rule.content) !== undefined) {
           rule.variant = 'keyword';
+          rule.content = rule.content.toLowerCase();
           hasChanged = true;
           const message = `ability rule on card ${card.id} face ${faceIndex} matches a keyword template ("${rule.content}"), `
              + 'consider changing it to a keyword rule';
