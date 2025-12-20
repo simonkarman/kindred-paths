@@ -1,6 +1,7 @@
 import { Card, hash } from 'kindred-paths';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { previewCard } from '@/utils/api';
+
+import { previewCard } from '@/utils/preview-card';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 

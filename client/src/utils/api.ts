@@ -3,7 +3,8 @@
 import { z } from 'zod';
 import {
   Collection,
-  SerializableMechanics, SerializableMechanicsSchema,
+  SerializableMechanics,
+  SerializableMechanicsSchema,
   SerializableSet,
   SerializableSetSchema,
   SerializedCard,
@@ -101,21 +102,6 @@ export async function updateCard(serializedCard: SerializedCard): Promise<Serial
   revalidateTag('cards');
   revalidateTag(`card-${serializedCard.id}`);
   return responseJson;
-}
-
-export async function previewCard(serializedCard: SerializedCard, faceIndex: number) {
-  const response = await fetch(`${internalBackendUrl}/preview/${faceIndex}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(serializedCard),
-  });
-  if (!response.ok) {
-    throw new Error(`Server error: ${response.status}`);
-  }
-
-  return await response.blob();
 }
 
 export type CollectorNumberInfo = { collectorNumber: number, cardId: string, faces: { name: string, renderedTypeLine: string }[] };

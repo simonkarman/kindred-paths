@@ -1,13 +1,14 @@
 'use client';
 
 import { CardEditor } from '@/components/editor/card-editor';
-import { getCardSampleGeneratorById, getCardSamples, previewCard } from '@/utils/api';
+import { getCardSampleGeneratorById, getCardSamples } from '@/utils/api';
 import { useCallback, useEffect, useState } from 'react';
 import { SerializedCard, filterCardsBasedOnSearch } from 'kindred-paths';
 import SearchBar from '@/components/search-bar';
 import { useSearch } from '@/utils/use-search';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleDown, faAngleUp, faArrowLeft, faPlus, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import { previewCard } from '@/utils/preview-card';
 
 export function CardInspiration(props: { previousCardGenerators: { generatorId: string, createdAt: string, updatedAt: string, prompt: string, sampleCount: number }[] }) {
   const [showPreviousGenerators, setShowPreviousGenerators] = useState(false);
