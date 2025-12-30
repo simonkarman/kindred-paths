@@ -409,7 +409,7 @@ export function SetEditor(props: SetEditorProps) {
                 className={`cursor-pointer px-3 py-1 rounded-lg text-sm font-medium border ${index === matrixIndex ? 'bg-blue-100 border-blue-300 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'}`}
                 onClick={() => setMatrixIndex(index)}
               >
-                #{index} {m.getName()} {m.getArchetypeCount()}x{m.getCycleCount()})
+                #{index} {m.getName()} {m.getArchetypeCount()}x{m.getCycleCount()}
               </button>)}
               <button
                 onClick={() => addMatrix()}
@@ -663,11 +663,10 @@ export function SetEditor(props: SetEditorProps) {
                     const hasValue = metadataKey in archetype.metadata && archetype.metadata[metadataKey] !== undefined;
                     return (
                       <td key={archetypeIndex} className={`border border-slate-200 p-1 ${hasValue ? 'bg-white' : 'bg-yellow-50 hover:bg-yellow-100'}`}>
-                        <input
-                          type="text"
+                        <textarea
                           value={archetype.metadata[metadataKey] || ''}
                           onChange={(e) => updateMetadataValue(archetypeIndex, metadataKey, e.target.value)}
-                          className="w-full border-none text-xs bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 placeholder:text-yellow-800"
+                          className="w-full min-h-20 border-none text-xs bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 placeholder:text-yellow-800"
                           placeholder="..."
                         />
                       </td>

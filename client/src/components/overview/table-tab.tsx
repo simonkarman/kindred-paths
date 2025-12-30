@@ -17,6 +17,7 @@ import {
 import Link from 'next/link';
 import { deleteCard } from '@/utils/api';
 import { useDeckNameFromSearch } from '@/utils/use-search';
+import { useLocalStorageState } from '@/utils/use-local-storage-state';
 
 type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' | 'power' | 'toughness' | 'art' | 'tags' | 'tag:count';
 
@@ -37,7 +38,7 @@ export const TableTab = (props: {
   const deckName = useDeckNameFromSearch();
   const { onSelect } = props;
 
-  const [sortKey, setSortKey] = useState<{ k: SortKey, d: 'asc' | 'desc' }>({ k: 'collector-number', d: 'asc' });
+  const [sortKey, setSortKey] = useLocalStorageState<{ k: SortKey, d: 'asc' | 'desc' }>('home/sort-key', { k: 'collector-number', d: 'asc' });
   const sortOn = (key: SortKey) => {
     if (sortKey.k === key) {
       setSortKey({ k: key, d: sortKey.d === 'asc' ? 'desc' : 'asc' });
