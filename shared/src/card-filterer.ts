@@ -165,6 +165,21 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: s
             && validateNumberRequirement(powerRequirement, cardFace.pt.power);
         }),
 
+        check(['rules'], ruleNeedle => {
+          return cardFace.rules.some(r => (r.variant === 'keyword' || r.variant === 'ability')
+            && r.content.toLowerCase().includes(ruleNeedle));
+        }),
+
+        check(['reminder'], ruleNeedle => {
+          return cardFace.rules.some(r => (r.variant === 'card-type-reminder' || r.variant === 'inline-reminder')
+            && r.content.toLowerCase().includes(ruleNeedle));
+        }),
+
+        check(['flavor'], ruleNeedle => {
+          return cardFace.rules.some(r => (r.variant === 'flavor')
+            && r.content.toLowerCase().includes(ruleNeedle));
+        }),
+
         check(['deck', 'd'], deckNameNeedle => {
           const deckTag = card.getTagAsNumber(`deck/${deckNameNeedle}`);
           return deckTag !== undefined && deckTag >= 0;

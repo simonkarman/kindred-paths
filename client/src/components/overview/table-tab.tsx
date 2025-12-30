@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, SerializedCard } from 'kindred-paths';
+import { Card, SerializedCard, sort, SortKey } from 'kindred-paths';
 import { ReactNode, useState } from 'react';
 import { RarityText } from '@/components/rarity-text';
 import { ManaCost } from '@/components/mana-cost';
@@ -16,34 +16,23 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import { deleteCard } from '@/utils/api';
-import { useDeckNameFromSearch } from '@/utils/use-search';
-import { useLocalStorageState } from '@/utils/use-local-storage-state';
-
-type SortKey = 'collector-number' | 'mana-value' | 'name' | 'rarity' | 'types' | 'power' | 'toughness' | 'art' | 'tags' | 'tag:count';
-
-const tagsAsString = (tags: Card["tags"]) => {
-  return tags
-    ? Object.entries(tags)
-      .filter(([tagName]) => tagName !== "createdAt")
-      .toSorted(([a], [b]) => a.localeCompare(b))
-      .map(([tagName, tagValue]) => tagValue === true ? tagName : `${tagName}=${tagValue}`)
-      .join(', ')
-    : '';
-}
+import { useDeckNameFromSearch, useSortOptions } from '@/utils/use-search';
 
 export const TableTab = (props: {
   cards: SerializedCard[],
   onSelect?: (card: SerializedCard, faceIndex: number) => void,
 }) => {
-  const deckName = useDeckNameFromSearch();
   const { onSelect } = props;
 
-  const [sortKey, setSortKey] = useLocalStorageState<{ k: SortKey, d: 'asc' | 'desc' }>('home/sort-key', { k: 'collector-number', d: 'asc' });
+  const deckName = useDeckNameFromSearch();
+  const [sortOptions, setSortOptions] = useSortOptions('home');
+  const mainSortKey = Array.isArray(sortOptions.key) ? sortOptions.key[0] : sortOptions.key;
+
   const sortOn = (key: SortKey) => {
-    if (sortKey.k === key) {
-      setSortKey({ k: key, d: sortKey.d === 'asc' ? 'desc' : 'asc' });
+    if (mainSortKey === key) {
+      setSortOptions({ key: sortOptions.key, direction: sortOptions.direction === 'asc' ? 'desc' : 'asc' });
     } else {
-      setSortKey({ k: key, d: 'asc' });
+      setSortOptions({ key, direction: 'asc' });
     }
   };
 
@@ -53,95 +42,28 @@ export const TableTab = (props: {
     deleteCard(id).catch(() => setDeletedCardIds(p => p.filter(cardId => cardId !== id)));
   };
 
-  const cards = props.cards
-    .filter(c => !deletedCardIds.includes(c.id))
-    .map(serializedCard => new Card(serializedCard))
-    .sort((_a, _b) => {
-      let a = _a.faces[0];
-      let b = _b.faces[0];
-      if (sortKey.d === 'desc') {
-        const temp = a;
-        a = b;
-        b = temp;
-      }
-      if (sortKey.k === 'collector-number') {
-        return a.card.collectorNumber - b.card.collectorNumber;
-      } else if (sortKey.k === 'mana-value') {
-        if (a.manaValue() !== b.manaValue()) {
-          return a.manaValue() - b.manaValue();
-        }
-        const colorlessA = a.manaCost?.['colorless'] ?? 0;
-        const colorlessB = b.manaCost?.['colorless'] ?? 0;
-        if (colorlessA !== colorlessB) {
-          return -(colorlessA - colorlessB);
-        }
-        return a.renderManaCost().localeCompare(b.renderManaCost());
-      } else if (sortKey.k === 'name') {
-        return a.name.localeCompare(b.name);
-      } else if (sortKey.k === 'rarity') {
-        const rarityOrder = ['common', 'uncommon', 'rare', 'mythic'];
-        return rarityOrder.indexOf(a.card.rarity) - rarityOrder.indexOf(b.card.rarity);
-      } else if (sortKey.k === 'types') {
-        const typeLineA = [a.card.isToken ? 'token' : '', ...a.types, '-', a.supertype ?? ' ', '-', ...(a.subtypes ?? [])]
-        const typeLineB = [...b.types, '-', b.supertype ?? ' ', '-', ...(b.subtypes ?? [])];
-        return typeLineA.join(', ').localeCompare(typeLineB.join(', '));
-      } else if (sortKey.k === 'power' || sortKey.k === 'toughness') {
-        const powerA = a.pt?.power ?? 0;
-        const powerB = b.pt?.power ?? 0;
-        const toughnessA = a.pt?.toughness ?? 0;
-        const toughnessB = b.pt?.toughness ?? 0;
-        if (sortKey.k === 'power') {
-          return powerA - powerB;
-        } else {
-          return toughnessA - toughnessB;
-        }
-      } else if (sortKey.k === 'art') {
-        const aHasArt = a.art !== undefined && a.art.length > 0;
-        const bHasArt = b.art !== undefined && b.art.length > 0;
-        if (aHasArt && !bHasArt) {
-          return -1;
-        } else if (!aHasArt && bHasArt) {
-          return 1;
-        }
-        return 0;
-      } else if (sortKey.k === 'tags') {
-        const tagsA = tagsAsString(a.card.tags);
-        const tagsB = tagsAsString(b.card.tags);
-        return tagsA.localeCompare(tagsB)
-      } else if (sortKey.k === 'tag:count') {
-        const tagAsNumber = (c: Card, tagName: string) => {
-          const tagValue = c.tags?.[tagName];
-          if (typeof tagValue === 'number') {
-            return tagValue;
-          } else if (typeof tagValue === 'string' && !isNaN(Number(tagValue))) {
-            return Number(tagValue);
-          } else if (typeof tagValue === 'boolean') {
-            return tagValue ? 1 : 0;
-          } else if (tagValue === undefined || tagValue === null) {
-            return 0.5;
-          }
-          return 99;
-        }
-        return tagAsNumber(a.card, `deck/${deckName}`) - tagAsNumber(b.card, `deck/${deckName}`);
-      }
-      return 0;
-    });
+  const cards = sort(
+    props.cards
+      .filter(c => !deletedCardIds.includes(c.id))
+      .map(serializedCard => new Card(serializedCard)),
+    { ...sortOptions, deckName },
+  );
 
   const SortableHeader = ({ sortKey: key, children, textAlignment = "text-left" }: {
     sortKey: SortKey,
     children: ReactNode,
     textAlignment?: string,
   }) => {
-    const sortIcon = sortKey.k === key && (
+    const sortIcon = mainSortKey === key && (
       <FontAwesomeIcon
-        icon={sortKey.d === 'desc' ? faAngleUp : faAngleDown}
+        icon={sortOptions.direction === 'desc' ? faAngleUp : faAngleDown}
         className="text-blue-600 text-xs"
       />
     );
     return (
       <th
         onClick={() => sortOn(key)}
-        className={`px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer transition-colors ${textAlignment} ${sortKey.k === key ? 'bg-slate-50 text-slate-900 font-semibold' : ''}`}
+        className={`px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer transition-colors ${textAlignment} ${mainSortKey === key ? 'bg-slate-50 text-slate-900 font-semibold' : ''}`}
       >
         <div className="flex gap-1.5">
           <span className="grow">
@@ -167,9 +89,9 @@ export const TableTab = (props: {
             <SortableHeader sortKey="rarity">Rarity</SortableHeader>
             <SortableHeader sortKey="types">Types</SortableHeader>
             <th className="px-3 py-2 text-center text-xs font-medium text-slate-600">
-              <span onClick={() => sortOn('power')} className={`cursor-pointer hover:text-slate-900 ${sortKey.k === 'power' ? 'text-slate-900 font-semibold' : ''}`}>P</span>
+              <span onClick={() => sortOn('power')} className={`cursor-pointer hover:text-slate-900 ${mainSortKey === 'power' ? 'text-slate-900 font-semibold' : ''}`}>P</span>
               /
-              <span onClick={() => sortOn('toughness')} className={`cursor-pointer hover:text-slate-900 ${sortKey.k === 'toughness' ? 'text-slate-900 font-semibold' : ''}`}>T</span>
+              <span onClick={() => sortOn('toughness')} className={`cursor-pointer hover:text-slate-900 ${mainSortKey === 'toughness' ? 'text-slate-900 font-semibold' : ''}`}>T</span>
             </th>
             <SortableHeader sortKey="art" textAlignment="text-center">Art</SortableHeader>
             <th className="px-3 py-2 text-center text-xs font-medium text-slate-600">Token</th>

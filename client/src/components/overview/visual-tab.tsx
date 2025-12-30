@@ -1,21 +1,39 @@
 "use client";
 
-import { getStatistics, Layout, SerializedCard } from 'kindred-paths';
+import { getStatistics, Layout, SerializedCard, sort, SortKey, sortKeys } from 'kindred-paths';
 import Link from 'next/link';
 import { CardRender } from '@/components/card-render';
 import { useEffect, useRef, useState } from 'react';
-import { useDeckNameFromSearch } from '@/utils/use-search';
+import { replaceKeysInSearchText, useDeckNameFromSearch, useSearch, useSortOptions } from '@/utils/use-search';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowDownWideShort,
+  faArrowUpWideShort, faChevronLeft,
+  faSquare,
+  faTableCells,
+  faTableCellsLarge,
+  faTriangleExclamation, faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import { useLocalStorageState } from '@/utils/use-local-storage-state';
 
 const n = (count: number) => Array.from({ length: count }, (_, i) => i + 1);
+
+// Helper to normalize key to array for easier manipulation
+const getKeysArray = (key: SortKey | SortKey[]): SortKey[] =>
+  Array.isArray(key) ? key : [key];
+
+// Helper to convert back - single value if length 1, otherwise array
+const normalizeKeys = (keys: SortKey[]): SortKey | SortKey[] =>
+  keys.length === 1 ? keys[0] : keys;
 
 export function VisualTab(props: {
   cards: SerializedCard[],
   dynamicLink?: (card: SerializedCard) => string,
 }) {
   const deckName = useDeckNameFromSearch();
+  const [, setSearchText] = useSearch('home');
+  const [sortOptions, setSortOptions] = useSortOptions('home');
+
   const {
     cardsWithoutTokensAndBasicLands,
     basicLands,
@@ -31,6 +49,7 @@ export function VisualTab(props: {
     'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2',
   ];
   const [zoomLevel, setZoomLevel] = useLocalStorageState('visual-tab/zoom', zoomLevels[0]);
+
 
   const cardGroups = [cardsWithoutTokensAndBasicLands];
   if (renderBasicLands) {
@@ -56,7 +75,7 @@ export function VisualTab(props: {
   }, []);
 
   const flatMapCards = cardGroups
-    .flatMap(group => group
+    .flatMap(group => sort(group, { ...sortOptions, deckName })
       .flatMap(card => {
         return n(respectDeckCount && deckName && typeof card.tags?.[`deck/${deckName}`] === 'number'
           ? card.tags[`deck/${deckName}`] as number
@@ -102,12 +121,23 @@ export function VisualTab(props: {
     setNumberOfCardsToShow(12);
   }, [props.cards]);
 
+  const availableDeckNames = [...new Set(flatMapCards
+    .flatMap(c => Object.entries(c.card.tags)
+      .filter(([tagName]) => tagName.startsWith('deck/'))
+      .map(([tagName]) => tagName.replace('deck/', ''))
+    )
+  )].toSorted();
+
+  const setSelectedDeck = (name: string) => {
+    setSearchText(text => replaceKeysInSearchText(text, ['deck', 'd'], name || undefined));
+  }
+
   return (
     <div className="space-y-6">
       {/* Controls Section */}
-      <div className="print:hidden bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-        <h3 className="text-sm font-semibold text-slate-900 mb-3">Display Options</h3>
-        <div className="flex flex-wrap gap-4">
+      <div className="print:hidden bg-white rounded-lg shadow-sm border border-slate-200 p-4 space-y-3">
+        <h3 className="text-sm font-semibold text-slate-900">Display Options</h3>
+        <div className="flex flex-wrap flex-col sm:flex-row justify-between gap-4">
           <label className="flex items-center gap-2 cursor-pointer group">
             <input
               type="checkbox"
@@ -116,7 +146,7 @@ export function VisualTab(props: {
               className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
             />
             <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">
-              Render Tokens
+              Tokens
               <span className="text-slate-500 ml-1">
                 ({tokens.length} unique, {totalTokens} total)
               </span>
@@ -131,7 +161,7 @@ export function VisualTab(props: {
               className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
             />
             <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">
-              Render Basic Lands
+              Basic Lands
               <span className="text-slate-500 ml-1">
                 ({basicLands.length} unique, {totalBasicLands} total)
               </span>
@@ -152,6 +182,24 @@ export function VisualTab(props: {
             </label>
           )}
 
+          {availableDeckNames.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-700">Deck:</span>
+              <select
+                value={deckName}
+                onChange={(e) => setSelectedDeck(e.target.value)}
+                className="rounded border border-slate-300 bg-white py-1 px-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+              >
+                <option value="">None</option>
+                {availableDeckNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <label className="flex items-center gap-2 cursor-pointer group">
             <input
               type="checkbox"
@@ -160,21 +208,147 @@ export function VisualTab(props: {
               className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
             />
             <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">
-              Automatically Load More Cards
+              Auto Load
             </span>
           </label>
-
+        </div>
+        <div className="flex flex-wrap flex-col sm:flex-row justify-between gap-4">
+          {/* Zoom Controls */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-700">Zoom:</span>
-            <select
-              value={zoomLevel}
-              onChange={(e) => setZoomLevel(e.target.value)}
-              className="rounded border border-slate-300 bg-white py-1 px-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-            >
-              <option value={zoomLevels[0]}>Bigger Cards, Less Cards</option>
-              <option value={zoomLevels[1]}>Balanced</option>
-              <option value={zoomLevels[2]}>More Cards, Small Cards</option>
-            </select>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setZoomLevel(zoomLevels[0])}
+                className={`py-1 px-2 rounded transition-colors ${
+                  zoomLevel === zoomLevels[0]
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+                title="Bigger Cards, Less Cards"
+              >
+                <FontAwesomeIcon icon={faSquare} className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setZoomLevel(zoomLevels[1])}
+                className={`py-1 px-2 rounded transition-colors ${
+                  zoomLevel === zoomLevels[1]
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+                title="Balanced"
+              >
+                <FontAwesomeIcon icon={faTableCellsLarge} className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setZoomLevel(zoomLevels[2])}
+                className={`py-1 px-2 rounded transition-colors ${
+                  zoomLevel === zoomLevels[2]
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+                title="More Cards, Small Cards"
+              >
+                <FontAwesomeIcon icon={faTableCells} className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Sort Controls */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-700">Sort:</span>
+            <div className="flex items-center flex-wrap gap-1">
+              {getKeysArray(sortOptions.key).map((sortKey, index) => {
+                const keysArray = getKeysArray(sortOptions.key);
+
+                return (
+                  <div
+                    key={sortKey}
+                    className="flex items-center bg-blue-500 text-white rounded text-sm overflow-hidden"
+                  >
+                    <span className="px-2 py-1">
+                      {keysArray.length > 1 && `${index + 1}. `}{sortKey}
+                    </span>
+                    {keysArray.length > 1 && (
+                      <button
+                        onClick={() => {
+                          if (index > 0) {
+                            const newKeys = [...keysArray];
+                            [newKeys[index - 1], newKeys[index]] = [newKeys[index], newKeys[index - 1]];
+                            setSortOptions({ ...sortOptions, key: normalizeKeys(newKeys) });
+                          }
+                        }}
+                        disabled={index === 0}
+                        className="px-1 py-1 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Increase priority"
+                      >
+                        <FontAwesomeIcon icon={faChevronLeft} className="w-3 h-3" />
+                      </button>
+                    )}
+                    {keysArray.length > 1 && (
+                      <button
+                        onClick={() => {
+                          const newKeys = keysArray.filter(k => k !== sortKey);
+                          setSortOptions({
+                            ...sortOptions,
+                            key: normalizeKeys(newKeys)
+                          });
+                        }}
+                        className="px-1 py-1 hover:bg-blue-600"
+                        title="Remove"
+                      >
+                        <FontAwesomeIcon icon={faXmark} className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {sortKeys.filter(k => !getKeysArray(sortOptions.key).includes(k)).length > 0 && (
+              <select
+                value=""
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const keysArray = getKeysArray(sortOptions.key);
+                    setSortOptions({
+                      ...sortOptions,
+                      key: normalizeKeys([...keysArray, e.target.value as SortKey])
+                    });
+                  }
+                }}
+                className="rounded border border-slate-300 bg-white py-1 px-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">+ Add...</option>
+                {sortKeys
+                  .filter(k => !getKeysArray(sortOptions.key).includes(k))
+                  .map(sortKey => (
+                    <option key={sortKey} value={sortKey}>{sortKey}</option>
+                  ))}
+              </select>
+            )}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setSortOptions({ ...sortOptions, direction: 'asc' })}
+                className={`py-1 px-2 rounded transition-colors ${
+                  sortOptions.direction === 'asc'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+                title="Ascending"
+              >
+                <FontAwesomeIcon icon={faArrowDownWideShort} className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setSortOptions({ ...sortOptions, direction: 'desc' })}
+                className={`py-1 px-2 rounded transition-colors ${
+                  sortOptions.direction === 'desc'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+                title="Descending"
+              >
+                <FontAwesomeIcon icon={faArrowUpWideShort} className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

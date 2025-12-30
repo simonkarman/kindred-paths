@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 export const useLocalStorageState = <T>(
   key: string,
   initialState: T | (() => T),
-): [T, (value: T) => void] => {
+): [T, (value: T | ((prev: T) => T)) => void] => {
   const _initialState = initialState instanceof Function ? initialState() : initialState;
   const [state, setState] = useState<T>(_initialState);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -39,10 +39,11 @@ export const useLocalStorageState = <T>(
   }, [key, _initialState]);
 
   // Function to set the localStorage state and update the component state
-  const setLocalStorageState = (value: T) => {
-    setState(value);
+  const setLocalStorageState = (value: T | ((prev: T) => T)) => {
+    const valueToStore = value instanceof Function ? value(state) : value;
+    setState(valueToStore);
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      localStorage.setItem(key, JSON.stringify(valueToStore));
     } finally {}
   }
 
