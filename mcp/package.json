@@ -18,6 +18,7 @@
   "description": "",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
+    "kindred-paths": "file:../shared",
     "zod": "^3.25.76"
   },
   "devDependencies": {

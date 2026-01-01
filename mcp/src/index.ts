@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { z } from 'zod';
+import { registerGetCardsTool } from './tool/get-cards.js';
+import { registerExplainCardTool } from './tool/explain-card.js';
 
 const server = new McpServer({
   name: 'kindred-paths',
@@ -9,29 +10,8 @@ const server = new McpServer({
   description: 'A tool for managing a collection of custom Magic the Gathering cards',
 });
 
-server.registerTool(
-  'hello',
-  {
-    description: 'Say hello',
-    inputSchema: {
-      name: z
-        .string()
-        .min(5)
-        .describe('Name of the user.'),
-    },
-  },
-  async ({ name }) => {
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Hello, ${name}! Version 5!`,
-        },
-      ],
-    };
-  },
-);
+registerGetCardsTool(server);
+registerExplainCardTool(server);
 
 export async function main() {
   const transport = new StdioServerTransport();
