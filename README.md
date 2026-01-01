@@ -43,6 +43,29 @@ You can now open the application in your browser on https://localhost:4100.
 
 > The server is available on `http://localhost:4101` and Card Conjurer is available on `http://localhost:4102`.
 
+## Adding MCP to Claude Desktop
+To use the provided MCP server with Claude Desktop, add it to your Claude configuration file. Follow the steps found in the [docs](https://modelcontextprotocol.io/docs/develop/build-server#testing-your-server-with-claude-for-desktop) or follow the steps below:
+
+1. Open `~/Library/Application\ Support/Claude/claude_desktop_config.json`.
+2. Add the `kindred-paths` entry to the `mcpServers` section:
+
+    ```json
+    {
+      "mcpServers": {
+        "kindred-paths": {
+          "command": "node",
+          "args": ["</absolute/path/to/kindred-paths>/mcp/build/index.js"]
+        }
+      }
+    }
+    ```
+
+    Replace `/absolute/path/to/kindred-paths` with the actual path where you cloned this repository.
+
+3. Restart Claude Desktop.
+
+   > Note: You have to restart Claude Desktop every time you make changes to the MCP server code.
+
 ## Troubleshooting
 If you run into issues, here are some common troubleshooting steps:
 

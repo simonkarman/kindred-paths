@@ -4,15 +4,16 @@
   "description": "A tool for managing the cards in Kindred Paths, the custom Magic the Gathering set by Simon Karman.",
   "private": true,
   "scripts": {
-    "postinstall": "npm --prefix shared install && npm --prefix server install && npm --prefix client install",
-    "precommit": "npm run --prefix shared precommit && npm run --prefix server precommit && npm run --prefix client precommit",
+    "postinstall": "npm --prefix shared install && npm --prefix server install && npm --prefix client install && npm --prefix mcp install",
+    "precommit": "npm run --prefix shared precommit && npm run --prefix server precommit && npm run --prefix client precommit && npm run --prefix mcp precommit",
     "start": "npm --prefix shared run clean && npm --prefix shared run build && npm-run-all --parallel start:*",
     "start:server": "npm --prefix server start",
     "start:client": "npm --prefix client run build && npm --prefix client start",
     "dev": "npm-run-all --parallel dev:*",
     "dev:shared": "npm run --prefix shared dev",
     "dev:server": "npm run --prefix server dev",
-    "dev:client": "npm run --prefix client dev"
+    "dev:client": "npm run --prefix client dev",
+    "dev:mcp": "npm run --prefix mcp dev"
   },
   "repository": {
     "type": "git",
