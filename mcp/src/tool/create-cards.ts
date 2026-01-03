@@ -10,8 +10,8 @@ export function registerCreateCardsTool(server: McpServer) {
     'create_cards',
     {
       description:
-        'Create new cards in the collection. Accepts an array of card JSON objects. A placeholder card id is must be provided. ' +
-        'The card id will be computed automatically on save.',
+        'Create new cards in the collection. Accepts an array of card JSON objects. A placeholder card ID is must be provided. ' +
+        'The card ID will be computed automatically on save.',
       inputSchema: {
         cards: z
           .array(SerializedCardSchema)

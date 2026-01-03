@@ -5,6 +5,7 @@ import { registerVerifyCardsTool } from './tool/verify-card.js';
 import { registerCreateCardsTool } from './tool/create-cards.js';
 import { registerDeleteCardsTool } from './tool/delete-cards.js';
 import { registerUpdateCardsTool } from './tool/update-cards.js';
+import { registerGetCardsTool } from './tool/get-cards.js';
 
 const server = new McpServer({
   name: 'kindred-paths',
@@ -13,6 +14,7 @@ const server = new McpServer({
   description: 'A tool for managing a collection of custom Magic the Gathering cards',
 });
 
+registerGetCardsTool(server);
 registerSearchCardsTool(server);
 registerVerifyCardsTool(server);
 registerCreateCardsTool(server);

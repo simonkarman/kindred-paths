@@ -56,7 +56,7 @@ export class CardService {
         fileExists = true;
       } catch { /* file does not exist */ }
       if (fileExists) {
-        throw new Error(`Card with id ${computedId} already exists`);
+        throw new Error(`Card with ID ${computedId} already exists`);
       }
     }
 

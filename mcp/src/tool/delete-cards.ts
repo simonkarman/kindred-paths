@@ -11,9 +11,9 @@ export function registerDeleteCardsTool(server: McpServer) {
     'delete_cards',
     {
       description:
-        'Deletes cards by their ids.',
+        'Deletes cards by their IDs.',
       inputSchema: {
-        ids: z.array(z.string()).describe('Array of card ids to delete'),
+        ids: z.array(z.string()).describe('Array of card IDs to delete'),
       },
     },
     async ({ ids }) => {

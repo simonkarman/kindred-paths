@@ -11,7 +11,7 @@ export function registerVerifyCardsTool(server: McpServer) {
     {
       description:
         'Verify that cards are valid and get human readable explanations showing how they will be interpreted. ' +
-        'Accepts an array of card ids (strings) or card json objects, which can be mixed.',
+        'Accepts an array of card IDs (strings) or card json objects, which can be mixed.',
       inputSchema: {
         cards: CardInputSchemaArray,
       },
@@ -28,7 +28,7 @@ export function registerVerifyCardsTool(server: McpServer) {
               return {
                 input,
                 success: false,
-                error: `Card not found with id: ${input}`,
+                error: `Card not found with ID: ${input}`,
               };
             }
             try {

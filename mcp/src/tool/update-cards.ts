@@ -18,7 +18,7 @@ const PartialSerializedCardUpdateSchema = z.object({
 
 const cardUpdateSchema = z.union([
   SerializedCardSchema.describe('Full card replacement'),
-  PartialSerializedCardUpdateSchema.describe('Partial update with id + changes'),
+  PartialSerializedCardUpdateSchema.describe('Partial update with ID + changes'),
 ]);
 
 export function registerUpdateCardsTool(server: McpServer) {
@@ -30,7 +30,7 @@ export function registerUpdateCardsTool(server: McpServer) {
       description:
         'Update existing cards in the collection. Accepts an array of either: ' +
         '(1) full card JSON objects for complete replacement, or ' +
-        '(2) { id, changes } objects for partial updates. Partial updates support tags, rarity, collectorNumber, layout, isToken, primaryFace, and ' +
+        '(2) { ID, changes } objects for partial updates. Partial updates support tags, rarity, collectorNumber, layout, isToken, primaryFace, and ' +
              'secondaryFace. Face changes are shallow merged - each field provided replaces the existing value entirely.',
       inputSchema: {
         cards: z.array(cardUpdateSchema).describe('Array of card updates'),

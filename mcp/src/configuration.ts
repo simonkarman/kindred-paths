@@ -8,10 +8,10 @@ const __dirname = dirname(__filename);
 export const collectionDirectory = resolve(__dirname, '../../collection');
 
 export const CardInputSchema = z.union([
-  z.string().describe('Card id to look up for verification'),
+  z.string().describe('Card ID to look up for verification'),
   SerializedCardSchema.describe('Card json object to verify directly'),
 ]);
 
 export const CardInputSchemaArray = z
   .array(CardInputSchema)
-  .describe('Array of card ids (strings) or card json objects to verify');
+  .describe('Array of card IDs (strings) or card json objects to verify');
