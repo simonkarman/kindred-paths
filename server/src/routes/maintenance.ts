@@ -2,10 +2,9 @@ import { Router } from 'express';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { cardService } from '../services/card-service';
-import { computeCardId } from '../utils/card-utils';
 import { configuration } from '../configuration';
 import { mechanicsService } from '../services/mechanics-service';
-import { AutoReminderText } from 'kindred-paths';
+import { AutoReminderText, computeCardId } from 'kindred-paths';
 
 export const maintenanceRouter = Router();
 

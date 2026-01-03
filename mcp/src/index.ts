@@ -1,7 +1,10 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { registerGetCardsTool } from './tool/get-cards.js';
-import { registerExplainCardTool } from './tool/explain-card.js';
+import { registerVerifyCardsTool } from './tool/verify-card.js';
+import { registerCreateCardsTool } from './tool/create-cards.js';
+import { registerDeleteCardsTool } from './tool/delete-cards.js';
+import { registerUpdateCardsTool } from './tool/update-cards.js';
 
 const server = new McpServer({
   name: 'kindred-paths',
@@ -11,7 +14,10 @@ const server = new McpServer({
 });
 
 registerGetCardsTool(server);
-registerExplainCardTool(server);
+registerVerifyCardsTool(server);
+registerCreateCardsTool(server);
+registerDeleteCardsTool(server);
+registerUpdateCardsTool(server);
 
 export async function main() {
   const transport = new StdioServerTransport();

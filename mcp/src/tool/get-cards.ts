@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { cardColors, cardLayouts, cardRarities } from 'kindred-paths';
-import { CardService } from '../service/cards.js';
+import { CardService } from '../service/card-service.js';
 
 const filterSchema = z
   .object({
@@ -20,7 +20,7 @@ const filterSchema = z
     deck: z.string().describe('card must be included in the deck with this name'),
     set: z.string().describe('card set code must exactly match'),
     tag: z.string()
-      .describe('card must have this tag (eq. "to-print", etc.) or have this tag whose value contains something (eq. "org=three", "count=1", etc.)'),
+      .describe('card must have this tag (eq. "set", etc.) or have this tag whose value contains something (eq. "set=BLT", "deck/main=2", etc.)'),
   }).partial().optional();
 
 type Filter = z.infer<typeof filterSchema>;

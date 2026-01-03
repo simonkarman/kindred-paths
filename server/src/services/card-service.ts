@@ -1,6 +1,5 @@
 import fs from 'fs/promises';
-import { Card, SerializedCard, SerializedCardFace, SerializedCardSchema } from 'kindred-paths';
-import { computeCardId } from '../utils/card-utils';
+import { Card, SerializedCard, SerializedCardFace, SerializedCardSchema, computeCardId } from 'kindred-paths';
 import { configuration } from '../configuration';
 
 export class CardService {

@@ -23,9 +23,13 @@ export class Card {
       layout: layout,
       rarity: 'common',
       collectorNumber: 1,
-      tags: { status: 'concept', createdAt: new Date().toISOString().substring(0, 10) },
+      tags: Card.defaultTags(),
       faces: new Layout(layout).defaultFaces(),
     });
+  }
+
+  static defaultTags(): { [key: string]: string | number | boolean | undefined } {
+    return { status: 'concept', createdAt: new Date().toISOString().substring(0, 10) };
   }
 
   constructor(props: SerializedCard) {

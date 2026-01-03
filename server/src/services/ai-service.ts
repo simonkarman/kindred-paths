@@ -1,10 +1,9 @@
 import fs from 'fs/promises';
-import { Card, CardArtPromptCreator, CardFace, SerializedCard, SerializedCardSchema } from 'kindred-paths';
+import { Card, CardArtPromptCreator, CardFace, SerializedCard, SerializedCardSchema, computeCardId } from 'kindred-paths';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { Leonardo } from '@leonardo-ai/sdk';
 import { z } from 'zod';
 import { GetGenerationByIdResponse } from '@leonardo-ai/sdk/sdk/models/operations';
-import { computeCardId } from '../utils/card-utils';
 import { CardGenerator } from './generator/card-generator';
 import { configuration } from '../configuration';
 import { symbolService } from './symbol-service';

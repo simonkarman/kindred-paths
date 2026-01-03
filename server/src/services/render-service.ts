@@ -1,7 +1,6 @@
 import fs from 'fs/promises';
-import { capitalize, Card, CardColor, CardFace, colorToShort, enumerate, hash, SerializedCard } from 'kindred-paths';
+import { capitalize, Card, CardColor, CardFace, colorToShort, enumerate, hash, SerializedCard, computeCardId } from 'kindred-paths';
 import { CardConjurer, Renderable } from '../card-conjurer';
-import { computeCardId } from '../utils/card-utils';
 import { configuration } from '../configuration';
 import { symbolService } from './symbol-service';
 
