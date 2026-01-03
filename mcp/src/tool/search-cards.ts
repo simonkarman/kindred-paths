@@ -41,11 +41,11 @@ const filterToString = (filter: Filter | undefined): string => {
   return parts.join(' ');
 };
 
-export function registerGetCardsTool(server: McpServer) {
+export function registerSearchCardsTool(server: McpServer) {
   const cardService = new CardService();
 
   server.registerTool(
-    'get_cards',
+    'search_cards',
     {
       description: 'Get cards from the collection. All filters are optional and combined with AND logic. No spaces can be used in any of the values.',
       inputSchema: {

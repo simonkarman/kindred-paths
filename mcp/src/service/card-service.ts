@@ -61,7 +61,7 @@ export class CardService {
     }
 
     // Write to the file
-    const content = JSON.stringify(data, null, 2);
+    const content = JSON.stringify(data, null, 2) + '\n';
     await fs.writeFile(`${this.dir}/${computedId}.json`, content, 'utf-8');
     return computedId;
   }

@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { registerGetCardsTool } from './tool/get-cards.js';
+import { registerSearchCardsTool } from './tool/search-cards.js';
 import { registerVerifyCardsTool } from './tool/verify-card.js';
 import { registerCreateCardsTool } from './tool/create-cards.js';
 import { registerDeleteCardsTool } from './tool/delete-cards.js';
@@ -13,7 +13,7 @@ const server = new McpServer({
   description: 'A tool for managing a collection of custom Magic the Gathering cards',
 });
 
-registerGetCardsTool(server);
+registerSearchCardsTool(server);
 registerVerifyCardsTool(server);
 registerCreateCardsTool(server);
 registerDeleteCardsTool(server);

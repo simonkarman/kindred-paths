@@ -73,6 +73,30 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
     }
   }
 
+  // Ensure emdashes and bullets are used consistently in rules text
+  for (const card of await cardService.getAllCards()) {
+    let hasChanged = false;
+    card.faces.forEach(face => {
+      face.rules = face.rules?.map(rule => {
+        let content = rule.content;
+        const newContent = content
+          .replace(/—/g, '{-}')
+          .replace(/[·•]/g, '{bullet}');
+        if (content !== newContent) {
+          hasChanged = true;
+          content = newContent;
+        }
+        return { ...rule, content };
+      });
+    });
+    if (hasChanged) {
+      const message = `standardized punctuation in rules text for card ${card.id}`;
+      messages.push(message);
+      await cardService.saveCard(card);
+      console.log(message);
+    }
+  }
+
   // Ensure that 0 values in the mana cost are removed
   for (const card of await cardService.getAllCards()) {
     let hasChanged = false;

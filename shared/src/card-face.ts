@@ -214,6 +214,14 @@ export class CardFace {
     if (this.rules.some(rule => rule.content.toLowerCase().includes(this.name.toLowerCase()))) {
       throw new Error('the card name should not be in the rules (use ~ as a placeholder for the card name)');
     }
+    // The emdash (—) should not be used in the rules, use {-} instead.
+    if (this.rules.some(rule => rule.content.includes('—'))) {
+      throw new Error('the card should not use the emdash (—) in the rules, use {-} (including the brackets) instead');
+    }
+    // The bullet (· or •) should not be used in the rules, use {bullet} instead.
+    if (this.rules.some(rule => /[·•]/.test(rule.content))) {
+      throw new Error('the card should not use the bullet (· or •) in the rules, use {bullet} instead');
+    }
     // ensure all keywords are lowercase
     if (this.rules.some(rule => rule.variant === 'keyword' && rule.content !== rule.content.toLowerCase())) {
       throw new Error('all keywords must be lowercase');
