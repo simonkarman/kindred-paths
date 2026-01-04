@@ -10,6 +10,7 @@ export const sortKeys = [
   'power',
   'toughness',
   'art',
+  'created-at',
   'tags',
   'tag:count',
 ] as const;
@@ -117,6 +118,10 @@ export const sort = (cards: Card[], options: SortOptions): Card[] => {
           return 1;
         }
         return 0;
+      } else if (sortKey === 'created-at') {
+        const dateA = typeof a.card.tags?.createdAt === 'string' ? new Date(a.card.tags.createdAt) : new Date(0);
+        const dateB = typeof b.card.tags?.createdAt === 'string' ? new Date(b.card.tags.createdAt) : new Date(0);
+        return dateA.getTime() - dateB.getTime();
       } else if (sortKey === 'tags') {
         const tagsA = tagsAsString(a.card.tags);
         const tagsB = tagsAsString(b.card.tags);
