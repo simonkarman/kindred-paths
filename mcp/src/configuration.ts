@@ -15,3 +15,5 @@ export const CardInputSchema = z.union([
 export const CardInputSchemaArray = z
   .array(CardInputSchema)
   .describe('Array of card IDs (strings) or card json objects to verify');
+
+export const backendUrl = 'http://localhost:4101';
