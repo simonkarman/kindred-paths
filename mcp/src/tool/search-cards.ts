@@ -10,7 +10,14 @@ const filterSchema = z
     type: z.string().describe('card type line must include (eq. "creature", "token", "legendary", "human", etc.)'),
     rarity: z.enum(cardRarities).describe('card rarity must exactly match'),
     color: z.enum(['colorless', 'multicolor', ...cardColors])
-      .describe('card must have the provide color description ("colorless", "multicolor") or includes the provided color (eq. "red", "blue", etc.)'),
+      .describe('card must have the provide color description ("colorless", "multicolor") ' +
+        'or includes the provided color (eq. "red", "blue", etc.)'),
+    'color-identity': z.enum(['colorless', 'multicolor', ...cardColors])
+      .describe('card must have the provide color identity description ("colorless", "multicolor") ' +
+        'or includes the provided color in its identity (eq. "red", "blue", etc.)'),
+    'producible-color': z.enum(['colorless', 'multicolor', ...cardColors])
+      .describe('card must be able to produce the provide color description ("none", "multicolor") ' +
+        'or includes the provided color in its identity (eq. "red", "blue", etc.)'),
     manavalue: z.string().regex(/\n+[+-]?/).describe('Matches if the card mana value meets this requirement (eq. "3", "2+", "12-", etc.)'),
     pt: z.string().describe('Matches if the card power/toughness meets this requirement '
         + '(eq. "yes", "no", "1/1", "2/4", "1+/5-", "/3", "5/", "n/n", "n+/n", "n/n-", "n+1/n", etc.)'),

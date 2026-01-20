@@ -67,7 +67,7 @@ export function registerRenderCardsTool(server: McpServer) {
           return await Promise.all(
             card.faces.map(async (_, faceIndex) => {
               try {
-                const res = await fetch(`${baseRenderUrl}/${faceIndex}?scale=0.2`, isPreview ? {
+                const res = await fetch(`${baseRenderUrl}/${faceIndex}?scale=0.15`, isPreview ? {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(card),

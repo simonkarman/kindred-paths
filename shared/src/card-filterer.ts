@@ -90,7 +90,7 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: s
           if (colorNeedle === 'colorless' || colorNeedle === 'c') {
             return cardFace.color().length === 0;
           }
-          if (colorNeedle === 'multicolor' || colorNeedle === 'm') {
+          if (colorNeedle === 'multicolor' || colorNeedle === 'multi' || colorNeedle === 'm') {
             return cardFace.color().length > 1;
           }
           // Convert single character to full color name
@@ -98,6 +98,34 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: s
             ? colorToLong(colorNeedle as CardColorCharacter)
             : colorNeedle;
           return cardFace.color().includes(c as CardColor);
+        }),
+
+        check(['color-identity', 'ci'], colorNeedle => {
+          if (colorNeedle === 'colorless' || colorNeedle === 'c') {
+            return cardFace.colorIdentity().length === 0;
+          }
+          if (colorNeedle === 'multicolor' || colorNeedle === 'multi' || colorNeedle === 'm') {
+            return cardFace.colorIdentity().length > 1;
+          }
+          // Convert single character to full color name
+          const c = wubrg.includes(colorNeedle as CardColorCharacter)
+            ? colorToLong(colorNeedle as CardColorCharacter)
+            : colorNeedle;
+          return cardFace.colorIdentity().includes(c as CardColor);
+        }),
+
+        check(['producible-color', 'pc'], colorNeedle => {
+          if (colorNeedle === 'none' || colorNeedle === 'n') {
+            return cardFace.producibleColors().length === 0;
+          }
+          if (colorNeedle === 'multicolor' || colorNeedle === 'multi' || colorNeedle === 'm') {
+            return cardFace.producibleColors().length > 1;
+          }
+          // Convert single character to full color name
+          const c = wubrg.includes(colorNeedle as CardColorCharacter)
+            ? colorToLong(colorNeedle as CardColorCharacter)
+            : colorNeedle;
+          return cardFace.producibleColors().includes(c as CardColor);
         }),
 
         check(['manavalue', 'mv'], manaValueNeedle => {

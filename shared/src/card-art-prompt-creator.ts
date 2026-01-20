@@ -15,13 +15,16 @@ export class CardArtPromptCreator {
     const dominantCardType = cardFace.types[cardFace.types.length - 1];
     sections.push(`A Magic the Gathering artwork for a ${dominantCardType} named "${cardFace.name}"`);
 
+    const setting = cardFace.faceIndex === 0 ? cardFace.card.tags['setting'] : cardFace.card.tags['setting-back'];
+    const hasSetting = typeof setting === 'string' && setting.length > 0;
+
     // Style section
     const focus: { [cardType: string]: string } = {
       'creature': ', focusing on a dynamic moment that tells a clear story within a single frame',
       'artifact': ', focusing on a close up of the artifact as the main subject',
       'sorcery': ', focusing on an event taking place',
       'instant': ', focusing on an action being performed',
-      'land': ', focusing on an empty landscape or environment',
+      'land': ', focusing on an empty environment',
       'enchantment': ', focusing on a magical effect that is visible in the environment',
       'planeswalker': ', focusing on a dynamic moment that tells a clear story within a single frame',
     };
@@ -34,13 +37,14 @@ export class CardArtPromptCreator {
       sections.push('The main subject takes up about 60% of the composition.');
     }
 
-    // Add card type section
-    sections.push(this[`${dominantCardType}Prompt`](cardFace));
+    // Add card type section (only when setting is not negated)
+    if (!hasSetting || !setting.startsWith('!')) {
+      sections.push(this[`${dominantCardType}Prompt`](cardFace));
+    }
 
     // Add tags["setting"] section
-    const setting = cardFace.faceIndex === 0 ? cardFace.card.tags['setting'] : cardFace.card.tags['setting-back'];
-    if (typeof setting === 'string' && setting.length > 0) {
-      sections.push(setting);
+    if (hasSetting) {
+      sections.push(setting.startsWith('!') ? setting.substring(1) : setting);
     }
 
     return sections.filter(s => s.length > 0).join(' ');

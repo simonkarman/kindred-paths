@@ -34,6 +34,8 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
       { keys: ['type', 't'] },
       { keys: ['rarity', 'r'], value: [...cardRarities, ...cardRarities.map(r => r[0])] },
       { keys: ['color', 'c'], value: [...cardColors, ...wubrg, 'colorless', 'c', 'multicolor', 'm'] },
+      { keys: ['color-identity', 'ci'], value: [...cardColors, ...wubrg, 'colorless', 'c', 'multicolor', 'm'] },
+      { keys: ['producible-color', 'pc'], value: [...cardColors, ...wubrg, 'colorless', 'c', 'multicolor', 'm'] },
       { keys: ['manavalue', 'mv'], value: /^\d+$|^\d+[+-]$/ },
       { keys: ['pt'], value: /^yes$|^no$|^n\/n(?:[+-]\d*)?$|^n(?:[+-]\d*)?\/n$|^(?:\d+[+-]?)?\/(?:\d+[+-]?)?$/ },
       { keys: ['rules'] },
