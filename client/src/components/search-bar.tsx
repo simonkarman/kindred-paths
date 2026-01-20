@@ -2,14 +2,27 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faQuestionCircle, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { useSearch } from '@/utils/use-search';
 import ColorCodedSearchInput from '@/components/color-coded-search-input';
+import SearchHelpPopup from '@/components/search-help-popup';
 
 export default function SearchBar(props: { scope: string, initial?: string }) {
   const searchInputRef = useRef<HTMLDivElement>(null);
   const [searchText, setSearchText] = useSearch(props.scope, props.initial);
   const [open, setOpen] = useState(searchText.length > 0);
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  const handleExampleClick = (example: string) => {
+    const newText = searchText.trim() ? `${searchText.trim()} ${example}` : example;
+    setSearchText(newText);
+    setHelpOpen(false);
+    setOpen(true);
+    // Focus the search input after adding the example
+    setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 0);
+  };
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -75,11 +88,23 @@ export default function SearchBar(props: { scope: string, initial?: string }) {
         className={isOpen ? 'bg-white' : ''}
       />
       <button
+        onClick={() => setHelpOpen(true)}
+        className={`${isOpen ? 'inline-block' : 'hidden'} text-sm px-2 py-1 text-zinc-400 hover:text-zinc-600`}
+        title="Search help"
+      >
+        <FontAwesomeIcon icon={faQuestionCircle} />
+      </button>
+      <button
         onClick={() => setOpen(true)}
         className={`${isOpen ? 'hidden' : 'inline-block'} text-sm px-3 py-1 border border-gray-300 rounded-lg`}
       >
         <FontAwesomeIcon icon={faSearch} />
       </button>
+      <SearchHelpPopup
+        isOpen={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        onExampleClick={handleExampleClick}
+      />
     </>
   );
 }
