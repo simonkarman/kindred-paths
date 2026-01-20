@@ -1,5 +1,5 @@
 import React, { RefObject, useCallback, useEffect, useState } from 'react';
-import { cardColors, cardLayouts, cardRarities, wubrg } from 'kindred-paths';
+import { filterDefinitions } from 'kindred-paths';
 
 interface ColorCodedSearchInputProps {
   ref: RefObject<HTMLDivElement | null>;
@@ -28,23 +28,11 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
   const colorizeText = useCallback((text: string) => {
     if (!text) return '';
 
-    // Define keys and their corresponding values
-    const validations: { keys: string[], value?: readonly string[] | RegExp | RegExp[] }[] = [
-      { keys: ['layout', 'l'], value: cardLayouts },
-      { keys: ['type', 't'] },
-      { keys: ['rarity', 'r'], value: [...cardRarities, ...cardRarities.map(r => r[0])] },
-      { keys: ['color', 'c'], value: [...cardColors, ...wubrg, 'colorless', 'c', 'multicolor', 'm'] },
-      { keys: ['color-identity', 'ci'], value: [...cardColors, ...wubrg, 'colorless', 'c', 'multicolor', 'm'] },
-      { keys: ['producible-color', 'pc'], value: [...cardColors, ...wubrg, 'colorless', 'c', 'multicolor', 'm'] },
-      { keys: ['manavalue', 'mv'], value: /^\d+$|^\d+[+-]$/ },
-      { keys: ['pt'], value: /^yes$|^no$|^n\/n(?:[+-]\d*)?$|^n(?:[+-]\d*)?\/n$|^(?:\d+[+-]?)?\/(?:\d+[+-]?)?$/ },
-      { keys: ['rules'] },
-      { keys: ['reminder'] },
-      { keys: ['flavor'] },
-      { keys: ['deck', 'd'] },
-      { keys: ['set', 's'] },
-      { keys: ['tag'] },
-    ];
+    // Use centralized filter definitions for validation
+    const validations = filterDefinitions.map(def => ({
+      keys: def.keys,
+      value: def.validation,
+    }));
 
     // Color key-value pairs
     let colorizedText = text.replace(/([^\s!]+?)(!?[:=])([^\s]*)/g, (_, key, op, _value) => {

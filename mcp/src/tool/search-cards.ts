@@ -1,34 +1,39 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { cardColors, cardLayouts, cardRarities } from 'kindred-paths';
+import { filterDefinitions } from 'kindred-paths';
 import { CardService } from '../service/card-service.js';
 
-const filterSchema = z
-  .object({
+// Build the filter schema dynamically from centralized filter definitions
+const buildFilterSchema = () => {
+  const schemaFields: Record<string, z.ZodTypeAny> = {
     name: z.string().describe('card name must include'),
-    layout: z.enum(cardLayouts).describe(('card layout must exactly match')),
-    type: z.string().describe('card type line must include (eq. "creature", "token", "legendary", "human", etc.)'),
-    rarity: z.enum(cardRarities).describe('card rarity must exactly match'),
-    color: z.enum(['colorless', 'multicolor', ...cardColors])
-      .describe('card must have the provide color description ("colorless", "multicolor") ' +
-        'or includes the provided color (eq. "red", "blue", etc.)'),
-    'color-identity': z.enum(['colorless', 'multicolor', ...cardColors])
-      .describe('card must have the provide color identity description ("colorless", "multicolor") ' +
-        'or includes the provided color in its identity (eq. "red", "blue", etc.)'),
-    'producible-color': z.enum(['colorless', 'multicolor', ...cardColors])
-      .describe('card must be able to produce the provide color description ("none", "multicolor") ' +
-        'or includes the provided color in its identity (eq. "red", "blue", etc.)'),
-    manavalue: z.string().regex(/\n+[+-]?/).describe('Matches if the card mana value meets this requirement (eq. "3", "2+", "12-", etc.)'),
-    pt: z.string().describe('Matches if the card power/toughness meets this requirement '
-        + '(eq. "yes", "no", "1/1", "2/4", "1+/5-", "/3", "5/", "n/n", "n+/n", "n/n-", "n+1/n", etc.)'),
-    rules: z.string().describe('card rules text must include'),
-    reminder: z.string().describe('card reminder text must include'),
-    flavor: z.string().describe('card flavor text must include'),
-    deck: z.string().describe('card must be included in the deck with this name'),
-    set: z.string().describe('card set code must exactly match'),
-    tag: z.string()
-      .describe('card must have this tag (eq. "set", etc.) or have this tag whose value contains something (eq. "set=BLT", "deck/main=2", etc.)'),
-  }).partial().optional();
+  };
+
+  filterDefinitions.forEach(def => {
+    const primaryKey = def.keys[0];
+    const description = def.description || '';
+
+    if (!def.validation) {
+      // No validation - just a string
+      schemaFields[primaryKey] = z.string().describe(description);
+    } else if (Array.isArray(def.validation)) {
+      // Array validation - use enum
+      const values = def.validation as string[];
+      if (values.length > 0) {
+        schemaFields[primaryKey] = z.enum([values[0], ...values.slice(1)] as [string, ...string[]]).describe(description);
+      } else {
+        schemaFields[primaryKey] = z.string().describe(description);
+      }
+    } else if (def.validation instanceof RegExp) {
+      // Regex validation
+      schemaFields[primaryKey] = z.string().regex(def.validation).describe(description);
+    }
+  });
+
+  return z.object(schemaFields).partial().optional();
+};
+
+const filterSchema = buildFilterSchema();
 
 type Filter = z.infer<typeof filterSchema>;
 

@@ -1,6 +1,7 @@
 import { SerializedCard } from './serialized-card';
 import { Card } from './card';
 import { CardColor, CardColorCharacter, colorToLong, wubrg } from './colors';
+import { filterDefinitions } from './filter-definitions';
 
 const check = (
   keys: string[],
@@ -72,21 +73,26 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: s
   return cards.filter(_card => {
     return new Card(_card).faces.some(cardFace => {
       const card = cardFace.card;
-      const checks = [
-        check(['layout', 'l'], layoutNeedle => card.layout.id.startsWith(layoutNeedle)),
 
-        check(['type', 't'], typeNeedle => [
+      // Build checks dynamically from filter definitions
+      const getFilterKeys = (primaryKey: string) =>
+        filterDefinitions.find(def => def.keys[0] === primaryKey)?.keys ?? [];
+
+      const checks = [
+        check(getFilterKeys('layout'), layoutNeedle => card.layout.id.startsWith(layoutNeedle)),
+
+        check(getFilterKeys('type'), typeNeedle => [
           ...(card.isToken ? ['token'] : []),
           ...cardFace.types,
           ...(cardFace.subtypes ?? []),
           ...(cardFace.supertype ? [cardFace.supertype] : []),
         ].some(t => t.startsWith(typeNeedle))),
 
-        check(['rarity', 'r'], rarityNeedle => rarityNeedle.length === 1
+        check(getFilterKeys('rarity'), rarityNeedle => rarityNeedle.length === 1
           ? card.rarity[0] === rarityNeedle[0]
           : card.rarity === rarityNeedle),
 
-        check(['color', 'c'], colorNeedle => {
+        check(getFilterKeys('color'), colorNeedle => {
           if (colorNeedle === 'colorless' || colorNeedle === 'c') {
             return cardFace.color().length === 0;
           }
@@ -100,7 +106,7 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: s
           return cardFace.color().includes(c as CardColor);
         }),
 
-        check(['color-identity', 'ci'], colorNeedle => {
+        check(getFilterKeys('color-identity'), colorNeedle => {
           if (colorNeedle === 'colorless' || colorNeedle === 'c') {
             return cardFace.colorIdentity().length === 0;
           }
@@ -114,7 +120,7 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: s
           return cardFace.colorIdentity().includes(c as CardColor);
         }),
 
-        check(['producible-color', 'pc'], colorNeedle => {
+        check(getFilterKeys('producible-color'), colorNeedle => {
           if (colorNeedle === 'none' || colorNeedle === 'n') {
             return cardFace.producibleColors().length === 0;
           }
@@ -128,11 +134,11 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: s
           return cardFace.producibleColors().includes(c as CardColor);
         }),
 
-        check(['manavalue', 'mv'], manaValueNeedle => {
+        check(getFilterKeys('manavalue'), manaValueNeedle => {
           return validateNumberRequirement(manaValueNeedle, cardFace.manaValue());
         }),
 
-        check(['pt'], ptNeedle => {
+        check(getFilterKeys('pt'), ptNeedle => {
           if (ptNeedle === 'yes' || ptNeedle === 'no') {
             // Match "pt:yes" for cards with power/toughness
             // Match "pt:no" for cards without power/toughness
@@ -193,32 +199,32 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: s
             && validateNumberRequirement(powerRequirement, cardFace.pt.power);
         }),
 
-        check(['rules'], ruleNeedle => {
+        check(getFilterKeys('rules'), ruleNeedle => {
           return cardFace.rules.some(r => (r.variant === 'keyword' || r.variant === 'ability')
             && r.content.toLowerCase().includes(ruleNeedle));
         }),
 
-        check(['reminder'], ruleNeedle => {
+        check(getFilterKeys('reminder'), ruleNeedle => {
           return cardFace.rules.some(r => (r.variant === 'card-type-reminder' || r.variant === 'inline-reminder')
             && r.content.toLowerCase().includes(ruleNeedle));
         }),
 
-        check(['flavor'], ruleNeedle => {
+        check(getFilterKeys('flavor'), ruleNeedle => {
           return cardFace.rules.some(r => (r.variant === 'flavor')
             && r.content.toLowerCase().includes(ruleNeedle));
         }),
 
-        check(['deck', 'd'], deckNameNeedle => {
+        check(getFilterKeys('deck'), deckNameNeedle => {
           const deckTag = card.getTagAsNumber(`deck/${deckNameNeedle}`);
           return deckTag !== undefined && deckTag >= 0;
         }),
 
-        check(['set', 's'], setNameNeedle => {
+        check(getFilterKeys('set'), setNameNeedle => {
           const setTag = card.getTagAsString('set');
           return setTag !== undefined && setTag.toLowerCase().startsWith(setNameNeedle);
         }),
 
-        check(['tag'], tagNeedle => {
+        check(getFilterKeys('tag'), tagNeedle => {
           const [key, value] = tagNeedle.split('=').map(s => s.trim());
           if (value) {
             // If both key and value are specified (e.g. "tag:foo=bar"), match exact key and value on contains

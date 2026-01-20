@@ -5,6 +5,7 @@ export * from './card-filterer';
 export * from './card-sorter';
 export * from './collection';
 export * from './colors';
+export * from './filter-definitions';
 export * from './hash';
 export * from './layout';
 export * from './mechanics';
