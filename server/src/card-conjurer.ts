@@ -431,6 +431,14 @@ export class CardConjurer {
           await addFrame(frameColorRight, 'addToRightHalf');
         }
         isFullArt = true;
+      } else if (renderable.supertype === 'basic' && renderable.tags.borderless === true) {
+        // Render borderless basic lands as full art textless frames
+        await page.selectOption('#selectFrameGroup', 'Textless-4');
+        await page.selectOption('#selectFramePack', 'TextlessBasics2022');
+        const pc = renderable.producibleColors[0];
+        const c = pc === 'colorless' ? 'c' : colorToShort(pc);
+        await addFrameImage(`textless/2022/${c}`);
+        await addFrameImage(`textless/2022/s${c}`);
       } else {
         // Enable autoFrame
         await page.selectOption('#autoFrame', renderable.tags.borderless ? 'Borderless' : 'M15RegularNew');
@@ -599,8 +607,11 @@ export class CardConjurer {
         }
       }
 
-      // If basic land, add the icon for the land type to the frame
-      if (renderable.supertype === 'basic' && renderable.types.includes('land') && renderable.rules.length === 0) {
+      // If basic land (that is not borderless/full art), add the icon for the land type to the frame
+      if (
+        renderable.supertype === 'basic' && renderable.tags.borderless !== true
+        && renderable.types.includes('land') && renderable.rules.length === 0
+      ) {
         await page.click('#creator-menu-tabs h3:has-text("Frame")');
         await page.waitForLoadState('networkidle');
 
@@ -678,13 +689,16 @@ export class CardConjurer {
         await notification.click();
       }
 
-      // Wait in debugging mode
+      // Wait in debugging mode for the Tutorial tab to be selected
       if (this.isDebuggingMode) {
-        await sleep(15000);
+        while (!(await page.locator('#creator-menu-tabs h3:has-text("Tutorial")').getAttribute('class'))?.includes('selected')) {
+          await sleep(250);
+        }
+      } else {
+        await sleep(500); // Wait a bit for the image to load
       }
 
       // Download the card
-      await sleep(500); // Wait a bit for the image to load
       const [imgPage] = await Promise.all([
         context.waitForEvent('page'),
         page.click('#downloadAlt'),
