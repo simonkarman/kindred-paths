@@ -100,10 +100,10 @@ export const sort = (cards: Card[], options: SortOptions): Card[] => {
       } else if (sortKey === 'types') {
         return asSortableTypeLine(a).localeCompare(asSortableTypeLine(b));
       } else if (sortKey === 'power' || sortKey === 'toughness') {
-        const powerA = a.pt?.power ?? -1;
-        const powerB = b.pt?.power ?? -1;
-        const toughnessA = a.pt?.toughness ?? -1;
-        const toughnessB = b.pt?.toughness ?? -1;
+        const powerA = a.pt?.power === '*' ? -1 : a.pt?.power ?? -2;
+        const powerB = b.pt?.power === '*' ? -1 : b.pt?.power ?? -2;
+        const toughnessA = a.pt?.toughness === '*' ? -1 : a.pt?.toughness ?? -2;
+        const toughnessB = b.pt?.toughness === '*' ? -1 : b.pt?.toughness ?? -2;
         if (sortKey === 'power') {
           return powerA - powerB;
         } else {

@@ -15,8 +15,8 @@ export const SerializedCardFaceSchema = z.object({
     content: z.string().min(1),
   })).optional(),
   pt: z.object({
-    power: z.number().int().nonnegative(),
-    toughness: z.number().int().nonnegative(),
+    power: z.union([z.literal('*'), z.number().int().nonnegative()]),
+    toughness: z.union([z.literal('*'), z.number().int().nonnegative()]),
   }).optional(),
   loyalty: z.number().int().nonnegative().optional(),
   art: z.string().min(5).regex(/.+\.(jpeg|jpg|png)$/i).optional(),

@@ -139,47 +139,51 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: s
         }),
 
         check(getFilterKeys('pt'), ptNeedle => {
+          const pt: { power: number, toughness: number } | undefined = cardFace.pt ? {
+            power: typeof cardFace.pt?.power === 'string' ? 0 : cardFace.pt.power,
+            toughness: typeof cardFace.pt?.toughness === 'string' ? 0 : cardFace.pt.toughness,
+          } : undefined;
           if (ptNeedle === 'yes' || ptNeedle === 'no') {
             // Match "pt:yes" for cards with power/toughness
             // Match "pt:no" for cards without power/toughness
-            return ptNeedle === 'yes' ? !!cardFace.pt : !cardFace.pt;
+            return ptNeedle === 'yes' ? !!pt : !pt;
           }
-          if (!cardFace.pt
+          if (!pt
             || !ptNeedle.includes('/')
             || ptNeedle.indexOf('/') !== ptNeedle.lastIndexOf('/')
           ) return false;
           if (ptNeedle.includes('n')) {
             // Match "n/n" for cards with equal power/toughness
             if (ptNeedle === 'n/n') {
-              return cardFace.pt.power === cardFace.pt.toughness;
+              return pt.power === pt.toughness;
               // Match "n/n+" for cards with greater toughness than power
             } else if (ptNeedle === 'n/n+') {
-              return cardFace.pt.toughness > cardFace.pt.power;
+              return pt.toughness > pt.power;
               // Match "n+/n" for cards with greater power than toughness
             } else if (ptNeedle === 'n+/n') {
-              return cardFace.pt.power > cardFace.pt.toughness;
+              return pt.power > pt.toughness;
               // Match "n/n-" for cards with less toughness than power
             } else if (ptNeedle === 'n/n-') {
-              return cardFace.pt.toughness < cardFace.pt.power;
+              return pt.toughness < pt.power;
               // Match "n-/n" for cards with less power than toughness
             } else if (ptNeedle === 'n-/n') {
-              return cardFace.pt.power < cardFace.pt.toughness;
+              return pt.power < pt.toughness;
               // Match "n/n+2" for cards with toughness exactly equal to its than power by 2
             } else if (ptNeedle.startsWith('n/n+')) {
               const diff = Number(ptNeedle.slice(4));
-              return !isNaN(diff) && (cardFace.pt.toughness - cardFace.pt.power) === diff;
+              return !isNaN(diff) && (pt.toughness - pt.power) === diff;
               // Match "n+3/n" for cards with power exactly equal to its than toughness by 3
             } else if (ptNeedle.startsWith('n+') && ptNeedle.endsWith('/n')) {
               const diff = Number(ptNeedle.slice(2, -2));
-              return !isNaN(diff) && (cardFace.pt.power - cardFace.pt.toughness) === diff;
+              return !isNaN(diff) && (pt.power - pt.toughness) === diff;
               // Match "n/n-3" for cards with toughness exactly equal to its than power minus 3
             } else if (ptNeedle.startsWith('n/n-')) {
               const diff = Number(ptNeedle.slice(4));
-              return !isNaN(diff) && (cardFace.pt.power - cardFace.pt.toughness) === diff;
+              return !isNaN(diff) && (pt.power - pt.toughness) === diff;
               // Match "n-3/n" for cards with power exactly equal to its than toughness minus 3
             } else if (ptNeedle.startsWith('n-') && ptNeedle.endsWith('/n')) {
               const diff = Number(ptNeedle.slice(2, -2));
-              return !isNaN(diff) && (cardFace.pt.toughness - cardFace.pt.power) === diff;
+              return !isNaN(diff) && (pt.toughness - pt.power) === diff;
             }
             // Invalid format
             return false;
@@ -195,8 +199,8 @@ export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: s
             // Otherwise, match exact power/toughness (e.g. "3/4", "2+/3-", etc)
             [powerRequirement, toughnessRequirement] = ptNeedle.split('/');
           }
-          return validateNumberRequirement(toughnessRequirement, cardFace.pt.toughness)
-            && validateNumberRequirement(powerRequirement, cardFace.pt.power);
+          return validateNumberRequirement(toughnessRequirement, pt.toughness)
+            && validateNumberRequirement(powerRequirement, pt.power);
         }),
 
         check(getFilterKeys('rules'), ruleNeedle => {

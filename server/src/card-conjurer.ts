@@ -8,7 +8,7 @@ import {
   CardType,
   colorToShort,
   landSubtypeToColor,
-  LoyaltyCost,
+  LoyaltyCost, Pt,
   TokenCardType,
 } from 'kindred-paths';
 import { computePlaneswalkerData } from './utils/compute-planeswalker-data';
@@ -87,7 +87,7 @@ export type Renderable = {
   supertype: CardSuperType,
   hasRules: boolean,
   rules: string,
-  pt?: { power: number, toughness: number },
+  pt?: Pt,
   loyalty?: number,
   loyaltyAbilities?: { cost: LoyaltyCost, content: string }[],
   art?: string,

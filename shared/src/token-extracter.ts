@@ -6,7 +6,7 @@ export class TokenExtractor {
     this.regex = new RegExp([
       '[cC]reates?',
       '( [A-Z][\\w ]*?[a-z],)?',
-      ' (?:a(?: number of)?|that many|X|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen)',
+      ' (?:an?(?: number of)?|that many|X|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen)',
       '(?: tapped and attacking)?',
       '(?: tapped)?',
       '((?: [a-zA-Z0-9/ ]+)? token)',

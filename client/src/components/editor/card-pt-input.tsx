@@ -1,8 +1,9 @@
 import { InputHeader } from '@/components/editor/input-header';
+import { Pt } from 'kindred-paths';
 
 export const CardPTInput = (props: {
-  pt: { power: number, toughness: number },
-  setPt: (value: { power: number, toughness: number }) => void,
+  pt: Pt,
+  setPt: (value: Pt) => void,
   getErrorMessage: () => string | undefined,
   isChanged: boolean,
   revert: () => void,
@@ -13,6 +14,14 @@ export const CardPTInput = (props: {
       props.setPt({
         ...props.pt,
         power: 0,
+      });
+      return;
+    }
+
+    if (value === '-1') {
+      props.setPt({
+        ...props.pt,
+        power: '*',
       });
       return;
     }
@@ -32,6 +41,14 @@ export const CardPTInput = (props: {
       props.setPt({
         ...props.pt,
         toughness: 0,
+      });
+      return;
+    }
+
+    if (value === '-1') {
+      props.setPt({
+        ...props.pt,
+        toughness: '*',
       });
       return;
     }
@@ -70,8 +87,8 @@ export const CardPTInput = (props: {
             <input
               id="power"
               type="number"
-              min="0"
-              value={props.pt.power}
+              min={-1}
+              value={typeof props.pt.power === 'number' ? props.pt.power : -1}
               onChange={handlePowerChange}
               className="w-full bg-white px-3 py-1 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center font-mono"
             />
@@ -85,8 +102,8 @@ export const CardPTInput = (props: {
             <input
               id="toughness"
               type="number"
-              min="0"
-              value={props.pt.toughness}
+              min={-1}
+              value={typeof props.pt.toughness === 'number' ? props.pt.toughness : -1}
               onChange={handleToughnessChange}
               className="w-full bg-white px-3 py-1 border border-zinc-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-center font-mono"
             />

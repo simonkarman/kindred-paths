@@ -55,8 +55,9 @@ export class CardArtPromptCreator {
     const toughness = cardFace.pt?.toughness ?? 0;
 
     const powerDescription = {
+      '*': '',
       0: 'non-combatant',
-      1: toughness > 1 ? 'weak' : '',
+      1: (toughness === '*' || toughness > 1) ? 'weak' : '',
       2: '',
       3: '',
       4: 'strength',
@@ -69,6 +70,7 @@ export class CardArtPromptCreator {
     }[cardFace.subtypes.length] || `${cardFace.subtypes[0]} creature with features from ${cardFace.subtypes.slice(1, -1).join(', ')} and ${cardFace.subtypes[cardFace.subtypes.length - 1]}`;
 
     const toughnessDescription = {
+      '*': '',
       0: 'nimble-sized',
       1: 'nimble-sized in an agile pose',
       2: 'small-sized in a dynamic pose',

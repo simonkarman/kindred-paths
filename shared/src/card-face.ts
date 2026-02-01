@@ -15,7 +15,9 @@ export const permanentTypes = ['enchantment', 'artifact', 'creature', 'land', 'p
 
 export type TokenCardType = Exclude<CardType, 'instant' | 'sorcery' | 'planeswalker'>;
 export const tokenCardTypes = ['enchantment', 'artifact', 'creature', 'land'] as const;
-export const predefinedTokenNames = ['Blood', 'Clue', 'Food', 'Fuel', 'Gold', 'Incubator', 'Junk', 'Map', 'Powerstone', 'Treasure'];
+export const predefinedTokenNames = ['Blood', 'Clue', 'Food', 'Fuel', 'Gold', 'Incubator', 'Junk', 'Map', 'Powerstone', 'Treasure', 'Asteroid'];
+
+export type Pt = { power: number | '*', toughness: number | '*' };
 
 export const landSubtypes = ['plains', 'island', 'swamp', 'mountain', 'forest'] as const;
 export const landSubtypeToColor = (type: typeof landSubtypes[number] | string): CardColor | undefined => ({
@@ -75,7 +77,7 @@ export class CardFace {
   public readonly subtypes: string[];
   public readonly supertype: CardSuperType;
   public readonly rules: Rule[];
-  public readonly pt?: { power: number, toughness: number };
+  public readonly pt?: Pt;
   public readonly loyalty?: number;
   public readonly art?: string;
 
@@ -234,12 +236,22 @@ export class CardFace {
     // Check toughness and power consistency
     if (this.pt) {
       // Check for integer values
-      if (!Number.isInteger(this.pt.power) || !Number.isInteger(this.pt.toughness)) {
+      if ((this.pt.power !== '*' && !Number.isInteger(this.pt.power))
+          || (this.pt.toughness !== '*' && !Number.isInteger(this.pt.toughness))
+      ) {
         throw new Error('power and toughness must be integers');
       }
       // Check for negative values
-      if (this.pt.power < 0 || this.pt.toughness < 0) {
+      if ((typeof this.pt.power !== 'string' && this.pt.power < 0) || (typeof this.pt.toughness !== 'string' && this.pt.toughness < 0)) {
         throw new Error('power and toughness must be non-negative');
+      }
+      // Check for rules containing "power" when power is '*'
+      if (this.pt.power === '*' && !this.rules.some(rule => rule.content.toLowerCase().includes('power'))) {
+        throw new Error('cards with * power must have rules that reference power');
+      }
+      // Check for rules containing "toughness" when toughness is '*'
+      if (this.pt.toughness === '*' && !this.rules.some(rule => rule.content.toLowerCase().includes('toughness'))) {
+        throw new Error('cards with * toughness must have rules that reference toughness');
       }
     } else {
       // If there is no power and toughness, ensure the card is not a creature or vehicle artifact

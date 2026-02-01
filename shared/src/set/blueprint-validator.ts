@@ -193,7 +193,9 @@ export class BlueprintValidator {
         });
       }
       if (blueprint.powerToughnessDiff) {
-        const powerToughnessDiff = (cardFace.pt?.power ?? 0) - (cardFace.pt?.toughness ?? 0);
+        const power = cardFace.pt?.power === '*' ? 0 : (cardFace.pt?.power ?? 0);
+        const toughness = cardFace.pt?.toughness === '*' ? 0 : (cardFace.pt?.toughness ?? 0);
+        const powerToughnessDiff = power - toughness;
         blueprint.powerToughnessDiff.forEach(c => {
           if (!checkNumberCriteria(c, powerToughnessDiff)) {
             reasons.push({ location: 'pt.power - pt.toughness', criteria: c, value: powerToughnessDiff });
