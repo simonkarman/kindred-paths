@@ -1,37 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { CardService } from '../service/card-service.js';
-import { backendUrl, CardInputSchemaArray } from '../configuration.js';
-import { z } from 'zod';
-import { Card, SerializedCard } from 'kindred-paths';
-
-async function inputToSerializedCards(
-  cardService: CardService,
-  _cards: z.infer<typeof CardInputSchemaArray>,
-): Promise<(SerializedCard | { id: string; error: string })[]> {
-  return await Promise.all(
-    _cards.map(async (input) => {
-      let card: SerializedCard;
-      if (typeof input === 'string') {
-        const sc = await cardService.one(input);
-        if (!sc) {
-          return { id: input, error: 'Card not found' };
-        }
-        card = sc;
-      } else {
-        card = input;
-      }
-      try {
-        new Card(card);
-      } catch (e) {
-        return {
-          id: card.id,
-          error: `Invalid card data: ${e instanceof Error ? e.message : String(e)}`,
-        };
-      }
-      return card;
-    }),
-  );
-}
+import { backendUrl, CardInputSchemaArray, inputToSerializedCards } from '../configuration.js';
 
 export function registerRenderCardsTool(server: McpServer) {
   const cardService = new CardService();

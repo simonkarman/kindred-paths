@@ -156,7 +156,7 @@ export class AIService {
     }
   }
 
-  async generateCardArt(cardFace: CardFace): Promise<ArtSuggestion[]> {
+  async generateCardArt(cardFace: CardFace, numImages: number): Promise<ArtSuggestion[]> {
     const prompt = this.cardArtPromptCreator.createPrompt(cardFace);
     const isTallCard = cardFace.types.includes('planeswalker') || cardFace.card.isToken;
     const dimensions = isTallCard
@@ -167,7 +167,7 @@ export class AIService {
       ...dimensions,
       public: false,
       prompt,
-      numImages: 4,
+      numImages,
     });
 
     const generationId = result.object?.sdGenerationJob?.generationId;

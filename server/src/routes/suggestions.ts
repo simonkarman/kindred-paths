@@ -98,6 +98,9 @@ suggestionsRouter.post('/art-setting/:faceIndex', async (req, res) => {
 });
 
 suggestionsRouter.post('/art/:faceIndex', async (req, res) => {
+  const numImagesData = z.number({ coerce: true }).int().min(1).max(8).safeParse(req.query.numImages);
+  const numImages = numImagesData.success ? numImagesData.data : 4;
+
   const body = SerializedCardSchema.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
@@ -111,7 +114,7 @@ suggestionsRouter.post('/art/:faceIndex', async (req, res) => {
 
   try {
     const card = new Card(body.data);
-    const suggestions = await aiService.generateCardArt(card.faces[faceIndex.data]);
+    const suggestions = await aiService.generateCardArt(card.faces[faceIndex.data], numImages);
     res.json(suggestions);
   } catch (error) {
     console.error('Error generating art suggestions:', error);
