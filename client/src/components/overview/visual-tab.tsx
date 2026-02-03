@@ -79,8 +79,8 @@ export function VisualTab(props: {
       .flatMap(card => {
         return n(respectDeckCount && deckName && typeof card.tags?.[`deck/${deckName}`] === 'number'
           ? card.tags[`deck/${deckName}`] as number
-          : 1
-        ).map(() => ({ n, card }));
+          : ((isPrint && card.isToken === true )? 9 : 1)
+        ).map((_, index) => ({ index, card }));
       })
     );
   const [numberOfCardsToShow, setNumberOfCardsToShow] = useState(12);
@@ -387,11 +387,11 @@ export function VisualTab(props: {
 
       {/* Cards Grid */}
       <div className={`grid ${zoomLevel} print:gap-0 print:grid-cols-3`}>
-        {cardsToShow.map(({ n, card }) => (
+        {cardsToShow.map(({ index, card }) => (
           (new Layout(card.layout.id).isDualRenderLayout() ? card.faces : card.faces.slice(0, 1))
             .map((_, faceIndex) =>
               <div
-                key={card.id + n + faceIndex.toString()}
+                key={card.id + index + faceIndex.toString()}
                 className="print:border-3 print:bg-zinc-500"
               >
                 <CardRender
