@@ -77,4 +77,51 @@ export function registerDesignDocumentTools(server: McpServer) {
       };
     },
   );
+
+  server.registerTool(
+    'delete_design_document',
+    {
+      description: 'Delete a markdown design document by name.',
+      inputSchema: {
+        set: z.string().describe('The three letter set code to delete the design document from (example: "DKI")'),
+        name: z.string().describe('The name of the design document to delete (example: "overview.md")'),
+      },
+    },
+    async ({ set, name }) => {
+      const success = await fileService.delete(set, name);
+      return {
+        isError: !success,
+        content: [
+          {
+            type: 'text',
+            text: success ? 'Design document deleted successfully' : 'Failed to delete design document',
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerTool(
+    'move_design_document',
+    {
+      description: 'Move or rename a markdown design document.',
+      inputSchema: {
+        set: z.string().describe('The three letter set code to move the design document within (example: "DKI")'),
+        oldName: z.string().describe('The current name of the design document to move (example: "overview.md")'),
+        newName: z.string().describe('The new name for the design document (example: "main.md")'),
+      },
+    },
+    async ({ set, oldName, newName }) => {
+      const success = await fileService.move(set, oldName, newName);
+      return {
+        isError: !success,
+        content: [
+          {
+            type: 'text',
+            text: success ? 'Design document moved successfully' : 'Failed to move design document',
+          },
+        ],
+      };
+    },
+  );
 }

@@ -397,7 +397,7 @@ export function VisualTab(props: {
                 <CardRender
                   faceIndex={faceIndex}
                   serializedCard={card.toJson()}
-                  scale={isPrint ? 0.6 : undefined}
+                  scale={isPrint ? 0.4 : undefined}
                   quality={isPrint ? 80 : undefined}
                   hoverControls={!isPrint}
                 />

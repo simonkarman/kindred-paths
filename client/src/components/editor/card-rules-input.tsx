@@ -1,5 +1,6 @@
 import { RuleVariant, ruleVariants, capitalize, SerializableMechanics, AutoReminderText } from 'kindred-paths';
 import { InputHeader } from '@/components/editor/input-header';
+import { useEffect, useRef } from 'react';
 
 export const CardRulesInput = (props: {
   rules?: { variant: RuleVariant, content: string }[],
@@ -10,6 +11,10 @@ export const CardRulesInput = (props: {
   revert: () => void,
 }) => {
   const rules = props.rules || [];
+  const autoReminderTextRef = useRef(new AutoReminderText(props.mechanics.keywords));
+  useEffect(() => {
+    autoReminderTextRef.current = new AutoReminderText(props.mechanics.keywords);
+  }, [props.mechanics.keywords]);
 
   const updateRule = (index: number, field: 'variant' | 'content', value: string | RuleVariant) => {
     const newRules = [...rules];
@@ -64,8 +69,13 @@ export const CardRulesInput = (props: {
         {rules.map((rule, index) => {
           let auto: string | undefined = undefined;
           const previousRule = index === 0 ? undefined : rules[index - 1];
-          if (rule.variant === 'inline-reminder' && previousRule?.variant === 'keyword') {
-            auto = new AutoReminderText(props.mechanics.keywords).for(previousRule.content);
+          if (rule.variant === 'inline-reminder') {
+            if (previousRule?.variant === 'keyword') {
+              auto = autoReminderTextRef.current.standaloneFor(previousRule.content);
+            }
+            if (previousRule?.variant === 'ability') {
+              auto = autoReminderTextRef.current.inlineFor(previousRule.content);
+            }
           }
           return <div key={index} className="flex flex-col gap-1 border-zinc-200 rounded hover:bg-zinc-50">
             <div key={index} className="flex items-center gap-2">

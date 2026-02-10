@@ -202,7 +202,7 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
           const previousRule = index === 0 ? undefined : face.rules?.[index - 1];
           // console.info('Checking inline-reminder', { cardId: card.id, faceIndex, rule, previousRule });
           if (previousRule?.variant === 'keyword') {
-            const auto = autoReminderText.for(previousRule.content);
+            const auto = autoReminderText.standaloneFor(previousRule.content);
             if (auto && auto !== rule.content) {
               const message = `inline-reminder for keyword "${previousRule.content}" on card ${card.id} face ${faceIndex} does not` +
                   `match the template (it is "${rule.content}" but should be "${auto}")`;
@@ -211,7 +211,7 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
             }
           }
         }
-        if (rule.variant === 'ability' && autoReminderText.for(rule.content) !== undefined) {
+        if (rule.variant === 'ability' && autoReminderText.standaloneFor(rule.content) !== undefined) {
           rule.variant = 'keyword';
           rule.content = rule.content.toLowerCase();
           hasChanged = true;
