@@ -17,7 +17,7 @@ export function ManaCost(props: { cost: string }) {
           backgroundColor: backgroundColor.main,
         }}
       >
-        {c}
+        {c === 'c' ? '◇' : c}
       </span>
     );
   });
