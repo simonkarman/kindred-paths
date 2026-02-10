@@ -86,10 +86,10 @@ export const sort = (cards: Card[], options: SortOptions): Card[] => {
         if (a.manaValue() !== b.manaValue()) {
           return a.manaValue() - b.manaValue();
         }
-        const colorlessA = a.manaCost?.['colorless'] ?? 0;
-        const colorlessB = b.manaCost?.['colorless'] ?? 0;
-        if (colorlessA !== colorlessB) {
-          return -(colorlessA - colorlessB);
+        const genericA = a.manaCost?.['generic'] ?? 0;
+        const genericB = b.manaCost?.['generic'] ?? 0;
+        if (genericA !== genericB) {
+          return -(genericA - genericB);
         }
         return asSortableManaCost(a.renderManaCost()).localeCompare(asSortableManaCost(b.renderManaCost()));
       } else if (sortKey === 'name') {
