@@ -505,12 +505,12 @@ export class CardConjurer {
       await page.waitForLoadState('networkidle');
 
       // Adjust type line width (if needed for a wide set symbol)
-      // await page.click('#creator-menu-text button:has-text("Edit Bounds")');
-      // await sleep(20);
-      // await page.fill('#textbox-editor-width', '1400');
-      // await sleep(20);
-      // await page.click('#textbox-editor h2.textbox-editor-close');
-      // await page.waitForLoadState('networkidle');
+      await page.click('#creator-menu-text button:has-text("Edit Bounds")');
+      await sleep(20);
+      await page.fill('#textbox-editor-width', '1550');
+      await sleep(20);
+      await page.click('#textbox-editor h2.textbox-editor-close');
+      await page.waitForLoadState('networkidle');
 
       if (planeswalkerData) {
         // Set the loyalty text
