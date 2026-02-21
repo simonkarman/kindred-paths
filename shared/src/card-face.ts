@@ -579,7 +579,7 @@ export class CardFace {
     const color = this.color();
     if (color.length > 0) {
       referenceName += `${enumerate(color)} `;
-    } else if (!this.types.includes('artifact')) {
+    } else if (this.types.includes('creature')) {
       referenceName += 'colorless ';
     }
     if (this.subtypes.length > 0) {
@@ -604,7 +604,7 @@ export class CardFace {
 
     // If the name of the card is not the same as the subtypes joined, add it at the start
     const subtypesJoined = this.subtypes.join(' ');
-    if (this.name.toLowerCase() !== subtypesJoined) {
+    if (this.name.toLowerCase() !== subtypesJoined.toLowerCase()) {
       referenceName += `${this.name}, `;
     }
 

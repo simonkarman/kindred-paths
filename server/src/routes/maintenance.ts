@@ -50,7 +50,7 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
     }
   }
 
-  // Ensure all keywords are lowercase
+  // Ensure all keywords and subtypes are lowercase
   for (const card of await cardService.getAllCards()) {
     let hasChanged = false;
     card.faces.forEach(face => {
@@ -64,9 +64,16 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
         }
         return rule;
       });
+      face.subtypes = face.subtypes?.map(subtype => {
+        const lower = subtype.toLowerCase();
+        if (subtype !== lower) {
+          hasChanged = true;
+        }
+        return lower;
+      });
     });
     if (hasChanged) {
-      const message = `updated keywords to lowercase for card ${card.id}`;
+      const message = `updated keywords and/or subtypes to lowercase for card ${card.id}`;
       messages.push(message);
       await cardService.saveCard(card);
       console.log(message);
