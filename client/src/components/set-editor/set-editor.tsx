@@ -103,9 +103,12 @@ export function SetEditor(props: SetEditorProps) {
     }
     saveTimeoutRef.current = setTimeout(() => {
       putSet(serializableSet)
-        .then(() => setHasPendingChanges(false))
+        .then(() => {
+          setHasPendingChanges(false);
+          saveTimeoutRef.current = null;
+        })
         .catch(e => console.error('Error saving set:', e));
-    }, 2000);
+    }, 1000);
   };
 
   useEffect(() => {
@@ -464,7 +467,7 @@ export function SetEditor(props: SetEditorProps) {
               />
 
               {/* Has Pending Changes Banner */}
-              <div className="flex items-center gap-3 text-xs pt-1">
+              <div className="flex items-center gap-2 text-xs pt-1">
                 {hasPendingChanges && (<>
                   <FontAwesomeIcon icon={faArrowsRotate} className="text-yellow-600 mt-0.5 flex-shrink-0 animate-spin" />
                   <span className="text-yellow-800">Saving...</span>
