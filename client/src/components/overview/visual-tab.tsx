@@ -370,9 +370,9 @@ export function VisualTab(props: {
               </p>
               <ul className="space-y-1">
                 {cardsWithZeroCount.map(card => (
-                  <li key={card.id}>
+                  <li key={card.cid}>
                     <Link
-                      href={props.dynamicLink ? props.dynamicLink(card.toJson()) : `/card/${card.id}`}
+                      href={props.dynamicLink ? props.dynamicLink(card.toJson()) : `/card/${card.cid}`}
                       className="text-sm text-amber-900 hover:text-amber-700 underline decoration-amber-300 hover:decoration-amber-500 transition-colors font-medium"
                     >
                       {card.faces.map(f => f.name).join(' // ')}
@@ -391,7 +391,7 @@ export function VisualTab(props: {
           (new Layout(card.layout.id).isDualRenderLayout() ? card.faces : card.faces.slice(0, 1))
             .map((_, faceIndex) =>
               <div
-                key={card.id + index + faceIndex.toString()}
+                key={card.cid + index + faceIndex.toString()}
                 className="print:border-3 print:bg-zinc-500"
               >
                 <CardRender

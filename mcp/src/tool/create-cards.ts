@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { CardService } from '../service/card-service.js';
 import { z } from 'zod';
-import { Card, SerializedCardSchema } from 'kindred-paths';
+import { Card, generateCardId, SerializedCardSchema } from 'kindred-paths';
 
 export function registerCreateCardsTool(server: McpServer) {
   const cardService = new CardService();
@@ -10,22 +10,23 @@ export function registerCreateCardsTool(server: McpServer) {
     'create_cards',
     {
       description:
-        'Create new cards in the collection. Accepts an array of card JSON objects. A placeholder card ID is must be provided. ' +
-        'The card ID will be computed automatically on save.',
+        'Create new cards in the collection. Accepts an array of card JSON objects. No cid must be provided as it will be computed ' +
+        'automatically on save.',
       inputSchema: {
         cards: z
-          .array(SerializedCardSchema)
+          .array(SerializedCardSchema.omit({ cid: true }))
           .describe('Array of card JSON objects to create'),
       },
     },
     async ({ cards }) => {
       const results = await Promise.all(
         cards.map(async (_input) => {
+          const cid = generateCardId();
           const input = { ..._input, tags: { ...Card.defaultTags(), ..._input.tags } };
           const name = input.faces[0].name;
 
           try {
-            new Card(input);
+            new Card({ cid, ...input });
           } catch (e) {
             return {
               name,
@@ -34,8 +35,8 @@ export function registerCreateCardsTool(server: McpServer) {
             };
           }
 
-          const id = await cardService.save(input);
-          return { id, name, success: true };
+          await cardService.save(cid, input);
+          return { cid, name, success: true };
         }),
       );
 
@@ -46,7 +47,7 @@ export function registerCreateCardsTool(server: McpServer) {
 
       if (succeeded.length > 0) {
         lines.push(
-          `Created ${succeeded.length} card(s):\n${succeeded.map((r) => `  ✓ ${r.name} (${r.id})`).join('\n')}`,
+          `Created ${succeeded.length} card(s):\n${succeeded.map((r) => `  ✓ ${r.name} (${r.cid})`).join('\n')}`,
         );
       }
 

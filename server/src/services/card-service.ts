@@ -1,27 +1,44 @@
 import fs from 'fs/promises';
-import { Card, SerializedCard, SerializedCardFace, SerializedCardSchema, computeCardId } from 'kindred-paths';
+import {
+  Card,
+  SerializedCard,
+  SerializedCardFace,
+  SerializedCardSchema,
+  getCidFromFilename,
+  computeFilename,
+  computeCardSlug,
+} from 'kindred-paths';
 import { configuration } from '../configuration';
 
 export class CardService {
 
-  public async getCardFileContent(id: string): Promise<unknown> {
-    const text = await fs.readFile(`${configuration.cardsDir}/${id}.json`, 'utf-8');
-    return { ...JSON.parse(text), id };
+  public findCardFilename = async (cid: string): Promise<string | undefined> => {
+    const files = await fs.readdir(configuration.cardsDir);
+    return files.find(file => getCidFromFilename(file) === cid);
+  };
+
+  public async getCardFileContent(cid: string): Promise<unknown> {
+    const file = await this.findCardFilename(cid);
+    if (!file) {
+      throw new Error(`Card file with ID ${cid} not found`);
+    }
+    const text = await fs.readFile(`${configuration.cardsDir}/${file}`, 'utf-8');
+    return { ...JSON.parse(text), cid };
   }
 
-  public async forEachCardFile<T>(callback: (id: string) => Promise<T>): Promise<T[]> {
-    const files = await fs.readdir(configuration.cardsDir);
-    return await Promise.all(files
-      .filter(file => file.endsWith('.json'))
-      .map(file => file.replace('.json', ''))
-      .map((id) => callback(id)),
+  public async forEachCardFile<T>(callback: (cid: string) => Promise<T>): Promise<T[]> {
+    const filenames = await fs.readdir(configuration.cardsDir);
+    return await Promise.all(filenames
+      .map(filename => getCidFromFilename(filename))
+      .filter(cid => cid !== null)
+      .map((cid) => callback(cid)),
     );
   }
 
   async getAllCards(): Promise<SerializedCard[]> {
     try {
-      return await this.forEachCardFile(async (id) => {
-        const card = await this.getCardById(id);
+      return await this.forEachCardFile(async (cid) => {
+        const card = await this.getCardByCid(cid);
         return card!.toJson();
       });
     } catch (error) {
@@ -30,26 +47,37 @@ export class CardService {
     }
   }
 
-  async getCardById(id: string): Promise<Card | undefined> {
+  async getCardByCid(cid: string): Promise<Card | undefined> {
     try {
-      const content = await this.getCardFileContent(id);
+      const content = await this.getCardFileContent(cid);
       const result = SerializedCardSchema.safeParse(content);
       if (result.success) {
         return new Card(result.data);
       } else {
-        console.error(`Invalid card data for ${id}:`, result.error);
+        console.error(`Invalid card data for ${cid}:`, result.error);
         return undefined;
       }
     } catch (error) {
-      console.error(`Error reading card ${id}:`, error);
+      console.error(`Error reading card ${cid}:`, error);
       return undefined;
     }
   }
 
   async saveCard(serializedCard: SerializedCard): Promise<SerializedCard> {
-    const path = `${configuration.cardsDir}/${serializedCard.id}.json`;
+    const cardFilename = await this.findCardFilename(serializedCard.cid);
+    const expectedFilename = computeFilename(computeCardSlug(serializedCard), serializedCard.cid);
+    const expectedExists = await fs.access(`${configuration.cardsDir}/${expectedFilename}`).then(() => true).catch(() => false);
+
+    if (cardFilename && cardFilename !== expectedFilename) {
+      if (expectedExists) {
+        throw new Error(`Cannot save card, as it would rename ${cardFilename} to ${expectedFilename} while that file already exists`);
+      }
+      await fs.rename(`${configuration.cardsDir}/${cardFilename}`, `${configuration.cardsDir}/${expectedFilename}`);
+    }
+
+    const path = `${configuration.cardsDir}/${expectedFilename}`;
     await fs.mkdir(configuration.cardsDir, { recursive: true });
-    await fs.writeFile(path, JSON.stringify({ ...serializedCard, id: undefined }, null, 2) + '\n', 'utf-8');
+    await fs.writeFile(path, JSON.stringify({ ...serializedCard, cid: undefined }, null, 2) + '\n', 'utf-8');
     return serializedCard;
   }
 
@@ -58,12 +86,10 @@ export class CardService {
     | { success: false, error: string, statusCode: number }
   > {
     // Check if card with this ID already exists
-    const id = computeCardId(card);
-    const existingCard = await this.getCardById(id);
+    const existingCard = await this.getCardByCid(card.cid);
     if (existingCard) {
-      return { success: false, error: `Card with ID ${id} already exists`, statusCode: 409 };
+      return { success: false, error: `Card with ID ${card.cid} already exists`, statusCode: 409 };
     }
-    card.id = id;
 
     // Try to create a new Card instance
     try {
@@ -74,7 +100,7 @@ export class CardService {
 
     // If the new art is in the suggestions directory, we need to ensure it is moved to the art directory
     for (const face of card.faces) {
-      face.art = await this.tryMoveArtSuggestionToArt(face, card.id);
+      face.art = await this.tryMoveArtSuggestionToArt(face, card.cid);
     }
 
     // Save the card and return the response
@@ -82,23 +108,15 @@ export class CardService {
     return { success: true, card: saved };
   }
 
-  async updateCard(previousCardId: string, card: SerializedCard): Promise<
+  async updateCard(cid: string, card: SerializedCard): Promise<
       { success: true, card: SerializedCard }
     | { success: false, error: string, statusCode: number }
   > {
     // Check if the card exists
-    const existingCard = await this.getCardById(previousCardId);
+    const existingCard = await this.getCardByCid(cid);
     if (!existingCard) {
-      return { success: false, error: `Card with ID ${previousCardId} not found`, statusCode: 404 };
+      return { success: false, error: `Card with ID ${cid} not found`, statusCode: 404 };
     }
-
-    // If the card changing resulted in a change in the card ID, then we need to update the file name
-    let nextCardId = computeCardId(card);
-    if (nextCardId !== previousCardId && await this.getCardById(nextCardId)) {
-      console.warn(`Card with ID ${nextCardId} already exists, sticking to old ID for ${previousCardId}`);
-      nextCardId = previousCardId; // Keep the old ID
-    }
-    card.id = nextCardId;
 
     // Update the card with new data
     try {
@@ -107,16 +125,11 @@ export class CardService {
       return { success: false, error: 'Invalid card data', statusCode: 400 };
     }
 
-    // If the new card ID is different from the old one, we need to delete the old file
-    if (nextCardId !== previousCardId) {
-      await fs.rm(`${configuration.cardsDir}/${previousCardId}.json`);
-    }
-
     // Move the old art to the suggestions directory
     for (const faceIndex in existingCard.faces) {
       const existingFace = existingCard.faces[faceIndex];
-      const newFace = card.faces[faceIndex];
-      if (newFace && existingFace.art && existingFace.art !== newFace.art && !existingFace.art.startsWith('suggestions/')) {
+      const newFace: SerializedCardFace | undefined = card.faces[faceIndex];
+      if (existingFace.art && (existingFace.art !== newFace?.art) && !existingFace.art.startsWith('suggestions/')) {
         const oldArtPath = `${configuration.artDir}/${existingFace.art}`;
         const suggestionsDir = `${configuration.artDir}/suggestions`;
         try {
@@ -125,14 +138,14 @@ export class CardService {
           await fs.rename(oldArtPath, newArtPath);
           console.log(`Moved old art from ${oldArtPath} to ${newArtPath}`);
         } catch (error) {
-          console.error(`Error moving old art for card ${previousCardId}:`, error);
+          console.error(`Error moving old art for card ${cid}:`, error);
         }
       }
     }
 
     // If the new art is in the suggestions directory, we need to ensure it is moved to the art directory
     for (const face of card.faces) {
-      face.art = await this.tryMoveArtSuggestionToArt(face, card.id);
+      face.art = await this.tryMoveArtSuggestionToArt(face, card.cid);
     }
 
     // Save the updated card
@@ -140,7 +153,7 @@ export class CardService {
     return { success: true, card: saved };
   }
 
-  public async tryMoveArtSuggestionToArt(face: SerializedCardFace, cardId: string): Promise<string | undefined> {
+  public async tryMoveArtSuggestionToArt(face: SerializedCardFace, cid: string): Promise<string | undefined> {
     if (face.art && face.art.startsWith('suggestions/')) {
       try {
         await fs.mkdir(configuration.artDir, { recursive: true });
@@ -151,7 +164,7 @@ export class CardService {
         console.log(`Moved new art from ${from} to ${to}`);
         return toFileName;
       } catch (error) {
-        console.error(`Error moving new art for card ${cardId}:`, error);
+        console.error(`Error moving new art for card ${cid}:`, error);
       }
     }
     return face.art;

@@ -9,6 +9,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CardCreate() {
   return <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-    <CardEditor />
+    <CardEditor isNewCard={true} />
   </div>;
 };

@@ -1,20 +1,27 @@
 import fs from 'fs/promises';
-import { computeCardId, filterCardsBasedOnSearch, SerializedCard, SerializedCardSchema } from 'kindred-paths';
+import { computeCardSlug, computeFilename, filterCardsBasedOnSearch, getCidFromFilename, SerializedCard, SerializedCardSchema } from 'kindred-paths';
 import { collectionDirectory } from '../configuration.js';
 import { resolve } from 'node:path';
 
 export class CardService {
   private readonly dir: string = resolve(collectionDirectory, 'cards');
 
+  public findCardFilename = async (cid: string): Promise<string | undefined> => {
+    const files = await fs.readdir(this.dir);
+    return files.find(file => getCidFromFilename(file) === cid);
+  };
+
   async all(filter?: string): Promise<SerializedCard[]> {
     const cards = (await Promise.all(
       (await fs.readdir(this.dir))
-        .filter(file => file.endsWith('.json'))
         .map(async filename => {
           try {
-            const id = filename.substring(0, filename.length - '.json'.length);
+            const cid = getCidFromFilename(filename);
+            if (cid === null) {
+              return null;
+            }
             const content = await fs.readFile(`${this.dir}/${filename}`, 'utf-8');
-            return SerializedCardSchema.parse({ ...JSON.parse(content), id });
+            return SerializedCardSchema.parse({ ...JSON.parse(content), cid });
           } catch (e) {
             console.error(`Error reading or parsing card file ${filename}:`, e);
             return null;
@@ -24,45 +31,43 @@ export class CardService {
     return filter ? filterCardsBasedOnSearch(cards, filter) : cards;
   }
 
-  async one(id: string): Promise<SerializedCard | null> {
+  async one(cid: string): Promise<SerializedCard | null> {
+    const filename = await this.findCardFilename(cid);
+    if (!filename) {
+      return null;
+    }
     try {
-      const content = await fs.readFile(`${this.dir}/${id}.json`, 'utf-8');
-      return SerializedCardSchema.parse({ ...JSON.parse(content), id });
+      const content = await fs.readFile(`${this.dir}/${filename}`, 'utf-8');
+      return SerializedCardSchema.parse({ ...JSON.parse(content), cid });
     } catch (e) {
-      console.error(`Error reading or parsing card file ${id}.json:`, e);
+      console.error(`Error reading or parsing card file ${filename}:`, e);
       return null;
     }
   }
 
-  async save(card: SerializedCard, mode: 'create' | 'update' = 'create'): Promise<string> {
-    const { id, ...data } = card;
-    const computedId = computeCardId(card);
+  async save(cid: string, card: Omit<SerializedCard, 'cid'>, mode: 'create' | 'update' = 'create'): Promise<void> {
+    const existingFilename = await this.findCardFilename(cid);
+    const expectedFilename = computeFilename(computeCardSlug({ ...card, cid }), cid);
 
     // If updating...
     if (mode === 'update') {
-      // and the id has changed, delete the old file
-      if (id !== computedId) {
-        await fs.unlink(`${this.dir}/${id}.json`).catch(() => { /* ignore errors if files does not exist */
-        });
+      // and the filename has changed, delete the old file
+      if (existingFilename !== expectedFilename) {
+        await fs.unlink(`${this.dir}/${existingFilename}`).catch(() => { /* ignore errors if files does not exist */ });
       }
     }
 
     // If creating...
     if (mode === 'create') {
       // and the file already exists, throw an error
-      let fileExists = false;
-      try {
-        await fs.access(`${this.dir}/${computedId}.json`);
-        fileExists = true;
-      } catch { /* file does not exist */ }
+      const fileExists = existingFilename !== undefined;
       if (fileExists) {
-        throw new Error(`Card with ID ${computedId} already exists`);
+        throw new Error(`Card with ID ${existingFilename} already exists`);
       }
     }
 
     // Write to the file
-    const content = JSON.stringify(data, null, 2) + '\n';
-    await fs.writeFile(`${this.dir}/${computedId}.json`, content, 'utf-8');
-    return computedId;
+    const content = JSON.stringify({ ...card, cid: undefined }, null, 2) + '\n';
+    await fs.writeFile(`${this.dir}/${expectedFilename}`, content, 'utf-8');
   }
 }

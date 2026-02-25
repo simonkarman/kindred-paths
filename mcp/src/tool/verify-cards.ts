@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { CardService } from '../service/card-service.js';
-import { Card } from 'kindred-paths';
+import { Card, generateCardId } from 'kindred-paths';
 import { CardInputSchemaArray } from '../configuration.js';
 
 export function registerVerifyCardsTool(server: McpServer) {
@@ -11,7 +11,7 @@ export function registerVerifyCardsTool(server: McpServer) {
     {
       description:
         'Verify that cards are valid and get human readable explanations showing how they will be interpreted. ' +
-        'Accepts an array of card IDs (strings) or card json objects, which can be mixed.',
+        'Accepts an array of card IDs (cid strings) or card json objects, which can be mixed.',
       inputSchema: {
         cards: CardInputSchemaArray,
       },
@@ -23,7 +23,7 @@ export function registerVerifyCardsTool(server: McpServer) {
         cards.map(async (input) => {
           if (typeof input === 'string') {
             // It's an ID, look it up
-            const card = allCards.find((c) => c.id === input);
+            const card = allCards.find((c) => c.cid === input);
             if (!card) {
               return {
                 input,
@@ -46,17 +46,17 @@ export function registerVerifyCardsTool(server: McpServer) {
           } else {
             // It's a card JSON, verify it directly
             try {
-              const explanation = new Card(input).faces
+              const explanation = new Card({ cid: generateCardId(), ...input }).faces
                 .map((f) => f.explain())
                 .join('\n\n');
               return {
-                input: input.id ?? input.faces?.[0]?.name ?? 'unnamed card',
+                input: input.faces?.[0]?.name ?? 'unnamed card',
                 success: true,
                 explanation,
               };
             } catch (e) {
               return {
-                input: input.id ?? input.faces?.[0]?.name ?? 'unnamed card',
+                input: input.faces?.[0]?.name ?? 'unnamed card',
                 success: false,
                 error: `Invalid card JSON: ${e instanceof Error ? e.message : String(e)}`,
               };

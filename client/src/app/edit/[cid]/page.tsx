@@ -6,39 +6,32 @@ import type { Metadata } from 'next';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
-export async function generateMetadata({ params: _params }: PageProps<{ id: string }>): Promise<Metadata> {
+export async function generateMetadata({ params: _params }: PageProps<{ cid: string }>): Promise<Metadata> {
   const params = await _params;
-  const card = await getCard(params.id);
+  const card = await getCard(params.cid);
   return {
-    title: `Clone of ${card?.faces.map(f => f.name).join(' // ') ?? params.id} - Kindred Paths`,
+    title: `Edit ${card?.faces.map(f => f.name).join(' // ') ?? params.cid} - Kindred Paths`,
   }
 }
 
-export default async function CardClone({ params: _params }: Readonly<{ params: Promise<{ id: string }> }>) {
+export default async function CardEdit({ params: _params }: Readonly<{ params: Promise<{ cid: string }> }>) {
   const params = await _params;
-  const serializedCard = await getCard(params.id);
+  const serializedCard = await getCard(params.cid);
   if (!serializedCard) {
     return <h1 className="text-red-500">Card not found</h1>;
   }
-
-  const start = {
-    ...serializedCard,
-    id: '<new>',
-    faces: serializedCard.faces.map(f => ({ ...f, name: `${f.name} (clone)` }) ),
-  };
-
   return (<>
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="w-full flex justify-center">
         <Link
-          href={`/card/${serializedCard.id}`}
+          href={`/card/${serializedCard.cid}`}
           className="mb-6 inline-flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors shadow-sm"
         >
           <FontAwesomeIcon icon={faArrowLeft} />
-          View Original {serializedCard.faces.map(f => f.name).join(' // ')}
+          View {serializedCard.faces.map(f => f.name).join(' // ')}
         </Link>
       </div>
-      <CardEditor initialCard={start} />
+      <CardEditor isNewCard={false} initialCard={serializedCard} />
     </div>
   </>);
 }

@@ -4,7 +4,7 @@ import { expect, test } from 'vitest';
 
 test('blueprint validator', async () => {
   const serializedCard: SerializedCard = {
-    id: 'mfy-401',
+    cid: 'mfyaa401',
     'rarity': 'mythic',
     layout: 'normal',
     faces: [{

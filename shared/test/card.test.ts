@@ -64,7 +64,7 @@ test('loyalty - complex', () => {
 
 test('creature card', () => {
   const serializedCreatureCard: SerializedCard = {
-    id: 'creature',
+    cid: '01234567',
     isToken: undefined,
     layout: 'normal',
     rarity: 'rare',
@@ -130,7 +130,7 @@ test('creature card', () => {
 
 test('token card', () => {
   const serializedTokenCard: SerializedCard = {
-    id: '821-1-1-white-mouse-token',
+    cid: '01234567',
     'rarity': 'common',
     'isToken': true,
     layout: 'normal',
@@ -181,7 +181,7 @@ test('token card', () => {
 
 test('planeswalker card', () => {
   const serializedPlaneswalkerCard: SerializedCard = {
-    id: 'farock-the-damned-doctor',
+    cid: '01234567',
     isToken: undefined,
     layout: 'normal',
     'rarity': 'rare',

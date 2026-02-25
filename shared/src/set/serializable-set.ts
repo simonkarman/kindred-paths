@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { SerializableBlueprintSchema } from './serializable-blueprint';
 
 export const SerializableCardReferenceSchema = z.object({
-  cardId: z.string(),
+  cid: z.string(),
 });
 export type SerializableCardReference = z.infer<typeof SerializableCardReferenceSchema>;
 

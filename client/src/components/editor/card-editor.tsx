@@ -36,6 +36,7 @@ import { CardLayoutInput } from '@/components/editor/card-layout-input';
 import { useDeckNameFromSearch, useSetNameFromSearch } from '@/utils/use-search';
 
 type CardEditorProps = {
+  isNewCard: boolean;
   initialCard?: SerializedCard;
   validate?: {
     blueprints: SerializableBlueprintWithSource[];
@@ -47,7 +48,7 @@ type CardEditorProps = {
 };
 
 type EditorState = {
-  id: string;
+  cid: string;
   layout: CardLayout;
   rarity: CardRarity;
   isToken?: true;
@@ -237,9 +238,8 @@ const autoAdjustCardProperties = (props: {
   return next as EditorState;
 };
 
-export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo }: CardEditorProps) {
-  const isAiCard = initialCard?.id.startsWith('ai-');
-  const isEditMode = initialCard !== undefined && initialCard.id !== '<new>' && !isAiCard;
+export function CardEditor({ initialCard, isNewCard, validate, onSave, onCancel, redirectTo }: CardEditorProps) {
+  const mode: 'create' | 'edit' = initialCard === undefined || isNewCard ? 'create' : 'edit';
   const [state, setState] = useState<EditorState>(() => initializeEditorState(initialCard));
   const [_selectedFaceIndex, setSelectedFaceIndex] = useState(0);
   const selectedFaceIndex = Math.min(_selectedFaceIndex, state.faces.length - 1);
@@ -276,23 +276,23 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
   const set = useSetNameFromSearch();
   const deck = useDeckNameFromSearch();
   useEffect(() => {
-    if (!isAiCard && !isEditMode && (set || deck)) {
+    if (mode === 'create' && (set || deck)) {
       updateCardProperty('tags', tags => ({
         ...tags,
         ...(set ? { set } : {}),
         ...(deck ? { [`deck/${deck}`]: 1 } : {}),
       }));
     }
-  }, [isEditMode, deck, set, isAiCard, updateCardProperty]);
+  }, [mode, deck, set, updateCardProperty]);
 
   // Build current serialized card
   const currentCard: SerializedCard = {
-    id: state.id,
-    layout: state.layout,
+    cid: state.cid,
     rarity: state.rarity,
     isToken: state.isToken,
     collectorNumber: state.collectorNumber,
     tags: state.tags,
+    layout: state.layout,
     faces: state.faces.map(face => ({
       ...face,
       subtypes: face.subtypes ?? [],
@@ -354,7 +354,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
   };
 
   // Determine if save is allowed
-  const isChanged = isEditMode
+  const isChanged = mode === 'edit'
     ? JSON.stringify(currentCard) !== JSON.stringify(initialCard)
     : state.faces.every((face, i) => {
         const defaultFaces = new Layout(state.layout).defaultFaces();
@@ -369,7 +369,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
 
     setIsLoading(true);
     try {
-      const result = isEditMode
+      const result = mode === 'edit'
         ? await updateCard(parsedCard.data)
         : await createCard(parsedCard.data);
 
@@ -379,7 +379,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
         } else if (redirectTo) {
           window.location.href = redirectTo;
         } else {
-          window.location.href = `/card/${result.id}`;
+          window.location.href = `/card/${result.cid}`;
         }
       }
     } catch (error) {
@@ -397,8 +397,8 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
       onCancel();
     } else if (redirectTo) {
       window.location.href = redirectTo;
-    } else if (isEditMode) {
-      window.location.href = `/card/${state.id}`;
+    } else if (mode === 'edit') {
+      window.location.href = `/card/${state.cid}`;
     } else {
       window.location.href = '/';
     }
@@ -441,7 +441,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
   return (
     <div className={`mx-auto max-w-[1400px] space-y-6 ${isChanged ? 'border-2 border-orange-200' : 'border border-zinc-200'} bg-white rounded-lg p-6 shadow-md`}>
       <h2 className="text-2xl font-bold mt-2 mb-4 text-center">
-        {isEditMode ? `Edit ${currentCard.faces.map(f => f.name).join(' // ')}` : 'Create Card'}
+        {mode === 'edit' ? `Edit ${currentCard.faces.map(f => f.name).join(' // ')}` : 'Create Card'}
       </h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -453,7 +453,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
             layout={state.layout}
             setLayout={handleLayoutChange}
             getErrorMessage={() => getErrorMessage('layout')}
-            isChanged={isEditMode && initialCard.layout !== state.layout}
+            isChanged={initialCard !== undefined && initialCard.layout !== state.layout}
             revert={() => initialCard && updateCardProperty('layout', initialCard.layout)}
           />
 
@@ -461,7 +461,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
             rarity={state.rarity}
             setRarity={(value) => updateCardProperty('rarity', value)}
             getErrorMessage={() => getErrorMessage('rarity')}
-            isChanged={isEditMode && initialCard.rarity !== state.rarity}
+            isChanged={initialCard !== undefined && initialCard.rarity !== state.rarity}
             revert={() => initialCard && updateCardProperty('rarity', initialCard.rarity)}
           />
 
@@ -469,17 +469,17 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
             collectorNumber={state.collectorNumber}
             setCollectorNumber={(value) => updateCardProperty('collectorNumber', value)}
             getErrorMessage={() => getErrorMessage('collectorNumber')}
-            isChanged={isEditMode && initialCard.collectorNumber !== state.collectorNumber}
+            isChanged={initialCard !== undefined && initialCard.collectorNumber !== state.collectorNumber}
             revert={() => initialCard && updateCardProperty('collectorNumber', initialCard.collectorNumber)}
             renderedTypeLine={card?.faces[0].renderTypeLine() ?? ''}
-            cardId={state.id}
+            cid={state.cid}
           />
 
           <CardTagsInput
             tags={state.tags}
             setTags={(value) => updateCardProperty('tags', value)}
             getErrorMessage={() => getErrorMessage('tags')}
-            isChanged={isEditMode && JSON.stringify(initialCard.tags) !== JSON.stringify(state.tags)}
+            isChanged={initialCard !== undefined && JSON.stringify(initialCard.tags) !== JSON.stringify(state.tags)}
             revert={() => initialCard && updateCardProperty('tags', initialCard.tags as { [key: string]: string | number | boolean } | undefined)}
           />
 
@@ -518,7 +518,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
             getErrorMessage={() => getErrorMessage('types')}
             isToken={state.isToken}
             setIsToken={(value) => updateCardProperty('isToken', value)}
-            isChanged={isEditMode && (initialFace?.types !== currentFace.types || initialCard?.isToken !== state.isToken)}
+            isChanged={initialCard !== undefined && (initialFace?.types !== currentFace.types || initialCard?.isToken !== state.isToken)}
             revert={() => {
               if (initialFace) updateFaceProperty(selectedFaceIndex, 'types', initialFace.types);
               if (initialCard) updateCardProperty('isToken', initialCard.isToken);
@@ -531,7 +531,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
               setSubtypes={(value) => updateFaceProperty(selectedFaceIndex, 'subtypes', value)}
               getErrorMessage={() => getErrorMessage('subtypes')}
               types={currentFace.types}
-              isChanged={isEditMode && JSON.stringify(initialFace?.subtypes) !== JSON.stringify(currentFace.subtypes)}
+              isChanged={initialCard !== undefined && JSON.stringify(initialFace?.subtypes) !== JSON.stringify(currentFace.subtypes)}
               revert={() => initialFace && updateFaceProperty(selectedFaceIndex, 'subtypes', initialFace.subtypes)}
             />
           )}
@@ -541,7 +541,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
               pt={currentFace.pt}
               setPt={(value) => updateFaceProperty(selectedFaceIndex, 'pt', value)}
               getErrorMessage={() => getErrorMessage('pt')}
-              isChanged={isEditMode && JSON.stringify(initialFace?.pt) !== JSON.stringify(currentFace.pt)}
+              isChanged={initialCard !== undefined && JSON.stringify(initialFace?.pt) !== JSON.stringify(currentFace.pt)}
               revert={() => initialFace?.pt && updateFaceProperty(selectedFaceIndex, 'pt', initialFace.pt)}
             />
           )}
@@ -551,7 +551,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
               loyalty={currentFace.loyalty}
               setLoyalty={(value) => updateFaceProperty(selectedFaceIndex, 'loyalty', value)}
               getErrorMessage={() => getErrorMessage('loyalty')}
-              isChanged={isEditMode && initialFace?.loyalty !== currentFace.loyalty}
+              isChanged={initialCard !== undefined && initialFace?.loyalty !== currentFace.loyalty}
               revert={() => initialFace?.loyalty !== undefined && updateFaceProperty(selectedFaceIndex, 'loyalty', initialFace.loyalty)}
             />
           )}
@@ -561,7 +561,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
               manaCost={currentFace.manaCost}
               setManaCost={(value) => updateFaceProperty(selectedFaceIndex, 'manaCost', value)}
               getErrorMessage={() => getErrorMessage('manaCost')}
-              isChanged={isEditMode && JSON.stringify(initialFace?.manaCost) !== JSON.stringify(currentFace.manaCost)}
+              isChanged={initialCard !== undefined && JSON.stringify(initialFace?.manaCost) !== JSON.stringify(currentFace.manaCost)}
               revert={() => updateFaceProperty(selectedFaceIndex, 'manaCost', initialFace?.manaCost)}
             />
           )}
@@ -571,7 +571,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
               givenColors={currentFace.givenColors ?? []}
               setGivenColors={(value) => updateFaceProperty(selectedFaceIndex, 'givenColors', value)}
               getErrorMessage={() => getErrorMessage('givenColors')}
-              isChanged={isEditMode && JSON.stringify(initialFace?.givenColors) !== JSON.stringify(currentFace.givenColors)}
+              isChanged={initialCard !== undefined && JSON.stringify(initialFace?.givenColors) !== JSON.stringify(currentFace.givenColors)}
               revert={() => updateFaceProperty(selectedFaceIndex, 'givenColors', initialFace?.givenColors)}
             />
           )}
@@ -581,7 +581,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
             setRules={(value) => updateFaceProperty(selectedFaceIndex, 'rules', value)}
             mechanics={mechanics}
             getErrorMessage={() => getErrorMessage('rules')}
-            isChanged={isEditMode && JSON.stringify(initialFace?.rules) !== JSON.stringify(currentFace.rules)}
+            isChanged={initialCard !== undefined && JSON.stringify(initialFace?.rules) !== JSON.stringify(currentFace.rules)}
             revert={() => updateFaceProperty(selectedFaceIndex, 'rules', initialFace?.rules)}
           />
 
@@ -590,7 +590,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
             setSupertype={(value) => updateFaceProperty(selectedFaceIndex, 'supertype', value)}
             types={currentFace.types}
             getErrorMessage={() => getErrorMessage('supertype')}
-            isChanged={isEditMode && initialFace?.supertype !== currentFace.supertype}
+            isChanged={initialCard !== undefined && initialFace?.supertype !== currentFace.supertype}
             revert={() => updateFaceProperty(selectedFaceIndex, 'supertype', initialFace?.supertype)}
           />
 
@@ -600,7 +600,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
             getErrorMessage={() => getErrorMessage('name')}
             card={card}
             faceIndex={selectedFaceIndex}
-            isChanged={isEditMode && initialFace?.name !== currentFace.name}
+            isChanged={initialCard !== undefined && initialFace?.name !== currentFace.name}
             revert={() => initialFace && updateFaceProperty(selectedFaceIndex, 'name', initialFace.name)}
           />
 
@@ -610,16 +610,16 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
             getErrorMessage={() => getErrorMessage('art')}
             card={card}
             faceIndex={selectedFaceIndex}
-            isChanged={isEditMode && initialFace?.art !== currentFace.art}
+            isChanged={initialCard !== undefined && initialFace?.art !== currentFace.art}
             revert={() => updateFaceProperty(selectedFaceIndex, 'art', initialFace?.art)}
             artSetting={getStringTag(settingTag)}
             setArtSetting={(value) => setTag(settingTag, value)}
-            artSettingIsChanged={isEditMode && initialCard?.tags?.setting !== state.tags?.setting}
+            artSettingIsChanged={initialCard !== undefined && initialCard?.tags?.setting !== state.tags?.setting}
             revertArtSetting={() => setTag(settingTag, initialCard?.tags?.setting as string | undefined)}
             showArtFocus={state.isToken || currentFace.types.includes('planeswalker')}
             artFocus={getStringTag('art/focus')}
             setArtFocus={(value) => setTag('art/focus', value)}
-            artFocusIsChanged={isEditMode && initialCard?.tags?.['art/focus'] !== state.tags?.['art/focus']}
+            artFocusIsChanged={initialCard !== undefined && initialCard?.tags?.['art/focus'] !== state.tags?.['art/focus']}
             revertArtFocus={() => setTag('art/focus', initialCard?.tags?.['art/focus'] as string | undefined)}
           />}
 
@@ -631,7 +631,7 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
       <div className="space-y-1">
         {!isChanged && (
           <p className="text-center text-zinc-600 text-sm">
-            {isEditMode
+            {mode === 'edit'
               ? "You must make changes before you can save."
               : "You must change all face names before you can create the card."}
           </p>
@@ -647,13 +647,13 @@ export function CardEditor({ initialCard, validate, onSave, onCancel, redirectTo
             disabled={!canSave || isLoading}
             className="w-full py-2 px-4 disabled:bg-zinc-500 bg-orange-600 text-white font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Saving...' : isEditMode ? 'Save Changes' : 'Create Card'}
+            {isLoading ? 'Saving...' : mode === 'edit' ? 'Save Changes' : 'Create Card'}
           </button>
           <button
             onClick={handleCancel}
             className="w-60 mt-2 py-2 px-4 bg-zinc-200 text-zinc-800 font-medium rounded-md hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-400"
           >
-            {isEditMode ? 'Discard Changes' : 'Cancel'}
+            {mode === 'edit' ? 'Discard Changes' : 'Cancel'}
           </button>
         </div>
       </div>

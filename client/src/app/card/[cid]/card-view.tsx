@@ -33,7 +33,7 @@ export const CardView = (props: { serializedCard: SerializedCard }) => {
       <div className="flex gap-3 justify-center">
         {/* Edit Card Button */}
         <Link
-          href={`/edit/${serializedCard.id}`}
+          href={`/edit/${serializedCard.cid}`}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
         >
           <FontAwesomeIcon icon={faPenToSquare} />
@@ -42,7 +42,7 @@ export const CardView = (props: { serializedCard: SerializedCard }) => {
 
         {/* Clone Card Button */}
         <Link
-          href={`/clone/${serializedCard.id}`}
+          href={`/clone/${serializedCard.cid}`}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
         >
           <FontAwesomeIcon icon={faClone} />
@@ -112,7 +112,7 @@ export const CardView = (props: { serializedCard: SerializedCard }) => {
               You can edit {serializedCard.faces.map(f => f.name).join(' // ')} to modify its properties, <br className="hidden lg:inline" />abilities, or artwork.
             </p>
             <Link
-              href={`/edit/${serializedCard.id}`}
+              href={`/edit/${serializedCard.cid}`}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
             >
               <FontAwesomeIcon icon={faPenToSquare} />

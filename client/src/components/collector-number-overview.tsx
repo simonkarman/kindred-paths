@@ -59,7 +59,7 @@ export function CollectorNumberOverview(props: CollectorNumberOverviewProps) {
                   <div className="bg-gray-900 text-white text-xs rounded py-2 px-3 shadow-lg whitespace-nowrap">
                     <div className="font-semibold mb-1">#{num}</div>
                     {occupiedInfo.map((oi) => oi.faces.map(face => (
-                      <div key={oi.cardId + '_' + face.name} className="mb-1 last:mb-0">
+                      <div key={oi.cid + '_' + face.name} className="mb-1 last:mb-0">
                         <div className="font-medium">{face.name}</div>
                         <div className="text-gray-300 text-xs">{face.renderedTypeLine}</div>
                       </div>

@@ -44,7 +44,7 @@ export const TableTab = (props: {
 
   const cards = sort(
     props.cards
-      .filter(c => !deletedCardIds.includes(c.id))
+      .filter(c => !deletedCardIds.includes(c.cid))
       .map(serializedCard => new Card(serializedCard)),
     { ...sortOptions, deckName },
   );
@@ -99,7 +99,7 @@ export const TableTab = (props: {
           </tr>
           </thead>
           {cards.map(card => <tbody
-            key={card.id}
+            key={card.cid}
             className="hover:bg-slate-50 transition-colors border-y border-slate-300"
           >
             {card.faces.map((face, faceIndex) => {
@@ -137,7 +137,7 @@ export const TableTab = (props: {
                   ) : (
                     <Link
                       className="hover:text-blue-600 active:text-blue-700 transition-colors"
-                      href={`/card/${face.card.id}${faceIndex !== 0 ? `?faceIndex=${faceIndex}` : ''}`}
+                      href={`/card/${face.card.cid}${faceIndex !== 0 ? `?faceIndex=${faceIndex}` : ''}`}
                     >
                       {face.name}
                     </Link>
@@ -173,21 +173,21 @@ export const TableTab = (props: {
                     <div className="flex gap-2 justify-center">
                       <Link
                         className="text-slate-500 hover:text-blue-600 transition-colors"
-                        href={`/edit/${face.card.id}?t=/`}
+                        href={`/edit/${face.card.cid}?t=/`}
                         title="Edit"
                       >
                         <FontAwesomeIcon icon={faPenToSquare} />
                       </Link>
                       <Link
                         className="text-slate-500 hover:text-blue-600 transition-colors"
-                        href={`/clone/${face.card.id}?t=/`}
+                        href={`/clone/${face.card.cid}?t=/`}
                         title="Clone"
                       >
                         <FontAwesomeIcon icon={faClone} />
                       </Link>
                       <button
                         className="text-slate-500 hover:text-red-600 transition-colors"
-                        onClick={() => del(face.card.id)}
+                        onClick={() => del(face.card.cid)}
                         title="Delete"
                       >
                         <FontAwesomeIcon icon={faTrashCan} />

@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { CardService } from '../service/card-service.js';
 import { backendUrl, CardInputSchemaArray, inputToSerializedCards } from '../configuration.js';
+import { computeCardSlug } from 'kindred-paths';
 
 export function registerRenderCardsTool(server: McpServer) {
   const cardService = new CardService();
@@ -23,7 +24,7 @@ export function registerRenderCardsTool(server: McpServer) {
             return [
               {
                 type: 'text' as const,
-                text: `Error for card ID ${card.id}: ${card.error}`,
+                text: `Error for card ${[card.slug, card.cid].filter(s => s).join(' ')}: ${card.error}`,
               },
             ];
           }
@@ -31,7 +32,7 @@ export function registerRenderCardsTool(server: McpServer) {
           const isPreview = typeof _cards[index] !== 'string';
           const baseRenderUrl = isPreview
             ? `${backendUrl}/preview`
-            : `${backendUrl}/render/${card.id}`;
+            : `${backendUrl}/render/${card.cid}`;
 
           return await Promise.all(
             card.faces.map(async (_, faceIndex) => {
@@ -44,7 +45,7 @@ export function registerRenderCardsTool(server: McpServer) {
                 if (!res.ok) {
                   return {
                     type: 'text' as const,
-                    text: `Failed to render ${card.id} face ${faceIndex}: HTTP ${res.status}: ${res.statusText}`,
+                    text: `Failed to render ${computeCardSlug(card)} face ${faceIndex}: HTTP ${res.status}: ${res.statusText}`,
                   };
                 }
                 const arrayBuffer = await res.arrayBuffer();
@@ -57,7 +58,7 @@ export function registerRenderCardsTool(server: McpServer) {
               } catch (e) {
                 return {
                   type: 'text' as const,
-                  text: `Failed to parse render of ${card.id} face ${faceIndex}: ${e instanceof Error ? e.message : String(e)}`,
+                  text: `Failed to parse render of ${computeCardSlug(card)} face ${faceIndex}: ${e instanceof Error ? e.message : String(e)}`,
                 };
               }
             }),

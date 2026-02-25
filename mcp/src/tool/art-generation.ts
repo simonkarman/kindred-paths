@@ -13,7 +13,7 @@ export function registerArtGenerationTool(server: McpServer) {
         'The art image is generated based on card mechanics and the \'setting\' tag which describes the prompt for the art setting. ' +
         'Prepend the setting with ! to make the card less depended on the mechanics of the card, and more on the setting tag.' +
         'The images are returned with metadata indicating the card they belong to, the face index of that card, and the filename that can be used ' +
-        'as the art property for the card.',
+        'as the art property for the card (include suggestions/ prefix when setting card art).',
       inputSchema: {
         cards: CardInputSchemaArray,
       },
@@ -27,7 +27,7 @@ export function registerArtGenerationTool(server: McpServer) {
             return [
               {
                 type: 'text' as const,
-                text: `Error for card ID ${card.id}: ${card.error}`,
+                text: `Error for card ID ${card.cid}: ${card.error}`,
               },
             ];
           }
@@ -43,18 +43,18 @@ export function registerArtGenerationTool(server: McpServer) {
                 if (!res.ok) {
                   return [{
                     type: 'text' as const,
-                    text: `Failed to generate art for ${card.id} face ${faceIndex}: HTTP ${res.status}: ${res.statusText}`,
+                    text: `Failed to generate art for ${card.cid} face ${faceIndex}: HTTP ${res.status}: ${res.statusText}`,
                   }];
                 }
                 const data: { fileName: string, base64Image: string }[] = await res.json();
                 return data.map((d, index) => ({
                   type: 'text' as const,
-                  text: `For face ${faceIndex} of the '${card.id}'-card, suggestion ${index} is: ${d.fileName}`,
+                  text: `For face ${faceIndex} of the '${card.cid}'-card, suggestion ${index} is: ${d.fileName}`,
                 }));
               } catch (e) {
                 return [{
                   type: 'text' as const,
-                  text: `Failed to parse render of ${card.id} face ${faceIndex}: ${e instanceof Error ? e.message : String(e)}`,
+                  text: `Failed to parse render of ${card.cid} face ${faceIndex}: ${e instanceof Error ? e.message : String(e)}`,
                 }];
               }
             }),

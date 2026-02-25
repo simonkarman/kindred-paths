@@ -1,6 +1,6 @@
 import { SerializableSet } from './serializable-set';
 import { Matrix, MatrixLocation } from './matrix';
-import { SerializedCard } from '../serialized-card';
+import { computeCardSlug, SerializedCard } from '../serialized-card';
 
 export type SetLocation = {
   matrixIndex: number,
@@ -93,17 +93,17 @@ export class Set {
     this.matrices.forEach(m => m.getArchetypes().forEach(archetype => {
       Object.entries(archetype.cycles).forEach(([cycleKey, slot]) => {
         if (slot && slot !== 'skip' && slot.cardRef) {
-          const cardId = slot.cardRef.cardId;
-          const cardExists = cards.some(c => c.id === cardId);
+          const cid = slot.cardRef.cid;
+          const cardExists = cards.some(c => c.cid === cid);
           if (!cardExists) {
-            messages.push(`Unlinked non-existing card "${cardId}" from slot in archetype "${archetype.name}", cycle "${cycleKey}".`);
+            messages.push(`Unlinked non-existing card "${cid}" from slot in archetype "${archetype.name}", cycle "${cycleKey}".`);
             delete slot.cardRef;
             if (!slot.blueprint) {
               delete archetype.cycles[cycleKey];
             }
           } else {
-            const locations = cardIdsToLocations.get(cardId) ?? [];
-            cardIdsToLocations.set(cardId, [...locations, `"${archetype.name}"."${cycleKey}"`]);
+            const locations = cardIdsToLocations.get(cid) ?? [];
+            cardIdsToLocations.set(cid, [...locations, `"${archetype.name}"."${cycleKey}"`]);
           }
         }
       });
@@ -122,9 +122,10 @@ export class Set {
     // Check that all cards with the set tag are linked to a slot
     const cardsWithSetTag = cards.filter(c => c.tags?.set === this.name);
     cardsWithSetTag.forEach(card => {
-      if (!card.isToken && !cardIdsToLocations.has(card.id)) {
+
+      if (!card.isToken && !cardIdsToLocations.has(card.cid)) {
         messages.push(
-          `Card "${card.id}" (with tag "set=${this.name}") is not linked to any slot.`,
+          `Card "${computeCardSlug(card)} (#${card.cid})" (with tag "set=${this.name}") is not linked to any slot.`,
         );
       }
     });

@@ -63,13 +63,13 @@ function getFirstAvailableCollectorNumber(
 export const CardCollectorNumberInput = (props: {
   collectorNumber: number,
   setCollectorNumber: (value: number) => void,
-  cardId: string,
+  cid: string,
   renderedTypeLine: string,
   getErrorMessage: () => string | undefined,
   isChanged: boolean,
   revert: () => void,
 }) => {
-  const { collectorNumber, setCollectorNumber, renderedTypeLine, cardId } = props;
+  const { collectorNumber, setCollectorNumber, renderedTypeLine, cid } = props;
 
   const [showCollectorNumbers, setShowCollectorNumbers] = useState(false);
   const [collectorNumbers, setCollectorNumbers] = useState<CollectorNumberInfo[]>([]);
@@ -80,7 +80,7 @@ export const CardCollectorNumberInput = (props: {
     setFetching(true);
     try {
       const collectorNumbers = (await getOrganizeCollectorNumbers(setNameFromSearch ? `set:${setNameFromSearch}` : ''))
-        .filter(c => c.cardId !== cardId);
+        .filter(c => c.cid !== cid);
       setCollectorNumbers(collectorNumbers);
       if (autoAssign) {
         const n = getFirstAvailableCollectorNumber(renderedTypeLine, collectorNumbers);
@@ -89,7 +89,7 @@ export const CardCollectorNumberInput = (props: {
     } finally {
       setFetching(false);
     }
-  }, [setNameFromSearch, renderedTypeLine, setCollectorNumber, cardId]);
+  }, [setNameFromSearch, renderedTypeLine, setCollectorNumber, cid]);
 
   return <div className="space-y-1">
     <InputHeader propertyName="collector number" isChanged={props.isChanged} revert={props.revert} />

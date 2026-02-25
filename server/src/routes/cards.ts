@@ -1,42 +1,42 @@
 import { Router } from 'express';
-import { SerializedCard, SerializedCardSchema } from 'kindred-paths';
+import { SerializedCardSchema } from 'kindred-paths';
 import { cardService } from '../services/card-service';
 
 export const cardsRouter = Router();
 
-cardsRouter.get('/', async (req, res) => {
+cardsRouter.get('/', async (_, res) => {
   const cards = await cardService.getAllCards();
   if (cards.length === 0) {
     res.status(404).json({ error: 'No cards found' });
   } else {
-    res.json(cards.sort((a: SerializedCard, b: SerializedCard) => a.id.localeCompare(b.id)));
+    res.json(cards);
   }
 });
 
-cardsRouter.get('/:id', async (req, res) => {
-  const cardId = req.params.id;
-  const card = await cardService.getCardById(cardId);
+cardsRouter.get('/:cid', async (req, res) => {
+  const cid = req.params.cid;
+  const card = await cardService.getCardByCid(cid);
   if (!card) {
-    res.status(404).json({ error: `Card with ID ${req.params.id} not found` });
+    res.status(404).json({ error: `Card with ID ${cid} not found` });
     return;
   }
   res.send(card.toJson());
 });
 
-cardsRouter.delete('/:id', async (req, res) => {
-  const cardId = req.params.id;
+cardsRouter.delete('/:cid', async (req, res) => {
+  const cid = req.params.cid;
   try {
-    const card = await cardService.getCardById(cardId);
+    const card = await cardService.getCardByCid(cid);
     if (!card) {
-      res.status(404).json({ error: `Card with ID ${cardId} not found` });
+      res.status(404).json({ error: `Card with ID ${cid} not found` });
       return;
     }
     card.tags['deleted'] = true;
     await cardService.saveCard(card.toJson());
     res.status(204).send();
   } catch (error) {
-    console.error(`Error deleting card ${cardId}:`, error);
-    res.status(500).json({ error: `Failed to delete card with ID ${cardId}` });
+    console.error(`Error deleting card ${cid}:`, error);
+    res.status(500).json({ error: `Failed to delete card with ID ${cid}` });
   }
 });
 
@@ -60,8 +60,8 @@ cardsRouter.post('/', async (req, res) => {
   }
 });
 
-cardsRouter.put('/:id', async (req, res) => {
-  const previousCardId = req.params.id;
+cardsRouter.put('/:cid', async (req, res) => {
+  const cid = req.params.cid;
   const body = SerializedCardSchema.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid card data', details: body.error });
@@ -69,7 +69,7 @@ cardsRouter.put('/:id', async (req, res) => {
   }
 
   try {
-    const result = await cardService.updateCard(previousCardId, body.data);
+    const result = await cardService.updateCard(cid, body.data);
     if (result.success) {
       res.status(200).json(result.card);
     } else {

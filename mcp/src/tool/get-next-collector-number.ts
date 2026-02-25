@@ -40,7 +40,7 @@ export function registerGetNextCollectorNumberTool(server: McpServer) {
         if (!usedNumbers.has(candidate)) {
           availableNumbers.push(candidate);
         }
-        candidate++;
+        candidate += 1;
       }
 
       return {

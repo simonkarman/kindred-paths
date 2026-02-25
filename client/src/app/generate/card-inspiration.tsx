@@ -129,7 +129,7 @@ export function CardInspiration(props: { previousCardGenerators: { generatorId: 
             Back to Suggestions
           </button>
         </div>
-        <CardEditor initialCard={selectedCard} />
+        <CardEditor isNewCard={true} initialCard={selectedCard} />
       </div>
     );
   }
@@ -220,7 +220,7 @@ export function CardInspiration(props: { previousCardGenerators: { generatorId: 
                     const imageUrl = cardImages[imageIndex];
                     return (
                       <div
-                        key={card.id}
+                        key={card.cid}
                         onClick={() => handleCardClick(card)}
                         className="group border border-slate-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all bg-white"
                       >

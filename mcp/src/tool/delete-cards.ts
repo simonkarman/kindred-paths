@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { CardService } from '../service/card-service.js';
 import { z } from 'zod';
 
-type DeleteResult = { id: string } & ({ success: true, computedId: string } | { success: false, error: string });
+type DeleteResult = { cid: string } & ({ success: true } | { success: false, error: string });
 
 export function registerDeleteCardsTool(server: McpServer) {
   const cardService = new CardService();
@@ -11,21 +11,21 @@ export function registerDeleteCardsTool(server: McpServer) {
     'delete_cards',
     {
       description:
-        'Deletes cards by their IDs.',
+        'Deletes cards by their Card IDs (cids).',
       inputSchema: {
-        ids: z.array(z.string()).describe('Array of card IDs to delete'),
+        cids: z.array(z.string()).describe('Array of card IDs to delete'),
       },
     },
-    async ({ ids }) => {
+    async ({ cids }) => {
       const results = await Promise.all(
-        ids.map(async (id): Promise<DeleteResult> => {
-          const card = await cardService.one(id);
+        cids.map(async (cid): Promise<DeleteResult> => {
+          const card = await cardService.one(cid);
 
           if (!card) {
-            return { id, success: false, error: 'Card not found' };
+            return { cid, success: false, error: 'Card not found' };
           }
 
-          const computedId = await cardService.save({
+          await cardService.save(cid, {
             ...card,
             tags: {
               ...card.tags,
@@ -33,7 +33,7 @@ export function registerDeleteCardsTool(server: McpServer) {
             },
           }, 'update');
 
-          return { id, success: true, computedId };
+          return { cid, success: true };
         }),
       );
 
@@ -45,7 +45,7 @@ export function registerDeleteCardsTool(server: McpServer) {
       if (succeeded.length > 0) {
         lines.push(`Deleted ${succeeded.length} card(s):\n${
           succeeded
-            .map((r) => `  ✓ ${r.computedId}${r.id === r.computedId ? '' : ` (was ${r.id})`}`)
+            .map((r) => `  ✓ ${r.cid}`)
             .join('\n')
         }`);
       }
@@ -53,7 +53,7 @@ export function registerDeleteCardsTool(server: McpServer) {
       if (failed.length > 0) {
         lines.push(`Failed to delete ${failed.length} card(s):\n${
           failed
-            .map((r) => `  ✗ ${r.id}: ${r.error}`)
+            .map((r) => `  ✗ ${r.cid}: ${r.error}`)
             .join('\n')
         }`);
       }

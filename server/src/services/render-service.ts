@@ -1,5 +1,16 @@
 import fs from 'fs/promises';
-import { capitalize, Card, CardColor, CardFace, colorToShort, enumerate, hash, SerializedCard, computeCardId } from 'kindred-paths';
+import {
+  capitalize,
+  Card,
+  CardColor,
+  CardFace,
+  colorToShort,
+  computeCardSlug,
+  computeFilename,
+  enumerate,
+  hash,
+  SerializedCard,
+} from 'kindred-paths';
 import { CardConjurer, Renderable } from '../card-conjurer';
 import { configuration } from '../configuration';
 import { symbolService } from './symbol-service';
@@ -169,8 +180,8 @@ export class RenderService {
 
     // Save the card json to the previews directory
     if (!fromCache) {
-      const previewId = `${new Date().toISOString()}-${computeCardId(card.toJson())}`;
-      const previewPath = `${configuration.previewsCacheDir}/${previewId}.json`;
+      const previewSlug = `${new Date().toISOString()}-${computeCardSlug(card.toJson())}`;
+      const previewPath = `${configuration.previewsCacheDir}/${computeFilename(previewSlug, card.cid)}`;
       await fs.mkdir(configuration.previewsCacheDir, { recursive: true });
       await fs.writeFile(previewPath, JSON.stringify(card.toJson(), null, 2), 'utf-8');
     }

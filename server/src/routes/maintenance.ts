@@ -4,7 +4,7 @@ import { existsSync } from 'fs';
 import { cardService } from '../services/card-service';
 import { configuration } from '../configuration';
 import { mechanicsService } from '../services/mechanics-service';
-import { AutoReminderText, computeCardId } from 'kindred-paths';
+import { AutoReminderText, computeCardSlug, computeFilename } from 'kindred-paths';
 
 export const maintenanceRouter = Router();
 
@@ -30,22 +30,24 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
     await cardService.saveCard(card);
   }
 
-  // Rename cards that have an ID different from the computed ID based on their name
+  // Rename cards that have a slug different from what's in their filename
   for (const card of await cardService.getAllCards()) {
-    const computedCardId = computeCardId(card);
-    if (card.id !== computedCardId) {
-      // check that the computed card id does not already exist
-      const existingCard = await cardService.getCardById(computedCardId);
-      if (existingCard) {
-        const message = `skipped renaming card ${card.id} to ${computedCardId} because a card with that id already exists`;
+    const filename = await cardService.findCardFilename(card.cid);
+    const expectedFilename = computeFilename(computeCardSlug(card), card.cid);
+    if (filename !== expectedFilename) {
+      // Simply resave the file, as it will rename it if necessary.
+      // If a card with the expected filename already exists, this will throw an error, so we catch and log it and move on to the next card.
+      try {
+        await cardService.saveCard(card);
+      } catch {
+        const message = `skipped renaming card ${filename} to ${expectedFilename} because a card with that filename already exists`;
         messages.push(message);
         console.warn(message);
         continue;
       }
 
-      const message = `renamed card ${card.id} to ${computedCardId}`;
+      const message = `renamed card ${filename} to ${expectedFilename}`;
       messages.push(message);
-      await fs.rename(`${configuration.cardsDir}/${card.id}.json`, `${configuration.cardsDir}/${computedCardId}.json`);
       console.log(message);
     }
   }
@@ -73,7 +75,7 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
       });
     });
     if (hasChanged) {
-      const message = `updated keywords and/or subtypes to lowercase for card ${card.id}`;
+      const message = `updated keywords and/or subtypes to lowercase for card ${computeCardSlug(card)} (${card.cid})`;
       messages.push(message);
       await cardService.saveCard(card);
       console.log(message);
@@ -97,7 +99,7 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
       });
     });
     if (hasChanged) {
-      const message = `standardized punctuation in rules text for card ${card.id}`;
+      const message = `standardized punctuation in rules text for card ${computeCardSlug(card)} (${card.cid})`;
       messages.push(message);
       await cardService.saveCard(card);
       console.log(message);
@@ -125,7 +127,7 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
       face.manaCost = newManaCost;
     });
     if (hasChanged) {
-      const message = `removed 0 values from mana cost for card ${card.id}`;
+      const message = `removed 0 values from mana cost for card ${computeCardSlug(card)} (${card.cid})`;
       messages.push(message);
       await cardService.saveCard(card);
       console.log(message);
@@ -139,7 +141,7 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
       const face = card.faces[faceIndex];
 
       if (face.art && !existsSync(`${configuration.artDir}/${face.art}`)) {
-        const message = `removed missing art for face ${faceIndex} of card ${card.id}: ${face.art}`;
+        const message = `removed missing art for face ${faceIndex} of card ${computeCardSlug(card)} (${card.cid}): ${face.art}`;
         messages.push(message);
         delete face.art;
         await cardService.saveCard(card);
@@ -147,10 +149,10 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
       }
 
       // Ensure that the art is not in the suggestions directory
-      const art = await cardService.tryMoveArtSuggestionToArt(face, card.id);
+      const art = await cardService.tryMoveArtSuggestionToArt(face, card.cid);
       if (art !== face.art) {
         face.art = art;
-        const message = `updated art for face ${faceIndex} of card ${card.id} to ${art}`;
+        const message = `updated art for face ${faceIndex} of card ${computeCardSlug(card)} (${card.cid}) to ${art}`;
         messages.push(message);
         await cardService.saveCard(card);
         console.log(message);
@@ -187,7 +189,7 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
         if (typeof count !== 'number' || count <= -1) {
           delete card.tags[tag];
           hasChanged = true;
-          const message = `removed ${tag} tag with invalid count (${count}) for card ${card.id}`;
+          const message = `removed ${tag} tag with invalid count (${count}) for card ${computeCardSlug(card)} (${card.cid})`;
           messages.push(message);
           console.warn(message);
         }
@@ -211,8 +213,8 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
           if (previousRule?.variant === 'keyword') {
             const auto = autoReminderText.standaloneFor(previousRule.content);
             if (auto && auto !== rule.content) {
-              const message = `inline-reminder for keyword "${previousRule.content}" on card ${card.id} face ${faceIndex} does not` +
-                  `match the template (it is "${rule.content}" but should be "${auto}")`;
+              const message = `inline-reminder for keyword "${previousRule.content}" on card ${computeCardSlug(card)} (${card.cid}) `
+                  + `face ${faceIndex} does not match the template (it is "${rule.content}" but should be "${auto}")`;
               messages.push(message);
               console.log(message);
             }
@@ -222,8 +224,8 @@ maintenanceRouter.post('/cleanup', async (_, res) => {
           rule.variant = 'keyword';
           rule.content = rule.content.toLowerCase();
           hasChanged = true;
-          const message = `ability rule on card ${card.id} face ${faceIndex} matches a keyword template ("${rule.content}"), `
-             + 'consider changing it to a keyword rule';
+          const message = `ability rule on card ${computeCardSlug(card)} (${card.cid}) face ${faceIndex} matches a keyword `
+            + `template ("${rule.content}"), consider changing it to a keyword rule`;
           messages.push(message);
           console.log(message);
         }

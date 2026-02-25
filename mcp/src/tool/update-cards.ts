@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { Card, SerializedCardSchema, SerializedCardFaceSchema } from 'kindred-paths';
 
 const PartialSerializedCardUpdateSchema = z.object({
-  id: z.string().describe('ID of the card to update'),
+  cid: z.string().describe('Card ID (cid) of the card to update'),
   changes: z.object({
     tags: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
     rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']).optional(),
@@ -30,8 +30,8 @@ export function registerUpdateCardsTool(server: McpServer) {
       description:
         'Update existing cards in the collection. Accepts an array of either: ' +
         '(1) full card JSON objects for complete replacement, or ' +
-        '(2) { ID, changes } objects for partial updates. Partial updates support tags, rarity, collectorNumber, layout, isToken, primaryFace, and ' +
-             'secondaryFace. Face changes are shallow merged - each field provided replaces the existing value entirely.',
+        '(2) { cid, changes } objects for partial updates. Partial updates support tags, rarity, collectorNumber, layout, isToken, primaryFace, ' +
+             'and secondaryFace. Face changes are shallow merged - each field provided replaces the existing value entirely.',
       inputSchema: {
         cards: z.array(cardUpdateSchema).describe('Array of card updates'),
       },
@@ -40,11 +40,11 @@ export function registerUpdateCardsTool(server: McpServer) {
       const results = await Promise.all(
         cards.map(async (input) => {
           const isPartialUpdate = 'changes' in input;
-          const id = input.id;
+          const cid = input.cid;
 
-          const existing = await cardService.one(id);
+          const existing = await cardService.one(cid);
           if (!existing) {
-            return { id, success: false, error: 'Card not found' };
+            return { cid, success: false, error: 'Card not found' };
           }
 
           let updatedCard: typeof existing;
@@ -85,7 +85,7 @@ export function registerUpdateCardsTool(server: McpServer) {
             if (changes.secondaryFace) {
               if (!existing.faces[1]) {
                 return {
-                  id,
+                  cid,
                   success: false,
                   error: 'Card has no secondary face to update. To add a secondary face, provide a full card JSON with the desired layout.',
                 };
@@ -105,14 +105,14 @@ export function registerUpdateCardsTool(server: McpServer) {
             new Card(updatedCard);
           } catch (e) {
             return {
-              id,
+              cid,
               success: false,
               error: `Invalid card data: ${e instanceof Error ? e.message : String(e)}`,
             };
           }
 
-          const newId = await cardService.save(updatedCard, 'update');
-          return { id, newId, name, success: true };
+          await cardService.save(cid, updatedCard, 'update');
+          return { cid, name, success: true };
         }),
       );
 
@@ -125,10 +125,7 @@ export function registerUpdateCardsTool(server: McpServer) {
         lines.push(
           `Updated ${succeeded.length} card(s):\n${succeeded
             .map((r) => {
-              if (r.id !== r.newId) {
-                return `  ✓ ${r.name} (${r.id} → ${r.newId})`;
-              }
-              return `  ✓ ${r.name} (${r.id})`;
+              return `  ✓ ${r.name} (${r.cid})`;
             })
             .join('\n')}`,
         );
@@ -136,7 +133,7 @@ export function registerUpdateCardsTool(server: McpServer) {
 
       if (failed.length > 0) {
         lines.push(
-          `Failed to update ${failed.length} card(s):\n${failed.map((r) => `  ✗ ${r.id}: ${r.error}`).join('\n')}`,
+          `Failed to update ${failed.length} card(s):\n${failed.map((r) => `  ✗ ${r.cid}: ${r.error}`).join('\n')}`,
         );
       }
 

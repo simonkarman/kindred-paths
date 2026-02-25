@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import { Card, CardArtPromptCreator, CardFace, SerializedCard, SerializedCardSchema, computeCardId } from 'kindred-paths';
+import { Card, CardArtPromptCreator, CardFace, computeCardSlug, computeFilename, SerializedCard, SerializedCardSchema } from 'kindred-paths';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { Leonardo } from '@leonardo-ai/sdk';
 import { z } from 'zod';
@@ -215,10 +215,10 @@ export class AIService {
         return;
       }
       const buffer = await imageResponse.arrayBuffer();
-      const cardId = computeCardId(cardFace.card.toJson());
-      const fileName = `${cardId}-f${cardFace.faceIndex}-${image.id}.png`;
+      const slug = computeCardSlug(cardFace.card.toJson());
+      const fileName = computeFilename(`${slug}-f${cardFace.faceIndex}`, image.id, '.png');
       await fs.writeFile(`${configuration.artSuggestionsDir}/${fileName}`, Buffer.from(buffer));
-      console.log(`Saved art suggestion for ${cardId} (for image ${image.id}): ${fileName}`);
+      console.log(`Saved art suggestion for ${cardFace.card.cid} (for image ${image.id}): ${fileName}`);
       return { fileName: `suggestions/${fileName}`, base64Image: Buffer.from(buffer).toString('base64') };
     }));
 

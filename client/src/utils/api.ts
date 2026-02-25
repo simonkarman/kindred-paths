@@ -34,10 +34,10 @@ export async function getCards(): Promise<SerializedCard[]> {
   }
 }
 
-export async function getCard(id: string): Promise<SerializedCard | null> {
+export async function getCard(cid: string): Promise<SerializedCard | null> {
   try {
-    const response = await fetch(`${internalBackendUrl}/card/${id}`, {
-      next: { tags: [`card-${id}`] }
+    const response = await fetch(`${internalBackendUrl}/card/${cid}`, {
+      next: { tags: [`card-${cid}`] }
     });
     if (!response.ok) {
       throw new Error('fetch failed with status ' + response.status);
@@ -50,9 +50,9 @@ export async function getCard(id: string): Promise<SerializedCard | null> {
   }
 }
 
-export async function deleteCard(id: string): Promise<void> {
+export async function deleteCard(cid: string): Promise<void> {
   try {
-    const response = await fetch(`${internalBackendUrl}/card/${id}`, {
+    const response = await fetch(`${internalBackendUrl}/card/${cid}`, {
       method: 'DELETE',
     });
     if (!response.ok) {
@@ -60,7 +60,7 @@ export async function deleteCard(id: string): Promise<void> {
     }
 
     revalidateTag('cards');
-    revalidateTag(`card-${id}`);
+    revalidateTag(`card-${cid}`);
   } catch (error: unknown) {
     console.error('Error deleting card:', error);
     throw error;
@@ -86,7 +86,7 @@ export async function createCard(serializedCard: SerializedCard): Promise<Serial
 }
 
 export async function updateCard(serializedCard: SerializedCard): Promise<SerializedCard | null> {
-  const response = await fetch(`${internalBackendUrl}/card/${serializedCard.id}`, {
+  const response = await fetch(`${internalBackendUrl}/card/${serializedCard.cid}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -100,11 +100,11 @@ export async function updateCard(serializedCard: SerializedCard): Promise<Serial
   }
 
   revalidateTag('cards');
-  revalidateTag(`card-${serializedCard.id}`);
+  revalidateTag(`card-${serializedCard.cid}`);
   return responseJson;
 }
 
-export type CollectorNumberInfo = { collectorNumber: number, cardId: string, faces: { name: string, renderedTypeLine: string }[] };
+export type CollectorNumberInfo = { collectorNumber: number, cid: string, faces: { name: string, renderedTypeLine: string }[] };
 export async function getOrganizeCollectorNumbers(searchQuery: string): Promise<CollectorNumberInfo[]> {
   const response = await fetch(`${internalBackendUrl}/organize/collector-numbers`, {
     method: 'POST',

@@ -267,7 +267,7 @@ export function SetEditor(props: SetEditorProps) {
   const editCard = (archetypeIndex: number, cycleKey: string) => {
     const slot = matrix.getArchetype(archetypeIndex).cycles[cycleKey];
     if (slot && typeof slot !== 'string' && "cardRef" in slot && slot.cardRef) {
-      const card = cards.filter(c => c.id === slot.cardRef?.cardId).pop();
+      const card = cards.find(c => c.cid === slot.cardRef?.cid);
       if (card) {
         setCardEditorSettings({
           archetypeIndex,
@@ -322,7 +322,7 @@ export function SetEditor(props: SetEditorProps) {
                   metadata: matrix.getArchetype(cardEditorSettings.archetypeIndex).metadata,
                 }}
                 onSave={(updatedCard) => {
-                  const cardIndex = cards.findIndex(c => c.id === updatedCard.id);
+                  const cardIndex = cards.findIndex(c => c.cid === updatedCard.cid);
                   let newCards;
                   if (cardIndex === -1) {
                     newCards = [...cards, updatedCard];
@@ -334,7 +334,7 @@ export function SetEditor(props: SetEditorProps) {
                     ];
                   }
                   setAllCards(newCards);
-                  matrix.linkCardToSlot(cardEditorSettings.archetypeIndex, cardEditorSettings.cycleKey, { cardId: updatedCard.id });
+                  matrix.linkCardToSlot(cardEditorSettings.archetypeIndex, cardEditorSettings.cycleKey, { cid: updatedCard.cid });
                   saveChanges({ newCards });
                   setCardEditorSettings(undefined);
                 }}
@@ -376,7 +376,7 @@ export function SetEditor(props: SetEditorProps) {
                   metadata: matrix.getArchetype(cardSelectorSettings.archetypeIndex).metadata,
                 }}
                 onSelect={(card) => {
-                  matrix.linkCardToSlot(cardSelectorSettings.archetypeIndex, cardSelectorSettings.cycleKey, { cardId: card.id });
+                  matrix.linkCardToSlot(cardSelectorSettings.archetypeIndex, cardSelectorSettings.cycleKey, { cid: card.cid });
                   saveChanges();
                   setCardSelectorSettings(undefined);
                 }}
@@ -786,7 +786,7 @@ export function SetEditor(props: SetEditorProps) {
                     const { status, reasons } = matrix.getSlotStatus(cards, archetypeIndex, cycleKey);
                     const slot = matrix.getArchetype(archetypeIndex).cycles[cycleKey];
                     const cardRef = slot && typeof slot !== 'string' && "cardRef" in slot ? slot.cardRef : undefined;
-                    const card = cardRef ? cards.filter(c => c.id === cardRef.cardId).pop() : undefined;
+                    const card = cardRef ? cards.filter(c => c.cid === cardRef.cid).pop() : undefined;
                     const hasSlotBlueprint = (slot && typeof slot !== 'string' && "blueprint" in slot ? slot.blueprint : undefined) !== undefined;
                     return (
                       <SetEditorCell
@@ -803,7 +803,7 @@ export function SetEditor(props: SetEditorProps) {
                         hasBlueprint={hasSlotBlueprint}
                         onEditBlueprint={() => onEditSlotBlueprint(archetypeIndex, cycleKey)}
                         onRemoveBlueprint={() => onRemoveSlotBlueprint(archetypeIndex, cycleKey)}
-                        cardPreviewUrl={cardRef === undefined ? undefined : `/api/render/${cardRef.cardId}/0`}
+                        cardPreviewUrl={cardRef === undefined ? undefined : `/api/render/${cardRef.cid}/0`}
                       />
                     );
                   })}

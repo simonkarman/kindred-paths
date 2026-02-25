@@ -101,7 +101,7 @@ test('token extracter', () => {
   // For each ability, create a card and check the creatable tokens
   scenarios.forEach(({ abilities, expectedTokens }, index) => {
     const card = new Card({
-      id: `test-card-${index}`,
+      cid: `${index}00000000`.substring(0, 8),
       rarity: 'common',
       layout: 'normal',
       faces: [{

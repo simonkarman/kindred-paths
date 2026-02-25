@@ -1,6 +1,7 @@
 import { SerializedCard } from './serialized-card';
 import { CardFace, permanentTypes } from './card-face';
 import { Layout } from './layout';
+import { generateCardId } from './card-id';
 
 export type CardLayout = 'normal' | 'modal' | 'adventure' | 'transform';
 export const cardLayouts = ['normal', 'modal', 'adventure', 'transform'] as const;
@@ -9,7 +10,7 @@ export type CardRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 export const cardRarities = ['common', 'uncommon', 'rare', 'mythic'] as const;
 
 export class Card {
-  public readonly id: string;
+  public readonly cid: string;
   public readonly isToken?: true;
   public readonly rarity: CardRarity;
   public readonly collectorNumber: number;
@@ -19,7 +20,7 @@ export class Card {
 
   static new(layout: CardLayout): Card {
     return new Card({
-      id: '<new>',
+      cid: generateCardId(),
       layout: layout,
       rarity: 'common',
       collectorNumber: 1,
@@ -33,7 +34,7 @@ export class Card {
   }
 
   constructor(props: SerializedCard) {
-    this.id = props.id;
+    this.cid = props.cid;
     this.isToken = props.isToken;
     this.rarity = props.rarity;
     this.collectorNumber = props.collectorNumber;
@@ -46,7 +47,7 @@ export class Card {
 
   public toJson(): SerializedCard {
     return structuredClone({
-      id: this.id,
+      cid: this.cid,
       rarity: this.rarity,
       isToken: this.isToken,
       collectorNumber: this.collectorNumber,

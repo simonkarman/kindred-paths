@@ -32,13 +32,13 @@ export function CardRender({ serializedCard, faceIndex, shown = true, forceRende
       <img
         alt={cardFace.name + " image"}
         className={`${shown ? 'scale-x-100' : 'scale-x-0'} transition-all aspect-[63/88] w-120 print:w-100 not-print:rounded-2xl border ${hideBorder ? 'bg-transparent border-transparent' : 'bg-zinc-400'}`}
-        src={`/api/render/${card.id}/${faceIndex}?force=${forceRender ? 'true' : 'false'}&scale=${scale || 1}&quality=${quality || 100}`}
+        src={`/api/render/${card.cid}/${faceIndex}?force=${forceRender ? 'true' : 'false'}&scale=${scale || 1}&quality=${quality || 100}`}
       />
       {hoverControls && <>
         {/* Clickable areas */}
         {/* Top half - View card */}
         <Link
-          href={`/card/${card.id}`}
+          href={`/card/${card.cid}`}
           className={`${hoverAreaSizes[0]} ${hoverStyle}`}
           title={`View ${cardFace.name}`}
         >
@@ -47,7 +47,7 @@ export function CardRender({ serializedCard, faceIndex, shown = true, forceRende
 
         {/* Bottom half - Edit card */}
         <Link
-          href={`/edit/${card.id}?t=/`}
+          href={`/edit/${card.cid}?t=/`}
           className={`${hoverAreaSizes[1]} ${hoverStyle}`}
           title={`Edit ${cardFace.name}`}
         >

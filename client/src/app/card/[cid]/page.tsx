@@ -4,19 +4,19 @@ import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { getCard } from '@/utils/api';
 import { PageProps } from '@/utils/page-props';
-import { CardView } from '@/app/card/[id]/card-view';
+import { CardView } from '@/app/card/[cid]/card-view';
 
-export async function generateMetadata({ params: _params }: PageProps<{ id: string }>): Promise<Metadata> {
+export async function generateMetadata({ params: _params }: PageProps<{ cid: string }>): Promise<Metadata> {
   const params = await _params;
-  const card = await getCard(params.id);
+  const card = await getCard(params.cid);
   return {
-    title: `${card?.faces.map(f => f.name).join(' // ') ?? params.id} - Kindred Paths`,
+    title: `${card?.faces.map(f => f.name).join(' // ') ?? params.cid} - Kindred Paths`,
   }
 }
 
-export default async function Page({ params: _params }: Readonly<{ params: Promise<{ id: string }> }>) {
+export default async function Page({ params: _params }: Readonly<{ params: Promise<{ cid: string }> }>) {
   const params = await _params;
-  const serializedCard = await getCard(params.id);
+  const serializedCard = await getCard(params.cid);
 
   if (!serializedCard) {
     return (
@@ -26,7 +26,7 @@ export default async function Page({ params: _params }: Readonly<{ params: Promi
             <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-600 text-4xl mb-4" />
             <h1 className="text-2xl font-bold text-red-900 mb-2">Card Not Found</h1>
             <p className="text-red-700 mb-4">
-              The card with ID &ldquo;{params.id}&rdquo; could not be found.
+              The card with ID &ldquo;{params.cid}&rdquo; could not be found.
             </p>
             <Link
               href="/"

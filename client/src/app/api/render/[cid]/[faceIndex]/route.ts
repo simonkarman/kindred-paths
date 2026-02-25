@@ -4,18 +4,18 @@ import { internalBackendUrl } from '@/utils/connection';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string, faceIndex: number }> }
+  { params }: { params: Promise<{ cid: string, faceIndex: number }> }
 ) {
-  const { id, faceIndex } = await params;
+  const { cid, faceIndex } = await params;
   const searchParams = request.nextUrl.searchParams;
   const force = searchParams.get('force') === 'true';
   const queryString = searchParams.toString() ? `?${searchParams.toString()}` : '';
 
   if (force) {
-    revalidateTag(`card-${id}`);
+    revalidateTag(`card-${cid}`);
   }
 
-  const path = `/render/${id}/${faceIndex}${queryString}`;
+  const path = `/render/${cid}/${faceIndex}${queryString}`;
   const response = await fetch(`${internalBackendUrl}${path}`, {
 
     // In development, Next.js runs API routes on a single thread and serializes
@@ -23,7 +23,7 @@ export async function GET(
     // up sequentially. We disable caching in dev to allow parallel requests, while
     // keeping cache tags in production for proper revalidation via server actions.
     ...(process.env.NODE_ENV === 'production'
-      ? { next: { tags: [`card-${id}`] } }
+      ? { next: { tags: [`card-${cid}`] } }
       : { cache: 'no-store' }),
   });
 

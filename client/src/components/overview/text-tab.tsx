@@ -23,7 +23,7 @@ export function TextTab(props: { cards: SerializedCard[] }) {
 
           return (
             <li
-              key={card.id}
+              key={card.cid}
               className="group border-b border-slate-100 space-y-2 pb-4 last:border-b-0 hover:bg-slate-50 -mx-2 px-2 py-2 rounded transition-colors"
             >
               <div className="flex items-baseline gap-2">
@@ -33,7 +33,7 @@ export function TextTab(props: { cards: SerializedCard[] }) {
                   </span>
                 )}
                 <Link
-                  href={`/card/${card.id}`}
+                  href={`/card/${card.cid}`}
                   className="text-blue-600 hover:text-blue-700 font-semibold hover:underline decoration-blue-300 hover:decoration-blue-500 transition-colors"
                 >
                   {card.faces.map(f => f.name).join(' // ')}

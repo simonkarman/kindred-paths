@@ -31,7 +31,7 @@ export function CardOverview(props: {
     { id: 'table' as TabType, label: 'Table', component: <TableTab cards={cards} /> },
     { id: 'visual' as TabType, label: 'Visual', component: <VisualTab
         cards={cards}
-        dynamicLink={c => `/edit/${c.id}?t=/`} />
+        dynamicLink={c => `/edit/${c.cid}?t=/`} />
     },
     { id: 'text' as TabType, label: 'Text', component: <TextTab cards={cards} /> },
     { id: 'statistics' as TabType, label: 'Statistics', component: <StatisticsTab cards={cards} /> },

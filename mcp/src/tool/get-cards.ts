@@ -8,16 +8,16 @@ export function registerGetCardsTool(server: McpServer) {
   server.registerTool(
     'get_cards',
     {
-      description: 'Get cards by their IDs. Returns the full card JSON for each ID.',
+      description: 'Get cards by their Card IDs (cids). Returns the full card JSON for each ID.',
       inputSchema: {
-        ids: z.array(z.string()).describe('Array of card IDs to fetch'),
+        cids: z.array(z.string()).describe('Array of card IDs to fetch'),
       },
     },
-    async ({ ids }) => {
+    async ({ cids }) => {
       const results = await Promise.all(
-        ids.map(async (id) => {
-          const card = await cardService.one(id);
-          return { id, card };
+        cids.map(async (cid) => {
+          const card = await cardService.one(cid);
+          return { cid, card };
         }),
       );
 
@@ -32,7 +32,7 @@ export function registerGetCardsTool(server: McpServer) {
             text: JSON.stringify(
               {
                 cards: found.map((r) => r.card),
-                notFound: notFound.map((r) => r.id),
+                notFound: notFound.map((r) => r.cid),
               },
               null,
               2,

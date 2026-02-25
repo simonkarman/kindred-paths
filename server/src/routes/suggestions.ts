@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Card, SerializedCardSchema } from 'kindred-paths';
+import { Card, getCidFromFilename, SerializedCardSchema } from 'kindred-paths';
 import { aiService } from '../services/ai-service';
 import { cardService } from '../services/card-service';
 import fs from 'fs/promises';
@@ -122,27 +122,27 @@ suggestionsRouter.post('/art/:faceIndex', async (req, res) => {
   }
 });
 
-suggestionsRouter.get('/art/:id', async (req, res) => {
-  const cardId = req.params.id;
+suggestionsRouter.get('/art/:cid', async (req, res) => {
+  const cid = req.params.cid;
 
   // Check if the card exists
-  const card = await cardService.getCardById(cardId);
+  const card = await cardService.getCardByCid(cid);
   if (!card) {
-    res.status(404).json({ error: `Card with ID ${cardId} not found` });
+    res.status(404).json({ error: `Card with ID ${cid} not found` });
     return;
   }
 
   try {
     const files = await fs.readdir(configuration.artSuggestionsDir);
     const suggestions = files
-      .filter(file => file.startsWith(`${cardId}-`) && file.endsWith('.png'))
+      .filter(file => getCidFromFilename(file, '.png') === cid)
       .map(file => ({
         fileName: `suggestions/${file}`,
         base64Image: fs.readFile(`${configuration.artSuggestionsDir}/${file}`, 'base64'),
       }));
     res.json(suggestions);
   } catch (error) {
-    console.error(`Error reading art suggestions for card ID ${cardId}:`, error);
+    console.error(`Error reading art suggestions for card ID ${cid}:`, error);
     res.status(500).json({ error: 'Failed to read art suggestions' });
   }
 });

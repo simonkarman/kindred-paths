@@ -280,7 +280,7 @@ export class Matrix {
     const cardRef = slot.cardRef;
     if (!cardRef) return { status: 'missing' };
 
-    const card = cards.find(c => c.id === cardRef.cardId);
+    const card = cards.find(c => c.cid === cardRef.cid);
     if (!card) return { status: 'missing' };
 
     const metadata = archetype.metadata;
@@ -315,7 +315,7 @@ export class Matrix {
     const archetype = this.archetypes[archetypeIndex];
     if (!archetype.cycles[cycleKey] || archetype.cycles[cycleKey] === 'skip') {
       archetype.cycles[cycleKey] = {
-        cardRef: { cardId: '' },
+        cardRef: undefined,
         blueprint,
       };
     } else {

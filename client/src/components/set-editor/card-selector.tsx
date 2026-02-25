@@ -64,7 +64,7 @@ export function CardSelector(props: CardSelectorProps) {
     </div>}
     <div className="grid grid-cols-3 gap-2">
       {cards.map(card => <div
-        key={card.id}
+        key={card.cid}
       >
         <button
           className="cursor-pointer rounded-2xl border-3 border-transparent hover:border-black transition-colors"

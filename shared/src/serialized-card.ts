@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { SerializedCardFaceSchema } from './serialized-card-face';
+import { CardIdSchema } from './card-id';
 
 export const SerializedCardSchema = z.object({
-  id: z.string().min(1),
+  cid: CardIdSchema,
   isToken: z.literal(true).optional(),
   rarity: z.enum(['common', 'uncommon', 'rare', 'mythic']),
   collectorNumber: z.number().int().min(1),
@@ -13,7 +14,7 @@ export const SerializedCardSchema = z.object({
 
 export type SerializedCard = z.infer<typeof SerializedCardSchema>;
 
-export const computeCardId = (card: SerializedCard) => {
+export const computeCardSlug = (card: SerializedCard) => {
   const set = typeof card.tags?.set === 'string' ? `${card.tags.set}-` : '';
   const collectorNumberAsString = ('0000' + card.collectorNumber).slice(-4);
   const prefix = set + `${collectorNumberAsString}-`;

@@ -1,5 +1,5 @@
 import { AISampleGenerator } from './ai-sample-generator';
-import { Card, getStatistics, SerializedCard } from 'kindred-paths';
+import { Card, generateCardId, getStatistics, SerializedCard } from 'kindred-paths';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { GenerateCardSchema } from './generate-card-schema';
 import { renderService } from '../render-service';
@@ -23,7 +23,6 @@ Additional information:
 
 Example valid JSON objects:
 {
-  "id": "mtg_001",
   "name": "Lightning Bolt",
   "rarity": "common",
   "types": ["instant"],
@@ -37,7 +36,6 @@ Example valid JSON objects:
 }
 
 {
-  "id": "mtg_002",
   "name": "Serra Angel",
   "rarity": "uncommon",
   "types": ["creature"],
@@ -96,7 +94,7 @@ Make sure to align the mana cost and name with the rules you choose.`;
         const jsonObject = JSON.parse(text);
         const validatedData = GenerateCardSchema.parse(jsonObject);
         return new Card({
-          id: `ai-${crypto.randomUUID()}`,
+          cid: generateCardId(),
           isToken: validatedData.isToken,
           layout: 'normal',
           collectorNumber: 1,

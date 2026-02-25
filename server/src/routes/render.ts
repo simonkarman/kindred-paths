@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { SerializedCardSchema } from 'kindred-paths';
+import { computeCardSlug, computeFilename, SerializedCardSchema } from 'kindred-paths';
 import { cardService } from '../services/card-service';
 import { renderService } from '../services/render-service';
 import sharp from 'sharp';
@@ -31,9 +31,9 @@ async function sendImage(res: Response, render: Buffer, filename: string, qualit
   res.send(render);
 }
 
-renderRouter.get('/render/:id/:faceIndex', async (req, res) => {
+renderRouter.get('/render/:cid/:faceIndex', async (req, res) => {
   // Get information from request
-  const cardId = req.params.id;
+  const cid = req.params.cid;
   const faceIndex = Number.parseInt(req.params.faceIndex);
 
   const force = [1, true, '1', 'true', 'yes', 'y', 'on'].includes(req.query.force as string);
@@ -41,9 +41,9 @@ renderRouter.get('/render/:id/:faceIndex', async (req, res) => {
   const scale = req.query.scale ? parseFloat(req.query.scale as string) : 1;
 
   // Try and find the card
-  const card = await cardService.getCardById(cardId);
+  const card = await cardService.getCardByCid(cid);
   if (!card) {
-    res.status(404).json({ error: `Card with ID ${cardId} not found` });
+    res.status(404).json({ error: `Card with ID ${cid} not found` });
     return;
   }
 
@@ -53,7 +53,7 @@ renderRouter.get('/render/:id/:faceIndex', async (req, res) => {
   }
   const cardFace = card.faces[faceIndex];
   const { render } = await renderService.getRender(cardFace, force);
-  const filename = `${card.id}-${faceIndex}.png`;
+  const filename = computeFilename(`${computeCardSlug(card.toJson())}-${faceIndex}`, card.cid, '.png');
   await sendImage(res, render, filename, quality, scale);
 });
 
