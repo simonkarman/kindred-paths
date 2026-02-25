@@ -38,6 +38,18 @@ export type SerializableMatrix = z.infer<typeof SerializableMatrixSchema>;
 export const SerializableSetSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
+  /**
+   * Whether the set requires all card to be represented in the set's matrices and archetypes.
+   *
+   * Default: true
+   */
+  exhaustive: z.boolean().optional().default(true),
+  /**
+   * Whether the set allows the same card to be assigned to multiple slots across the set's matrices and archetypes.
+   *
+   * Default: false
+   */
+  allowMultiAssignment: z.boolean().optional().default(false),
   matrices: z.array(SerializableMatrixSchema),
 });
 export type SerializableSet = z.infer<typeof SerializableSetSchema>;

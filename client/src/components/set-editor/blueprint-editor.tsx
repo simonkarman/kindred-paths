@@ -9,10 +9,10 @@ import {
   defaultCriteriaFor,
   getCriteriaTypesForSerializableBlueprintField,
   NumberCriteria,
-  SerializableBlueprint,
+  SerializableBlueprint, SerializableBlueprintSchema,
 } from 'kindred-paths';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faCopy, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faCircleDown, faCopy, faPlus } from '@fortawesome/free-solid-svg-icons';
 
 const criteriaInputStyle = 'font-mono font-bold tracking-wide text-center field-sizing-content text-sm border rounded px-2 py-0.5 bg-gray-50 border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-200';
 
@@ -397,6 +397,7 @@ export function BlueprintEditor(props: BlueprintEditorProps) {
   const [blueprint, setBlueprint] = useState<SerializableBlueprint>(props.blueprint);
   const hasChanged = JSON.stringify(blueprint) !== JSON.stringify(props.blueprint);
   const [forceShow, setForceShow] = useState<Partial<Record<keyof SerializableBlueprint, boolean>>>({});
+  const [isCopied, setIsCopied] = useState(false);
 
   const removeCriteria = (field: keyof SerializableBlueprint, index: number) => {
     return () => {
@@ -441,8 +442,56 @@ export function BlueprintEditor(props: BlueprintEditorProps) {
   });
 
   return <div className="p-3 border border-blue-200 bg-white rounded-lg space-y-3">
-    <div>
-      <h2 className="font-bold tracking-wide pb-1 text-lg border-b border-blue-100">{props.title}</h2>
+    <div className="space-y-1">
+      <div className="flex justify-between pb-1 border-b border-blue-100">
+        <h2 className="font-bold tracking-wide text-lg">{props.title}</h2>
+        <div className="flex gap-2 items-center">
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(JSON.stringify(blueprint));
+              setIsCopied(true);
+              setTimeout(() => setIsCopied(false), 2000);
+            }}
+            className={`inline-flex items-center gap-1 mb-1 px-2 py-1 font-medium
+              border ${isCopied ? 'border-green-300' : 'border-gray-300'} rounded-md
+              ${isCopied ? 'bg-green-50 text-green-700' : 'bg-white hover:bg-blue-50 text-gray-700 hover:text-blue-700 hover:border-blue-300'}
+              transition-colors duration-200
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+            `}
+            type="button"
+            aria-label="Copy blueprint JSON to clipboard"
+          >
+            <FontAwesomeIcon icon={isCopied ? faCheck : faCopy} />
+          </button>
+          <button
+            onClick={async () => {
+              let text = '';
+              try {
+                text = await navigator.clipboard.readText();
+              } catch {
+                text = prompt('Paste blueprint JSON here:') ?? 'null';
+              }
+              if (text) {
+                try {
+                  setBlueprint(SerializableBlueprintSchema.parse(JSON.parse(text)));
+                } catch {
+                  alert('Invalid JSON');
+                }
+              }
+            }}
+            className={`inline-flex items-center gap-1 mb-1 px-2 py-1 font-medium
+              border border-gray-300 rounded-md
+              bg-white hover:bg-blue-50 text-gray-700 hover:text-blue-700 hover:border-blue-300
+              transition-colors duration-200
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+            `}
+            type="button"
+            aria-label="Paste blueprint JSON from clipboard"
+          >
+            <FontAwesomeIcon icon={faCircleDown} />
+          </button>
+        </div>
+      </div>
       <CopyableMetadataKeys metadataKeys={props.metadataKeys} />
     </div>
     <ul className="space-y-2">

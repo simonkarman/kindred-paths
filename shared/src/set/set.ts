@@ -1,4 +1,4 @@
-import { SerializableSet } from './serializable-set';
+import { SerializableSet, SerializableSetSchema } from './serializable-set';
 import { Matrix, MatrixLocation } from './matrix';
 import { computeCardSlug, SerializedCard } from '../serialized-card';
 
@@ -11,15 +11,19 @@ export class Set {
   private id: string;
   private name: string;
   private matrices: Matrix[];
+  private exhaustive: boolean;
+  private allowMultiAssignment: boolean;
 
   constructor(serializableSet: SerializableSet) {
     this.id = serializableSet.id;
     this.name = serializableSet.name;
     this.matrices = serializableSet.matrices.map(matrix => new Matrix(this, matrix));
+    this.exhaustive = serializableSet.exhaustive;
+    this.allowMultiAssignment = serializableSet.allowMultiAssignment;
   }
 
   static new(name: string): Set {
-    return new Set({
+    return new Set(SerializableSetSchema.parse({
       id: crypto.randomUUID(),
       name,
       matrices: [{
@@ -28,13 +32,15 @@ export class Set {
         cycles: [],
         archetypes: [],
       }],
-    });
+    }));
   }
 
   toJson(): SerializableSet {
     return structuredClone({
       id: this.id,
       name: this.name,
+      exhaustive: this.exhaustive,
+      allowMultiAssignment: this.allowMultiAssignment,
       matrices: this.matrices.map(matrix => matrix.toJson()),
     });
   }
@@ -49,6 +55,14 @@ export class Set {
 
   updateName(name: string) {
     this.name = name;
+  }
+
+  setExhaustive(exhaustive: boolean) {
+    this.exhaustive = exhaustive;
+  }
+
+  setAllowMultiAssignment(allowMultiAssignment: boolean) {
+    this.allowMultiAssignment = allowMultiAssignment;
   }
 
   getMatrixCount(): number {
@@ -109,27 +123,30 @@ export class Set {
       });
     }));
 
-    // check that no card is linked more than once
-    cardIdsToLocations.forEach((locations, cardId) => {
-      if (locations.length > 1) {
-        messages.push(
-          `Card "${cardId}" is linked to ${locations.length} locations (${locations.join(' and ')}). ` +
-          'You can fix this by unlinking the card from one of these locations. Each card should only be linked to up to one location.',
-        );
-      }
-    });
+    if (!this.allowMultiAssignment) {
+      // Check that no card is assigned more than once
+      cardIdsToLocations.forEach((locations, cardId) => {
+        if (locations.length > 1) {
+          messages.push(
+            `Card "${cardId}" is linked to ${locations.length} locations (${locations.join(' and ')}). ` +
+            'You can fix this by unlinking the card from one of these locations. Each card should only be linked to up to one location.',
+          );
+        }
+      });
+    }
 
-    // Check that all cards with the set tag are linked to a slot
-    const cardsWithSetTag = cards.filter(c => c.tags?.set === this.name);
-    cardsWithSetTag.forEach(card => {
+    if (this.exhaustive) {
+      // Check that all cards with the set tag are linked to a slot
+      const cardsWithSetTag = cards.filter(c => c.tags?.set === this.name);
+      cardsWithSetTag.forEach(card => {
 
-      if (!card.isToken && !cardIdsToLocations.has(card.cid)) {
-        messages.push(
-          `Card "${computeCardSlug(card)} (#${card.cid})" (with tag "set=${this.name}") is not linked to any slot.`,
-        );
-      }
-    });
-
+        if (!card.isToken && !cardIdsToLocations.has(card.cid)) {
+          messages.push(
+            `Card "${computeCardSlug(card)} (#${card.cid})" (with tag "set=${this.name}") is not linked to any slot.`,
+          );
+        }
+      });
+    }
     return messages;
   }
 }

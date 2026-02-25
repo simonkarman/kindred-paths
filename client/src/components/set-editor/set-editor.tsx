@@ -1,18 +1,11 @@
 'use client';
 
-import React, { PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeft,
-  faCancel,
-  faCheck,
-  faCircle,
-  faExclamationTriangle,
-  faPenToSquare,
-  faPlus,
-  faTimes, faTrash,
-  faTrashCan,
-  faWarning,
+  faArrowLeft, faArrowsRotate, faCancel, faCheck, faCircle, faCog,
+  faExclamationTriangle, faPenToSquare, faPlus, faTimes, faTrash,
+  faTrashCan, faWarning,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   Card,
@@ -66,8 +59,14 @@ type CardSelectorSettings = {
 
 export function SetEditor(props: SetEditorProps) {
   const [cards, setAllCards] = useState<SerializedCard[]>(props.cards);
+
   const [serializableSet, setSerializableSet] = useState(props.set);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [openSettings, setOpenSettings] = useState(false);
   const [setValidationMessages, setSetValidationMessages] = useState<string[]>([]);
+  const [showValidationMessages, setShowValidationMessages] = useLocalStorageState(`set/${props.set.name}/show-validation-messages`, true);
   const [blueprintEditorLocation, setBlueprintEditorLocation] = useState<SetLocation>();
   const [cardEditorSettings, setCardEditorSettings] = useState<CardEditorSettings>();
   const [cardSelectorSettings, setCardSelectorSettings] = useState<CardSelectorSettings>();
@@ -97,7 +96,16 @@ export function SetEditor(props: SetEditorProps) {
     setSetValidationMessages(set.validateAndCorrect(props?.newCards ?? cards));
     const serializableSet = set.toJson();
     setSerializableSet(serializableSet);
-    putSet(serializableSet).catch(e => console.error('Error saving set:', e));
+
+    setHasPendingChanges(true);
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      putSet(serializableSet)
+        .then(() => setHasPendingChanges(false))
+        .catch(e => console.error('Error saving set:', e));
+    }, 2000);
   };
 
   useEffect(() => {
@@ -312,11 +320,68 @@ export function SetEditor(props: SetEditorProps) {
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto">
         {/* Modals */}
+        {openSettings && (
+          <Modal onClose={() => setOpenSettings(false)}>
+            <div className="w-full max-w-[500px] rounded-xl shadow-2xl overflow-hidden">
+              <div className="bg-white p-6 space-y-8">
+                <h2 className="text-xl font-bold mb-4">Set Settings</h2>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Exhaustive<br/>
+                    <span className="text-gray-400">
+                      Whether the set requires all card to be represented in the set&#39;s matrices and archetypes.
+                    </span>
+                  </label>
+                  <select
+                    value={serializableSet.exhaustive ? 'true' : 'false'}
+                    onChange={(e) => {
+                      set.setExhaustive(e.target.value === 'true');
+                      saveChanges();
+                    }}
+                    className="p-1 mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  >
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Allow Multi-Assignment<br/>
+                    <span className="text-gray-400">
+                      Whether the set allows the same card to be assigned to multiple slots across the set&#39;s matrices and archetypes.
+                    </span>
+                  </label>
+                  <select
+                    value={serializableSet.allowMultiAssignment ? 'true' : 'false'}
+                    onChange={(e) => {
+                      set.setAllowMultiAssignment(e.target.value === 'true');
+                      saveChanges();
+                    }}
+                    className="p-1 mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  >
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                  </select>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setOpenSettings(false)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Modal>
+        )}
+
         {cardEditorSettings && (
           <Modal>
             <div className="w-full max-w-[1200px] rounded-xl shadow-2xl overflow-hidden">
               <CardEditor
                 initialCard={cardEditorSettings.card}
+                isNewCard={false}
                 validate={{
                   blueprints: cardEditorSettings.blueprints,
                   metadata: matrix.getArchetype(cardEditorSettings.archetypeIndex).metadata,
@@ -387,16 +452,30 @@ export function SetEditor(props: SetEditorProps) {
         )}
 
         {/* Set Header Section */}
-        <div className="mx-auto max-w-[1600px] px-6 mb-6">
+        <div className="mx-auto max-w-[1600px] mb-6">
           <div className="flex items-center justify-between gap-4 space-y-2">
-            <input
-              type="text"
-              value={serializableSet.name}
-              onChange={(e) => updateSetName(e.target.value)}
-              className="field-sizing-content text-2xl font-bold border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-              placeholder="Enter set name..."
-            />
-            <div className="flex flex-wrap gap-2 px-2">
+            <div className='flex gap-6'>
+              <input
+                type="text"
+                value={serializableSet.name}
+                onChange={(e) => updateSetName(e.target.value)}
+                className="field-sizing-content text-2xl font-bold border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                placeholder="Enter set name..."
+              />
+
+              {/* Has Pending Changes Banner */}
+              <div className="flex items-center gap-3 text-xs pt-1">
+                {hasPendingChanges && (<>
+                  <FontAwesomeIcon icon={faArrowsRotate} className="text-yellow-600 mt-0.5 flex-shrink-0 animate-spin" />
+                  <span className="text-yellow-800">Saving...</span>
+                </>)}
+                {!hasPendingChanges && (<>
+                  <FontAwesomeIcon icon={faCheck} className="text-green-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-green-800">All changes saved</span>
+                </>)}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
               {!showCollectorNumbers && <button
                 onClick={() => fetchCollectorNumbers()}
                 className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
@@ -417,6 +496,13 @@ export function SetEditor(props: SetEditorProps) {
               >
                 <FontAwesomeIcon icon={faPlus} className="mr-2" />
                 Add Matrix
+              </button>
+              <button
+                onClick={() => setOpenSettings(true)}
+                className="cursor-pointer px-3 py-1 rounded-lg text-sm font-medium border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:border-gray-400 active:bg-gray-200 transition-colors"
+              >
+                <FontAwesomeIcon icon={faCog} className="mr-2" />
+                Settings
               </button>
             </div>
           </div>
@@ -446,14 +532,35 @@ export function SetEditor(props: SetEditorProps) {
             <div className="flex gap-3">
               <FontAwesomeIcon icon={faWarning} className="text-amber-600 text-lg mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                <h3 className="font-semibold text-amber-900 mb-2">Validation Warnings</h3>
-                <ul className="space-y-1">
-                  {setValidationMessages.map(validationMessage => (
-                    <li key={validationMessage} className="text-sm text-amber-800">
-                      {validationMessage}
-                    </li>
-                  ))}
-                </ul>
+                <div className="flex justify-between">
+                  <h3 className="font-semibold text-amber-900 mb-2">
+                    {setValidationMessages.length} Validation Warning{setValidationMessages.length === 1 ? '' : 's'}
+                  </h3>
+                  <button
+                    onClick={() => setShowValidationMessages(!showValidationMessages)}
+                    className="text-sm text-amber-600 hover:text-amber-800 hover:underline"
+                  >
+                    {showValidationMessages
+                      ? `Hide warning${setValidationMessages.length === 1 ? '' : 's'}`
+                      : `Show warning${setValidationMessages.length === 1 ? '' : 's'}`
+                    }
+                  </button>
+                </div>
+                {showValidationMessages && (<>
+                  <ul className="space-y-1">
+                    {setValidationMessages.map(validationMessage => (
+                      <li key={validationMessage} className="text-sm text-amber-800">
+                        {validationMessage}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    onClick={() => setShowValidationMessages(false)}
+                    className="mt-6 text-sm text-amber-600 hover:text-amber-800 hover:underline"
+                  >
+                    Close
+                  </button>
+                </>)}
               </div>
             </div>
           </div>
