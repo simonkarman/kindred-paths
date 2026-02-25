@@ -1,7 +1,7 @@
 "use client";
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowsTurnRight, faClone, faForward, faPenToSquare, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faArrowsTurnRight, faCheck, faClone, faCopy, faForward, faPenToSquare, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import { useState } from 'react';
 import { CardRender } from '@/components/card-render';
@@ -13,6 +13,7 @@ import { z } from 'zod';
 export const CardView = (props: { serializedCard: SerializedCard }) => {
   const { serializedCard } = props;
   const [forceRender, setForceRender] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const layout = new Layout(serializedCard.layout);
   const queryFaceIndex = z.number({ coerce: true }).min(0).max(1).safeParse(useSearchParams().get('faceIndex'));
@@ -92,9 +93,22 @@ export const CardView = (props: { serializedCard: SerializedCard }) => {
     <div className="space-y-6">
       {/* Card Details Card */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-        <h2 className="text-2xl font-bold text-slate-900 mb-4">
-          {serializedCard.faces.map(f => f.name).join(' // ')}
-        </h2>
+        <div className="flex justify-between items-center pr-6 mb-4">
+          <h2 className="text-2xl font-bold text-slate-900">
+            {serializedCard.faces.map(f => f.name).join(' // ')}
+          </h2>
+          <button
+            className={`flex gap-2 items-center ${isCopied ? 'text-emerald-600' : 'text-gray-300 hover:text-gray-600'}`}
+            onClick={() => {
+              navigator.clipboard.writeText(serializedCard.cid);
+              setIsCopied(true);
+              setTimeout(() => setIsCopied(false), 2000);
+            }}
+          >
+            {serializedCard.cid}
+            <FontAwesomeIcon icon={isCopied ? faCheck : faCopy} />
+          </button>
+        </div>
         <CardExplanation serializedCard={serializedCard} activeFaceIndex={faceIndex} />
       </div>
 
