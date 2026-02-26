@@ -3,13 +3,13 @@
 import React, { PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeft, faArrowsRotate, faCancel, faCheck, faCircle, faCog,
+  faArrowLeft, faArrowsRotate, faCancel, faCheck, faCircle, faClone, faCog,
   faExclamationTriangle, faPenToSquare, faPlus, faTimes, faTrash,
   faTrashCan, faWarning,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   Card,
-  explainAllCriteria,
+  explainAllCriteria, SerializableBlueprint,
   SerializableBlueprintWithSource,
   SerializableSet,
   SerializedCard,
@@ -203,10 +203,13 @@ export function SetEditor(props: SetEditorProps) {
     saveChanges();
   };
 
-  const addCycle = (atIndex: number) => {
+  const addCycle = (atIndex: number, blueprint?: SerializableBlueprint) => {
     const newKey = prompt(`Enter cycle key name:`);
     if (newKey) {
       matrix.addCycle(atIndex, newKey);
+      if (blueprint) {
+        matrix.setBlueprintAt({ type: 'cycle', index: atIndex }, blueprint);
+      }
       saveChanges();
     }
   };
@@ -841,6 +844,16 @@ export function SetEditor(props: SetEditorProps) {
                         draggedItem={draggedItem}
                         setDraggedItem={setDraggedItem}
                       />
+                      <div className="opacity-10 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all">
+                        <IconButton
+                          onClick={() => {
+                            addCycle(rowIndex + 1, blueprint);
+                          }}
+                          icon={faClone}
+                          title="Clone Cycle"
+                          variant="default"
+                        />
+                      </div>
                       <div className="opacity-10 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all">
                         <IconButton
                           onClick={() => deleteCycle(rowIndex)}

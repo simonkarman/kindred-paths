@@ -27,7 +27,7 @@ export const DragHandle: React.FC<{
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       className={`
-        transition-colors cursor-grab active:cursor-grabbing
+        px-1 transition-colors cursor-grab active:cursor-grabbing
         ${isDragging ? 'text-blue-500' : ''}
         ${isDropTarget ? 'text-zinc-200' : 'text-zinc-100 group-hover:text-blue-500'}
       `}
