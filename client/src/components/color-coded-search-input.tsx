@@ -37,11 +37,11 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
 
     const items = tokens.map(token => {
       if (token.type === 'AND' || token.type === 'OR') {
-        return `<span class="text-emerald-500 font-semibold px-1">${token.type.toLowerCase()}</span>`;
+        return `<span class="text-zinc-400 italic px-1">${token.type.toLowerCase()}</span>`;
       }
       if (token.type === 'LPAREN' || token.type === 'RPAREN') {
-        const depthColor = ['text-purple-500', 'text-pink-500', 'text-yellow-500'][token.depth % 3];
-        return `<span class="${depthColor} font-semibold px-1">${token.type === 'LPAREN' ? '(' : ')'}</span>`;
+        const depthColor = ['text-purple-400', 'text-amber-400', 'text-pink-400'][(token.depth - 1) % 3];
+        return `<span class="${depthColor}">${token.type === 'LPAREN' ? '(' : ')'}</span>`;
       }
 
       const match = token.value.match(/^([^\s!]+?)(!?[:=])(.*)$/);
@@ -51,7 +51,7 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
 
       const [, key, op, _value] = match;
       const value = _value?.toLowerCase();
-      let keyColor = 'text-zinc-400';
+      let keyColor = 'text-zinc-600';
       let valueColor = 'text-blue-600';
 
       const validation = validations.find(val => val.keys.includes(key.toLowerCase()));
@@ -69,8 +69,8 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
         }
       }
 
-      return `<span class="px-1.5 py-0.5 rounded-lg border border-zinc-100 border-b-zinc-200 bg-zinc-50">` +
-        `<span class="${keyColor}">${key}</span>${op}<span class="${valueColor}">${_value}</span>` +
+      return `<span class="px-1.5 py-0.5 rounded-lg border border-zinc-100 border-b-zinc-200 bg-zinc-50 shadow-sm">` +
+        `<span class="${keyColor}">${key}</span><span class="text-zinc-400">${op}</span><span class="${valueColor}">${_value}</span>` +
       `</span>`;
     });
 
@@ -144,7 +144,6 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
       const charMap = buildCharMap();
 
       if (charMap.length === 0) {
-        // Empty content — place cursor at start
         const range = document.createRange();
         range.selectNodeContents(contentEditableRef.current);
         range.collapse(true);
@@ -154,7 +153,6 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
       }
 
       if (position >= charMap.length) {
-        // Place cursor at end
         const last = charMap[charMap.length - 1];
         const range = document.createRange();
         range.setStart(last.node, last.offset + 1);
@@ -186,13 +184,11 @@ const ColorCodedSearchInput: React.FC<ColorCodedSearchInputProps> = ({
     setCursorPosition(cursorPos);
 
     setSearchText(text);
-    // Reset flag after React has had a chance to process
     requestAnimationFrame(() => {
       isInternalUpdate.current = false;
     });
   }, [contentEditableRef, getRawText, getCursorPosition, colorizeText, setCursorPosition, setSearchText]);
 
-  // Only update DOM when searchText changes externally (not from user typing)
   useEffect(() => {
     if (!contentEditableRef.current) return;
     if (isInternalUpdate.current) return;
