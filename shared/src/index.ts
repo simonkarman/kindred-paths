@@ -7,6 +7,7 @@ export * from './card-sorter';
 export * from './collection';
 export * from './colors';
 export * from './filter-definitions';
+export * from './filter-query-handler';
 export * from './hash';
 export * from './layout';
 export * from './mechanics';

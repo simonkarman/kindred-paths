@@ -45,10 +45,10 @@ export const filterDefinitions: FilterDefinition[] = [
   },
   {
     keys: ['producible-color', 'pc'],
-    description: 'card must be able to produce the provide color description ("none", "multicolor") ' +
-      'or includes the provided color in its identity (eq. "red", "blue", etc.)',
-    validation: [...cardColors, ...wubrg, 'none', 'n', 'multicolor', 'multi', 'm'],
-    examples: ['producible-color:green', 'pc:multicolor', 'pc:none'],
+    description: 'card must be able to produce the provide color description ("none", "some", "multicolor") ' +
+      'or produce the provided color (eq. "red", "blue", "colorless", etc.)',
+    validation: [...cardColors, ...wubrg, 'none', 'n', 'some', 's', 'colorless', 'c', 'multicolor', 'multi', 'm'],
+    examples: ['producible-color:some', 'producible-color:green', 'pc:multicolor', 'pc:none', 'pc:colorless'],
   },
   {
     keys: ['manavalue', 'mv'],

@@ -84,7 +84,7 @@ export default function SearchBar(props: { scope: string, initial?: string }) {
         setSearchText={setSearchText}
         onBlur={handleBlur}
         isOpen={isOpen}
-        placeholder="Search... (e.g., color:red type:creature)"
+        placeholder="Search... (e.g., color:red (type:creature or type:artifact))"
         className={isOpen ? 'bg-white' : ''}
       />
       <button

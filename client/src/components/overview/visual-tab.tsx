@@ -392,7 +392,7 @@ export function VisualTab(props: {
             .map((_, faceIndex) =>
               <div
                 key={card.cid + index + faceIndex.toString()}
-                className="print:border-3 print:bg-zinc-500"
+                className="print:border-1 print:bg-black"
               >
                 <CardRender
                   faceIndex={faceIndex}
@@ -400,6 +400,7 @@ export function VisualTab(props: {
                   scale={isPrint ? 0.4 : undefined}
                   quality={isPrint ? 80 : undefined}
                   hoverControls={!isPrint}
+                  hideBorder={isPrint}
                 />
               </div>
             )
