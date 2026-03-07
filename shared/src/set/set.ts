@@ -1,25 +1,28 @@
-import { SerializableSet, SerializableSetSchema } from './serializable-set';
-import { Matrix, MatrixLocation } from './matrix';
+import { MultiAssignmentPolicy, SerializableSet, SerializableSetSchema } from './serializable-set';
+import { MatrixLocation, Matrix } from './matrix';
 import { computeCardSlug, SerializedCard } from '../serialized-card';
+import { SerializableBlueprint } from './serializable-blueprint';
 
-export type SetLocation = {
-  matrixIndex: number,
-  matrixLocation: MatrixLocation,
-};
+export type SetLocation =
+  | { type: 'set' }
+  | { type: 'matrix', index: number } | { type: 'matrix', name: string }
+  | (Exclude<MatrixLocation, { type: 'matrix' }> & ({ matrixIndex: number } | { matrixName: string }));
 
 export class Set {
-  private id: string;
+  private readonly id: string;
   private name: string;
-  private matrices: Matrix[];
   private exhaustive: boolean;
-  private allowMultiAssignment: boolean;
+  private multiAssignmentPolicy: MultiAssignmentPolicy;
+  private blueprint?: SerializableBlueprint;
+  private readonly matrices: Matrix[];
 
   constructor(serializableSet: SerializableSet) {
     this.id = serializableSet.id;
     this.name = serializableSet.name;
-    this.matrices = serializableSet.matrices.map(matrix => new Matrix(this, matrix));
     this.exhaustive = serializableSet.exhaustive;
-    this.allowMultiAssignment = serializableSet.allowMultiAssignment;
+    this.multiAssignmentPolicy = serializableSet.multiAssignmentPolicy;
+    this.blueprint = serializableSet.blueprint;
+    this.matrices = serializableSet.matrices.map(matrix => new Matrix(this, matrix));
   }
 
   static new(name: string): Set {
@@ -40,7 +43,8 @@ export class Set {
       id: this.id,
       name: this.name,
       exhaustive: this.exhaustive,
-      allowMultiAssignment: this.allowMultiAssignment,
+      multiAssignmentPolicy: this.multiAssignmentPolicy,
+      blueprint: this.blueprint,
       matrices: this.matrices.map(matrix => matrix.toJson()),
     });
   }
@@ -61,8 +65,8 @@ export class Set {
     this.exhaustive = exhaustive;
   }
 
-  setAllowMultiAssignment(allowMultiAssignment: boolean) {
-    this.allowMultiAssignment = allowMultiAssignment;
+  setMultiAssignmentPolicy(multiAssignmentPolicy: MultiAssignmentPolicy) {
+    this.multiAssignmentPolicy = multiAssignmentPolicy;
   }
 
   getMatrixCount(): number {
@@ -88,61 +92,133 @@ export class Set {
     return [...this.matrices];
   }
 
+  // Blueprints
+  getBlueprintAt(location: SetLocation): SerializableBlueprint | undefined {
+    if (location.type === 'set') {
+      return this.blueprint;
+
+    } else if (location.type === 'matrix') {
+      const matrixIndex = 'index' in location ? location.index : this.matrices.findIndex(m => m.getName() === location.name);
+      return this.matrices[matrixIndex]?.getBlueprintAt({ type: 'matrix' });
+
+    } else {
+      const matrix = 'matrixIndex' in location
+        ? this.matrices[location.matrixIndex]
+        : this.matrices.find(m => m.getName() === location.matrixName);
+      return matrix?.getBlueprintAt(location);
+    }
+  }
+
+  setBlueprintAt(location: SetLocation, blueprint: SerializableBlueprint) {
+    if (location.type === 'set') {
+      this.blueprint = blueprint;
+
+    } else if (location.type === 'matrix') {
+      const matrixIndex = 'index' in location ? location.index : this.matrices.findIndex(m => m.getName() === location.name);
+      this.matrices[matrixIndex]?.setBlueprintAt({ type: 'matrix' }, blueprint);
+
+    } else {
+      const matrix = 'matrixIndex' in location
+        ? this.matrices[location.matrixIndex]
+        : this.matrices.find(m => m.getName() === location.matrixName);
+      matrix?.setBlueprintAt(location, blueprint);
+    }
+  }
+
+  removeBlueprintAt(location: SetLocation) {
+    if (location.type === 'set') {
+      this.blueprint = undefined;
+
+    } else if (location.type === 'matrix') {
+      const matrixIndex = 'index' in location ? location.index : this.matrices.findIndex(m => m.getName() === location.name);
+      this.matrices[matrixIndex]?.removeBlueprintAt({ type: 'matrix' });
+
+    } else {
+      const matrix = 'matrixIndex' in location
+        ? this.matrices[location.matrixIndex]
+        : this.matrices.find(m => m.getName() === location.matrixName);
+      matrix?.removeBlueprintAt(location);
+    }
+  }
+
+  getLocationName(location: SetLocation): string {
+    if (location.type === 'set') {
+      return 'Set Blueprint';
+
+    } else if (location.type === 'matrix') {
+      const matrixName = 'index' in location ? this.matrices[location.index]?.getName() : location.name;
+      return `${matrixName} Matrix Blueprint`;
+
+    } else {
+      const matrix = 'matrixIndex' in location
+        ? this.matrices[location.matrixIndex]
+        : this.matrices.find(m => m.getName() === location.matrixName);
+      if (!matrix) {
+        throw new Error(`Matrix not found for location: ${JSON.stringify(location)}`);
+      }
+      return matrix.getLocationName(location);
+    }
+  }
+
   // Validate
   validateAndCorrect(cards: SerializedCard[]): string[] {
     const messages: string[] = [];
 
-    // check that there are no slots without a blueprint AND without a cardRef
+    // check that all assignments point to an existing card AND gather info for multi-assignment policy validation
+    const assignmentPolicyCardIdsToLocations = new Map<string, string[]>();
     this.matrices.forEach(m => m.getArchetypes().forEach(archetype => {
-      Object.entries(archetype.cycles).forEach(([cycleKey, slot]) => {
-        if (slot && slot !== 'skip' && !slot.blueprint && !slot.cardRef) {
-          delete archetype.cycles[cycleKey];
-          messages.push(`Removed invalid slot in archetype "${archetype.name}", cycle "${cycleKey}" as it didn't have a blueprint or a card linked.`);
-        }
-      });
-    }));
-
-    // check that all cardRefs point to an existing card
-    const cardIdsToLocations = new Map<string, string[]>();
-    this.matrices.forEach(m => m.getArchetypes().forEach(archetype => {
-      Object.entries(archetype.cycles).forEach(([cycleKey, slot]) => {
-        if (slot && slot !== 'skip' && slot.cardRef) {
-          const cid = slot.cardRef.cid;
-          const cardExists = cards.some(c => c.cid === cid);
-          if (!cardExists) {
-            messages.push(`Unlinked non-existing card "${cid}" from slot in archetype "${archetype.name}", cycle "${cycleKey}".`);
-            delete slot.cardRef;
-            if (!slot.blueprint) {
-              delete archetype.cycles[cycleKey];
+      Object.entries(archetype.slots).forEach(([cycleKey, slot]) => {
+        if (slot && slot !== 'skip') {
+          slot.assignments = slot.assignments.map((assignment, assignmentIndex) => {
+            const cardExists = cards.some(c => c.cid === assignment.cid);
+            if (!cardExists) {
+              messages.push(`Unassigned non-existing card "${assignment.cid}" from slot in archetype "${archetype.name}", cycle "${cycleKey}".`);
+              return undefined;
+            } else {
+              const isPartOfMultiAssignmentPolicy = (this.multiAssignmentPolicy === 'unique-selected' && assignmentIndex === 0)
+                || (this.multiAssignmentPolicy === 'unique-all');
+              if (isPartOfMultiAssignmentPolicy) {
+                const locations = assignmentPolicyCardIdsToLocations.get(assignment.cid) ?? [];
+                assignmentPolicyCardIdsToLocations.set(assignment.cid, [...locations, `"${m.getName()}"."${archetype.name}"."${cycleKey}"`]);
+              }
+              return assignment;
             }
-          } else {
-            const locations = cardIdsToLocations.get(cid) ?? [];
-            cardIdsToLocations.set(cid, [...locations, `"${archetype.name}"."${cycleKey}"`]);
-          }
+          }).filter(a => a !== undefined);
         }
       });
     }));
 
-    if (!this.allowMultiAssignment) {
-      // Check that no card is assigned more than once
-      cardIdsToLocations.forEach((locations, cardId) => {
-        if (locations.length > 1) {
+    // check that there are no slots without a blueprint AND without any assignments
+    this.matrices.forEach(m => m.getArchetypes().forEach(archetype => {
+      Object.entries(archetype.slots).forEach(([cycleKey, slot]) => {
+        if (slot && slot !== 'skip' && !slot.blueprint && slot.assignments.length === 0) {
+          delete archetype.slots[cycleKey];
           messages.push(
-            `Card "${cardId}" is linked to ${locations.length} locations (${locations.join(' and ')}). ` +
-            'You can fix this by unlinking the card from one of these locations. Each card should only be linked to up to one location.',
+            `Removed invalid slot in archetype "${archetype.name}", cycle "${cycleKey}" as`
+            + ' it didn\'t have a blueprint or at least one card assigned.',
           );
         }
       });
-    }
+    }));
+
+    // Check that no card is assigned more than once according to the multi-assignment policy
+    assignmentPolicyCardIdsToLocations.forEach((locations, cardId) => {
+      if (locations.length > 1) {
+        messages.push(
+          `Card "${cardId}" is assigned to ${locations.length} locations (${locations.join(' and ')}). ` +
+          'You can fix this by unassigning the card from one of these locations. Each card should only be assigned to up to one location.',
+        );
+      }
+    });
 
     if (this.exhaustive) {
-      // Check that all cards with the set tag are linked to a slot
+      // Check that all cards with the set tag are assigned to a slot
       const cardsWithSetTag = cards.filter(c => c.tags?.set === this.name);
       cardsWithSetTag.forEach(card => {
 
-        if (!card.isToken && !cardIdsToLocations.has(card.cid)) {
+        if (!card.isToken && !assignmentPolicyCardIdsToLocations.has(card.cid)) {
           messages.push(
-            `Card "${computeCardSlug(card)} (#${card.cid})" (with tag "set=${this.name}") is not linked to any slot.`,
+            `Card "${computeCardSlug(card)} (#${card.cid})" (with tag "set=${this.name}") is not assigned to any slot.`,
           );
         }
       });

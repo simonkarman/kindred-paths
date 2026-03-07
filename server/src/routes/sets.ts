@@ -10,8 +10,8 @@ setsRouter.get('/', async (_, res) => {
   res.json(sets.map(s => ({
     name: s.getName(),
     matricesCount: s.getMatrixCount(),
-    validCardCount: s.getMatrices().map(m => m.getValidCardCount()).reduce((a, b) => a + b, 0),
-    cardCount: s.getMatrices().map(m => m.getTotalNonSkippedCardCount()).reduce((a, b) => a + b, 0),
+    assignedCardCount: s.getMatrices().map(m => m.computeNumberOfSlotsWithAtLeastOneAssignment()).reduce((a, b) => a + b, 0),
+    cardCount: s.getMatrices().map(m => m.computeNumberOfNonSkipSlots()).reduce((a, b) => a + b, 0),
   })));
 });
 

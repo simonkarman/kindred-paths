@@ -252,7 +252,7 @@ export async function getCardSampleGeneratorById(generatorId: string): Promise<{
   return await response.json();
 }
 
-export type SetSummary = { name: string; matricesCount: number; validCardCount: number; cardCount: number; };
+export type SetSummary = { name: string; matricesCount: number; assignedCardCount: number; cardCount: number; };
 export async function getSets(): Promise<SetSummary[]> {
   const response = await fetch(`${internalBackendUrl}/set`, {
     method: 'GET',
@@ -268,7 +268,7 @@ export async function getSets(): Promise<SetSummary[]> {
   return z.array(z.object({
     name: z.string(),
     matricesCount: z.number(),
-    validCardCount: z.number(),
+    assignedCardCount: z.number(),
     cardCount: z.number(),
   })).parse(data);
 }

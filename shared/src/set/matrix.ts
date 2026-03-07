@@ -1,15 +1,29 @@
-import { SerializableArchetype, SerializableCardReference, SerializableCycle, SerializableMatrix } from './serializable-set';
+import { SerializableArchetype, SerializableAssignment, SerializableCycle, SerializableMatrix } from './serializable-set';
 import { SerializedCard } from '../serialized-card';
 import { Set } from './set';
 import { SerializableBlueprint } from './serializable-blueprint';
 import { BlueprintValidator, CriteriaFailureReason, SerializableBlueprintWithSource } from './blueprint-validator';
 import { capitalize } from '../typography';
 
-export type SlotStatus = 'missing' | 'skip' | 'invalid' | 'valid';
-export type MatrixLocation = { type: 'matrix' }
-  | { type: 'archetype', index: number }
-  | { type: 'cycle', index: number }
-  | { type: 'slot', archetypeIndex: number, cycleKey: string };
+export type SlotStatus =
+  /** No card assigned to the slot */
+  | 'missing'
+  /** Slot is marked as skip, so it doesn't require a card */
+  | 'skip'
+  /** The first assigned card doesn't meet the slot's blueprint criteria */
+  | 'invalid'
+  /** The first assigned card meets the slot's blueprint criteria, and it's the only assigned card */
+  | 'valid'
+  /** The first assigned card meets the slot's blueprint criteria, but there are multiple assigned cards so it's not clear which one will be used */
+  | 'valid-undecided';
+
+export type MatrixLocation =
+  | { type: 'matrix' }
+  | { type: 'archetype', index: number } | { type: 'archetype', name: string }
+  | { type: 'cycle', index: number } | { type: 'cycle', key: string }
+  | ({ type: 'slot' }
+    & ({ archetypeIndex: number } | { archetypeName: string })
+    & ({ cycleIndex: number } | { cycleKey: string }))
 
 function findAvailable(key: string, checker: (k: string) => boolean): string | undefined {
   let index = 1;
@@ -25,12 +39,12 @@ function findAvailable(key: string, checker: (k: string) => boolean): string | u
 export class Matrix {
   private static readonly blueprintValidator = new BlueprintValidator();
 
-  private set: Set;
+  private readonly set: Set;
   private name: string;
   private blueprint?: SerializableBlueprint;
-  private metadataKeys: string[];
-  private cycles: SerializableCycle[];
-  private archetypes: SerializableArchetype[];
+  private readonly metadataKeys: string[];
+  private readonly cycles: SerializableCycle[];
+  private readonly archetypes: SerializableArchetype[];
 
   constructor(set: Set, serializableMatrix: SerializableMatrix) {
     this.set = set;
@@ -73,19 +87,6 @@ export class Matrix {
     this.name = name;
   }
 
-  // Matrix
-  getMatrixBlueprint(): SerializableBlueprint | undefined {
-    return this.blueprint;
-  }
-
-  updateMatrixBlueprint(blueprint: SerializableBlueprint) {
-    this.blueprint = blueprint;
-  }
-
-  removeMatrixBlueprint() {
-    delete this.blueprint;
-  }
-
   // Archetype
   getArchetypes(): SerializableArchetype[] {
     return [...this.archetypes];
@@ -103,7 +104,7 @@ export class Matrix {
     this.archetypes.push({
       name,
       metadata: {},
-      cycles: {},
+      slots: {},
     });
   }
 
@@ -113,14 +114,6 @@ export class Matrix {
 
   deleteArchetype(archetypeIndex: number) {
     this.archetypes.splice(archetypeIndex, 1);
-  }
-
-  removeArchetypeBlueprint(archetypeIndex: number) {
-    delete this.archetypes[archetypeIndex].blueprint;
-  }
-
-  setArchetypeBlueprint(archetypeIndex: number, blueprint: SerializableBlueprint) {
-    this.archetypes[archetypeIndex].blueprint = blueprint;
   }
 
   // Metadata
@@ -219,9 +212,9 @@ export class Matrix {
 
     // Update archetypes to rename the cycle key
     this.archetypes.forEach(archetype => {
-      if (oldKey in archetype.cycles) {
-        archetype.cycles[newKey] = archetype.cycles[oldKey];
-        delete archetype.cycles[oldKey];
+      if (oldKey in archetype.slots) {
+        archetype.slots[newKey] = archetype.slots[oldKey];
+        delete archetype.slots[oldKey];
       }
     });
   }
@@ -229,62 +222,102 @@ export class Matrix {
   deleteCycle(cycleIndex: number) {
     const [cycleToDelete] = this.cycles.splice(cycleIndex, 1);
     this.archetypes.forEach(archetype => {
-      if (cycleToDelete.key in archetype.cycles) {
-        delete archetype.cycles[cycleToDelete.key];
+      if (cycleToDelete.key in archetype.slots) {
+        delete archetype.slots[cycleToDelete.key];
       }
     });
   }
 
-  removeCycleBlueprint(cycleIndex: number) {
-    delete this.cycles[cycleIndex].blueprint;
-  }
-
-  setCycleBlueprint(cycleIndex: number, blueprint: SerializableBlueprint) {
-    this.cycles[cycleIndex].blueprint = blueprint;
-  }
-
   // Slot
   clearSlot(archetypeIndex: number, cycleKey: string) {
-    delete this.archetypes[archetypeIndex].cycles[cycleKey];
+    delete this.archetypes[archetypeIndex].slots[cycleKey];
   }
 
   markSlotAsSkip(archetypeIndex: number, cycleKey: string) {
-    this.archetypes[archetypeIndex].cycles[cycleKey] = 'skip';
+    this.archetypes[archetypeIndex].slots[cycleKey] = 'skip';
   }
 
-  getBlueprintsForSlot(
+  selectCardForSlot(
+    archetypeIndex: number,
+    cycleKey: string,
+    assignment: SerializableAssignment,
+  ) {
+    this.assignCardToSlot(archetypeIndex, cycleKey, assignment, 0);
+  }
+
+  getSlotAssignments(archetypeIndex: number, cycleKey: string): SerializableAssignment[] {
+    const slot = this.archetypes[archetypeIndex].slots[cycleKey];
+    if (!slot || slot === 'skip') {
+      return [];
+    }
+    return [...slot.assignments];
+  }
+
+  assignCardToSlot(
+    archetypeIndex: number,
+    cycleKey: string,
+    assignment: SerializableAssignment,
+    assignmentIndex: number,
+  ) {
+    const archetype = this.archetypes[archetypeIndex];
+    const slot = archetype.slots[cycleKey];
+    if (!slot || slot === 'skip') {
+      archetype.slots[cycleKey] = { assignments: [ assignment ] };
+    } else {
+      const assignments = slot.assignments.filter(a => a.cid !== assignment.cid);
+      assignments.splice(assignmentIndex, 0, assignment);
+      slot.assignments = assignments;
+    }
+  }
+
+  unassignCardFromSlot(
+    archetypeIndex: number,
+    cycleKey: string,
+    unassignmentIndex: number,
+  ) {
+    const archetype = this.archetypes[archetypeIndex];
+    if (!archetype.slots[cycleKey] || archetype.slots[cycleKey] === 'skip') {
+      return;
+    }
+    archetype.slots[cycleKey].assignments = archetype.slots[cycleKey].assignments.filter((_, index) => index !== unassignmentIndex);
+    if (archetype.slots[cycleKey].assignments.length === 0 && !archetype.slots[cycleKey].blueprint) {
+      delete archetype.slots[cycleKey];
+    }
+  }
+
+  findSlotBlueprints(
     archetypeIndex: number,
     cycleKey: string,
   ): SerializableBlueprintWithSource[] {
     const archetype = this.archetypes[archetypeIndex];
-    const slot = archetype?.cycles[cycleKey];
+    const slot = archetype?.slots[cycleKey];
 
     return [
-      { source: 'set', blueprint: this.blueprint },
+      { source: 'set', blueprint: this.set.getBlueprintAt({ type: 'set' }) },
+      { source: 'matrix', blueprint: this.blueprint },
       { source: 'archetype', blueprint: archetype?.blueprint },
       { source: 'cycle', blueprint: this.cycles.find(c => c.key === cycleKey)?.blueprint },
       { source: 'slot', blueprint: slot === 'skip' ? undefined : slot?.blueprint },
     ].filter(b => b.blueprint !== undefined) as SerializableBlueprintWithSource[];
   }
 
-  getSlotStatus(
+  computeSlotStatus(
     cards: SerializedCard[],
     archetypeIndex: number,
     cycleKey: string,
   ): { status: SlotStatus, reasons?: CriteriaFailureReason[] } {
     const archetype = this.archetypes[archetypeIndex];
-    const slot = archetype?.cycles[cycleKey];
+    const slot = archetype?.slots[cycleKey];
 
     if (!slot) return { status: 'missing' };
     if (slot === 'skip') return { status: 'skip' };
-    const cardRef = slot.cardRef;
-    if (!cardRef) return { status: 'missing' };
+    if (slot.assignments.length === 0) return { status: 'missing' };
 
-    const card = cards.find(c => c.cid === cardRef.cid);
+    const card = cards.find(c => c.cid === slot.assignments[0].cid);
     if (!card) return { status: 'missing' };
 
     const metadata = archetype.metadata;
-    const blueprints = this.getBlueprintsForSlot(archetypeIndex, cycleKey);
+    const blueprints = this.findSlotBlueprints(archetypeIndex, cycleKey);
 
     const result = Matrix.blueprintValidator.validate({
       metadata,
@@ -292,77 +325,8 @@ export class Matrix {
       card,
     });
     return result.success
-      ? { status: 'valid' }
+      ? { status: slot.assignments.length === 1 ? 'valid' : 'valid-undecided' }
       : { status: 'invalid', reasons: result.reasons };
-  }
-
-  getSlotStats(cards: SerializedCard[]) {
-    const statusCounts = { missing: 0, skip: 0, invalid: 0, valid: 0 };
-    this.cycles.forEach(({ key: cycleKey }) => {
-      this.archetypes.forEach((_, archetypeIndex) => {
-        const { status } = this.getSlotStatus(cards, archetypeIndex, cycleKey);
-        statusCounts[status] += 1;
-      });
-    });
-    return statusCounts;
-  }
-
-  setSlotBlueprint(
-    archetypeIndex: number,
-    cycleKey: string,
-    blueprint: SerializableBlueprint,
-  ) {
-    const archetype = this.archetypes[archetypeIndex];
-    if (!archetype.cycles[cycleKey] || archetype.cycles[cycleKey] === 'skip') {
-      archetype.cycles[cycleKey] = {
-        cardRef: undefined,
-        blueprint,
-      };
-    } else {
-      archetype.cycles[cycleKey].blueprint = blueprint;
-    }
-  }
-
-  removeSlotBlueprint(
-    archetypeIndex: number,
-    cycleKey: string,
-  ) {
-    const archetype = this.archetypes[archetypeIndex];
-    if (!archetype.cycles[cycleKey] || archetype.cycles[cycleKey] === 'skip') {
-      return;
-    }
-    delete archetype.cycles[cycleKey].blueprint;
-    if (!archetype.cycles[cycleKey].cardRef) {
-      delete archetype.cycles[cycleKey];
-    }
-  }
-
-  linkCardToSlot(
-    archetypeIndex: number,
-    cycleKey: string,
-    cardRef: SerializableCardReference,
-  ) {
-    const archetype = this.archetypes[archetypeIndex];
-    const slot = archetype.cycles[cycleKey];
-    if (!slot || slot === 'skip') {
-      archetype.cycles[cycleKey] = { cardRef };
-    } else {
-      slot.cardRef = cardRef;
-    }
-  }
-
-  unlinkCardFromSlot(
-    archetypeIndex: number,
-    cycleKey: string,
-  ) {
-    const archetype = this.archetypes[archetypeIndex];
-    if (!archetype.cycles[cycleKey] || archetype.cycles[cycleKey] === 'skip') {
-      return;
-    }
-    delete archetype.cycles[cycleKey].cardRef;
-    if (!archetype.cycles[cycleKey].blueprint) {
-      delete archetype.cycles[cycleKey];
-    }
   }
 
   // Blueprints
@@ -371,13 +335,21 @@ export class Matrix {
       return this.blueprint;
 
     } else if (location.type === 'archetype') {
-      return this.archetypes[location.index]?.blueprint;
+      const archetypeIndex = 'index' in location ? location.index : this.archetypes.findIndex(a => a.name === location.name);
+      return this.archetypes[archetypeIndex]?.blueprint;
 
     } else if (location.type === 'cycle') {
-      return this.cycles[location.index]?.blueprint;
+      const cycleIndex = 'index' in location ? location.index : this.cycles.findIndex(c => c.key === location.key);
+      return this.cycles[cycleIndex]?.blueprint;
 
     } else if (location.type === 'slot') {
-      const slot = this.archetypes[location.archetypeIndex]?.cycles[location.cycleKey];
+      const archetypeIndex = 'archetypeIndex' in location
+        ? location.archetypeIndex
+        : this.archetypes.findIndex(a => a.name === location.archetypeName);
+      const cycleKey = 'cycleKey' in location
+        ? location.cycleKey
+        : this.cycles[location.cycleIndex]?.key;
+      const slot = this.archetypes[archetypeIndex]?.slots[cycleKey];
       if (slot && slot !== 'skip') {
         return slot.blueprint;
       }
@@ -389,16 +361,25 @@ export class Matrix {
       this.blueprint = blueprint;
 
     } else if (location.type === 'archetype') {
-      this.archetypes[location.index].blueprint = blueprint;
+      const archetypeIndex = 'index' in location ? location.index : this.archetypes.findIndex(a => a.name === location.name);
+      this.archetypes[archetypeIndex].blueprint = blueprint;
 
     } else if (location.type === 'cycle') {
-      this.cycles[location.index].blueprint = blueprint;
+      const cycleIndex = 'index' in location ? location.index : this.cycles.findIndex(c => c.key === location.key);
+      this.cycles[cycleIndex].blueprint = blueprint;
 
     } else if (location.type === 'slot') {
-      const archetype = this.archetypes[location.archetypeIndex];
-      const slot = archetype.cycles[location.cycleKey];
+      const archetypeIndex = 'archetypeIndex' in location
+        ? location.archetypeIndex
+        : this.archetypes.findIndex(a => a.name === location.archetypeName);
+      const cycleKey = 'cycleKey' in location
+        ? location.cycleKey
+        : this.cycles[location.cycleIndex]?.key;
+
+      const archetype = this.archetypes[archetypeIndex];
+      const slot = archetype?.slots[cycleKey];
       if (slot === undefined || slot === 'skip') {
-        archetype.cycles[location.cycleKey] = { blueprint };
+        archetype.slots[cycleKey] = { assignments: [], blueprint };
       } else {
         slot.blueprint = blueprint;
       }
@@ -410,49 +391,82 @@ export class Matrix {
       delete this.blueprint;
 
     } else if (location.type === 'archetype') {
-      delete this.archetypes[location.index].blueprint;
+      const archetypeIndex = 'index' in location ? location.index : this.archetypes.findIndex(a => a.name === location.name);
+      delete this.archetypes[archetypeIndex].blueprint;
 
     } else if (location.type === 'cycle') {
-      delete this.cycles[location.index].blueprint;
+      const cycleIndex = 'index' in location ? location.index : this.cycles.findIndex(c => c.key === location.key);
+      delete this.cycles[cycleIndex].blueprint;
 
     } else if (location.type === 'slot') {
-      const archetype = this.archetypes[location.archetypeIndex];
-      const slot = archetype.cycles[location.cycleKey];
+      const archetypeIndex = 'archetypeIndex' in location
+        ? location.archetypeIndex
+        : this.archetypes.findIndex(a => a.name === location.archetypeName);
+      const cycleKey = 'cycleKey' in location
+        ? location.cycleKey
+        : this.cycles[location.cycleIndex]?.key;
+
+      const archetype = this.archetypes[archetypeIndex];
+      const slot = archetype.slots[cycleKey];
       if (!slot || slot === 'skip') {
         return;
       }
       delete slot.blueprint;
-      if (!slot.cardRef) {
-        delete archetype.cycles[location.cycleKey];
+      if (slot.assignments.length === 0) {
+        delete archetype.slots[cycleKey];
       }
     }
   }
 
-  getLocationName(location: MatrixLocation) {
+  getLocationName(location: MatrixLocation): string {
     let name = '';
     if (location.type === 'archetype') {
-      name = capitalize(this.getArchetype(location.index).name);
+      const archetypeIndex = 'index' in location ? location.index : this.archetypes.findIndex(a => a.name === location.name);
+      name = capitalize(this.getArchetype(archetypeIndex).name);
+
     } else if (location.type === 'cycle') {
-      name = capitalize(this.getCycleKey(location.index));
+      const cycleIndex = 'index' in location ? location.index : this.cycles.findIndex(c => c.key === location.key);
+      name = capitalize(this.getCycleKey(cycleIndex));
+
     } else if (location.type === 'slot') {
-      const archetype = this.getArchetype(location.archetypeIndex);
-      name = `"${capitalize(archetype.name)}"."${capitalize(location.cycleKey)}"`;
+      const archetypeIndex = 'archetypeIndex' in location
+        ? location.archetypeIndex
+        : this.archetypes.findIndex(a => a.name === location.archetypeName);
+      const cycleKey = 'cycleKey' in location
+        ? location.cycleKey
+        : this.cycles[location.cycleIndex]?.key;
+
+      const archetype = this.getArchetype(archetypeIndex);
+      name = `"${capitalize(archetype.name)}"."${capitalize(cycleKey)}"`;
     } else {
+
       name = this.name;
     }
     return (name.length > 0 ? `${name} ` : '') + `${capitalize(location.type)} Blueprint`;
   }
 
-  getValidCardCount(): number {
+  // Stats
+  computeStats(cards: SerializedCard[]) {
+    const statusCounts = { missing: 0, skip: 0, invalid: 0, valid: 0, 'valid-undecided': 0 };
+    this.cycles.forEach(({ key: cycleKey }) => {
+      this.archetypes.forEach((_, archetypeIndex) => {
+        const { status } = this.computeSlotStatus(cards, archetypeIndex, cycleKey);
+        statusCounts[status] += 1;
+      });
+    });
+    return statusCounts;
+  }
+
+  computeNumberOfSlotsWithAtLeastOneAssignment(): number {
     return this.archetypes
-      .flatMap(archetype => Object.values(archetype.cycles))
-      .filter(slot => slot && slot !== 'skip' && slot.cardRef)
+      .flatMap(archetype => Object.values(archetype.slots))
+      .filter(slot => slot && slot !== 'skip' && slot.assignments.length > 0)
       .length;
   }
 
-  getTotalNonSkippedCardCount(): number {
+  computeNumberOfNonSkipSlots(): number {
     const skipped = this.archetypes
-      .flatMap(archetype => Object.values(archetype.cycles))
+      .flatMap(archetype => Object.values(archetype.slots))
       .filter(slot => slot === 'skip')
       .length;
     return (this.cycles.length * this.archetypes.length) - skipped;

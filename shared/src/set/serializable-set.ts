@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { SerializableBlueprintSchema } from './serializable-blueprint';
 
-export const SerializableCardReferenceSchema = z.object({
+export const SerializableAssignmentSchema = z.object({
   cid: z.string(),
 });
-export type SerializableCardReference = z.infer<typeof SerializableCardReferenceSchema>;
+export type SerializableAssignment = z.infer<typeof SerializableAssignmentSchema>;
 
 export const SerializableSlotSchema = z.object({
   blueprint: SerializableBlueprintSchema.optional(),
-  cardRef: SerializableCardReferenceSchema.optional(),
+  assignments: z.array(SerializableAssignmentSchema),
 });
 export type SerializableSlot = z.infer<typeof SerializableSlotSchema>;
 
@@ -16,7 +16,7 @@ export const SerializableArchetypeSchema = z.object({
   name: z.string(),
   blueprint: SerializableBlueprintSchema.optional(),
   metadata: z.record(z.string().optional()),
-  cycles: z.record(z.union([z.literal('skip'), SerializableSlotSchema]).optional()),
+  slots: z.record(z.union([z.literal('skip'), SerializableSlotSchema]).optional()),
 });
 export type SerializableArchetype = z.infer<typeof SerializableArchetypeSchema>;
 
@@ -38,18 +38,20 @@ export type SerializableMatrix = z.infer<typeof SerializableMatrixSchema>;
 export const SerializableSetSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
+
   /**
    * Whether the set requires all card to be represented in the set's matrices and archetypes.
-   *
-   * Default: true
    */
   exhaustive: z.boolean().optional().default(true),
+
   /**
-   * Whether the set allows the same card to be assigned to multiple slots across the set's matrices and archetypes.
-   *
-   * Default: false
+   * Policy that defines how the set handles the same card being assigned to multiple slots.
    */
-  allowMultiAssignment: z.boolean().optional().default(false),
+  multiAssignmentPolicy: z.enum(['unrestricted', 'unique-selected', 'unique-all'] as const).optional().default('unique-selected'),
+
+  blueprint: SerializableBlueprintSchema.optional(),
   matrices: z.array(SerializableMatrixSchema),
 });
 export type SerializableSet = z.infer<typeof SerializableSetSchema>;
+
+export type MultiAssignmentPolicy = SerializableSet['multiAssignmentPolicy'];

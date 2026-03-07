@@ -32,7 +32,7 @@ export default async function Page() {
                   </h3>
                   <p className="text-sm text-slate-500 mt-1">
                     ({set.matricesCount}#){' '}
-                    {set.validCardCount} /{' '}
+                    {set.assignedCardCount} /{' '}
                     {set.cardCount} {set.cardCount === 1 ? 'card' : 'cards'}
                   </p>
                 </div>

@@ -27,7 +27,7 @@ export function CollectorNumberOverview(props: CollectorNumberOverviewProps) {
           <div
             key={num}
             className={`
-                relative group w-8 h-8 flex items-center justify-center rounded
+                relative group w-12 h-8 flex items-center justify-center rounded
                 border font-medium transition-all
                 ${isOccupied
                   ? isSelected
@@ -46,7 +46,7 @@ export function CollectorNumberOverview(props: CollectorNumberOverviewProps) {
             }}
           >
             {isOccupied ? (
-              <>
+              <div className="flex gap-1">
                 {occupiedInfo.length > 1 ? (
                   <div
                     className="bg-current/15 border border-current/40 text-[10px] font-bold rounded-full w-6 h-6 flex items-center justify-center"
@@ -54,6 +54,7 @@ export function CollectorNumberOverview(props: CollectorNumberOverviewProps) {
                     {'x' + occupiedInfo.length}
                   </div>
                 ) : <FontAwesomeIcon icon={faCheckCircle} className="" />}
+                <span className="text-xs">{num}</span>
                 {/* Tooltip on hover - positioned to avoid going off-screen */}
                 <div className="absolute bottom-full mb-2 hidden group-hover:block z-10 pointer-events-none">
                   <div className="bg-gray-900 text-white text-xs rounded py-2 px-3 shadow-lg whitespace-nowrap">
@@ -66,7 +67,7 @@ export function CollectorNumberOverview(props: CollectorNumberOverviewProps) {
                     )))}
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <span className="text-xs">{num}</span>
             )}

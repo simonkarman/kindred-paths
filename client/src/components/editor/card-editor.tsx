@@ -653,7 +653,7 @@ export function CardEditor({ initialCard, isNewCard, validate, onSave, onCancel,
             onClick={handleCancel}
             className="w-60 mt-2 py-2 px-4 bg-zinc-200 text-zinc-800 font-medium rounded-md hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-400"
           >
-            {mode === 'edit' ? 'Discard Changes' : 'Cancel'}
+            {mode === 'edit' && canSave ? 'Discard Changes' : 'Cancel'}
           </button>
         </div>
       </div>
