@@ -1,6 +1,6 @@
 import { SerializedCard } from './serialized-card';
 import { Card } from './card';
-import { CardColor, CardColorCharacter, colorToLong, wubrg } from './colors';
+import { CardColor, CardColorCharacter, colorToLong, isHybridMana, Mana, wubrg } from './colors';
 import { filterDefinitions } from './filter-definitions';
 import { FilterQueryHandler } from './filter-query-handler';
 
@@ -248,6 +248,17 @@ const cardFaceTermResolver = (_card: SerializedCard, faceIndex: number, term: st
           k.toLowerCase() === key,
         );
       }
+    }),
+
+    check(getFilterKeys('is'), isNeedle => {
+      if (isNeedle === 'hybrid') {
+        // Card has hybrid mana in its cost
+        if (!cardFace.manaCost) return false;
+        return (Object.keys(cardFace.manaCost) as Mana[]).some(key =>
+          isHybridMana(key) && (cardFace.manaCost![key] ?? 0) > 0,
+        );
+      }
+      return false;
     }),
   ];
 

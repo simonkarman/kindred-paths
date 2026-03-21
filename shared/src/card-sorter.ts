@@ -47,13 +47,26 @@ const tagAsNumber = (c: Card, tagName: string) => {
 };
 
 const asSortableManaCost = (manaCost: string): string => {
-  const from = ['{x}', '{c}', '{w}', '{u}', '{b}', '{r}', '{g}'];
-  const to = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+  // Single-char mana symbols
+  const singleFrom = ['{x}', '{c}', '{w}', '{u}', '{b}', '{r}', '{g}'];
+  const singleTo =   ['a',   'b',   'c',   'd',   'e',   'f',   'g'];
+  // Hybrid mana symbols (sorted between colorless and mono-colored)
+  const hybridFrom = [
+    '{w/u}', '{u/b}', '{b/r}', '{r/g}', '{g/w}',
+    '{w/b}', '{u/r}', '{b/g}', '{r/w}', '{g/u}',
+  ];
+  const hybridTo = [
+    'ba', 'bb', 'bc', 'bd', 'be',
+    'bf', 'bg', 'bh', 'bi', 'bj',
+  ];
   return manaCost
-    .replace(/{.}/gi, (match) => {
+    .replace(/{[\w/]+}/gi, (match) => {
       const lowerMatch = match.toLowerCase();
-      const index = from.indexOf(lowerMatch);
-      return index !== -1 ? to[index] : 'z';
+      const hybridIndex = hybridFrom.indexOf(lowerMatch);
+      if (hybridIndex !== -1) return hybridTo[hybridIndex];
+      const singleIndex = singleFrom.indexOf(lowerMatch);
+      if (singleIndex !== -1) return singleTo[singleIndex];
+      return 'z';
     });
 };
 

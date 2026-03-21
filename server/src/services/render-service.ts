@@ -17,6 +17,7 @@ import { symbolService } from './symbol-service';
 
 export class RenderService {
   private cardConjurer: CardConjurer;
+  private inFlight = new Map<string, Promise<Buffer>>();
 
   constructor(cardConjurerUrl: string) {
     this.cardConjurer = new CardConjurer(cardConjurerUrl);
@@ -156,7 +157,7 @@ export class RenderService {
     }));
 
     if (!force) {
-      // Check if the render already exists
+      // Check if the render already exists in the file cache
       const existingRender = await this.getExistingRender(key);
       if (existingRender) {
         console.info(`Returning cached render for "${cardFace.name}" (${key})`);
@@ -164,14 +165,32 @@ export class RenderService {
       }
     }
 
-    // If not, render the card using Card Conjurer
-    const startTime = Date.now();
-    console.info(`Starting render for "${cardFace.name}" (${key})`);
-    const render = await this.cardConjurer.renderCard(renderable);
-    const elapsedTime = Date.now() - startTime;
-    console.info(`Render completed for "${cardFace.name}" (${key}) in ${(elapsedTime / 1000).toFixed(1)} seconds`);
-    await this.saveRender(key, render);
-    return { fromCache: false, render };
+    // Check if there is already an in-flight render for this key
+    const existing = this.inFlight.get(key);
+    if (existing) {
+      console.info(`Awaiting in-flight render for "${cardFace.name}" (${key})`);
+      const render = await existing;
+      return { fromCache: true, render };
+    }
+
+    // If not, render the card using Card Conjurer and track it as in-flight
+    const renderPromise = (async () => {
+      const startTime = Date.now();
+      console.info(`Starting render for "${cardFace.name}" (${key})`);
+      const render = await this.cardConjurer.renderCard(renderable);
+      const elapsedTime = Date.now() - startTime;
+      console.info(`Render completed for "${cardFace.name}" (${key}) in ${(elapsedTime / 1000).toFixed(1)} seconds`);
+      await this.saveRender(key, render);
+      return render;
+    })();
+    this.inFlight.set(key, renderPromise);
+
+    try {
+      const render = await renderPromise;
+      return { fromCache: false, render };
+    } finally {
+      this.inFlight.delete(key);
+    }
   }
 
   async generatePreview(cardData: SerializedCard, faceIndex: number): Promise<{ render: Buffer, fromCache: boolean }> {

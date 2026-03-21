@@ -1,7 +1,42 @@
 export type CardColor = 'white' | 'blue' | 'black' | 'red' | 'green';
-export type Mana = CardColor | 'generic' | 'colorless' | 'x';
+export type HybridMana =
+  | 'white/blue' | 'blue/black' | 'black/red' | 'red/green' | 'green/white'
+  | 'white/black' | 'blue/red' | 'black/green' | 'red/white' | 'green/blue';
+export type Mana = CardColor | 'generic' | 'colorless' | 'x' | HybridMana;
 export const cardColors = ['white', 'blue', 'black', 'red', 'green'] as const;
 export const wubrg = ['w', 'u', 'b', 'r', 'g'] as const;
+
+/**
+ * All 10 hybrid mana combinations, in WUBRG-pair order.
+ * Allied pairs first (WU, UB, BR, RG, GW), then enemy pairs (WB, UR, BG, RW, GU).
+ */
+export const hybridManaTypes: HybridMana[] = [
+  'white/blue', 'blue/black', 'black/red', 'red/green', 'green/white',
+  'white/black', 'blue/red', 'black/green', 'red/white', 'green/blue',
+];
+
+/**
+ * Returns the two colors that make up a hybrid mana type.
+ */
+export const hybridManaColors = (hybrid: HybridMana): [CardColor, CardColor] => {
+  const [a, b] = hybrid.split('/') as [CardColor, CardColor];
+  return [a, b];
+};
+
+/**
+ * Returns true if the given mana type is a hybrid mana type.
+ */
+export const isHybridMana = (mana: Mana): mana is HybridMana => {
+  return (hybridManaTypes as string[]).includes(mana);
+};
+
+/**
+ * Returns the short notation for a hybrid mana type, e.g. 'white/blue' -> 'w/u'.
+ */
+export const hybridManaToShort = (hybrid: HybridMana): string => {
+  const [a, b] = hybridManaColors(hybrid);
+  return `${colorToShort(a)}/${colorToShort(b)}`;
+};
 export type CardColorCharacter = typeof wubrg[number];
 
 export const colorToShort = (color: CardColor): CardColorCharacter => {

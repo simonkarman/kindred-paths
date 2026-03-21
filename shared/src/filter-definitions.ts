@@ -93,6 +93,12 @@ export const filterDefinitions: FilterDefinition[] = [
     description: 'card must have this tag (eq. "set", etc.) or have this tag whose value contains something (eq. "set=BLT", "deck/main=2", etc.)',
     examples: ['tag:set', 'tag:set=BLT', 'tag:deck/main=2'],
   },
+  {
+    keys: ['is'],
+    description: 'card must match a named property (eq. "hybrid" for cards with hybrid mana in their cost)',
+    validation: ['hybrid'],
+    examples: ['is:hybrid', 'is!:hybrid'],
+  },
 ];
 
 export const getAllFilterKeys = (): string[] => {

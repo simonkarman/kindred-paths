@@ -179,6 +179,172 @@ test('token card', () => {
   expect(frontFace.getCreatableTokenNames()).toStrictEqual([]);
 });
 
+test('hybrid mana card', () => {
+  const serializedHybridCard: SerializedCard = {
+    cid: '01234567',
+    isToken: undefined,
+    layout: 'normal',
+    rarity: 'uncommon',
+    collectorNumber: 50,
+    tags: {},
+    faces: [{
+      name: 'Hybrid Scholar',
+      givenColors: undefined,
+      supertype: undefined,
+      types: ['creature'],
+      subtypes: ['human', 'wizard'],
+      manaCost: { generic: 1, 'white/blue': 2, black: 1 },
+      rules: [
+        { variant: 'keyword', content: 'flying' },
+        { variant: 'ability', content: 'When ~ enters, draw a card.' },
+      ],
+      pt: { power: 2, toughness: 3 },
+      loyalty: undefined,
+      art: undefined,
+    }],
+  };
+  const hybridCard = new Card(serializedHybridCard);
+  expect(hybridCard.faces.length).toBe(1);
+  expect(hybridCard.toJson()).toStrictEqual(serializedHybridCard);
+
+  const frontFace = hybridCard.faces[0];
+  // Hybrid pips contribute 1 each to mana value, so: generic(1) + white/blue(2) + black(1) = 4
+  expect(frontFace.manaValue()).toBe(4);
+  // Render order: generic, then hybrid (sorted by short notation), then mono-colored in WUBRG order
+  expect(frontFace.renderManaCost()).toBe('{1}{w/u}{w/u}{b}');
+  expect(frontFace.renderTypeLine()).toBe('Creature — Human Wizard');
+  // Color from mana cost: white (from w/u), blue (from w/u), black (from b)
+  expect(frontFace.color()).toStrictEqual(['white', 'blue', 'black']);
+  // Color identity includes colors from rules text too (no extra here)
+  expect(frontFace.colorIdentity()).toStrictEqual(['white', 'blue', 'black']);
+  expect(frontFace.getReferenceName()).toBe('2/3 white, blue, and black Human Wizard creature');
+});
+
+test('hybrid mana only card', () => {
+  const serializedHybridOnlyCard: SerializedCard = {
+    cid: '01234567',
+    isToken: undefined,
+    layout: 'normal',
+    rarity: 'common',
+    collectorNumber: 51,
+    tags: {},
+    faces: [{
+      name: 'Goblin Diplomat',
+      givenColors: undefined,
+      supertype: undefined,
+      types: ['creature'],
+      subtypes: ['goblin'],
+      manaCost: { 'red/green': 1 },
+      rules: [],
+      pt: { power: 1, toughness: 1 },
+      loyalty: undefined,
+      art: undefined,
+    }],
+  };
+  const card = new Card(serializedHybridOnlyCard);
+  const face = card.faces[0];
+  expect(face.manaValue()).toBe(1);
+  expect(face.renderManaCost()).toBe('{r/g}');
+  expect(face.color()).toStrictEqual(['red', 'green']);
+  expect(face.colorIdentity()).toStrictEqual(['red', 'green']);
+});
+
+test('hybrid mana with multiple hybrid pairs', () => {
+  const serializedMultiHybridCard: SerializedCard = {
+    cid: '01234567',
+    isToken: undefined,
+    layout: 'normal',
+    rarity: 'rare',
+    collectorNumber: 52,
+    tags: {},
+    faces: [{
+      name: 'Prismatic Agent',
+      givenColors: undefined,
+      supertype: undefined,
+      types: ['creature'],
+      subtypes: ['shapeshifter'],
+      manaCost: { 'white/blue': 1, 'black/red': 1, green: 1 },
+      rules: [
+        { variant: 'keyword', content: 'flying' },
+      ],
+      pt: { power: 3, toughness: 3 },
+      loyalty: undefined,
+      art: undefined,
+    }],
+  };
+  const card = new Card(serializedMultiHybridCard);
+  const face = card.faces[0];
+  // 1 + 1 + 1 = 3
+  expect(face.manaValue()).toBe(3);
+  // Hybrid pips sorted by short notation: b/r < w/u, then mono-colored
+  expect(face.renderManaCost()).toBe('{b/r}{w/u}{g}');
+  // Colors from all mana: white, blue (from w/u), black, red (from b/r), green
+  expect(face.color()).toStrictEqual(['white', 'blue', 'black', 'red', 'green']);
+  expect(face.colorIdentity()).toStrictEqual(['white', 'blue', 'black', 'red', 'green']);
+});
+
+test('hybrid mana zero-cost renders {0}', () => {
+  const serializedZeroCostCard: SerializedCard = {
+    cid: '01234567',
+    isToken: undefined,
+    layout: 'normal',
+    rarity: 'common',
+    collectorNumber: 53,
+    tags: {},
+    faces: [{
+      name: 'Empty Vessel',
+      givenColors: undefined,
+      supertype: undefined,
+      types: ['artifact'],
+      subtypes: [],
+      manaCost: { 'white/blue': 0 },
+      rules: [],
+      pt: undefined,
+      loyalty: undefined,
+      art: undefined,
+    }],
+  };
+  const card = new Card(serializedZeroCostCard);
+  const face = card.faces[0];
+  expect(face.manaValue()).toBe(0);
+  expect(face.renderManaCost()).toBe('{0}');
+  // Zero hybrid mana contributes no colors
+  expect(face.color()).toStrictEqual([]);
+});
+
+test('hybrid mana with color identity from rules', () => {
+  const serializedHybridWithRulesCard: SerializedCard = {
+    cid: '01234567',
+    isToken: undefined,
+    layout: 'normal',
+    rarity: 'uncommon',
+    collectorNumber: 54,
+    tags: {},
+    faces: [{
+      name: 'Dual Channeler',
+      givenColors: undefined,
+      supertype: undefined,
+      types: ['creature'],
+      subtypes: ['elf', 'shaman'],
+      manaCost: { 'green/white': 2 },
+      rules: [
+        { variant: 'ability', content: '{T}: Add {r}.' },
+      ],
+      pt: { power: 1, toughness: 2 },
+      loyalty: undefined,
+      art: undefined,
+    }],
+  };
+  const card = new Card(serializedHybridWithRulesCard);
+  const face = card.faces[0];
+  expect(face.manaValue()).toBe(2);
+  expect(face.renderManaCost()).toBe('{g/w}{g/w}');
+  // Color from mana cost only: green, white
+  expect(face.color()).toStrictEqual(['green', 'white']);
+  // Color identity includes red from rules text {r}
+  expect(face.colorIdentity()).toStrictEqual(['red', 'green', 'white']);
+});
+
 test('planeswalker card', () => {
   const serializedPlaneswalkerCard: SerializedCard = {
     cid: '01234567',

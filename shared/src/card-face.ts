@@ -1,5 +1,5 @@
 import { TokenExtractor } from './token-extracter';
-import { CardColor, cardColors, Mana, toOrderedColors, wubrg } from './colors';
+import { CardColor, cardColors, hybridManaColors, hybridManaToShort, isHybridMana, Mana, toOrderedColors, wubrg } from './colors';
 import { SerializedCardFace } from './serialized-card-face';
 import { capitalize, enumerate } from './typography';
 import {
@@ -372,7 +372,19 @@ export class CardFace {
     if (this.manaCost['colorless'] !== undefined && this.manaCost['colorless'] > 0) {
       result += '{c}'.repeat(this.manaCost['colorless']);
     }
-    const colors = toOrderedColors(Object.keys(this.manaCost).filter(c => !['generic', 'colorless', 'x'].includes(c)) as CardColor[]);
+    // Hybrid mana pips (in pair order, before mono-colored)
+    const hybridKeys = (Object.keys(this.manaCost) as Mana[]).filter(isHybridMana);
+    // Sort hybrid keys by their short notation for consistent ordering
+    hybridKeys.sort((a, b) => hybridManaToShort(a).localeCompare(hybridManaToShort(b)));
+    for (const hybrid of hybridKeys) {
+      const amount = this.manaCost[hybrid];
+      if (amount !== undefined && amount > 0) {
+        result += `{${hybridManaToShort(hybrid)}}`.repeat(amount);
+      }
+    }
+    // Mono-colored mana pips (in WUBRG order)
+    const manaKeys = Object.keys(this.manaCost) as Mana[];
+    const colors = toOrderedColors(manaKeys.filter(c => !['generic', 'colorless', 'x'].includes(c) && !isHybridMana(c)) as CardColor[]);
     for (const color of colors) {
       const amount = this.manaCost[color];
       if (amount !== undefined && amount > 0) {
