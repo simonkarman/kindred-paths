@@ -53,7 +53,7 @@ renderRouter.get('/render/:cid/:faceIndex', async (req, res) => {
   }
   const cardFace = card.faces[faceIndex];
   const { render } = await renderService.getRender(cardFace, force);
-  const filename = computeFilename(`${computeCardSlug(card.toJson())}-${faceIndex}`, card.cid, '.png');
+  const filename = computeFilename(`${computeCardSlug(card.toJson())}-${faceIndex}`, card.cid, 'png');
   await sendImage(res, render, filename, quality, scale);
 });
 

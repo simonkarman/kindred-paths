@@ -216,7 +216,7 @@ export class AIService {
       }
       const buffer = await imageResponse.arrayBuffer();
       const slug = computeCardSlug(cardFace.card.toJson());
-      const fileName = computeFilename(`${slug}-f${cardFace.faceIndex}`, image.id, '.png');
+      const fileName = computeFilename(`${slug}-f${cardFace.faceIndex}`, image.id, 'png');
       await fs.writeFile(`${configuration.artSuggestionsDir}/${fileName}`, Buffer.from(buffer));
       console.log(`Saved art suggestion for ${cardFace.card.cid} (for image ${image.id}): ${fileName}`);
       return { fileName: `suggestions/${fileName}`, base64Image: Buffer.from(buffer).toString('base64') };

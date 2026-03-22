@@ -135,7 +135,7 @@ suggestionsRouter.get('/art/:cid', async (req, res) => {
   try {
     const files = await fs.readdir(configuration.artSuggestionsDir);
     const suggestions = files
-      .filter(file => getCidFromFilename(file, '.png') === cid)
+      .filter(file => getCidFromFilename(file, 'png') === cid)
       .map(file => ({
         fileName: `suggestions/${file}`,
         base64Image: fs.readFile(`${configuration.artSuggestionsDir}/${file}`, 'base64'),
