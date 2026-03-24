@@ -87,7 +87,7 @@ export const TableTab = (props: {
             <SortableHeader sortKey="collector-number" textAlignment="text-right">#</SortableHeader>
             <SortableHeader sortKey="name">Name</SortableHeader>
             <SortableHeader sortKey="rarity">Rarity</SortableHeader>
-            <SortableHeader sortKey="types">Types</SortableHeader>
+            <SortableHeader sortKey="typeline">Types</SortableHeader>
             <th className="px-3 py-2 text-center text-xs font-medium text-slate-600">
               <span onClick={() => sortOn('power')} className={`cursor-pointer hover:text-slate-900 ${mainSortKey === 'power' ? 'text-slate-900 font-semibold' : ''}`}>P</span>
               /

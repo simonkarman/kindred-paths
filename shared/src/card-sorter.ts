@@ -1,12 +1,15 @@
 import { Card } from './card';
-import { CardFace } from './card-face';
+import { CardFace, cardTypes } from './card-face';
+import { cardColors } from './colors';
 
 export const sortKeys = [
   'collector-number',
+  'color',
   'mana-value',
   'name',
   'rarity',
-  'types',
+  'type',
+  'typeline',
   'power',
   'toughness',
   'art',
@@ -49,7 +52,7 @@ const tagAsNumber = (c: Card, tagName: string) => {
 const asSortableManaCost = (manaCost: string): string => {
   // Single-char mana symbols
   const singleFrom = ['{x}', '{c}', '{w}', '{u}', '{b}', '{r}', '{g}'];
-  const singleTo =   ['a',   'b',   'c',   'd',   'e',   'f',   'g'];
+  const singleTo = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
   // Hybrid mana symbols (sorted between colorless and mono-colored)
   const hybridFrom = [
     '{w/u}', '{u/b}', '{b/r}', '{r/g}', '{g/w}',
@@ -69,6 +72,12 @@ const asSortableManaCost = (manaCost: string): string => {
       return 'z';
     });
 };
+
+const asSortableTypes = (f: CardFace) => f.types
+  .map(t => cardTypes.indexOf(t))
+  .sort((a, b) => a - b)
+  .map(i => String.fromCharCode(97 + i))
+  .join('');
 
 const asSortableTypeLine = (f: CardFace) => [
   f.card.isToken ? 'token' : '',
@@ -95,6 +104,19 @@ export const sort = (cards: Card[], options: SortOptions): Card[] => {
       }
       if (sortKey === 'collector-number') {
         return a.card.collectorNumber - b.card.collectorNumber;
+      } else if (sortKey === 'color') {
+        const colorsA = a.color();
+        const colorsB = b.color();
+        // Sort by number of colors first (colorless < mono < dual < tri < ...)
+        if (colorsA.length !== colorsB.length) {
+          return colorsA.length - colorsB.length;
+        }
+        // Within the same number of colors, sort by WUBRG order so same combinations group together
+        for (let c = 0; c < colorsA.length; c++) {
+          const diff = cardColors.indexOf(colorsA[c]) - cardColors.indexOf(colorsB[c]);
+          if (diff !== 0) return diff;
+        }
+        return 0;
       } else if (sortKey === 'mana-value') {
         if (a.manaValue() !== b.manaValue()) {
           return a.manaValue() - b.manaValue();
@@ -110,7 +132,9 @@ export const sort = (cards: Card[], options: SortOptions): Card[] => {
       } else if (sortKey === 'rarity') {
         const rarityOrder = ['common', 'uncommon', 'rare', 'mythic'];
         return rarityOrder.indexOf(a.card.rarity) - rarityOrder.indexOf(b.card.rarity);
-      } else if (sortKey === 'types') {
+      } else if (sortKey === 'type') {
+        return asSortableTypes(a).localeCompare(asSortableTypes(b));
+      } else if (sortKey === 'typeline') {
         return asSortableTypeLine(a).localeCompare(asSortableTypeLine(b));
       } else if (sortKey === 'power' || sortKey === 'toughness') {
         const powerA = a.pt?.power === '*' ? -1 : a.pt?.power ?? -2;
