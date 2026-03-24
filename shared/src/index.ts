@@ -2,6 +2,7 @@ export * from './card';
 export * from './card-face';
 export * from './card-art-prompt-creator';
 export * from './card-filterer';
+export * from './card-mechanic-extractor';
 export * from './card-id';
 export * from './card-sorter';
 export * from './collection';
