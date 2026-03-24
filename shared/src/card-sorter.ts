@@ -19,10 +19,46 @@ export const sortKeys = [
 ] as const;
 export type SortKey = typeof sortKeys[number];
 export type SortDirection = 'asc' | 'desc';
-export type SortOptions = {
-  key: SortKey | SortKey[];
+export type SortEntry = {
+  key: SortKey;
   direction: SortDirection;
+};
+export type SortOptions = {
+  keys: SortEntry[];
   deckName?: string;
+};
+
+/**
+ * Normalize sort options from potentially legacy or malformed data into the current shape.
+ * Handles the old `{ key: SortKey | SortKey[], direction: SortDirection }` format.
+ */
+export const normalizeSortOptions = (raw: unknown): SortOptions => {
+  const defaultOptions: SortOptions = { keys: [{ key: 'collector-number', direction: 'asc' }] };
+  if (typeof raw !== 'object' || raw === null) return defaultOptions;
+  const obj = raw as Record<string, unknown>;
+
+  // New format: { keys: SortEntry[] }
+  if (Array.isArray(obj.keys)) {
+    const keys = obj.keys.filter(
+      (e: unknown): e is SortEntry =>
+        typeof e === 'object' && e !== null
+        && 'key' in e && typeof (e as SortEntry).key === 'string' && (sortKeys as readonly string[]).includes((e as SortEntry).key)
+        && 'direction' in e && ((e as SortEntry).direction === 'asc' || (e as SortEntry).direction === 'desc'),
+    );
+    return keys.length > 0 ? { keys, deckName: typeof obj.deckName === 'string' ? obj.deckName : undefined } : defaultOptions;
+  }
+
+  // Legacy format: { key: SortKey | SortKey[], direction: SortDirection }
+  if ('key' in obj && 'direction' in obj) {
+    const direction = (obj.direction === 'asc' || obj.direction === 'desc') ? obj.direction : 'asc';
+    const rawKeys = Array.isArray(obj.key) ? obj.key : [obj.key];
+    const keys = rawKeys
+      .filter((k: unknown): k is SortKey => typeof k === 'string' && (sortKeys as readonly string[]).includes(k))
+      .map((key, i) => ({ key, direction: i === 0 ? direction : 'asc' as SortDirection }));
+    return keys.length > 0 ? { keys } : defaultOptions;
+  }
+
+  return defaultOptions;
 };
 
 const tagsAsString = (tags: Card['tags']) => {
@@ -89,15 +125,14 @@ const asSortableTypeLine = (f: CardFace) => [
 ].join(', ');
 
 export const sort = (cards: Card[], options: SortOptions): Card[] => {
-  const { key, direction, deckName } = options;
-  const keys = Array.isArray(key) ? key : [key];
+  const { keys, deckName } = options;
   let _cards = [...cards];
   for (let i = keys.length - 1; i >= 0; i--) {
-    const sortKey = keys[i];
+    const { key: sortKey, direction } = keys[i];
     _cards = _cards.sort((_a, _b) => {
       let a = _a.faces[0];
       let b = _b.faces[0];
-      if (i === 0 && direction === 'desc') {
+      if (direction === 'desc') {
         const temp = a;
         a = b;
         b = temp;

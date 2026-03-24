@@ -26,13 +26,15 @@ export const TableTab = (props: {
 
   const deckName = useDeckNameFromSearch();
   const [sortOptions, setSortOptions] = useSortOptions('home');
-  const mainSortKey = Array.isArray(sortOptions.key) ? sortOptions.key[0] : sortOptions.key;
+  const mainSortEntry = sortOptions.keys[0];
 
   const sortOn = (key: SortKey) => {
-    if (mainSortKey === key) {
-      setSortOptions({ key: sortOptions.key, direction: sortOptions.direction === 'asc' ? 'desc' : 'asc' });
+    if (mainSortEntry.key === key) {
+      const newKeys = [...sortOptions.keys];
+      newKeys[0] = { ...mainSortEntry, direction: mainSortEntry.direction === 'asc' ? 'desc' : 'asc' };
+      setSortOptions({ ...sortOptions, keys: newKeys });
     } else {
-      setSortOptions({ key, direction: 'asc' });
+      setSortOptions({ keys: [{ key, direction: 'asc' }] });
     }
   };
 
@@ -54,16 +56,16 @@ export const TableTab = (props: {
     children: ReactNode,
     textAlignment?: string,
   }) => {
-    const sortIcon = mainSortKey === key && (
+    const sortIcon = mainSortEntry.key === key && (
       <FontAwesomeIcon
-        icon={sortOptions.direction === 'desc' ? faAngleUp : faAngleDown}
+        icon={mainSortEntry.direction === 'desc' ? faAngleUp : faAngleDown}
         className="text-blue-600 text-xs"
       />
     );
     return (
       <th
         onClick={() => sortOn(key)}
-        className={`px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer transition-colors ${textAlignment} ${mainSortKey === key ? 'bg-slate-50 text-slate-900 font-semibold' : ''}`}
+        className={`px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer transition-colors ${textAlignment} ${mainSortEntry.key === key ? 'bg-slate-50 text-slate-900 font-semibold' : ''}`}
       >
         <div className="flex gap-1.5">
           <span className="grow">
@@ -89,9 +91,9 @@ export const TableTab = (props: {
             <SortableHeader sortKey="rarity">Rarity</SortableHeader>
             <SortableHeader sortKey="typeline">Types</SortableHeader>
             <th className="px-3 py-2 text-center text-xs font-medium text-slate-600">
-              <span onClick={() => sortOn('power')} className={`cursor-pointer hover:text-slate-900 ${mainSortKey === 'power' ? 'text-slate-900 font-semibold' : ''}`}>P</span>
+              <span onClick={() => sortOn('power')} className={`cursor-pointer hover:text-slate-900 ${mainSortEntry.key === 'power' ? 'text-slate-900 font-semibold' : ''}`}>P</span>
               /
-              <span onClick={() => sortOn('toughness')} className={`cursor-pointer hover:text-slate-900 ${mainSortKey === 'toughness' ? 'text-slate-900 font-semibold' : ''}`}>T</span>
+              <span onClick={() => sortOn('toughness')} className={`cursor-pointer hover:text-slate-900 ${mainSortEntry.key === 'toughness' ? 'text-slate-900 font-semibold' : ''}`}>T</span>
             </th>
             <SortableHeader sortKey="art" textAlignment="text-center">Art</SortableHeader>
             <th className="px-3 py-2 text-center text-xs font-medium text-slate-600">Token</th>

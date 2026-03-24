@@ -1,8 +1,19 @@
 import { useLocalStorageState } from '@/utils/use-local-storage-state';
-import { SortOptions } from 'kindred-paths';
+import { normalizeSortOptions, SortOptions } from 'kindred-paths';
 
 export const useSearch = (scope: string, initial?: string) => useLocalStorageState(`${scope}/search`, initial ?? '');
-export const useSortOptions = (scope: string) => useLocalStorageState<SortOptions>(`${scope}/sort`, { key: 'collector-number', direction: 'asc' });
+export const useSortOptions = (scope: string) => {
+  const defaultOptions: SortOptions = { keys: [{ key: 'collector-number', direction: 'asc' }] };
+  const [raw, setRaw] = useLocalStorageState<unknown>(`${scope}/sort`, defaultOptions);
+  const sortOptions = normalizeSortOptions(raw);
+  return [sortOptions, (value: SortOptions | ((prev: SortOptions) => SortOptions)) => {
+    if (value instanceof Function) {
+      setRaw((prev: unknown) => value(normalizeSortOptions(prev)));
+    } else {
+      setRaw(value);
+    }
+  }] as const;
+};
 
 const useValueFromHomeSearch = (keys: string[]): string | undefined => {
   // TODO: this could result in multiple values if the user specifies the same key multiple times
