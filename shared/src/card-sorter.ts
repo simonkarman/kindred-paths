@@ -29,15 +29,13 @@ export type SortOptions = {
 };
 
 /**
- * Normalize sort options from potentially legacy or malformed data into the current shape.
- * Handles the old `{ key: SortKey | SortKey[], direction: SortDirection }` format.
+ * Normalize sort options from potentially malformed data into the current shape.
  */
 export const normalizeSortOptions = (raw: unknown): SortOptions => {
   const defaultOptions: SortOptions = { keys: [{ key: 'collector-number', direction: 'asc' }] };
   if (typeof raw !== 'object' || raw === null) return defaultOptions;
   const obj = raw as Record<string, unknown>;
 
-  // New format: { keys: SortEntry[] }
   if (Array.isArray(obj.keys)) {
     const keys = obj.keys.filter(
       (e: unknown): e is SortEntry =>
@@ -46,16 +44,6 @@ export const normalizeSortOptions = (raw: unknown): SortOptions => {
         && 'direction' in e && ((e as SortEntry).direction === 'asc' || (e as SortEntry).direction === 'desc'),
     );
     return keys.length > 0 ? { keys, deckName: typeof obj.deckName === 'string' ? obj.deckName : undefined } : defaultOptions;
-  }
-
-  // Legacy format: { key: SortKey | SortKey[], direction: SortDirection }
-  if ('key' in obj && 'direction' in obj) {
-    const direction = (obj.direction === 'asc' || obj.direction === 'desc') ? obj.direction : 'asc';
-    const rawKeys = Array.isArray(obj.key) ? obj.key : [obj.key];
-    const keys = rawKeys
-      .filter((k: unknown): k is SortKey => typeof k === 'string' && (sortKeys as readonly string[]).includes(k))
-      .map((key, i) => ({ key, direction: i === 0 ? direction : 'asc' as SortDirection }));
-    return keys.length > 0 ? { keys } : defaultOptions;
   }
 
   return defaultOptions;
