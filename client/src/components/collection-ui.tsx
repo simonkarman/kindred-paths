@@ -48,7 +48,7 @@ export function CollectionUI() {
     return () => clearInterval(interval);
   }, [autoRefresh, cached, refresh]);
 
-  if (!cached) {
+  if (!cached || !cached.data) {
     return (
       <button className="px-3 py-1 text-sm rounded bg-gray-200 text-gray-600">
         Loading...
