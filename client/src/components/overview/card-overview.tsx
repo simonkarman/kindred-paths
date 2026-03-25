@@ -6,6 +6,7 @@ import SearchBar from '@/components/search-bar';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 import { StatisticsTab } from '@/components/overview/statistics-tab';
+import { MechanicsTab } from '@/components/overview/mechanics-tab';
 import { useSearch } from '@/utils/use-search';
 import { filterCardsBasedOnSearch, SerializedCard } from 'kindred-paths';
 import { TextTab } from '@/components/overview/text-tab';
@@ -13,7 +14,7 @@ import { VisualTab } from '@/components/overview/visual-tab';
 import { useLocalStorageState } from '@/utils/use-local-storage-state';
 import { usePrintTitle } from '@/utils/use-print-title';
 
-type TabType = 'table' | 'statistics' | 'text' | 'visual';
+type TabType = 'table' | 'statistics' | 'text' | 'visual' | 'mechanics';
 
 export function CardOverview(props: {
   cards: SerializedCard[],
@@ -34,6 +35,7 @@ export function CardOverview(props: {
         dynamicLink={c => `/edit/${c.cid}?t=/`} />
     },
     { id: 'text' as TabType, label: 'Text', component: <TextTab cards={cards} /> },
+    { id: 'mechanics' as TabType, label: 'Mechanics', component: <MechanicsTab cards={cards} /> },
     { id: 'statistics' as TabType, label: 'Statistics', component: <StatisticsTab cards={cards} /> },
   ];
 
