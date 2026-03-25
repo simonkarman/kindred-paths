@@ -6,24 +6,34 @@ import { typographyColors, colorToTypographyColor } from '@/utils/typography';
 import { CardColor, cardColors } from 'kindred-paths';
 
 /**
- * Map a mechanic entry's color string to a background color for display.
- * Uses the existing typography color system.
+ * Map a single color to its background color.
  */
-function colorToBg(colorStr: string): string {
-  if (colorStr === 'generic') {
+function getSingleColorBg(color: string): string {
+  if (color === 'colorless' || color === 'generic') {
     return typographyColors.get('colorless')!.main;
   }
-  const parts = colorStr.split('+').filter(c => c !== 'colorless') as CardColor[];
-  const mtgColors = parts.filter(c => (cardColors as readonly string[]).includes(c)) as CardColor[];
-  return typographyColors.get(colorToTypographyColor(mtgColors))!.main;
+  const cardColor = color as CardColor;
+  if ((cardColors as readonly string[]).includes(cardColor)) {
+    return typographyColors.get(`mono ${cardColor}`)!.main;
+  }
+  return typographyColors.get('colorless')!.main;
 }
 
 /**
- * Format a color string for display.
- * E.g. "white+blue" → "White + Blue", "generic" → "Generic"
+ * Get individual colors from a color combination string.
  */
-function formatColors(colorStr: string): string {
-  return colorStr.split('+').map(c => capitalize(c)).join(' + ');
+function getIndividualColors(colorStr: string): string[] {
+  if (colorStr === 'generic') {
+    return ['colorless'];
+  }
+  return colorStr.split('+').filter(c => c !== 'colorless');
+}
+
+/**
+ * Format a single color name for display (first letter uppercase).
+ */
+function formatSingleColor(color: string): string {
+  return color.charAt(0).toUpperCase();
 }
 
 const stageBadgeClasses: Record<string, string> = {
@@ -142,12 +152,17 @@ export function MechanicEntries({ serializedCard, tokens }: { serializedCard: Se
                           </code>
                         </td>
                         <td className="py-1.5 px-3">
-                          <span
-                            className="inline-block text-xs font-medium px-2 py-0.5 rounded-full border border-slate-200"
-                            style={{ backgroundColor: colorToBg(entry.colors) }}
-                          >
-                            {formatColors(entry.colors)}
-                          </span>
+                          <div className="flex items-center gap-1">
+                            {getIndividualColors(entry.colors).map((c, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold border border-slate-300"
+                                style={{ backgroundColor: getSingleColorBg(c) }}
+                              >
+                                {formatSingleColor(c)}
+                              </span>
+                            ))}
+                          </div>
                         </td>
                         <td className="py-1.5 px-3">
                           <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${stageBadgeClasses[entry.stage]}`}>
