@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { extractMechanics, MechanicEntry, SerializedCard, capitalize } from 'kindred-paths';
-import { typographyColors, colorToTypographyColor } from '@/utils/typography';
+import { typographyColors } from '@/utils/typography';
 import { CardColor, cardColors } from 'kindred-paths';
 
 /**

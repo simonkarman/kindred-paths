@@ -20,6 +20,8 @@ export interface MechanicsAggregatorOptions {
   excludeCostOnlyMechanics?: boolean;
   /** Custom rarity weights for scoring. Default: {common: 6, uncommon: 3, rare: 2, mythic: 1} */
   rarityWeights?: RarityWeights;
+  /** Whether to use normalized text for grouping. When false, groups by original text. Default: true. */
+  useNormalized?: boolean;
 }
 
 /**
@@ -37,15 +39,16 @@ export interface CardSource {
   cid: string;
   cardName: string;
   faceIndex: number;
+  originalText: string;
 }
 
 /**
  * Represents a mechanic with its rarity distribution.
  */
 export interface MechanicWithRarity {
-  /** The normalized mechanic text. */
+  /** The mechanic text (normalized or original, depending on useNormalized option). */
   mechanic: string;
-  /** The original mechanic text (for display, first occurrence). */
+  /** The original mechanic text (first occurrence). */
   original: string;
   /** Count of this mechanic at each rarity level. */
   rarities: RarityCount[];
@@ -157,6 +160,7 @@ export function aggregateMechanics(
     tokens = [], 
     excludeCostOnlyMechanics = false,
     rarityWeights = defaultRarityWeights,
+    useNormalized = true,
   } = options;
 
   // Extract mechanics from all non-token cards
@@ -181,7 +185,10 @@ export function aggregateMechanics(
   for (const entry of allEntries) {
     const { colors, stage, fragment, rarity, source } = entry;
 
-    uniqueMechanicsSet.add(fragment.normalized);
+    // Use normalized or original text as the grouping key
+    const groupingKey = useNormalized ? fragment.normalized : fragment.original;
+
+    uniqueMechanicsSet.add(groupingKey);
 
     // Ensure nested maps exist
     if (!grid.has(colors)) {
@@ -194,25 +201,26 @@ export function aggregateMechanics(
     }
     const mechanicMap = stageMap.get(stage)!;
 
-    if (!mechanicMap.has(fragment.normalized)) {
-      mechanicMap.set(fragment.normalized, {
+    if (!mechanicMap.has(groupingKey)) {
+      mechanicMap.set(groupingKey, {
         rarityMap: new Map(),
         sources: [],
         firstOriginal: fragment.original,
       });
     }
-    const mechData = mechanicMap.get(fragment.normalized)!;
+    const mechData = mechanicMap.get(groupingKey)!;
 
     // Increment rarity count
     const currentCount = mechData.rarityMap.get(rarity) ?? 0;
     mechData.rarityMap.set(rarity, currentCount + 1);
 
-    // Track source card (avoid duplicates from the same card)
-    if (!mechData.sources.some(s => s.cid === source.cid && s.faceIndex === source.faceIndex)) {
+    // Track source card (avoid duplicates from the same card with same original text)
+    if (!mechData.sources.some(s => s.cid === source.cid && s.faceIndex === source.faceIndex && s.originalText === fragment.original)) {
       mechData.sources.push({
         cid: source.cid,
         cardName: source.cardName,
         faceIndex: source.faceIndex,
+        originalText: fragment.original,
       });
     }
   }

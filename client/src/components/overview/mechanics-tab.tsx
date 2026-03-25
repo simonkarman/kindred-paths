@@ -59,8 +59,9 @@ export function MechanicsTab(props: { cards: SerializedCard[] }) {
         rare: rareWeight,
         mythic: mythicWeight,
       },
+      useNormalized: showNormalized,
     });
-  }, [nonTokenCards, includeKeywords, tokens, hideCostMechanics, commonWeight, uncommonWeight, rareWeight, mythicWeight]);
+  }, [nonTokenCards, includeKeywords, tokens, hideCostMechanics, commonWeight, uncommonWeight, rareWeight, mythicWeight, showNormalized]);
 
   // Calculate absolute threshold from percentage (based on card weights)
   const absoluteThreshold = useMemo(() => {
@@ -113,8 +114,8 @@ export function MechanicsTab(props: { cards: SerializedCard[] }) {
       <MechanicsGrid
         aggregation={aggregation}
         threshold={absoluteThreshold}
-        showNormalized={showNormalized}
         totalWeightedScore={cardBasedWeightedScore}
+        showingNormalized={showNormalized}
       />
 
       {/* Settings Modal */}
@@ -164,8 +165,8 @@ export function MechanicsTab(props: { cards: SerializedCard[] }) {
                     className="rounded border-slate-300 w-4 h-4"
                   />
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-slate-900">Show normalized text</div>
-                    <div className="text-xs text-slate-500">Display as &ldquo;Scry N&rdquo; instead of &ldquo;Scry 1&rdquo;, &ldquo;Scry 2&rdquo;, etc.</div>
+                    <div className="text-sm font-medium text-slate-900">Use normalized text</div>
+                    <div className="text-xs text-slate-500">Group mechanics by normalized text (e.g., &ldquo;Gain 1 life&rdquo; and &ldquo;Gain 2 life&rdquo; become &ldquo;Gain N life&rdquo;). When disabled, each variant is shown separately.</div>
                   </div>
                 </label>
 

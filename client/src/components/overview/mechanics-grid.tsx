@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState, useRef } from 'react';
-import { MechanicsAggregation, Stage, MechanicsCell, MechanicWithRarity } from 'kindred-paths';
-import { colorToTypographyColor, typographyColors } from '@/utils/typography';
+import { MechanicsAggregation, Stage, MechanicWithRarity } from 'kindred-paths';
+import { typographyColors } from '@/utils/typography';
 import { CardColor, cardColors } from 'kindred-paths';
 import { MechanicRow } from './mechanic-row';
 
@@ -17,8 +17,8 @@ const stageBadgeClasses: Record<Stage, string> = {
 interface MechanicsGridProps {
   aggregation: MechanicsAggregation;
   threshold: number;
-  showNormalized: boolean;
   totalWeightedScore: number;
+  showingNormalized: boolean;
 }
 
 /**
@@ -65,15 +65,15 @@ function splitMechanics(
   return { prominent, unique };
 }
 
-export function MechanicsGrid({ aggregation, threshold, showNormalized, totalWeightedScore }: MechanicsGridProps) {
+export function MechanicsGrid({ aggregation, threshold, totalWeightedScore, showingNormalized }: MechanicsGridProps) {
   const { grid, colorCombinations } = aggregation;
 
   // Track which mechanic is currently hovered (by normalized text)
   const [hoveredMechanic, setHoveredMechanic] = useState<string | null>(null);
   const activeInstanceIdRef = useRef<string | null>(null);
 
-  // Track which cells are expanded
-  const [expandedCells, setExpandedCells] = useState<Set<string>>(new Set());
+  // Track which color rows are expanded (instead of individual cells)
+  const [expandedColors, setExpandedColors] = useState<Set<string>>(new Set());
 
   // Calculate which cells have hidden matches for the hovered mechanic
   const cellsWithHiddenMatches = useMemo(() => {
@@ -84,11 +84,11 @@ export function MechanicsGrid({ aggregation, threshold, showNormalized, totalWei
     const matches = new Set<string>();
 
     for (const [color, stageMap] of grid.entries()) {
+      // Skip if this color row is already expanded
+      if (expandedColors.has(color)) continue;
+
       for (const [stage, cell] of stageMap.entries()) {
         const cellKey = `${color}-${stage}`;
-
-        // Skip if cell is already expanded
-        if (expandedCells.has(cellKey)) continue;
 
         // Check if any unique (hidden) mechanics match
         const { unique } = splitMechanics(cell.mechanics, threshold);
@@ -101,17 +101,16 @@ export function MechanicsGrid({ aggregation, threshold, showNormalized, totalWei
     }
 
     return matches;
-  }, [hoveredMechanic, grid, threshold, expandedCells]);
+  }, [hoveredMechanic, grid, threshold, expandedColors]);
 
-  // Toggle cell expansion
-  const toggleCell = useCallback((color: string, stage: Stage) => {
-    const key = `${color}-${stage}`;
-    setExpandedCells(prev => {
+  // Toggle color row expansion (affects all cells in the row)
+  const toggleColorRow = useCallback((color: string) => {
+    setExpandedColors(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(key)) {
-        newSet.delete(key);
+      if (newSet.has(color)) {
+        newSet.delete(color);
       } else {
-        newSet.add(key);
+        newSet.add(color);
       }
       return newSet;
     });
@@ -183,7 +182,7 @@ export function MechanicsGrid({ aggregation, threshold, showNormalized, totalWei
                 {stages.map((stage) => {
                 const cell = grid.get(color)?.get(stage);
                 const cellKey = `${color}-${stage}`;
-                const isExpanded = expandedCells.has(cellKey);
+                const isExpanded = expandedColors.has(color);
 
                 if (!cell || cell.mechanics.length === 0) {
                   return (
@@ -211,17 +210,17 @@ export function MechanicsGrid({ aggregation, threshold, showNormalized, totalWei
                           key={idx}
                           mechanic={mech}
                           isProminent={true}
-                          showNormalized={showNormalized}
                           isHighlighted={hoveredMechanic === mech.mechanic}
                           onHover={handleMechanicHover}
                           totalWeightedScore={totalWeightedScore}
+                          showingNormalized={showingNormalized}
                         />
                       ))}
 
                       {/* Collapse/expand button for unique mechanics */}
                       {unique.length > 0 && (
                         <button
-                          onClick={() => toggleCell(color, stage)}
+                          onClick={() => toggleColorRow(color)}
                           className={`relative w-full text-left text-xs px-2 py-1 rounded border transition-all ${
                             hasHiddenMatch 
                               ? 'bg-yellow-50 hover:bg-yellow-100 border-yellow-200 text-yellow-700 hover:text-yellow-800' 
@@ -240,10 +239,10 @@ export function MechanicsGrid({ aggregation, threshold, showNormalized, totalWei
                               key={idx}
                               mechanic={mech}
                               isProminent={false}
-                              showNormalized={showNormalized}
                               isHighlighted={hoveredMechanic === mech.mechanic}
                               onHover={handleMechanicHover}
                               totalWeightedScore={totalWeightedScore}
+                              showingNormalized={showingNormalized}
                             />
                           ))}
                         </div>
