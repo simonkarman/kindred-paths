@@ -236,15 +236,21 @@ function parseActivatedAbility(text: string): { cost: string; effect: string } |
 
 // ─── Fragment Splitting ──────────────────────────────────────────────────────
 
+/** Trigger/conditional prefixes that indicate the first comma separates condition from effect. */
+const triggerPrefixes = /^(when |whenever |if |at the )/i;
+
+/** Pattern to split compound triggers joined by "and when/whenever/if/at the". */
+const triggerAndPattern = / and (when |whenever |if |at the )/i;
+
 /**
- * Split a text into fragments on ", " boundaries.
- * Does not split inside quoted strings.
- * Trims each fragment and filters out empty ones.
+ * Split text on a delimiter, respecting quoted strings.
+ * Returns the parts (trimmed, empty filtered).
  */
-function splitFragments(text: string): string[] {
-  const fragments: string[] = [];
+function splitRespectingQuotes(text: string, delimiter: string): string[] {
+  const parts: string[] = [];
   let current = '';
   let inQuotes = false;
+  const delimLen = delimiter.length;
 
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
@@ -252,12 +258,13 @@ function splitFragments(text: string): string[] {
     if (char === '"') {
       inQuotes = !inQuotes;
       current += char;
-    } else if (char === ',' && !inQuotes) {
+    } else if (!inQuotes && text.substring(i, i + delimLen) === delimiter) {
       const trimmed = current.trim();
       if (trimmed.length > 0) {
-        fragments.push(trimmed);
+        parts.push(trimmed);
       }
       current = '';
+      i += delimLen - 1; // skip past delimiter
     } else {
       current += char;
     }
@@ -265,10 +272,220 @@ function splitFragments(text: string): string[] {
 
   const trimmed = current.trim();
   if (trimmed.length > 0) {
-    fragments.push(trimmed);
+    parts.push(trimmed);
   }
 
-  return fragments;
+  return parts;
+}
+
+/**
+ * Split text on the FIRST occurrence of a delimiter (outside quotes).
+ * Returns [before, after] if found, or [text] if not found.
+ */
+function splitOnFirstRespectingQuotes(text: string, delimiter: string): string[] {
+  let inQuotes = false;
+  const delimLen = delimiter.length;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (!inQuotes && text.substring(i, i + delimLen) === delimiter) {
+      const before = text.substring(0, i).trim();
+      const after = text.substring(i + delimLen).trim();
+      const result: string[] = [];
+      if (before.length > 0) result.push(before);
+      if (after.length > 0) result.push(after);
+      return result;
+    }
+  }
+
+  return [text];
+}
+
+/**
+ * Split text into fragments based on the context.
+ *
+ * In 'cost' mode: splits on every comma (outside quotes). Used for activated ability costs.
+ *
+ * In 'ability' mode: splits using sentence boundaries, trigger/conditional comma splitting,
+ * compound trigger "and" splitting, and ", then" splitting. Used for ability effects and
+ * triggered/static ability text.
+ *
+ * All splitting respects quoted strings — never splits inside "...".
+ */
+export function splitFragments(text: string, context: 'cost' | 'ability'): string[] {
+  if (context === 'cost') {
+    return splitRespectingQuotes(text, ',');
+  }
+
+  // === ABILITY MODE ===
+
+  // Step 1: Split on sentence boundaries (". " — period followed by space)
+  // Also strip trailing period from last fragment
+  let input = text.trim();
+  if (input.endsWith('.')) {
+    // Check we're not inside quotes
+    let quoteCount = 0;
+    for (const ch of input) {
+      if (ch === '"') quoteCount++;
+    }
+    // Only strip if quotes are balanced (even count)
+    if (quoteCount % 2 === 0) {
+      input = input.substring(0, input.length - 1).trim();
+    }
+  }
+  const sentences = splitRespectingQuotes(input, '. ');
+
+  const result: string[] = [];
+
+  for (let sentence of sentences) {
+    // Step 2: Strip "Then" prefix
+    const thenMatch = sentence.match(/^then[, ]\s*/i);
+    if (thenMatch) {
+      sentence = sentence.substring(thenMatch[0].length);
+    }
+
+    // Step 3a: Conditional/trigger comma split
+    if (triggerPrefixes.test(sentence)) {
+      const parts = splitOnFirstRespectingQuotes(sentence, ',');
+      if (parts.length === 2) {
+        const triggerPart = parts[0];
+        const effectPart = parts[1];
+
+        // Step 3b: Split compound triggers on " and when/whenever/if/at the"
+        const triggerFragments: string[] = [];
+        let remaining = triggerPart;
+        let andMatch = remaining.match(triggerAndPattern);
+        while (andMatch && andMatch.index !== undefined) {
+          const before = remaining.substring(0, andMatch.index).trim();
+          if (before.length > 0) triggerFragments.push(before);
+          // Keep the trigger word (when/whenever/if/at the) with the rest
+          remaining = remaining.substring(andMatch.index + ' and '.length).trim();
+          andMatch = remaining.match(triggerAndPattern);
+        }
+        if (remaining.trim().length > 0) triggerFragments.push(remaining.trim());
+
+        // Add trigger fragments, then process effectPart through step 4
+        result.push(...triggerFragments);
+
+        // Step 4 on effect part: split on ", then " (with exception for ", then shuffle")
+        const effectFragments = splitThenFragments(effectPart);
+        result.push(...effectFragments);
+      } else {
+        // No comma found — process entire sentence through step 4
+        const fragments = splitThenFragments(sentence);
+        result.push(...fragments);
+      }
+    } else {
+      // No trigger prefix — process through step 4
+      const fragments = splitThenFragments(sentence);
+      result.push(...fragments);
+    }
+  }
+
+  // Step 5: Trim and filter
+  return result.map(f => f.trim()).filter(f => f.length > 0);
+}
+
+/**
+ * Step 4: Split on ", then " (case-insensitive), except when followed by "shuffle".
+ * Then apply step 4b: split on " and " when followed by an action verb.
+ */
+function splitThenFragments(text: string): string[] {
+  const thenResult: string[] = [];
+  let inQuotes = false;
+
+  let current = '';
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    if (char === '"') {
+      inQuotes = !inQuotes;
+      current += char;
+    } else if (!inQuotes && text.substring(i, i + 7).toLowerCase() === ', then ') {
+      // Check exception: ", then shuffle" (followed by end of string or period)
+      const afterThen = text.substring(i + 7);
+      if (/^shuffle\b/i.test(afterThen)) {
+        // Don't split — keep as part of current fragment
+        current += char;
+      } else {
+        // Split here
+        const trimmed = current.trim();
+        if (trimmed.length > 0) {
+          thenResult.push(trimmed);
+        }
+        current = '';
+        i += 6; // skip ", then" (the space after "then" starts the next fragment)
+      }
+    } else {
+      current += char;
+    }
+  }
+
+  const trimmed = current.trim();
+  if (trimmed.length > 0) {
+    thenResult.push(trimmed);
+  }
+
+  // Step 4b: Split each fragment on " and " when followed by an action verb
+  const result: string[] = [];
+  for (const fragment of thenResult) {
+    result.push(...splitEffectAnd(fragment));
+  }
+
+  return result;
+}
+
+/**
+ * Action verbs that indicate an independent effect clause after " and ".
+ * When " and " is followed by one of these verbs, the two sides are separate effects.
+ * E.g. "create an Asteroid token and scry 2" → two fragments.
+ * But "trample and haste" or "gets +1/+1 and has flying" → do NOT split.
+ */
+const effectAndVerbs = /^(draw|create|destroy|exile|sacrifice|return|put|search|scry|mill|surveil|gain|lose|discard|deal|tap|untap|counter|add|reveal|look|shuffle|transform|play|cast|remove|choose|copy|fight|pay|each|you|target)\b/i;
+
+/**
+ * Step 4b: Split text on " and " when followed by an action verb (outside quotes).
+ * This breaks compound effects like "create a token and scry 2" into separate fragments
+ * while preserving compound nouns like "trample and haste" or "vigilance, trample, and haste".
+ */
+function splitEffectAnd(text: string): string[] {
+  const result: string[] = [];
+  let inQuotes = false;
+  let current = '';
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    if (char === '"') {
+      inQuotes = !inQuotes;
+      current += char;
+    } else if (!inQuotes && text.substring(i, i + 5).toLowerCase() === ' and ') {
+      const afterAnd = text.substring(i + 5);
+      if (effectAndVerbs.test(afterAnd)) {
+        // Split here — the part after "and" starts an independent effect
+        const trimmed = current.trim();
+        if (trimmed.length > 0) {
+          result.push(trimmed);
+        }
+        current = '';
+        i += 4; // skip " and" (the space after starts the next fragment)
+      } else {
+        current += char;
+      }
+    } else {
+      current += char;
+    }
+  }
+
+  const trimmed = current.trim();
+  if (trimmed.length > 0) {
+    result.push(trimmed);
+  }
+
+  return result;
 }
 
 // ─── Normalization ───────────────────────────────────────────────────────────
@@ -283,14 +500,48 @@ const selfReferencePatterns = [
   'this land',
 ];
 
+/** Countable MTG nouns (singular and plural forms) for word-number lookahead. */
+const countableNouns = 'cards?|creatures?|tokens?|counters?|lands?|permanents?|targets?|opponents?|artifacts?|enchantments?|times?';
+
+/**
+ * Verbs after which "a"/"an" means "one" rather than an article.
+ * E.g. "draw a card" = draw one card, but "a creature dies" = any creature.
+ */
+const countingVerbs = 'draw|draws|create|creates|discard|discards|exile|exiles|destroy|destroys|sacrifice|sacrifices|return|returns|gain|gains|lose|loses|add|adds|mill|mills|put|puts|search|play|plays|cast|casts|get|gets|produce|produces|make|makes|choose|reveal|reveals|remove|removes';
+
+/** Word-number replacements: English word → digit string. */
+const wordNumbers: [RegExp, string | ((match: string) => string)][] = [
+  // "a"/"an" → 1 only after counting verbs (e.g. "draw a card" but NOT "a creature dies")
+  // Allows 0-2 intervening words before countable noun (e.g. "create an Asteroid token", "draw a basic land card")
+  [new RegExp(`(?:${countingVerbs}) \\b(?:a|an) (?=(?:\\w+ ){0,2}(?:${countableNouns}))`, 'gi'), (match: string) => {
+    // Replace the "a"/"an" part while keeping the verb
+    return match.replace(/\b(?:a|an) /, '1 ');
+  }],
+  // "one" always means the number 1
+  [new RegExp(`\\bone (?=(?:\\w+ ){0,2}(?:${countableNouns}))`, 'gi'), '1 '],
+  [new RegExp(`\\btwo (?=(?:\\w+ ){0,2}(?:${countableNouns}))`, 'gi'), '2 '],
+  [new RegExp(`\\bthree (?=(?:\\w+ ){0,2}(?:${countableNouns}))`, 'gi'), '3 '],
+  [new RegExp(`\\bfour (?=(?:\\w+ ){0,2}(?:${countableNouns}))`, 'gi'), '4 '],
+  [new RegExp(`\\bfive (?=(?:\\w+ ){0,2}(?:${countableNouns}))`, 'gi'), '5 '],
+  [new RegExp(`\\bsix (?=(?:\\w+ ){0,2}(?:${countableNouns}))`, 'gi'), '6 '],
+  [new RegExp(`\\bseven (?=(?:\\w+ ){0,2}(?:${countableNouns}))`, 'gi'), '7 '],
+  [new RegExp(`\\beight (?=(?:\\w+ ){0,2}(?:${countableNouns}))`, 'gi'), '8 '],
+  [new RegExp(`\\bnine (?=(?:\\w+ ){0,2}(?:${countableNouns}))`, 'gi'), '9 '],
+  [new RegExp(`\\bten (?=(?:\\w+ ){0,2}(?:${countableNouns}))`, 'gi'), '10 '],
+];
+
+/** Singular nouns to normalize to plural after N, allowing 0-2 intervening words. */
+const singularToPlural = /\bN ((?:\w+ ){0,2})(card|creature|token|counter|land|permanent|target|opponent|time|artifact|enchantment)\b/g;
+
 /**
  * Create a MechanicFragment from raw text.
  *
  * The `original` preserves the text as-is (trimmed, trailing period stripped).
- * The `normalized` lowercases, replaces self-references with ~, and replaces
- * specific numbers with N.
+ * The `normalized` lowercases, replaces self-references with ~, replaces
+ * word-numbers with digits, replaces specific numbers with N, and normalizes
+ * singular nouns after N to plural.
  */
-function normalizeFragment(text: string): MechanicFragment {
+export function normalizeFragment(text: string): MechanicFragment {
   // Strip trailing period
   let original = text.trim();
   if (original.endsWith('.')) {
@@ -304,12 +555,21 @@ function normalizeFragment(text: string): MechanicFragment {
     normalized = normalized.replace(new RegExp(pattern.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '~');
   }
 
+  // Word numbers → digits (before number normalization): "draw a card" → "draw 1 card", "two cards" → "2 cards"
+  for (const [regex, replacement] of wordNumbers) {
+    if (typeof replacement === 'function') {
+      normalized = normalized.replace(regex, replacement);
+    } else {
+      normalized = normalized.replace(regex, replacement);
+    }
+  }
+
   // Replace numbers in specific contexts with N
   // P/T modifications: +2/+0 → +N/+N, -2/-2 → -N/-N
   normalized = normalized.replace(/([+-])\d+\/([+-])\d+/g, '$1N/$2N');
 
-  // Life, damage, cards, etc.: "N life", "N damage", "N cards"
-  normalized = normalized.replace(/\b(\d+) (life|damage|cards?|times?)\b/g, 'N $2');
+  // Digit + countable noun: "3 creatures" → "N creatures", "2 cards" → "N cards", "1 asteroid token" → "N asteroid token"
+  normalized = normalized.replace(new RegExp(`\\b(\\d+) ((?:\\w+ ){0,2}(?:${countableNouns})|life|damage)\\b`, 'g'), 'N $2');
 
   // "gain N life" pattern where number comes after verb
   normalized = normalized.replace(/\b(gain|lose|loses|gains|deals?|draw|draws?|mill|mills|surveil|surveils|scry) (\d+)\b/g, '$1 N');
@@ -321,6 +581,9 @@ function normalizeFragment(text: string): MechanicFragment {
 
   // Power/toughness references: "power 3 or less" → "power N or less"
   normalized = normalized.replace(/\b(power|toughness) (\d+)\b/g, '$1 N');
+
+  // Singular → plural after N: "N card" → "N cards", "N asteroid token" → "N asteroid tokens"
+  normalized = normalized.replace(singularToPlural, 'N $1$2s');
 
   return { normalized, original };
 }
@@ -619,7 +882,7 @@ function extractFaceEntries(
         const stage = turnToStage(earliestTurn);
 
         // Split the loyalty ability content into fragments
-        const fragments = splitFragments(loyaltyParsed.content);
+        const fragments = splitFragments(loyaltyParsed.content, 'ability');
         for (const fragmentText of fragments) {
           const fragment = normalizeFragment(fragmentText);
           for (const colors of baseFaceColors) {
@@ -675,8 +938,8 @@ function extractFaceEntries(
       const uniqueActivatedColors = [...new Set(activatedAbilityColors)];
 
       // Split cost and effect into fragments
-      const costFragments = splitFragments(activated.cost);
-      const effectFragments = splitFragments(activated.effect);
+      const costFragments = splitFragments(activated.cost, 'cost');
+      const effectFragments = splitFragments(activated.effect, 'ability');
       const allFragments = [...costFragments, ...effectFragments];
 
       for (const fragmentText of allFragments) {
@@ -701,7 +964,7 @@ function extractFaceEntries(
     } else {
       // Triggered or static ability — use card MV for stage
       const stage = turnToStage(cardMV);
-      const fragments = splitFragments(rule.content);
+      const fragments = splitFragments(rule.content, 'ability');
 
       for (const fragmentText of fragments) {
         const fragment = normalizeFragment(fragmentText);
@@ -797,8 +1060,8 @@ function extractTokenMechanics(
         );
         const stage = turnToStage(earliestTurn);
 
-        const costFragments = splitFragments(activated.cost);
-        const effectFragments = splitFragments(activated.effect);
+        const costFragments = splitFragments(activated.cost, 'cost');
+        const effectFragments = splitFragments(activated.effect, 'ability');
         const allFragments = [...costFragments, ...effectFragments];
 
         for (const fragmentText of allFragments) {
@@ -817,7 +1080,7 @@ function extractTokenMechanics(
       } else {
         // Triggered or static ability on token — use the creating ability's earliest turn
         const stage = turnToStage(creatingAbilityEarliestTurn);
-        const fragments = splitFragments(tokenRule.content);
+        const fragments = splitFragments(tokenRule.content, 'ability');
 
         for (const fragmentText of fragments) {
           const fragment = normalizeFragment(fragmentText);

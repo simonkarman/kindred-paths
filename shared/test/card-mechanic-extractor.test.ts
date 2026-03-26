@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 import { describe, expect, test } from 'vitest';
-import { extractMechanics, MechanicEntry, SerializedCard } from '../src';
+import { extractMechanics, MechanicEntry, SerializedCard, splitFragments, normalizeFragment } from '../src';
 
 /** Helper to create a SerializedCard with proper literal types from a plain object. */
 function asCard(props: SerializedCard): SerializedCard {
@@ -34,11 +34,17 @@ describe('Shielding Shard ({W} common artifact)', () => {
 
   const entries = extractMechanics(card);
 
-  test('should produce fragments from the ETB/sacrifice trigger', () => {
-    const etbFragments = findByNormalized(entries, 'when ~ enters and when you sacrifice it');
-    expect(etbFragments.length).toBeGreaterThan(0);
-    expect(etbFragments[0].colors).toBe('white');
-    expect(etbFragments[0].rarity).toBe('common');
+  test('should produce fragments from the ETB/sacrifice trigger (compound trigger split)', () => {
+    // New splitting splits compound triggers: "When ~ enters and when you sacrifice it, you gain 2 life."
+    // → ["When this artifact enters", "when you sacrifice it", "you gain 2 life"]
+    const etbFragment = findByNormalized(entries, 'when ~ enters');
+    expect(etbFragment.length).toBeGreaterThan(0);
+    expect(etbFragment[0].colors).toBe('white');
+    expect(etbFragment[0].rarity).toBe('common');
+
+    const sacrificeFragment = findByNormalized(entries, 'when you sacrifice it');
+    expect(sacrificeFragment.length).toBeGreaterThan(0);
+    expect(sacrificeFragment[0].colors).toBe('white');
   });
 
   test('should produce "you gain N life" fragment', () => {
@@ -110,7 +116,7 @@ describe('Spore Tender ({G}{G} common creature)', () => {
   });
 
   test('{1}{G}, {T}: Create Asteroid — creature, earliest = max(2+1, 2) = 3', () => {
-    const createAsteroid = findByNormalized(entries, 'create an asteroid token');
+    const createAsteroid = findByNormalized(entries, 'create N asteroid tokens');
     expect(createAsteroid.length).toBeGreaterThan(0);
     expect(createAsteroid[0].earliestTurn).toBe(3);
     expect(createAsteroid[0].stage).toBe('mid');
@@ -761,7 +767,7 @@ describe('Game stage calculations', () => {
       }],
     });
     const entries = extractMechanics(card);
-    const draw = findByNormalized(entries, 'draw a card');
+    const draw = findByNormalized(entries, 'draw N cards');
     expect(draw[0].earliestTurn).toBe(3);
     expect(draw[0].stage).toBe('mid');
   });
@@ -1572,12 +1578,388 @@ describe('Complex: hybrid transform + multiple transform abilities + token creat
     //   Subtotal back: 16
     //
     // Token via {2}{W} (4 colors):
-    //   4 fragments ({N}, {t}, sacrifice ~, exile...) × 4 colors = 16
+    //   5 fragments ({N}, {t}, sacrifice ~, exile..., you may play...) × 4 colors = 20
     // Token via {4}{B} (4 colors):
-    //   4 fragments ({N}, {t}, sacrifice ~, exile...) × 4 colors = 16
-    //   Subtotal token: 32
+    //   5 fragments ({N}, {t}, sacrifice ~, exile..., you may play...) × 4 colors = 20
+    //   Subtotal token: 40
     //
-    // Total: 10 + 16 + 32 = 58
-    expect(entries).toHaveLength(58);
+    // Total: 10 + 16 + 40 = 66
+    expect(entries).toHaveLength(66);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── Unit Tests for splitFragments() ─────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('splitFragments — cost mode', () => {
+  test('splits on every comma', () => {
+    expect(splitFragments('{1}, {T}, Sacrifice this artifact', 'cost'))
+      .toEqual(['{1}', '{T}', 'Sacrifice this artifact']);
+  });
+
+  test('handles single element', () => {
+    expect(splitFragments('{T}', 'cost')).toEqual(['{T}']);
+  });
+
+  test('handles empty string', () => {
+    expect(splitFragments('', 'cost')).toEqual([]);
+  });
+});
+
+describe('splitFragments — ability mode: sentence splitting', () => {
+  test('splits on ". " and strips trailing period', () => {
+    expect(splitFragments('Mill four cards. You may put a permanent card from among the cards milled this way into your hand.', 'ability'))
+      .toEqual(['Mill four cards', 'You may put a permanent card from among the cards milled this way into your hand']);
+  });
+
+  test('single sentence with trailing period', () => {
+    expect(splitFragments('Scry 2.', 'ability')).toEqual(['Scry 2']);
+  });
+
+  test('multiple sentences', () => {
+    expect(splitFragments('Draw a card. Lose 1 life. Scry 2.', 'ability'))
+      .toEqual(['Draw a card', 'Lose 1 life', 'Scry 2']);
+  });
+});
+
+describe('splitFragments — ability mode: Then stripping', () => {
+  test('"Then, draw a card." strips Then prefix', () => {
+    expect(splitFragments('Scry 2. Then, draw a card.', 'ability'))
+      .toEqual(['Scry 2', 'draw a card']);
+  });
+
+  test('"Then draw" (no comma) strips Then prefix', () => {
+    expect(splitFragments('Scry 2. Then draw a card.', 'ability'))
+      .toEqual(['Scry 2', 'draw a card']);
+  });
+
+  test('"then if" strips Then and splits as conditional', () => {
+    const result = splitFragments('Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. Then if you control four or more lands, untap that land.', 'ability');
+    expect(result).toEqual([
+      'Search your library for a basic land card, put it onto the battlefield tapped, then shuffle',
+      'if you control four or more lands',
+      'untap that land',
+    ]);
+  });
+});
+
+describe('splitFragments — ability mode: trigger/conditional comma split', () => {
+  test('ETB trigger: splits on first comma', () => {
+    expect(splitFragments('When this creature enters, scry 2.', 'ability'))
+      .toEqual(['When this creature enters', 'scry 2']);
+  });
+
+  test('ETB trigger with multi-sentence effect', () => {
+    expect(splitFragments('When this creature enters, look at the top three cards of your library. Put one on top and the rest on the bottom in any order.', 'ability'))
+      .toEqual([
+        'When this creature enters',
+        'look at the top three cards of your library',
+        'Put one on top and the rest on the bottom in any order',
+      ]);
+  });
+
+  test('"if" conditional splits on first comma', () => {
+    const result = splitFragments('If you control a Squirrel or returned a Squirrel card to your hand this way, create a Food token.', 'ability');
+    expect(result).toEqual([
+      'If you control a Squirrel or returned a Squirrel card to your hand this way',
+      'create a Food token',
+    ]);
+  });
+
+  test('"at the" trigger splits on first comma', () => {
+    expect(splitFragments('At the beginning of your upkeep, draw a card.', 'ability'))
+      .toEqual(['At the beginning of your upkeep', 'draw a card']);
+  });
+
+  test('"whenever" trigger splits on first comma', () => {
+    expect(splitFragments('Whenever you cast a spell, scry 1.', 'ability'))
+      .toEqual(['Whenever you cast a spell', 'scry 1']);
+  });
+});
+
+describe('splitFragments — ability mode: compound trigger "and" split', () => {
+  test('"When X enters and when you sacrifice it" splits into separate triggers', () => {
+    expect(splitFragments('When this artifact enters and when you sacrifice it, scry 2.', 'ability'))
+      .toEqual(['When this artifact enters', 'when you sacrifice it', 'scry 2']);
+  });
+
+  test('"When X enters and whenever you expend 4" splits compound trigger', () => {
+    expect(splitFragments('When this enchantment enters and whenever you expend 4, put a stash counter on it.', 'ability'))
+      .toEqual(['When this enchantment enters', 'whenever you expend 4', 'put a stash counter on it']);
+  });
+});
+
+describe('splitFragments — ability mode: ", then" splitting', () => {
+  test('basic ", then" split', () => {
+    expect(splitFragments('Draw a card, then discard a card.', 'ability'))
+      .toEqual(['Draw a card', 'discard a card']);
+  });
+
+  test('trigger with ", then" in effect', () => {
+    expect(splitFragments('When this artifact is put into a graveyard from the battlefield, each opponent loses 2 life and you gain 2 life, then draw a card.', 'ability'))
+      .toEqual([
+        'When this artifact is put into a graveyard from the battlefield',
+        'each opponent loses 2 life',
+        'you gain 2 life',
+        'draw a card',
+      ]);
+  });
+
+  test('", then shuffle" is NOT split', () => {
+    expect(splitFragments('Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.', 'ability'))
+      .toEqual(['Search your library for a basic land card, put it onto the battlefield tapped, then shuffle']);
+  });
+});
+
+describe('splitFragments — ability mode: "and" effect splitting', () => {
+  test('"create an Asteroid token and scry 2" splits on and + action verb', () => {
+    expect(splitFragments('When this creature enters, create an Asteroid token and scry 2.', 'ability'))
+      .toEqual(['When this creature enters', 'create an Asteroid token', 'scry 2']);
+  });
+
+  test('"draw a card and lose 1 life" splits on and + action verb', () => {
+    expect(splitFragments('draw a card and lose 1 life.', 'ability'))
+      .toEqual(['draw a card', 'lose 1 life']);
+  });
+
+  test('"trample and haste" does NOT split (not action verbs)', () => {
+    // "haste" is not in the action verb list (it's a keyword, not an effect verb)
+    expect(splitFragments('Target creature gains trample and haste until end of turn.', 'ability'))
+      .toEqual(['Target creature gains trample and haste until end of turn']);
+  });
+
+  test('"gets +1/+1 and has flying" does NOT split (has is not an action verb)', () => {
+    expect(splitFragments('Equipped creature gets +1/+1 and has flying.', 'ability'))
+      .toEqual(['Equipped creature gets +1/+1 and has flying']);
+  });
+
+  test('"each opponent loses 2 life and you gain 2 life" splits (you is action)', () => {
+    expect(splitFragments('each opponent loses 2 life and you gain 2 life.', 'ability'))
+      .toEqual(['each opponent loses 2 life', 'you gain 2 life']);
+  });
+});
+
+describe('splitFragments — ability mode: quoted string protection', () => {
+  test('does not split on periods inside quoted strings', () => {
+    expect(splitFragments('When Mabel enters, create Cragflame, a legendary colorless Equipment artifact token with "Equipped creature gets +1/+1 and has vigilance, trample, and haste" and equip {2}.', 'ability'))
+      .toEqual([
+        'When Mabel enters',
+        'create Cragflame, a legendary colorless Equipment artifact token with "Equipped creature gets +1/+1 and has vigilance, trample, and haste" and equip {2}',
+      ]);
+  });
+
+  test('does not split on commas inside quoted strings', () => {
+    const input = 'Create a token with "When this enters, draw a card" and sacrifice it.';
+    const result = splitFragments(input, 'ability');
+    // The comma inside quotes should not trigger a split
+    expect(result.some(f => f.includes('"When this enters, draw a card"'))).toBe(true);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── Unit Tests for normalizeFragment() ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('normalizeFragment — word-number conversion', () => {
+  test('"draw a card" → "draw N cards" (verb + a + noun)', () => {
+    const result = normalizeFragment('draw a card');
+    expect(result.normalized).toBe('draw N cards');
+    expect(result.original).toBe('draw a card');
+  });
+
+  test('"create an Asteroid token" → "create N asteroid tokens" (verb + an + noun)', () => {
+    const result = normalizeFragment('create an Asteroid token');
+    expect(result.normalized).toBe('create N asteroid tokens');
+  });
+
+  test('"discard a card" → "discard N cards"', () => {
+    const result = normalizeFragment('discard a card');
+    expect(result.normalized).toBe('discard N cards');
+  });
+
+  test('"draw two cards" → "draw N cards"', () => {
+    const result = normalizeFragment('draw two cards');
+    expect(result.normalized).toBe('draw N cards');
+  });
+
+  test('"draw 2 cards" → "draw N cards"', () => {
+    const result = normalizeFragment('draw 2 cards');
+    expect(result.normalized).toBe('draw N cards');
+  });
+
+  test('"draw one card" → "draw N cards"', () => {
+    const result = normalizeFragment('draw one card');
+    expect(result.normalized).toBe('draw N cards');
+  });
+
+  test('"destroy three creatures" → "destroy N creatures"', () => {
+    const result = normalizeFragment('destroy three creatures');
+    expect(result.normalized).toBe('destroy N creatures');
+  });
+
+  test('"exile four cards" → "exile N cards"', () => {
+    const result = normalizeFragment('exile four cards');
+    expect(result.normalized).toBe('exile N cards');
+  });
+});
+
+describe('normalizeFragment — "a/an" as article should NOT convert', () => {
+  test('"a creature an opponent controls" stays unchanged (no verb before a/an)', () => {
+    const result = normalizeFragment('a creature an opponent controls');
+    expect(result.normalized).toBe('a creature an opponent controls');
+  });
+
+  test('"whenever a creature dies" stays unchanged', () => {
+    const result = normalizeFragment('whenever a creature dies');
+    expect(result.normalized).toBe('whenever a creature dies');
+  });
+
+  test('"if a creature died last turn" stays unchanged', () => {
+    const result = normalizeFragment('if a creature died last turn');
+    expect(result.normalized).toBe('if a creature died last turn');
+  });
+
+  test('"a creature you control" stays unchanged', () => {
+    const result = normalizeFragment('a creature you control');
+    expect(result.normalized).toBe('a creature you control');
+  });
+
+  test('"whenever you cast a card from exile" — "a card" stays (no counting verb before it)', () => {
+    // "cast" IS a counting verb, so "cast a card" should convert
+    const result = normalizeFragment('whenever you cast a card from exile');
+    expect(result.normalized).toBe('whenever you cast N cards from exile');
+  });
+});
+
+describe('normalizeFragment — singular → plural after N', () => {
+  test('"scry N" stays as is (no noun)', () => {
+    const result = normalizeFragment('scry 2');
+    expect(result.normalized).toBe('scry N');
+  });
+
+  test('"N card" → "N cards"', () => {
+    const result = normalizeFragment('draw 1 card');
+    expect(result.normalized).toBe('draw N cards');
+  });
+
+  test('"N cards" stays "N cards" (already plural)', () => {
+    const result = normalizeFragment('draw 3 cards');
+    expect(result.normalized).toBe('draw N cards');
+  });
+});
+
+describe('normalizeFragment — self-reference replacement', () => {
+  test('"this creature" → "~"', () => {
+    const result = normalizeFragment('when this creature enters');
+    expect(result.normalized).toBe('when ~ enters');
+  });
+
+  test('"this artifact" → "~"', () => {
+    const result = normalizeFragment('sacrifice this artifact');
+    expect(result.normalized).toBe('sacrifice ~');
+  });
+
+  test('"this enchantment" → "~"', () => {
+    const result = normalizeFragment('when this enchantment enters');
+    expect(result.normalized).toBe('when ~ enters');
+  });
+});
+
+describe('normalizeFragment — number normalization', () => {
+  test('P/T modifications: "+2/+0" → "+N/+N"', () => {
+    const result = normalizeFragment('target creature gets +2/+0 until end of turn');
+    expect(result.normalized).toBe('target creature gets +N/+N until end of turn');
+  });
+
+  test('life: "gain 3 life" → "gain N life"', () => {
+    const result = normalizeFragment('you gain 3 life');
+    expect(result.normalized).toBe('you gain N life');
+  });
+
+  test('damage: "deals 4 damage" → "deals N damage"', () => {
+    const result = normalizeFragment('~ deals 4 damage to any target');
+    expect(result.normalized).toBe('~ deals N damage to any target');
+  });
+
+  test('generic mana: "{2}" → "{N}"', () => {
+    const result = normalizeFragment('{2}{W}');
+    expect(result.normalized).toBe('{N}{w}');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── Integration: ETB + and splitting through extractMechanics ───────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('ETB "create token and scry" produces three fragments', () => {
+  const card = asCard({
+    cid: 'test0300',
+    rarity: 'common',
+    collectorNumber: 300,
+    layout: 'normal',
+    faces: [{
+      name: 'Token Scryer',
+      manaCost: { blue: 1, generic: 1 },
+      types: ['creature'],
+      subtypes: ['human', 'wizard'],
+      rules: [
+        { variant: 'ability', content: 'When this creature enters, create an Asteroid token and scry 2.' },
+      ],
+      pt: { power: 1, toughness: 2 },
+    }],
+  });
+
+  const entries = extractMechanics(card);
+
+  test('should produce exactly 3 fragments', () => {
+    expect(entries).toHaveLength(3);
+  });
+
+  test('should have ETB trigger fragment', () => {
+    const etb = findByNormalized(entries, 'when ~ enters');
+    expect(etb).toHaveLength(1);
+  });
+
+  test('should have create token fragment', () => {
+    const create = findByNormalized(entries, 'create N asteroid tokens');
+    expect(create).toHaveLength(1);
+  });
+
+  test('should have scry fragment', () => {
+    const scry = findByNormalized(entries, 'scry N');
+    expect(scry).toHaveLength(1);
+  });
+});
+
+describe('"a/an" article not falsely normalized in triggers', () => {
+  const card = asCard({
+    cid: 'test0310',
+    rarity: 'uncommon',
+    collectorNumber: 310,
+    layout: 'normal',
+    faces: [{
+      name: 'Death Watcher',
+      manaCost: { black: 1, generic: 1 },
+      types: ['creature'],
+      subtypes: ['human', 'cleric'],
+      rules: [
+        { variant: 'ability', content: 'Whenever a creature an opponent controls dies, you gain 2 life.' },
+      ],
+      pt: { power: 2, toughness: 1 },
+    }],
+  });
+
+  const entries = extractMechanics(card);
+
+  test('trigger should preserve "a creature an opponent controls"', () => {
+    const trigger = entries.find(e => e.fragment.normalized.includes('whenever'));
+    expect(trigger).toBeDefined();
+    expect(trigger!.fragment.normalized).toBe('whenever a creature an opponent controls dies');
+  });
+
+  test('effect should normalize "gain 2 life" → "gain N life"', () => {
+    const effect = findByNormalized(entries, 'you gain N life');
+    expect(effect).toHaveLength(1);
   });
 });
