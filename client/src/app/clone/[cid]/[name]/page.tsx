@@ -8,7 +8,7 @@ import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { Card, generateCardId } from 'kindred-paths';
 import { cardPath } from '@/utils/slugify';
 
-export async function generateMetadata({ params: _params }: PageProps<{ cid: string }>): Promise<Metadata> {
+export async function generateMetadata({ params: _params }: PageProps<{ cid: string; name: string }>): Promise<Metadata> {
   const params = await _params;
   const card = await getCard(params.cid);
   return {
@@ -16,7 +16,7 @@ export async function generateMetadata({ params: _params }: PageProps<{ cid: str
   }
 }
 
-export default async function CardClone({ params: _params }: Readonly<{ params: Promise<{ cid: string }> }>) {
+export default async function CardClone({ params: _params }: Readonly<{ params: Promise<{ cid: string; name: string }> }>) {
   const params = await _params;
   const serializedCard = await getCard(params.cid);
   if (!serializedCard) {

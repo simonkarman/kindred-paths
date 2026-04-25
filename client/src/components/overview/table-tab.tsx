@@ -17,6 +17,7 @@ import {
 import Link from 'next/link';
 import { deleteCard } from '@/utils/api';
 import { useDeckNameFromSearch, useSortOptions } from '@/utils/use-search';
+import { cardPath, editPath, clonePath } from '@/utils/slugify';
 
 export const TableTab = (props: {
   cards: SerializedCard[],
@@ -139,7 +140,7 @@ export const TableTab = (props: {
                   ) : (
                     <Link
                       className="hover:text-blue-600 active:text-blue-700 transition-colors"
-                      href={`/card/${face.card.cid}${faceIndex !== 0 ? `?faceIndex=${faceIndex}` : ''}`}
+                      href={cardPath(face.card.cid, face.card.faces[0].name) + (faceIndex !== 0 ? `?faceIndex=${faceIndex}` : '')}
                     >
                       {face.name}
                     </Link>
@@ -175,14 +176,14 @@ export const TableTab = (props: {
                     <div className="flex gap-2 justify-center">
                       <Link
                         className="text-slate-500 hover:text-blue-600 transition-colors"
-                        href={`/edit/${face.card.cid}?t=/`}
+                        href={editPath(face.card.cid, face.card.faces[0].name) + '?t=/'}
                         title="Edit"
                       >
                         <FontAwesomeIcon icon={faPenToSquare} />
                       </Link>
                       <Link
                         className="text-slate-500 hover:text-blue-600 transition-colors"
-                        href={`/clone/${face.card.cid}?t=/`}
+                        href={clonePath(face.card.cid, face.card.faces[0].name) + '?t=/'}
                         title="Clone"
                       >
                         <FontAwesomeIcon icon={faClone} />

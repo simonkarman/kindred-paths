@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { MechanicWithRarity, SerializedCard } from 'kindred-paths';
 import { CardRender } from '../card-render';
 import { getCard } from '@/utils/api';
+import { cardPath } from '@/utils/slugify';
 
 interface MechanicRowProps {
   mechanic: MechanicWithRarity;
@@ -275,7 +276,7 @@ export function MechanicRow({
                         {sources.map((source, idx) => (
                           <a
                             key={idx}
-                            href={`/card/${source.cid}`}
+                            href={cardPath(source.cid, source.cardName)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="block hover:bg-gray-800 px-2 py-1 rounded transition-colors ml-2"
@@ -297,7 +298,7 @@ export function MechanicRow({
                 mechanic.sources.map((source, idx) => (
                   <a
                     key={idx}
-                    href={`/card/${source.cid}`}
+                    href={cardPath(source.cid, source.cardName)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block hover:bg-gray-800 px-2 py-1 rounded transition-colors"

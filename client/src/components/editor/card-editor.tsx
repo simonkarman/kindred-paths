@@ -18,6 +18,7 @@ import {
 } from 'kindred-paths';
 import { useCallback, useEffect, useState } from 'react';
 import { createCard, getMechanics, updateCard } from '@/utils/api';
+import { cardPath } from '@/utils/slugify';
 import { CardNameInput } from '@/components/editor/card-name-input';
 import { CardTypesInput } from '@/components/editor/card-types-input';
 import { CardPTInput } from '@/components/editor/card-pt-input';
@@ -379,7 +380,7 @@ export function CardEditor({ initialCard, isNewCard, validate, onSave, onCancel,
         } else if (redirectTo) {
           window.location.href = redirectTo;
         } else {
-          window.location.href = `/card/${result.cid}`;
+          window.location.href = cardPath(result.cid, result.faces[0].name);
         }
       }
     } catch (error) {
@@ -398,7 +399,7 @@ export function CardEditor({ initialCard, isNewCard, validate, onSave, onCancel,
     } else if (redirectTo) {
       window.location.href = redirectTo;
     } else if (mode === 'edit') {
-      window.location.href = `/card/${state.cid}`;
+      window.location.href = cardPath(state.cid, state.faces[0].name);
     } else {
       window.location.href = '/';
     }

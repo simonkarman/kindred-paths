@@ -7,9 +7,11 @@ import { useSearch } from '@/utils/use-search';
 import ColorCodedSearchInput from '@/components/color-coded-search-input';
 import SearchHelpPopup from '@/components/search-help-popup';
 
-export default function SearchBar(props: { scope: string, initial?: string }) {
+export default function SearchBar(props: { scope: string, initial?: string, value?: string, onChange?: (value: string) => void }) {
   const searchInputRef = useRef<HTMLDivElement>(null);
-  const [searchText, setSearchText] = useSearch(props.scope, props.initial);
+  const [_searchText, _setSearchText] = useSearch(props.scope, props.initial);
+  const searchText = props.value !== undefined ? props.value : _searchText;
+  const setSearchText = props.onChange !== undefined ? props.onChange : _setSearchText;
   const [open, setOpen] = useState(searchText.length > 0);
   const [helpOpen, setHelpOpen] = useState(false);
 

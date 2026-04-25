@@ -1,10 +1,11 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { CardColor, SerializedCard } from 'kindred-paths';
 import { StrategyAggregation, StrategyBucketCell } from 'kindred-paths';
 import { typographyColors } from '@/utils/typography';
+import { cardPath } from '@/utils/slugify';
 
 interface StrategiesGridProps {
   aggregation: StrategyAggregation;
@@ -36,14 +37,20 @@ function getBubbleStyle(color: string): React.CSSProperties {
   return { background: `linear-gradient(135deg, ${stops.join(', ')})` };
 }
 
+const ALL_COLORS: CardColor[] = ['white', 'blue', 'black', 'red', 'green'];
+
 /** Returns the card color key string for a given SerializedCard face (or 'colorless'). */
 function getCardColorKey(card: SerializedCard, faceIndex: number): string {
   const face = card.faces[faceIndex];
   if (!face) return 'colorless';
   const given = face.givenColors ?? [];
-  const mana = Object.keys(face.manaCost ?? {}).filter(k =>
-    ['white', 'blue', 'black', 'red', 'green'].includes(k)
-  ) as CardColor[];
+  const mana = [...new Set(
+    Object.keys(face.manaCost ?? {}).flatMap(k => {
+      if (ALL_COLORS.includes(k as CardColor)) return [k as CardColor];
+      // expand hybrid keys like "white/blue" into their component colors
+      return (k.split('/') as CardColor[]).filter(p => ALL_COLORS.includes(p));
+    })
+  )];
   const colors: CardColor[] = given.length > 0 ? given : mana;
   if (colors.length === 0) return 'colorless';
   if (colors.length === 1) return colors[0];
@@ -197,7 +204,7 @@ function DrillDownPanel({
                     <tr key={i} className="border-b border-slate-100 hover:bg-white transition-colors">
                       <td className="py-1.5 pr-3 font-medium">
                         <Link
-                          href={`/card/${ref.cid}`}
+                          href={cardPath(ref.cid, faceName)}
                           className="text-blue-600 hover:text-blue-800 hover:underline"
                         >
                           {faceName}
@@ -309,9 +316,8 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels }: StrategiesG
           {rows.map((row, rowIndex) => {
             const isRowSelected = selected?.rowIndex === rowIndex;
             return (
-              <>
+              <React.Fragment key={rowIndex}>
                 <tr
-                  key={rowIndex}
                   className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
                 >
                   {/* Strategy name + description */}
@@ -377,7 +383,7 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels }: StrategiesG
                     />
                   ) : null;
                 })()}
-              </>
+              </React.Fragment>
             );
           })}
 
@@ -437,7 +443,7 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels }: StrategiesG
                                 >
                                   <td className="py-1.5 pr-3 font-medium">
                                     <Link
-                                      href={`/card/${card.cid}`}
+                                      href={cardPath(card.cid, card.faces[0].name)}
                                       className="text-blue-600 hover:text-blue-800 hover:underline"
                                     >
                                       {face.name}

@@ -8,12 +8,12 @@ import { faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 import { StatisticsTab } from '@/components/overview/statistics-tab';
 import { MechanicsTab } from '@/components/overview/mechanics-tab';
 import { StrategiesTab } from '@/components/overview/strategies-tab';
-import { useSearch } from '@/utils/use-search';
 import { filterCardsBasedOnSearch, SerializedCard } from 'kindred-paths';
 import { TextTab } from '@/components/overview/text-tab';
 import { VisualTab } from '@/components/overview/visual-tab';
-import { useLocalStorageState } from '@/utils/use-local-storage-state';
+import { useUrlParam } from '@/utils/use-url-param';
 import { usePrintTitle } from '@/utils/use-print-title';
+import { editPath } from '@/utils/slugify';
 
 type TabType = 'table' | 'statistics' | 'text' | 'visual' | 'mechanics' | 'strategies';
 
@@ -22,9 +22,9 @@ export function CardOverview(props: {
   showCreate?: boolean,
 }) {
   const { showCreate = true } = props;
-  const [activeTab, setActiveTab] = useLocalStorageState<TabType>('home/tab', 'table');
+  const [activeTab, setActiveTab] = useUrlParam('tab', 'table') as [TabType, (v: TabType) => void];
 
-  const [searchText] = useSearch('home');
+  const [searchText, setSearchText] = useUrlParam('q', '');
   usePrintTitle('KPA ' + searchText + ' date=' + new Date().toISOString().substring(0, 19).replaceAll(/[^\d]/g, '-'));
 
   const cards = filterCardsBasedOnSearch(props.cards, searchText);
@@ -41,7 +41,7 @@ export function CardOverview(props: {
   function renderActiveTab() {
     switch (activeTab) {
       case 'table':      return <TableTab cards={cards} />;
-      case 'visual':     return <VisualTab cards={cards} dynamicLink={c => `/edit/${c.cid}?t=/`} />;
+      case 'visual':     return <VisualTab cards={cards} dynamicLink={c => editPath(c.cid, c.faces[0].name) + '?t=/'} />;
       case 'text':       return <TextTab cards={cards} />;
       case 'mechanics':  return <MechanicsTab cards={cards} />;
       case 'strategies': return <StrategiesTab cards={cards} />;
@@ -58,7 +58,7 @@ export function CardOverview(props: {
           <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
               <div className="flex justify-end gap-2 w-full shrink">
-                <SearchBar scope="home" />
+                <SearchBar scope="home" value={searchText} onChange={setSearchText} />
               </div>
               {showCreate && (
                 <div className="shrink-0 flex gap-2 justify-end">

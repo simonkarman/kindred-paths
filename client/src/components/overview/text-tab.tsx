@@ -1,6 +1,7 @@
 import { capitalize, Card, SerializedCard } from 'kindred-paths';
 import Link from 'next/link';
 import { useDeckNameFromSearch } from '@/utils/use-search';
+import { cardPath } from '@/utils/slugify';
 
 export function TextTab(props: { cards: SerializedCard[] }) {
   const deckName = useDeckNameFromSearch();
@@ -33,7 +34,7 @@ export function TextTab(props: { cards: SerializedCard[] }) {
                   </span>
                 )}
                 <Link
-                  href={`/card/${card.cid}`}
+                  href={cardPath(card.cid, card.faces[0].name)}
                   className="text-blue-600 hover:text-blue-700 font-semibold hover:underline decoration-blue-300 hover:decoration-blue-500 transition-colors"
                 >
                   {card.faces.map(f => f.name).join(' // ')}

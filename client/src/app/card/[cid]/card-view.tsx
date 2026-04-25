@@ -3,13 +3,14 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsTurnRight, faCheck, faClone, faCopy, faForward, faPenToSquare, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CardRender } from '@/components/card-render';
 import { CardExplanation } from '@/components/card-explanation';
 import { MechanicEntries } from '@/components/mechanic-entries';
 import { Layout, SerializedCard } from 'kindred-paths';
 import { useSearchParams } from 'next/navigation';
 import { z } from 'zod';
+import { cardPath, editPath, clonePath, slugifyCardName } from '@/utils/slugify';
 
 export const CardView = (props: { serializedCard: SerializedCard, tokens: SerializedCard[] }) => {
   const { serializedCard, tokens } = props;
@@ -20,6 +21,19 @@ export const CardView = (props: { serializedCard: SerializedCard, tokens: Serial
   const queryFaceIndex = z.number({ coerce: true }).min(0).max(1).safeParse(useSearchParams().get('faceIndex'));
   const [_faceIndex, setFaceIndex] = useState(queryFaceIndex.success ? queryFaceIndex.data : 0);
   const faceIndex = Math.min(layout.isDualRenderLayout() ? 1 : 0, _faceIndex);
+
+  // Client-side: ensure the URL contains the correct name slug
+  useEffect(() => {
+    const expectedSlug = slugifyCardName(serializedCard.faces[0].name);
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    // pathParts: ['card', cid] or ['card', cid, name]
+    const currentSlug = pathParts[2];
+    if (currentSlug !== expectedSlug) {
+      const base = cardPath(serializedCard.cid, serializedCard.faces[0].name);
+      const search = window.location.search;
+      window.history.replaceState({}, '', base + search);
+    }
+  }, [serializedCard]);
 
   return <div className="flex lg:flex-row justify-center items-center lg:items-start flex-col gap-8">
     {/* Card Render Section */}
@@ -35,7 +49,7 @@ export const CardView = (props: { serializedCard: SerializedCard, tokens: Serial
       <div className="flex gap-3 justify-center">
         {/* Edit Card Button */}
         <Link
-          href={`/edit/${serializedCard.cid}`}
+          href={editPath(serializedCard.cid, serializedCard.faces[0].name)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
         >
           <FontAwesomeIcon icon={faPenToSquare} />
@@ -44,7 +58,7 @@ export const CardView = (props: { serializedCard: SerializedCard, tokens: Serial
 
         {/* Clone Card Button */}
         <Link
-          href={`/clone/${serializedCard.cid}`}
+          href={clonePath(serializedCard.cid, serializedCard.faces[0].name)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
         >
           <FontAwesomeIcon icon={faClone} />
@@ -133,7 +147,7 @@ export const CardView = (props: { serializedCard: SerializedCard, tokens: Serial
               You can edit {serializedCard.faces.map(f => f.name).join(' // ')} to modify its properties, <br className="hidden lg:inline" />abilities, or artwork.
             </p>
             <Link
-              href={`/edit/${serializedCard.cid}`}
+              href={editPath(serializedCard.cid, serializedCard.faces[0].name)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
             >
               <FontAwesomeIcon icon={faPenToSquare} />

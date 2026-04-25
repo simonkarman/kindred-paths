@@ -17,6 +17,7 @@ import {
 import { IconButton } from '@/components/icon-button';
 import { AssignmentInfo, AssignmentModal } from './assignment-modal';
 import { CriteriaFailureReason, SlotStatus } from 'kindred-paths';
+import { cardPath } from '@/utils/slugify';
 
 export const getStatusConfig = (status: SlotStatus, cardName: string, cardCid: string | undefined) => {
   const getCardLabel = () => {
@@ -24,7 +25,7 @@ export const getStatusConfig = (status: SlotStatus, cardName: string, cardCid: s
     return <span>
       <a
         className='group-hover:text-amber-700 hover:text-amber-500 rounded transition-colors'
-        href={`/card/${cardCid}`}
+        href={cardPath(cardCid ?? '', cardName)}
         target="_blank"
       >
         {prefix}

@@ -2,6 +2,7 @@ import { Card, SerializedCard } from 'kindred-paths';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
+import { cardPath, editPath } from '@/utils/slugify';
 
 export function CardRender({ serializedCard, faceIndex, shown = true, forceRender, hoverControls = false, quality, scale, hideBorder }: {
   serializedCard: SerializedCard,
@@ -38,7 +39,7 @@ export function CardRender({ serializedCard, faceIndex, shown = true, forceRende
         {/* Clickable areas */}
         {/* Top half - View card */}
         <Link
-          href={`/card/${card.cid}`}
+          href={cardPath(card.cid, cardFace.name)}
           className={`${hoverAreaSizes[0]} ${hoverStyle}`}
           title={`View ${cardFace.name}`}
         >
@@ -47,7 +48,7 @@ export function CardRender({ serializedCard, faceIndex, shown = true, forceRende
 
         {/* Bottom half - Edit card */}
         <Link
-          href={`/edit/${card.cid}?t=/`}
+          href={editPath(card.cid, cardFace.name) + '?t=/'}
           className={`${hoverAreaSizes[1]} ${hoverStyle}`}
           title={`Edit ${cardFace.name}`}
         >

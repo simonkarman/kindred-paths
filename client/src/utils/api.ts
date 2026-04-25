@@ -19,7 +19,7 @@ import { revalidateTag } from 'next/cache';
 export async function getCards(): Promise<SerializedCard[]> {
   try {
     const response = await fetch(`${internalBackendUrl}/card`, {
-      next: { tags: ['cards'] }
+      next: { tags: ['cards'], revalidate: 3600 }
     });
     if (!response.ok) {
       throw new Error('fetch failed with status ' + response.status);
@@ -39,7 +39,7 @@ export async function getCards(): Promise<SerializedCard[]> {
 export async function getCard(cid: string): Promise<SerializedCard | null> {
   try {
     const response = await fetch(`${internalBackendUrl}/card/${cid}`, {
-      next: { tags: [`card-${cid}`] }
+      next: { tags: [`card-${cid}`], revalidate: 3600 }
     });
     if (!response.ok) {
       throw new Error('fetch failed with status ' + response.status);
@@ -128,7 +128,7 @@ export async function getMechanics(): Promise<SerializableMechanics> {
     headers: {
       'Content-Type': 'application/json',
     },
-    next: { tags: ['mechanics'] },
+    next: { tags: ['mechanics'], revalidate: 3600 },
   });
 
   if (!response.ok) {
@@ -226,13 +226,18 @@ export async function getCardSampleGenerators(): Promise<{
   prompt: string;
   sampleCount: number;
 }[]> {
-  const response = await fetch(`${internalBackendUrl}/suggest/card-generator`, {
-    next: { tags: ['sample-generators'] }
-  });
-  if (!response.ok) {
-    throw new Error('Failed to fetch card generators');
+  try {
+    const response = await fetch(`${internalBackendUrl}/suggest/card-generator`, {
+      next: { tags: ['sample-generators'], revalidate: 3600 }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch card generators');
+    }
+    return await response.json();
+  } catch (error: unknown) {
+    console.error('Error getting card generators:', error);
+    return [];
   }
-  return await response.json();
 }
 
 export async function getCardSampleGeneratorById(generatorId: string): Promise<{
@@ -243,7 +248,7 @@ export async function getCardSampleGeneratorById(generatorId: string): Promise<{
   samples: SerializedCard[];
 } | null> {
   const response = await fetch(`${internalBackendUrl}/suggest/card-generator/${generatorId}`, {
-    next: { tags: [`sample-generator-${generatorId}`] }
+    next: { tags: [`sample-generator-${generatorId}`], revalidate: 3600 }
   });
   if (response.status === 404) {
     return null;
@@ -256,30 +261,35 @@ export async function getCardSampleGeneratorById(generatorId: string): Promise<{
 
 export type SetSummary = { name: string; matricesCount: number; assignedCardCount: number; cardCount: number; };
 export async function getSets(): Promise<SetSummary[]> {
-  const response = await fetch(`${internalBackendUrl}/set`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    next: { tags: ['sets'] },
-  });
-  if (!response.ok) {
-    throw new Error('Failed to fetch sets');
+  try {
+    const response = await fetch(`${internalBackendUrl}/set`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      next: { tags: ['sets'], revalidate: 3600 },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch sets');
+    }
+    const data = await response.json();
+    return z.array(z.object({
+      name: z.string(),
+      matricesCount: z.number(),
+      assignedCardCount: z.number(),
+      cardCount: z.number(),
+    })).parse(data);
+  } catch (error: unknown) {
+    console.error('Error getting sets:', error);
+    return [];
   }
-  const data = await response.json();
-  return z.array(z.object({
-    name: z.string(),
-    matricesCount: z.number(),
-    assignedCardCount: z.number(),
-    cardCount: z.number(),
-  })).parse(data);
 }
 
 export async function getStrategyList(): Promise<string[]> {
   const response = await fetch(`${internalBackendUrl}/strategy`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
-    next: { tags: ['strategy-list'] },
+    next: { tags: ['strategy-list'], revalidate: 3600 },
   });
   if (!response.ok) return [];
   return z.array(z.string()).parse(await response.json());
@@ -291,7 +301,7 @@ export async function getStrategies(filename: string): Promise<SerializableStrat
     headers: {
       'Content-Type': 'application/json',
     },
-    next: { tags: [`strategies-${filename.toLowerCase()}`] },
+    next: { tags: [`strategies-${filename.toLowerCase()}`], revalidate: 3600 },
   });
   if (response.status === 404) {
     return null;
@@ -314,7 +324,7 @@ export async function getSet(name: string): Promise<SerializableSet | null> {
     headers: {
       'Content-Type': 'application/json',
     },
-    next: { tags: [`set-${name}`] },
+    next: { tags: [`set-${name}`], revalidate: 3600 },
   });
   if (response.status === 404) {
     return null;
@@ -370,7 +380,7 @@ export async function getCollection(): Promise<Collection> {
     headers: {
       'Content-Type': 'application/json',
     },
-    next: { tags: ['collection'] },
+    next: { tags: ['collection'], revalidate: 3600 },
   });
   if (!response.ok) {
     throw new Error('Failed to fetch collection');
