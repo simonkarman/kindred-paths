@@ -154,7 +154,7 @@ describe('aggregateStrategies', () => {
       const bucket = result.rows[0].buckets[0];
 
       expect(bucket.refs).toHaveLength(1);
-      expect(bucket.refs[0]).toMatchObject({ cid: 'aaaaaaaa', faceIndex: 0, bucketName: 'low', contribution: 1 });
+      expect(bucket.refs[0]).toMatchObject({ cid: 'aaaaaaaa', faceIndex: 0, bucketName: 'low', contribution: 1, filterWeight: 1 });
     });
   });
 
@@ -336,5 +336,75 @@ describe('aggregateStrategies', () => {
       expect(result.rows[0].buckets[0].total).toBe(1);
       expect(result.rows[0].buckets[0].colors[0].count).toBeCloseTo(1);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// aggregateStrategies — weighted filters
+// ---------------------------------------------------------------------------
+
+describe('weighted filters', () => {
+  const card = makeCard('ffffffff', 'normal', [{ name: 'Token Maker', types: ['sorcery'], manaCost: { green: 1 } }]);
+  const config: BucketConfig = {
+    buckets: [['slot'], ['*']],
+    toBucketName: stubToBucketName({ ffffffff: 'slot' }),
+  };
+
+  test('string filter has implicit weight 1', () => {
+    const strategy: SerializableStrategy = { name: 'S', filters: ['type:sorcery'] };
+    const result = aggregateStrategies([card], [strategy], config);
+    const ref = result.rows[0].buckets[0].refs[0];
+    expect(ref.filterWeight).toBe(1);
+    expect(ref.contribution).toBeCloseTo(1);
+  });
+
+  test('weighted object filter multiplies contribution', () => {
+    const strategy: SerializableStrategy = {
+      name: 'S',
+      filters: [{ query: 'type:sorcery', weight: 2 }],
+    };
+    const result = aggregateStrategies([card], [strategy], config);
+    const ref = result.rows[0].buckets[0].refs[0];
+    expect(ref.filterWeight).toBe(2);
+    expect(ref.contribution).toBeCloseTo(2);
+  });
+
+  test('card matching two filters uses highest weight (max, not sum)', () => {
+    const strategy: SerializableStrategy = {
+      name: 'S',
+      filters: [
+        'type:sorcery',                              // weight 1
+        { query: 'color:green', weight: 3 },          // weight 3
+      ],
+    };
+    const result = aggregateStrategies([card], [strategy], config);
+    const ref = result.rows[0].buckets[0].refs[0];
+    expect(ref.filterWeight).toBe(3);
+    expect(ref.contribution).toBeCloseTo(3);
+  });
+
+  test('card matching only lower-weight filter uses that weight', () => {
+    // The card is a sorcery (green) but not an instant
+    const strategy: SerializableStrategy = {
+      name: 'S',
+      filters: [
+        'type:sorcery',                              // weight 1, matches
+        { query: 'type:instant', weight: 5 },         // weight 5, does NOT match
+      ],
+    };
+    const result = aggregateStrategies([card], [strategy], config);
+    const ref = result.rows[0].buckets[0].refs[0];
+    expect(ref.filterWeight).toBe(1);
+    expect(ref.contribution).toBeCloseTo(1);
+  });
+
+  test('card not matching any filter has no refs', () => {
+    const strategy: SerializableStrategy = {
+      name: 'S',
+      filters: [{ query: 'type:instant', weight: 2 }],
+    };
+    const result = aggregateStrategies([card], [strategy], config);
+    expect(result.rows[0].buckets[0].refs).toHaveLength(0);
+    expect(result.rows[0].total).toBe(0);
   });
 });

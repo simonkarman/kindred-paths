@@ -4,6 +4,7 @@ import Link from 'next/link';
 import React, { useState } from 'react';
 import { CardColor, SerializedCard } from 'kindred-paths';
 import { StrategyAggregation, StrategyBucketCell } from 'kindred-paths';
+import { getFilterQuery, getFilterWeight } from 'kindred-paths';
 import { typographyColors } from '@/utils/typography';
 import { cardPath } from '@/utils/slugify';
 
@@ -140,6 +141,37 @@ function ColorSwatch({ card, faceIndex }: { card: SerializedCard; faceIndex: num
   );
 }
 
+type GroupedContribution = {
+  color: string;
+  contribution: number;
+  filterWeight: number;
+};
+
+type GroupedCardRef = {
+  cid: string;
+  faceIndex: number;
+  totalContribution: number;
+  contributions: GroupedContribution[];
+};
+
+/** Groups cell.colors refs by card+face and collects per-color contributions. */
+function groupCellRefs(cell: StrategyBucketCell): GroupedCardRef[] {
+  const map = new Map<string, GroupedCardRef>();
+  for (const colorEntry of cell.colors) {
+    for (const ref of colorEntry.refs) {
+      const key = `${ref.cid}-${ref.faceIndex}`;
+      if (!map.has(key)) {
+        map.set(key, { cid: ref.cid, faceIndex: ref.faceIndex, totalContribution: 0, contributions: [] });
+      }
+      const group = map.get(key)!;
+      group.totalContribution += ref.contribution;
+      group.contributions.push({ color: colorEntry.color, contribution: ref.contribution, filterWeight: ref.filterWeight });
+    }
+  }
+  // Sort by total contribution descending
+  return [...map.values()].sort((a, b) => b.totalContribution - a.totalContribution);
+}
+
 /** Drill-down table for a selected cell. */
 function DrillDownPanel({
   cell,
@@ -156,11 +188,8 @@ function DrillDownPanel({
   onClose: () => void;
   colSpan: number;
 }) {
-  // Sort refs by bucketName alphabetically
-  const sortedRefs = [...cell.refs].sort((a, b) => a.bucketName.localeCompare(b.bucketName));
-
-  // Find max contribution for opacity scaling
-  const maxContrib = sortedRefs.reduce((m, r) => Math.max(m, r.contribution), 0);
+  const grouped = groupCellRefs(cell);
+  const maxContrib = grouped.reduce((m, g) => Math.max(m, g.totalContribution), 0);
 
   return (
     <tr>
@@ -172,7 +201,7 @@ function DrillDownPanel({
               <span className="mx-2 text-slate-400">/</span>
               <span className="text-slate-600">{bucketLabelText}</span>
               <span className="ml-3 text-xs text-slate-400">
-                {cell.refs.length} ref{cell.refs.length !== 1 ? 's' : ''} · {cell.total} unique card{cell.total !== 1 ? 's' : ''}
+                {cell.total} unique card{cell.total !== 1 ? 's' : ''}
               </span>
             </div>
             <button
@@ -189,48 +218,71 @@ function DrillDownPanel({
                 <tr className="border-b border-slate-200 text-slate-500">
                   <th className="text-left py-1.5 pr-3 font-medium">Card</th>
                   <th className="text-left py-1.5 pr-3 font-medium">Color</th>
-                  <th className="text-left py-1.5 pr-3 font-medium">Face</th>
-                  <th className="text-left py-1.5 pr-3 font-medium">Bucket</th>
-                  <th className="text-right py-1.5 font-medium">Contribution</th>
+                  <th className="text-left py-1.5 font-medium">Contributions</th>
                 </tr>
               </thead>
               <tbody>
-                {sortedRefs.map((ref, i) => {
-                  const card = cardMap.get(ref.cid);
-                  const faceName = card?.faces[ref.faceIndex]?.name ?? ref.cid;
-                  // Opacity scales with contribution: min 0.25, max 1.0
-                  const opacity = maxContrib > 0 ? 0.25 + 0.75 * (ref.contribution / maxContrib) : 1;
+                {grouped.map((group) => {
+                  const card = cardMap.get(group.cid);
+                  const faceName = card?.faces[group.faceIndex]?.name ?? group.cid;
+                  const isSecondaryFace = group.faceIndex > 0;
+                  const opacity = maxContrib > 0 ? 0.25 + 0.75 * (group.totalContribution / maxContrib) : 1;
                   return (
-                    <tr key={i} className="border-b border-slate-100 hover:bg-white transition-colors">
+                    <tr
+                      key={`${group.cid}-${group.faceIndex}`}
+                      className="border-b border-slate-100 hover:bg-white transition-colors"
+                    >
                       <td className="py-1.5 pr-3 font-medium">
                         <Link
-                          href={cardPath(ref.cid, faceName)}
+                          href={cardPath(group.cid, card?.faces[0].name ?? group.cid)}
                           className="text-blue-600 hover:text-blue-800 hover:underline"
                         >
                           {faceName}
                         </Link>
+                        {isSecondaryFace && (
+                          <span className="ml-1.5 text-slate-400 font-normal">(back)</span>
+                        )}
                       </td>
                       <td className="py-1.5 pr-3">
                         {card && (
                           <span className="inline-flex items-center gap-1.5">
-                            <ColorSwatch card={card} faceIndex={ref.faceIndex} />
+                            <ColorSwatch card={card} faceIndex={group.faceIndex} />
                             <span className="text-slate-500 capitalize">
-                              {getCardColorKey(card, ref.faceIndex)}
+                              {getCardColorKey(card, group.faceIndex)}
                             </span>
                           </span>
                         )}
                       </td>
-                      <td className="py-1.5 pr-3 text-slate-500">{ref.faceIndex}</td>
-                      <td className="py-1.5 pr-3">
-                        <code className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                          {ref.bucketName}
-                        </code>
-                      </td>
-                      <td
-                        className="py-1.5 text-right font-mono"
-                        style={{ color: `rgba(30, 30, 30, ${opacity})` }}
-                      >
-                        {ref.contribution.toFixed(4)}
+                      <td className="py-1.5">
+                        <div className="flex flex-wrap gap-1.5">
+                          {group.contributions.map((contrib, ci) => (
+                            <span
+                              key={ci}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200"
+                              style={{
+                                ...getBubbleStyle(contrib.color),
+                                opacity,
+                              }}
+                              title={`${contrib.color}: ${contrib.contribution.toFixed(4)}${contrib.filterWeight > 1 ? ` (×${contrib.filterWeight} weight)` : ''}`}
+                            >
+                              <span
+                                style={{
+                                  display: 'inline-block',
+                                  width: '0.5rem',
+                                  height: '0.5rem',
+                                  borderRadius: '50%',
+                                  backgroundColor: 'rgba(0,0,0,0.25)',
+                                  flexShrink: 0,
+                                }}
+                              />
+                              <span className="text-slate-800 font-medium capitalize">{contrib.color}</span>
+                              <span className="font-mono text-slate-600">{contrib.contribution.toFixed(2)}</span>
+                              {contrib.filterWeight > 1 && (
+                                <span className="text-slate-700 font-semibold">×{contrib.filterWeight}</span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -329,14 +381,19 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels }: StrategiesG
                       </div>
                     )}
                     <div className="flex flex-wrap gap-1 mt-1.5">
-                      {row.strategy.filters.map((f, fi) => (
-                        <code
-                          key={fi}
-                          className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded"
-                        >
-                          {f}
-                        </code>
-                      ))}
+                      {row.strategy.filters.map((f, fi) => {
+                        const query = getFilterQuery(f);
+                        const weight = getFilterWeight(f);
+                        return (
+                          <code
+                            key={fi}
+                            className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded"
+                            title={weight > 1 ? `weight: ×${weight}` : undefined}
+                          >
+                            {query}{weight > 1 && <span className="ml-1 text-slate-400 font-semibold">×{weight}</span>}
+                          </code>
+                        );
+                      })}
                     </div>
                   </td>
 

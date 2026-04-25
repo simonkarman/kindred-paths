@@ -1,6 +1,6 @@
 import { filterCardsBasedOnSearch } from './card-filterer';
 import { SerializedCard } from './serialized-card';
-import { SerializableStrategy } from './serializable-strategies';
+import { SerializableStrategy, getFilterQuery, getFilterWeight } from './serializable-strategies';
 import { getColorWeights } from './color-weights';
 
 export type CardFaceRef = {
@@ -11,8 +11,11 @@ export type CardFaceRef = {
   /** The bucket name returned by toBucketName that placed this ref in its bucket. */
   bucketName: string;
   /** Fractional weight this face contributed to the color entry.
-   *  When toBucketName returns N names, the original weight is divided by N. */
+   *  When toBucketName returns N names, the original weight is divided by N,
+   *  then multiplied by the highest matched filter weight. */
   contribution: number;
+  /** The highest filter weight among all filters this card matched. */
+  filterWeight: number;
 };
 
 export type StrategyColorEntry = {
@@ -86,6 +89,7 @@ export function getBucketIndex(bucketName: string, buckets: string[][]): number 
 /**
  * Aggregates the given cards against the given strategies and bucket config.
  * For each strategy, a card matches if it satisfies ANY of the strategy's filters (OR logic).
+ * When a card matches multiple filters, the highest filter weight is used as a contribution multiplier.
  * Each castable face of a card independently determines its own bucket(s) via toBucketName.
  * When toBucketName returns N names, the face's color weight is divided by N across those buckets.
  */
@@ -97,19 +101,22 @@ export function aggregateStrategies(
   const { buckets, toBucketName } = bucketConfig;
 
   const rows: StrategyRow[] = strategies.map(strategy => {
-    // Collect matching cards using OR logic across all filters
-    const matchedCids = new Set<string>();
+    // Collect matching cards using OR logic across all filters, tracking max weight per cid
+    const cidMaxWeight = new Map<string, number>();
     for (const filter of strategy.filters) {
-      const matched = filterCardsBasedOnSearch(cards, filter);
+      const query = getFilterQuery(filter);
+      const weight = getFilterWeight(filter);
+      const matched = filterCardsBasedOnSearch(cards, query);
       for (const card of matched) {
-        matchedCids.add(card.cid);
+        const current = cidMaxWeight.get(card.cid) ?? 0;
+        if (weight > current) cidMaxWeight.set(card.cid, weight);
       }
     }
-    const matchedCards = cards.filter(c => matchedCids.has(c.cid));
+    const matchedCards = cards.filter(c => cidMaxWeight.has(c.cid));
 
     // Temporary accumulator: bucketIndex -> colorKey -> { count, refs }
     const acc: Map<number, Map<string, { count: number; refs: CardFaceRef[] }>> = new Map();
-    // Unique cids per bucket (for total count — a card spanning multiple buckets counts as 1 each)
+    // Unique cids per bucket (for total count — a card spanning multiple buckets counts as 1)
     const bucketUniqueCids: Map<number, Set<string>> = new Map();
     for (let i = 0; i < buckets.length; i++) {
       acc.set(i, new Map());
@@ -118,6 +125,7 @@ export function aggregateStrategies(
 
     for (const card of matchedCards) {
       const faceWeights = getColorWeights(card);
+      const filterWeight = cidMaxWeight.get(card.cid) ?? 1;
 
       for (const { faceIndex, weights } of faceWeights) {
         const rawNames = toBucketName(card, faceIndex);
@@ -132,10 +140,10 @@ export function aggregateStrategies(
 
           const bucketAcc = acc.get(bucketIndex)!;
           for (const [colorKey, weight] of weights) {
-            const dividedWeight = weight / divisor;
+            const dividedWeight = (weight / divisor) * filterWeight;
             const existing = bucketAcc.get(colorKey) ?? { count: 0, refs: [] };
             existing.count += dividedWeight;
-            existing.refs.push({ cid: card.cid, faceIndex, bucketName, contribution: dividedWeight });
+            existing.refs.push({ cid: card.cid, faceIndex, bucketName, contribution: dividedWeight, filterWeight });
             bucketAcc.set(colorKey, existing);
           }
         }
