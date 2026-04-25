@@ -5,6 +5,7 @@ export type HybridMana =
 export type Mana = CardColor | 'generic' | 'colorless' | 'x' | HybridMana;
 export const cardColors = ['white', 'blue', 'black', 'red', 'green'] as const;
 export const wubrg = ['w', 'u', 'b', 'r', 'g'] as const;
+export type CardColorCharacter = typeof wubrg[number];
 
 /**
  * All 10 hybrid mana combinations, in WUBRG-pair order.
@@ -30,15 +31,6 @@ export const isHybridMana = (mana: Mana): mana is HybridMana => {
   return (hybridManaTypes as string[]).includes(mana);
 };
 
-/**
- * Returns the short notation for a hybrid mana type, e.g. 'white/blue' -> 'w/u'.
- */
-export const hybridManaToShort = (hybrid: HybridMana): string => {
-  const [a, b] = hybridManaColors(hybrid);
-  return `${colorToShort(a)}/${colorToShort(b)}`;
-};
-export type CardColorCharacter = typeof wubrg[number];
-
 export const colorToShort = (color: CardColor): CardColorCharacter => {
   switch (color) {
   case 'white': return 'w';
@@ -57,6 +49,14 @@ export const colorToLong = (color: CardColorCharacter): CardColor => {
   case 'r': return 'red';
   case 'g': return 'green';
   }
+};
+
+/**
+ * Returns the short notation for a hybrid mana type, e.g. 'white/blue' -> 'w/u'.
+ */
+export const hybridManaToShort = (hybrid: HybridMana): string => {
+  const [a, b] = hybridManaColors(hybrid);
+  return `${colorToShort(a)}/${colorToShort(b)}`;
 };
 
 export const toOrderedColors = (_colors: CardColor[]): CardColor[] => {

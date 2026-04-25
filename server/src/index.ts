@@ -7,6 +7,7 @@ import { suggestionsRouter } from './routes/suggestions';
 import { maintenanceRouter } from './routes/maintenance';
 import { renderService } from './services/render-service';
 import { setsRouter } from './routes/sets';
+import { strategiesRouter } from './routes/strategies';
 import { collectionRouter } from './routes/collection';
 import { configuration } from './configuration';
 import { organizeRouter } from './routes/organize';
@@ -18,6 +19,7 @@ app.use(cors());
 // Register routes
 app.use('/card', cardsRouter);
 app.use('/set', setsRouter);
+app.use('/strategy', strategiesRouter);
 app.use('/', renderRouter);
 app.use('/suggest', suggestionsRouter);
 app.use('/', maintenanceRouter);

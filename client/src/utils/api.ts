@@ -7,6 +7,8 @@ import {
   SerializableMechanicsSchema,
   SerializableSet,
   SerializableSetSchema,
+  SerializableStrategiesConfig,
+  SerializableStrategiesConfigSchema,
   SerializedCard,
   SerializedCardSchema,
   SyncResult,
@@ -271,6 +273,39 @@ export async function getSets(): Promise<SetSummary[]> {
     assignedCardCount: z.number(),
     cardCount: z.number(),
   })).parse(data);
+}
+
+export async function getStrategyList(): Promise<string[]> {
+  const response = await fetch(`${internalBackendUrl}/strategy`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    next: { tags: ['strategy-list'] },
+  });
+  if (!response.ok) return [];
+  return z.array(z.string()).parse(await response.json());
+}
+
+export async function getStrategies(filename: string): Promise<SerializableStrategiesConfig | null> {
+  const response = await fetch(`${internalBackendUrl}/strategy/${filename.toLowerCase()}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    next: { tags: [`strategies-${filename.toLowerCase()}`] },
+  });
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to fetch strategies for set "${filename}"`);
+  }
+  const jsonData = await response.json();
+  const parsed = SerializableStrategiesConfigSchema.safeParse(jsonData);
+  if (!parsed.success) {
+    console.error('Failed to parse strategies config:', parsed.error);
+    return null;
+  }
+  return parsed.data;
 }
 
 export async function getSet(name: string): Promise<SerializableSet | null> {

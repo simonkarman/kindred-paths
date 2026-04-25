@@ -1,16 +1,19 @@
 import { z } from 'zod';
 
+const manaCostSchema = z.record(
+  z.enum([
+    'white', 'blue', 'black', 'red', 'green', 'generic', 'colorless', 'x',
+    'white/blue', 'blue/black', 'black/red', 'red/green', 'green/white',
+    'white/black', 'blue/red', 'black/green', 'red/white', 'green/blue',
+  ]),
+  z.number().int().nonnegative(),
+).default({}).optional();
+export type ManaCost = z.infer<typeof manaCostSchema>;
+
 export const SerializedCardFaceSchema = z.object({
   name: z.string().min(1),
   givenColors: z.array(z.enum(['white', 'blue', 'black', 'red', 'green'])).optional(),
-  manaCost: z.record(
-    z.enum([
-      'white', 'blue', 'black', 'red', 'green', 'generic', 'colorless', 'x',
-      'white/blue', 'blue/black', 'black/red', 'red/green', 'green/white',
-      'white/black', 'blue/red', 'black/green', 'red/white', 'green/blue',
-    ]),
-    z.number().int().nonnegative(),
-  ).default({}).optional(),
+  manaCost: manaCostSchema,
   types: z.array(z.enum(['creature', 'enchantment', 'artifact', 'instant', 'sorcery', 'land', 'planeswalker'])).nonempty(),
   subtypes: z.array(z.string().min(1)).optional(),
   supertype: z.enum(['basic', 'legendary']).optional(),

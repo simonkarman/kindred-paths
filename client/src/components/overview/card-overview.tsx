@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 import { StatisticsTab } from '@/components/overview/statistics-tab';
 import { MechanicsTab } from '@/components/overview/mechanics-tab';
+import { StrategiesTab } from '@/components/overview/strategies-tab';
 import { useSearch } from '@/utils/use-search';
 import { filterCardsBasedOnSearch, SerializedCard } from 'kindred-paths';
 import { TextTab } from '@/components/overview/text-tab';
@@ -14,7 +15,7 @@ import { VisualTab } from '@/components/overview/visual-tab';
 import { useLocalStorageState } from '@/utils/use-local-storage-state';
 import { usePrintTitle } from '@/utils/use-print-title';
 
-type TabType = 'table' | 'statistics' | 'text' | 'visual' | 'mechanics';
+type TabType = 'table' | 'statistics' | 'text' | 'visual' | 'mechanics' | 'strategies';
 
 export function CardOverview(props: {
   cards: SerializedCard[],
@@ -28,16 +29,25 @@ export function CardOverview(props: {
 
   const cards = filterCardsBasedOnSearch(props.cards, searchText);
 
-  const tabs = [
-    { id: 'table' as TabType, label: 'Table', component: <TableTab cards={cards} /> },
-    { id: 'visual' as TabType, label: 'Visual', component: <VisualTab
-        cards={cards}
-        dynamicLink={c => `/edit/${c.cid}?t=/`} />
-    },
-    { id: 'text' as TabType, label: 'Text', component: <TextTab cards={cards} /> },
-    { id: 'mechanics' as TabType, label: 'Mechanics', component: <MechanicsTab cards={cards} /> },
-    { id: 'statistics' as TabType, label: 'Statistics', component: <StatisticsTab cards={cards} /> },
+  const TAB_DEFS: { id: TabType; label: string }[] = [
+    { id: 'table', label: 'Table' },
+    { id: 'visual', label: 'Visual' },
+    { id: 'text', label: 'Text' },
+    { id: 'mechanics', label: 'Mechanics' },
+    { id: 'strategies', label: 'Strategies' },
+    { id: 'statistics', label: 'Statistics' },
   ];
+
+  function renderActiveTab() {
+    switch (activeTab) {
+      case 'table':      return <TableTab cards={cards} />;
+      case 'visual':     return <VisualTab cards={cards} dynamicLink={c => `/edit/${c.cid}?t=/`} />;
+      case 'text':       return <TextTab cards={cards} />;
+      case 'mechanics':  return <MechanicsTab cards={cards} />;
+      case 'strategies': return <StrategiesTab cards={cards} />;
+      case 'statistics': return <StatisticsTab cards={cards} />;
+    }
+  }
 
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 print:px-1.5">
@@ -76,7 +86,7 @@ export function CardOverview(props: {
           {/* Tab Navigation */}
           <div className="px-6">
             <nav className="flex space-x-8 -mb-px">
-              {tabs.map((tab) => (
+              {TAB_DEFS.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
@@ -95,7 +105,7 @@ export function CardOverview(props: {
 
         {/* Tab Content */}
         <div className="max-w-7xl mx-auto">
-          {tabs.find(tab => tab.id === activeTab)?.component}
+          {renderActiveTab()}
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ export class Configuration {
   readonly artDir;
   readonly artSuggestionsDir;
   readonly setsDir;
+  readonly strategiesDir;
   readonly symbolDir;
   readonly mechanicsDir;
 
@@ -25,6 +26,7 @@ export class Configuration {
     this.artDir = `${this.collectionRootDir}/art`;
     this.artSuggestionsDir = `${this.artDir}/suggestions`;
     this.setsDir = `${this.collectionRootDir}/sets`;
+    this.strategiesDir = `${this.collectionRootDir}/strategies`;
     this.symbolDir = `${this.collectionRootDir}/symbols`;
     this.mechanicsDir = `${this.collectionRootDir}/mechanics`;
 
