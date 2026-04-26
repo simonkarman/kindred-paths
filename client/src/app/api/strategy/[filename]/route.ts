@@ -42,3 +42,20 @@ export async function PUT(
     headers: { 'Content-Type': 'application/json' },
   });
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ filename: string }> },
+) {
+  const { filename } = await params;
+  const response = await fetch(`${internalBackendUrl}/strategy/${filename.toLowerCase()}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const error = await response.text();
+    return new Response(error, { status: response.status, headers: { 'Content-Type': 'application/json' } });
+  }
+  revalidateTag(`strategies-${filename.toLowerCase()}`);
+  revalidateTag('strategy-list');
+  return new Response(null, { status: 204 });
+}

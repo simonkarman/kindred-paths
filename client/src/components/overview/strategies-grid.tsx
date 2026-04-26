@@ -341,8 +341,8 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels, editMode, onE
     }
   }
 
-  // Total column count: [drag handle?] + strategy name + buckets + total + [edit?]
-  const totalCols = buckets.length + 2 + (editMode ? 2 : 0);
+  // Total column count: [drag handle?] + strategy name + buckets + total
+  const totalCols = buckets.length + 2 + (editMode ? 1 : 0);
 
   // Drag handlers
   function handleDragStart(rowIndex: number) {
@@ -394,7 +394,6 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels, editMode, onE
             <th className="px-3 py-3 font-semibold text-slate-700 text-center min-w-[60px]">
               Total
             </th>
-            {editMode && <th className="w-10 px-2 py-3" />}
           </tr>
         </thead>
         <tbody>
@@ -426,26 +425,44 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels, editMode, onE
 
                   {/* Strategy name + description */}
                   <td className="px-4 py-3 align-top">
-                    <div className="font-medium text-slate-900">{row.strategy.name}</div>
-                    {row.strategy.description && (
-                      <div className="text-xs text-slate-400 mt-0.5 leading-snug">
-                        {row.strategy.description}
+                    <div className="flex items-start gap-2">
+                      {/* Edit button — left side, in edit mode */}
+                      {editMode && (
+                        <button
+                          onClick={() => onEdit?.(rowIndex)}
+                          title="Edit strategy"
+                          className="mt-0.5 shrink-0 text-slate-400 hover:text-blue-600 transition"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                      )}
+                      <div className="min-w-0">
+                        <div className="font-medium text-slate-900">{row.strategy.name}</div>
+                        {row.strategy.description && (
+                          <div className="text-xs text-slate-400 mt-0.5 leading-snug">
+                            {row.strategy.description}
+                          </div>
+                        )}
+                        {editMode && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {row.strategy.filters.map((f, fi) => {
+                              const query = getFilterQuery(f);
+                              const weight = getFilterWeight(f);
+                              return (
+                                <code
+                                  key={fi}
+                                  className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded"
+                                  title={weight > 1 ? `weight: ×${weight}` : undefined}
+                                >
+                                  {query}{weight > 1 && <span className="ml-1 text-slate-400 font-semibold">×{weight}</span>}
+                                </code>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      {row.strategy.filters.map((f, fi) => {
-                        const query = getFilterQuery(f);
-                        const weight = getFilterWeight(f);
-                        return (
-                          <code
-                            key={fi}
-                            className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded"
-                            title={weight > 1 ? `weight: ×${weight}` : undefined}
-                          >
-                            {query}{weight > 1 && <span className="ml-1 text-slate-400 font-semibold">×{weight}</span>}
-                          </code>
-                        );
-                      })}
                     </div>
                   </td>
 
@@ -474,21 +491,6 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels, editMode, onE
                       {row.total > 0 ? row.total : '—'}
                     </span>
                   </td>
-
-                  {/* Edit button */}
-                  {editMode && (
-                    <td className="px-2 py-3 text-center align-top">
-                      <button
-                        onClick={() => onEdit?.(rowIndex)}
-                        title="Edit strategy"
-                        className="text-slate-400 hover:text-blue-600 transition"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                    </td>
-                  )}
                 </tr>
 
                 {/* Inline drill-down panel — inserted immediately after this row */}
@@ -560,7 +562,6 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels, editMode, onE
                 <td className="px-3 py-3 text-center align-middle">
                   <span className="font-semibold text-slate-500">{unmatchedCards.length}</span>
                 </td>
-                {editMode && <td className="px-2 py-3" />}
               </tr>
 
               {/* Expanded unmatched card list */}
