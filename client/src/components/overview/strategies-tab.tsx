@@ -10,6 +10,7 @@ import {
   StrategyAggregation,
 } from 'kindred-paths';
 import { StrategiesGrid } from './strategies-grid';
+import { StrategyEditorPanel } from './strategy-editor-panel';
 
 /** Direct client-side fetches — bypass 'use server' double-hop overhead. */
 async function fetchStrategyList(): Promise<string[]> {
@@ -26,6 +27,19 @@ async function fetchStrategies(filename: string): Promise<SerializableStrategies
   const parsed = SerializableStrategiesConfigSchema.safeParse(json);
   if (!parsed.success) return null;
   return parsed.data;
+}
+
+async function saveConfig(filename: string, config: SerializableStrategiesConfig): Promise<SerializableStrategiesConfig> {
+  const res = await fetch(`/api/strategy/${encodeURIComponent(filename.toLowerCase())}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(err.error ?? 'Failed to save');
+  }
+  return res.json();
 }
 
 const LS_KEY = 'kindred-paths:strategies:selected';
@@ -61,32 +75,38 @@ export function StrategiesTab(props: { cards: SerializedCard[] }) {
   const [configLoading, setConfigLoading] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
 
+  // Edit mode state
+  const [editMode, setEditMode] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelStrategyIndex, setPanelStrategyIndex] = useState<number | null>(null); // null = new
+
+  // Config metadata editing state
+  const [editingMeta, setEditingMeta] = useState(false);
+  const [metaName, setMetaName] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [metaSaving, setMetaSaving] = useState(false);
+  const [metaError, setMetaError] = useState<string | null>(null);
+
   // Parallel fetch: strategy file list + saved config (if any) on mount
   useEffect(() => {
     const savedOnMount = (() => { try { return localStorage.getItem(LS_KEY); } catch { return null; } })();
-
     setConfigLoading(savedOnMount !== null);
-
     Promise.all([
       fetchStrategyList(),
       savedOnMount ? fetchStrategies(savedOnMount).catch(() => null) : Promise.resolve(null),
     ]).then(([files, initialConfig]) => {
       setStrategyFiles(files);
-
       if (savedOnMount && files.includes(savedOnMount)) {
-        // Saved selection is valid
         setSelected(savedOnMount);
         if (initialConfig) {
           setConfig(initialConfig);
           setConfigLoading(false);
         } else {
-          // getStrategies failed, fetch again now that we confirmed the file exists
           fetchStrategies(savedOnMount)
             .then(c => { setConfig(c); setConfigLoading(false); })
             .catch(() => { setConfigError(`Failed to load strategies from "${savedOnMount}".`); setConfigLoading(false); });
         }
       } else if (savedOnMount && !files.includes(savedOnMount)) {
-        // Saved selection is stale
         setStaleSelected(savedOnMount);
         const fallback = files.length > 0 ? files[0] : null;
         setSelected(fallback);
@@ -99,7 +119,6 @@ export function StrategiesTab(props: { cards: SerializedCard[] }) {
           setConfigLoading(false);
         }
       } else if (!savedOnMount && files.length > 0) {
-        // No saved selection, pick first
         const first = files[0];
         setSelected(first);
         setConfigLoading(true);
@@ -113,7 +132,6 @@ export function StrategiesTab(props: { cards: SerializedCard[] }) {
       setListError('Failed to load strategy file list.');
       setConfigLoading(false);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fetch config whenever selection changes (after initial mount)
@@ -123,6 +141,7 @@ export function StrategiesTab(props: { cards: SerializedCard[] }) {
     if (!selected) { setConfig(null); return; }
     setConfigLoading(true);
     setConfigError(null);
+    setEditMode(false);
     fetchStrategies(selected)
       .then(result => { setConfig(result); setConfigLoading(false); })
       .catch(() => { setConfigError(`Failed to load strategies from "${selected}".`); setConfigLoading(false); });
@@ -144,6 +163,67 @@ export function StrategiesTab(props: { cards: SerializedCard[] }) {
     setSelected(value);
     setDropdownOpen(false);
     localStorage.setItem(LS_KEY, value);
+  }
+
+  function handleToggleEditMode() {
+    const next = !editMode;
+    setEditMode(next);
+    if (!next) {
+      setPanelOpen(false);
+      setEditingMeta(false);
+    }
+  }
+
+  function handleOpenPanel(index: number | null) {
+    setPanelStrategyIndex(index);
+    setPanelOpen(true);
+  }
+
+  function handlePanelSave(updatedConfig: SerializableStrategiesConfig) {
+    setConfig(updatedConfig);
+    setPanelOpen(false);
+  }
+
+  function handleReorder(fromIndex: number, toIndex: number) {
+    if (!config || !selected) return;
+    const strategies = [...config.strategies];
+    const [moved] = strategies.splice(fromIndex, 1);
+    strategies.splice(toIndex, 0, moved);
+    const updated: SerializableStrategiesConfig = { ...config, strategies };
+    // Optimistic update
+    setConfig(updated);
+    saveConfig(selected, updated).catch(() => {
+      // Revert on error
+      setConfig(config);
+    });
+  }
+
+  // Metadata save
+  function handleStartEditMeta() {
+    setMetaName(config?.name ?? '');
+    setMetaDescription(config?.description ?? '');
+    setMetaError(null);
+    setEditingMeta(true);
+  }
+
+  async function handleSaveMeta() {
+    if (!config || !selected || !metaName.trim()) return;
+    setMetaSaving(true);
+    setMetaError(null);
+    try {
+      const updated: SerializableStrategiesConfig = {
+        ...config,
+        name: metaName.trim(),
+        description: metaDescription.trim() || undefined,
+      };
+      const saved = await saveConfig(selected, updated);
+      setConfig(saved);
+      setEditingMeta(false);
+    } catch (e) {
+      setMetaError(e instanceof Error ? e.message : 'Failed to save.');
+    } finally {
+      setMetaSaving(false);
+    }
   }
 
   const aggregation: StrategyAggregation | null = useMemo(() => {
@@ -172,10 +252,14 @@ export function StrategiesTab(props: { cards: SerializedCard[] }) {
                   className="flex items-center gap-2 text-left w-full group"
                 >
                   <div className="min-w-0">
-                    <span className="text-lg font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
-                      {(selected && config ? config.name : null) ?? selected ?? '—'}
-                    </span>
-                    {selected && strategyCount !== null && (
+                    {editingMeta ? (
+                      <span className="text-lg font-semibold text-slate-800">{metaName || '—'}</span>
+                    ) : (
+                      <span className="text-lg font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
+                        {(selected && config ? config.name : null) ?? selected ?? '—'}
+                      </span>
+                    )}
+                    {selected && strategyCount !== null && !editingMeta && (
                       <span className="ml-2 text-sm text-slate-400">
                         {strategyCount} {strategyCount === 1 ? 'strategy' : 'strategies'}
                       </span>
@@ -192,6 +276,46 @@ export function StrategiesTab(props: { cards: SerializedCard[] }) {
                   </svg>
                 </button>
 
+                {/* Metadata editing form */}
+                {editingMeta && (
+                  <div className="mt-3 space-y-2">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Name</label>
+                      <input
+                        type="text"
+                        value={metaName}
+                        onChange={e => setMetaName(e.target.value)}
+                        className="w-full text-sm border border-slate-300 rounded-md px-3 py-1.5 outline-none focus:ring-2 focus:ring-blue-300"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Description</label>
+                      <textarea
+                        value={metaDescription}
+                        onChange={e => setMetaDescription(e.target.value)}
+                        rows={2}
+                        className="w-full text-sm border border-slate-300 rounded-md px-3 py-1.5 outline-none focus:ring-2 focus:ring-blue-300 resize-none"
+                      />
+                    </div>
+                    {metaError && <p className="text-xs text-red-500">{metaError}</p>}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleSaveMeta}
+                        disabled={metaSaving || !metaName.trim()}
+                        className="text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md px-3 py-1.5 font-medium transition disabled:opacity-50"
+                      >
+                        {metaSaving ? 'Saving…' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => setEditingMeta(false)}
+                        className="text-xs text-slate-500 hover:text-slate-700 transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Dropdown panel */}
                 {dropdownOpen && (
                   <div className="absolute z-20 mt-2 left-0 min-w-[220px] bg-white border border-slate-200 rounded-lg shadow-lg py-1 overflow-hidden">
@@ -206,7 +330,6 @@ export function StrategiesTab(props: { cards: SerializedCard[] }) {
                             isSelected ? 'bg-blue-50' : '',
                           ].join(' ')}
                         >
-                          {/* Checkmark */}
                           <span className={`w-4 h-4 shrink-0 ${isSelected ? 'text-blue-500' : 'text-transparent'}`}>
                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -249,17 +372,47 @@ export function StrategiesTab(props: { cards: SerializedCard[] }) {
             <div className="w-px self-stretch bg-slate-100 shrink-0" />
           )}
 
-          {/* Stats */}
+          {/* Stats + edit toggle */}
           {strategyCount !== null && (
-            <div className="flex items-baseline gap-6 shrink-0">
-              <div>
-                <span className="text-3xl font-bold text-blue-600">{strategyCount}</span>
-                <span className="text-sm text-slate-500 ml-1.5">strategies</span>
+            <div className="flex items-center gap-6 shrink-0">
+              <div className="flex items-baseline gap-6">
+                <div>
+                  <span className="text-3xl font-bold text-blue-600">{strategyCount}</span>
+                  <span className="text-sm text-slate-500 ml-1.5">strategies</span>
+                </div>
+                <div>
+                  <span className="text-2xl font-semibold text-slate-700">{props.cards.length}</span>
+                  <span className="text-sm text-slate-500 ml-1.5">cards</span>
+                </div>
               </div>
-              <div>
-                <span className="text-2xl font-semibold text-slate-700">{props.cards.length}</span>
-                <span className="text-sm text-slate-500 ml-1.5">cards</span>
-              </div>
+
+              {/* Edit mode toggle */}
+              <button
+                onClick={handleToggleEditMode}
+                title={editMode ? 'Exit edit mode' : 'Edit strategies'}
+                className={[
+                  'flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-md border transition',
+                  editMode
+                    ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                    : 'text-slate-600 border-slate-300 hover:border-blue-400 hover:text-blue-600',
+                ].join(' ')}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                {editMode ? 'Editing' : 'Edit'}
+              </button>
+
+              {/* Edit metadata button — only in edit mode */}
+              {editMode && !editingMeta && (
+                <button
+                  onClick={handleStartEditMeta}
+                  title="Edit name and description"
+                  className="text-xs text-slate-500 hover:text-blue-600 border border-slate-300 hover:border-blue-400 rounded-md px-3 py-2 transition"
+                >
+                  Rename
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -320,16 +473,51 @@ export function StrategiesTab(props: { cards: SerializedCard[] }) {
     );
   }
 
+  // Empty config — still allow editing in edit mode
   if (!config || !config.strategies || config.strategies.length === 0) {
     return (
       <div className="space-y-4">
         <HeaderCard />
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center text-slate-500">
-          <p className="text-lg font-medium text-slate-700 mb-1">No strategies defined in &ldquo;{selected}&rdquo;</p>
-          <p className="text-sm">
-            Add a <code className="bg-slate-100 px-1 rounded">strategies</code> array to the file.
-          </p>
-        </div>
+        {config && editMode && (
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center text-slate-500">
+            <p className="text-lg font-medium text-slate-700 mb-3">No strategies defined</p>
+            <button
+              onClick={() => handleOpenPanel(null)}
+              className="inline-flex items-center gap-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 font-medium transition"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Add first strategy
+            </button>
+          </div>
+        )}
+        {config && !editMode && (
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center text-slate-500">
+            <p className="text-lg font-medium text-slate-700 mb-1">No strategies defined in &ldquo;{selected}&rdquo;</p>
+            <p className="text-sm">
+              Click <strong>Edit</strong> to add strategies.
+            </p>
+          </div>
+        )}
+        {!config && (
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center text-slate-500">
+            <p className="text-lg font-medium text-slate-700 mb-1">No strategies defined in &ldquo;{selected}&rdquo;</p>
+          </div>
+        )}
+
+        {/* Panel for empty config */}
+        {panelOpen && config && selected && (
+          <StrategyEditorPanel
+            filename={selected}
+            config={config}
+            strategy={null}
+            strategyIndex={null}
+            cards={props.cards}
+            onSave={handlePanelSave}
+            onClose={() => setPanelOpen(false)}
+          />
+        )}
       </div>
     );
   }
@@ -342,6 +530,23 @@ export function StrategiesTab(props: { cards: SerializedCard[] }) {
           aggregation={aggregation}
           cards={props.cards}
           bucketLabels={MV_BUCKET_LABELS}
+          editMode={editMode}
+          onEdit={handleOpenPanel}
+          onReorder={handleReorder}
+          onAddStrategy={() => handleOpenPanel(null)}
+        />
+      )}
+
+      {/* Side panel */}
+      {panelOpen && config && selected && (
+        <StrategyEditorPanel
+          filename={selected}
+          config={config}
+          strategy={panelStrategyIndex !== null ? (config.strategies[panelStrategyIndex] ?? null) : null}
+          strategyIndex={panelStrategyIndex}
+          cards={props.cards}
+          onSave={handlePanelSave}
+          onClose={() => setPanelOpen(false)}
         />
       )}
     </div>

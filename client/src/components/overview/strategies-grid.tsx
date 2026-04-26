@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { CardColor, SerializedCard } from 'kindred-paths';
 import { StrategyAggregation, StrategyBucketCell } from 'kindred-paths';
 import { getFilterQuery, getFilterWeight } from 'kindred-paths';
@@ -12,6 +12,10 @@ interface StrategiesGridProps {
   aggregation: StrategyAggregation;
   cards: SerializedCard[];
   bucketLabels?: string[];
+  editMode?: boolean;
+  onEdit?: (strategyIndex: number) => void;
+  onReorder?: (fromIndex: number, toIndex: number) => void;
+  onAddStrategy?: () => void;
 }
 
 const FALLBACK_COLOR = 'rgb(238, 236, 235)';
@@ -296,10 +300,14 @@ function DrillDownPanel({
   );
 }
 
-export function StrategiesGrid({ aggregation, cards, bucketLabels }: StrategiesGridProps) {
+export function StrategiesGrid({ aggregation, cards, bucketLabels, editMode, onEdit, onReorder, onAddStrategy }: StrategiesGridProps) {
   const { rows, buckets } = aggregation;
   const [selected, setSelected] = useState<{ rowIndex: number; cellIndex: number } | null>(null);
   const [unmatchedOpen, setUnmatchedOpen] = useState(false);
+
+  // Drag-and-drop state
+  const dragFromRef = useRef<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
 
   // Build a cid → card lookup map
   const cardMap = new Map<string, SerializedCard>(cards.map(c => [c.cid!, c]));
@@ -333,14 +341,38 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels }: StrategiesG
     }
   }
 
-  // Total column count: strategy name + buckets + total
-  const totalCols = buckets.length + 2;
+  // Total column count: [drag handle?] + strategy name + buckets + total + [edit?]
+  const totalCols = buckets.length + 2 + (editMode ? 2 : 0);
+
+  // Drag handlers
+  function handleDragStart(rowIndex: number) {
+    dragFromRef.current = rowIndex;
+  }
+  function handleDragOver(e: React.DragEvent, rowIndex: number) {
+    e.preventDefault();
+    setDragOver(rowIndex);
+  }
+  function handleDrop(toIndex: number) {
+    const fromIndex = dragFromRef.current;
+    if (fromIndex !== null && fromIndex !== toIndex) {
+      onReorder?.(fromIndex, toIndex);
+      // If selected drill-down was open on a moved row, close it
+      setSelected(null);
+    }
+    dragFromRef.current = null;
+    setDragOver(null);
+  }
+  function handleDragEnd() {
+    dragFromRef.current = null;
+    setDragOver(null);
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-x-auto">
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50">
+            {editMode && <th className="w-8 px-2 py-3" />}
             <th className="text-left px-4 py-3 font-semibold text-slate-700 min-w-[200px]">
               Strategy
             </th>
@@ -362,16 +394,36 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels }: StrategiesG
             <th className="px-3 py-3 font-semibold text-slate-700 text-center min-w-[60px]">
               Total
             </th>
+            {editMode && <th className="w-10 px-2 py-3" />}
           </tr>
         </thead>
         <tbody>
           {rows.map((row, rowIndex) => {
             const isRowSelected = selected?.rowIndex === rowIndex;
+            const isDragTarget = dragOver === rowIndex;
             return (
               <React.Fragment key={rowIndex}>
                 <tr
-                  className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                  draggable={editMode}
+                  onDragStart={editMode ? () => handleDragStart(rowIndex) : undefined}
+                  onDragOver={editMode ? (e) => handleDragOver(e, rowIndex) : undefined}
+                  onDrop={editMode ? () => handleDrop(rowIndex) : undefined}
+                  onDragEnd={editMode ? handleDragEnd : undefined}
+                  className={[
+                    'border-b border-slate-100 hover:bg-slate-50 transition-colors',
+                    isDragTarget ? 'bg-blue-50 border-t-2 border-t-blue-400' : '',
+                    editMode ? 'cursor-default' : '',
+                  ].join(' ')}
                 >
+                  {/* Drag handle */}
+                  {editMode && (
+                    <td className="px-2 py-3 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing align-top">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M7 4a1 1 0 100 2 1 1 0 000-2zm6 0a1 1 0 100 2 1 1 0 000-2zM7 9a1 1 0 100 2 1 1 0 000-2zm6 0a1 1 0 100 2 1 1 0 000-2zM7 14a1 1 0 100 2 1 1 0 000-2zm6 0a1 1 0 100 2 1 1 0 000-2z" />
+                      </svg>
+                    </td>
+                  )}
+
                   {/* Strategy name + description */}
                   <td className="px-4 py-3 align-top">
                     <div className="font-medium text-slate-900">{row.strategy.name}</div>
@@ -422,6 +474,21 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels }: StrategiesG
                       {row.total > 0 ? row.total : '—'}
                     </span>
                   </td>
+
+                  {/* Edit button */}
+                  {editMode && (
+                    <td className="px-2 py-3 text-center align-top">
+                      <button
+                        onClick={() => onEdit?.(rowIndex)}
+                        title="Edit strategy"
+                        className="text-slate-400 hover:text-blue-600 transition"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </td>
+                  )}
                 </tr>
 
                 {/* Inline drill-down panel — inserted immediately after this row */}
@@ -444,6 +511,23 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels }: StrategiesG
             );
           })}
 
+          {/* Add strategy row */}
+          {editMode && (
+            <tr className="border-b border-slate-100">
+              <td colSpan={totalCols} className="px-4 py-2">
+                <button
+                  onClick={onAddStrategy}
+                  className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium transition"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add strategy
+                </button>
+              </td>
+            </tr>
+          )}
+
           {/* No-strategy row */}
           {unmatchedCards.length > 0 && (
             <>
@@ -451,6 +535,7 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels }: StrategiesG
                 className="border-b border-slate-100 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors"
                 onClick={() => setUnmatchedOpen(o => !o)}
               >
+                {editMode && <td className="px-2 py-3" />}
                 <td className="px-4 py-3 align-middle">
                   <div className="flex items-center gap-2">
                     <svg
@@ -475,6 +560,7 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels }: StrategiesG
                 <td className="px-3 py-3 text-center align-middle">
                   <span className="font-semibold text-slate-500">{unmatchedCards.length}</span>
                 </td>
+                {editMode && <td className="px-2 py-3" />}
               </tr>
 
               {/* Expanded unmatched card list */}

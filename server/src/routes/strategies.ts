@@ -33,3 +33,19 @@ strategiesRouter.get('/:set', async (req, res) => {
     res.status(404).json({ error: `No strategies config found for set "${setName}"` });
   }
 });
+
+strategiesRouter.put('/:set', async (req, res) => {
+  const setName = z.string().parse(req.params.set).toLowerCase();
+  const path = `${configuration.strategiesDir}/${setName}.json`;
+  const parsed = SerializableStrategiesConfigSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(422).json({ error: 'Invalid strategies config', details: parsed.error });
+    return;
+  }
+  try {
+    await fs.writeFile(path, JSON.stringify(parsed.data, null, 2), 'utf-8');
+    res.json(parsed.data);
+  } catch {
+    res.status(500).json({ error: `Failed to write strategies config for set "${setName}"` });
+  }
+});
