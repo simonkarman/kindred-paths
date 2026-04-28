@@ -1,4 +1,4 @@
-import { RuleVariant, ruleVariants, capitalize, SerializableMechanics, AutoReminderText } from 'kindred-paths';
+import { RuleVariant, ruleVariants, capitalize, AutoReminderText, SerializableMechanics } from 'kindred-paths';
 import { InputHeader } from '@/components/editor/input-header';
 import { useEffect, useRef } from 'react';
 

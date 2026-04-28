@@ -6,7 +6,6 @@ import SearchBar from '@/components/search-bar';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 import { StatisticsTab } from '@/components/overview/statistics-tab';
-import { MechanicsTab } from '@/components/overview/mechanics-tab';
 import { StrategiesTab } from '@/components/overview/strategies-tab';
 import { filterCardsBasedOnSearch, SerializedCard } from 'kindred-paths';
 import { TextTab } from '@/components/overview/text-tab';
@@ -15,7 +14,7 @@ import { useUrlParam } from '@/utils/use-url-param';
 import { usePrintTitle } from '@/utils/use-print-title';
 import { editPath } from '@/utils/slugify';
 
-type TabType = 'table' | 'statistics' | 'text' | 'visual' | 'mechanics' | 'strategies';
+type TabType = 'table' | 'statistics' | 'text' | 'visual' | 'strategies';
 
 export function CardOverview(props: {
   cards: SerializedCard[],
@@ -33,7 +32,6 @@ export function CardOverview(props: {
     { id: 'table', label: 'Table' },
     { id: 'visual', label: 'Visual' },
     { id: 'text', label: 'Text' },
-    { id: 'mechanics', label: 'Mechanics' },
     { id: 'strategies', label: 'Strategies' },
     { id: 'statistics', label: 'Statistics' },
   ];
@@ -43,7 +41,6 @@ export function CardOverview(props: {
       case 'table':      return <TableTab cards={cards} />;
       case 'visual':     return <VisualTab cards={cards} dynamicLink={c => editPath(c.cid, c.faces[0].name) + '?t=/'} />;
       case 'text':       return <TextTab cards={cards} />;
-      case 'mechanics':  return <MechanicsTab cards={cards} />;
       case 'strategies': return <StrategiesTab cards={cards} />;
       case 'statistics': return <StatisticsTab cards={cards} />;
     }

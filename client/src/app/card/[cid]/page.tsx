@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { getCard, getCards } from '@/utils/api';
+import { getCard } from '@/utils/api';
 import { PageProps } from '@/utils/page-props';
 import { CardView } from '@/app/card/[cid]/card-view';
 
@@ -17,7 +17,6 @@ export async function generateMetadata({ params: _params }: PageProps<{ cid: str
 export default async function Page({ params: _params }: Readonly<{ params: Promise<{ cid: string }> }>) {
   const params = await _params;
   const serializedCard = await getCard(params.cid);
-  const tokens = (await getCards()).filter(c => c.isToken)
 
   if (!serializedCard) {
     return (
@@ -44,7 +43,7 @@ export default async function Page({ params: _params }: Readonly<{ params: Promi
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <CardView serializedCard={serializedCard} tokens={tokens} />
+        <CardView serializedCard={serializedCard} />
       </div>
     </div>
   );

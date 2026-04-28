@@ -6,14 +6,13 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { CardRender } from '@/components/card-render';
 import { CardExplanation } from '@/components/card-explanation';
-import { MechanicEntries } from '@/components/mechanic-entries';
 import { Layout, SerializedCard } from 'kindred-paths';
 import { useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 import { cardPath, editPath, clonePath, slugifyCardName } from '@/utils/slugify';
 
-export const CardView = (props: { serializedCard: SerializedCard, tokens: SerializedCard[] }) => {
-  const { serializedCard, tokens } = props;
+export const CardView = (props: { serializedCard: SerializedCard }) => {
+  const { serializedCard } = props;
   const [forceRender, setForceRender] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -125,12 +124,6 @@ export const CardView = (props: { serializedCard: SerializedCard, tokens: Serial
           </button>
         </div>
         <CardExplanation serializedCard={serializedCard} activeFaceIndex={faceIndex} />
-      </div>
-
-      {/* Mechanic Entries */}
-      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-        <h2 className="text-lg font-bold text-slate-900 mb-4">Mechanic Entries</h2>
-        <MechanicEntries serializedCard={serializedCard} tokens={tokens} />
       </div>
 
       {/* Edit Card */}
