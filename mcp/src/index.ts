@@ -10,6 +10,8 @@ import { registerRenderCardsTool } from './tool/render-cards.js';
 import { registerGetNextCollectorNumberTool } from './tool/get-next-collector-number.js';
 import { registerArtGenerationTool } from './tool/art-generation.js';
 import { registerDesignDocumentTools } from './tool/design-documents.js';
+import { registerStrategyTools } from './tool/strategies.js';
+import { registerResearchTools } from './tool/research.js';
 
 const server = new McpServer({
   name: 'kindred-paths',
@@ -28,6 +30,8 @@ registerRenderCardsTool(server);
 registerGetNextCollectorNumberTool(server);
 registerArtGenerationTool(server);
 registerDesignDocumentTools(server);
+registerStrategyTools(server);
+registerResearchTools(server);
 
 export async function main() {
   const transport = new StdioServerTransport();
