@@ -3,6 +3,8 @@ import { SerializedCard } from './serialized-card';
 import { SerializableStrategy, getFilterQuery, getFilterWeight } from './serializable-strategies';
 import { getColorWeights } from './color-weights';
 
+export type Bucket = { title: string, matches: string[] };
+
 export type CardFaceRef = {
   /** The card ID. */
   cid: string;
@@ -28,8 +30,8 @@ export type StrategyColorEntry = {
 };
 
 export type StrategyBucketCell = {
-  /** The bucket names that belong to this bucket column (e.g. ['mv:2', 'mv:3'] or ['*']). */
-  bucketNames: string[];
+  /** The bucket matches that belong to this bucket column (e.g. ['mv:2', 'mv:3'] or ['*']). */
+  bucket: Bucket;
   /** Per-color-combination weights for this bucket, only containing entries with count > 0. */
   colors: StrategyColorEntry[];
   /** Count of unique cards in this bucket (a modal card with two faces counts as 1). */
@@ -49,7 +51,7 @@ export type StrategyRow = {
 export type StrategyAggregation = {
   rows: StrategyRow[];
   /** The bucket columns used (mirrors the bucket config). */
-  buckets: string[][];
+  buckets: Bucket[];
 };
 
 /**
@@ -61,8 +63,8 @@ export type ToBucketNameFn = (card: SerializedCard, faceIndex: number) => string
 
 export type BucketConfig = {
   /** The bucket columns. Each column is an array of bucket name strings.
-   *  A column containing '*' is the catch-all for any name not found elsewhere. */
-  buckets: string[][];
+   *  A column containing the '*' match is the catch-all for any name not found elsewhere. */
+  buckets: Bucket[];
   /** Function that maps a card face to one or more bucket names. */
   toBucketName: ToBucketNameFn;
 };
@@ -71,15 +73,15 @@ export type BucketConfig = {
  * Returns the bucket index for a given bucket name, or -1 if it doesn't fit in any bucket.
  * First looks for an exact match; if none is found, falls back to the first bucket containing '*'.
  */
-export function getBucketIndex(bucketName: string, buckets: string[][]): number {
+export function getBucketIndex(bucketName: string, buckets: Bucket[]): number {
   for (let i = 0; i < buckets.length; i++) {
-    if (buckets[i].includes(bucketName)) {
+    if (buckets[i].matches.includes(bucketName)) {
       return i;
     }
   }
   // Fall back to the catch-all bucket
   for (let i = 0; i < buckets.length; i++) {
-    if (buckets[i].includes('*')) {
+    if (buckets[i].matches.includes('*')) {
       return i;
     }
   }
@@ -151,7 +153,7 @@ export function aggregateStrategies(
     }
 
     // Convert accumulator to StrategyBucketCell[]
-    const bucketCells: StrategyBucketCell[] = buckets.map((bucketNames, i) => {
+    const bucketCells: StrategyBucketCell[] = buckets.map((bucket, i) => {
       const bucketAcc = acc.get(i)!;
       const colors: StrategyColorEntry[] = [...bucketAcc.entries()]
         .filter(([, e]) => e.count > 0)
@@ -159,7 +161,7 @@ export function aggregateStrategies(
       const allRefs = colors.flatMap(e => e.refs);
       const uniqueCids = bucketUniqueCids.get(i)!;
       return {
-        bucketNames,
+        bucket,
         colors,
         total: uniqueCids.size,
         refs: allRefs,

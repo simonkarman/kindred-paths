@@ -41,7 +41,7 @@ export function CardOverview(props: {
       case 'table':      return <TableTab cards={cards} />;
       case 'visual':     return <VisualTab cards={cards} dynamicLink={c => editPath(c.cid, c.faces[0].name) + '?t=/'} />;
       case 'text':       return <TextTab cards={cards} />;
-      case 'strategies': return <StrategiesTab cards={cards} />;
+      case 'strategies': return <StrategiesTab cards={cards} searchText={searchText} />;
       case 'statistics': return <StatisticsTab cards={cards} />;
     }
   }

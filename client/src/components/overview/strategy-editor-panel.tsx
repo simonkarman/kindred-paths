@@ -38,7 +38,12 @@ interface Props {
 // ---------------------------------------------------------------------------
 
 const MV_BUCKET_CONFIG: BucketConfig = {
-  buckets: [['mv:0', 'mv:1'], ['mv:2', 'mv:3'], ['mv:4', 'mv:5'], ['*']],
+  buckets: [
+    { title: 'MV <2', matches: ['mv:0', 'mv:1', 'mv:2'] },
+    { title: 'MV 3', matches: ['mv:3'] },
+    { title: 'MV 4-5', matches: ['mv:4', 'mv:5'] },
+    { title: 'MV >6', matches: ['*'] },
+  ],
   toBucketName: (card, faceIndex) => {
     const face = card.faces[faceIndex];
     const mv = Object.entries(face.manaCost ?? {}).reduce(
@@ -48,8 +53,6 @@ const MV_BUCKET_CONFIG: BucketConfig = {
     return `mv:${mv}`;
   },
 };
-
-const MV_BUCKET_LABELS = ['MV 0–1', 'MV 2–3', 'MV 4–5', 'MV 6+'];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -137,7 +140,7 @@ function MiniPreviewGrid({ strategy, cards }: { strategy: SerializableStrategy |
         <tbody>
           {row.buckets.map((cell, i) => (
             <tr key={i} className="border-b border-slate-100">
-              <td className="py-1 pr-2 text-slate-600 font-medium">{MV_BUCKET_LABELS[i]}</td>
+              <td className="py-1 pr-2 text-slate-600 font-medium">{cell.bucket.title}</td>
               <td className="py-1 pr-2 text-right font-semibold text-slate-700">{cell.total > 0 ? cell.total : '—'}</td>
               <td className="py-1">
                 <div className="flex flex-wrap gap-1">

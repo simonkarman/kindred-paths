@@ -79,7 +79,12 @@ async function deleteStrategyFile(filename: string): Promise<void> {
 const LS_KEY = 'kindred-paths:strategies:selected';
 
 const MV_BUCKET_CONFIG: BucketConfig = {
-  buckets: [['mv:0', 'mv:1'], ['mv:2', 'mv:3'], ['mv:4', 'mv:5'], ['*']],
+  buckets: [
+    { title: 'MV <2', matches: ['mv:0', 'mv:1', 'mv:2'] },
+    { title: 'MV 3', matches: ['mv:3'] },
+    { title: 'MV 4-5', matches: ['mv:4', 'mv:5'] },
+    { title: 'MV >6', matches: ['*'] },
+  ],
   toBucketName: (card, faceIndex) => {
     const face = card.faces[faceIndex];
     const mv = Object.entries(face.manaCost ?? {}).reduce(
@@ -90,13 +95,11 @@ const MV_BUCKET_CONFIG: BucketConfig = {
   },
 };
 
-const MV_BUCKET_LABELS = ['MV 0–1', 'MV 2–3', 'MV 4–5', 'MV 6+'];
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function StrategiesTab(props: { cards: SerializedCard[] }) {
+export function StrategiesTab(props: { cards: SerializedCard[]; searchText?: string }) {
   const [strategyFiles, setStrategyFiles] = useState<StrategyFileMeta[] | null>(null);
   const [listError, setListError] = useState<string | null>(null);
 
@@ -702,8 +705,8 @@ export function StrategiesTab(props: { cards: SerializedCard[] }) {
         <StrategiesGrid
           aggregation={aggregation}
           cards={props.cards}
-          bucketLabels={MV_BUCKET_LABELS}
           editMode={editMode}
+          searchText={props.searchText}
           onEdit={handleOpenPanel}
           onReorder={handleReorder}
           onAddStrategy={() => handleOpenPanel(null)}

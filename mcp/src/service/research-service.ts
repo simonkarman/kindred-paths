@@ -25,7 +25,7 @@ export type Research = {
   strategyFilename: string;
   cardFilter: string;
   createdAt: string;
-  bucketLabels: string[];
+  bucketTitles: string[];
   rows: ResearchRow[];
   totalCards: number;
 };

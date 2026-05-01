@@ -10,7 +10,12 @@ import { Research, ResearchService } from '../service/research-service.js';
 // ---------------------------------------------------------------------------
 
 const MV_BUCKET_CONFIG: BucketConfig = {
-  buckets: [['mv:0', 'mv:1'], ['mv:2', 'mv:3'], ['mv:4', 'mv:5'], ['*']],
+  buckets: [
+    { title: 'MV <2', matches: ['mv:0', 'mv:1', 'mv:2'] },
+    { title: 'MV 3', matches: ['mv:3'] },
+    { title: 'MV 4-5', matches: ['mv:4', 'mv:5'] },
+    { title: 'MV >6', matches: ['*'] },
+  ],
   toBucketName: (card: SerializedCard, faceIndex: number) => {
     const face = card.faces[faceIndex];
     const mv = Object.entries(face?.manaCost ?? {}).reduce(
@@ -20,8 +25,6 @@ const MV_BUCKET_CONFIG: BucketConfig = {
     return `mv:${mv}`;
   },
 };
-
-const MV_BUCKET_LABELS = ['MV 0–1', 'MV 2–3', 'MV 4–5', 'MV 6+'];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -69,7 +72,8 @@ function formatTypeLine(face: SerializedCardFace): string {
 }
 
 function renderSummaryTable(research: Research): string {
-  const { strategyFilename, cardFilter, createdAt, bucketLabels, rows, totalCards, id } = research;
+  const { strategyFilename, cardFilter, createdAt, bucketTitles, rows, totalCards, id } = research;
+  const bucketLabels = bucketTitles;
 
   // Column widths
   const nameCol = Math.max(20, ...rows.map(r => r.strategyName.length));
@@ -160,7 +164,7 @@ export function registerResearchTools(server: McpServer) {
         strategyFilename: filename,
         cardFilter,
         createdAt: new Date().toISOString(),
-        bucketLabels: MV_BUCKET_LABELS,
+        bucketTitles: MV_BUCKET_CONFIG.buckets.map(b => b.title),
         rows: aggregation.rows.map(row => ({
           strategyName: row.strategy.name,
           ...(row.strategy.description ? { strategyDescription: row.strategy.description } : {}),
@@ -235,13 +239,14 @@ export function registerResearchTools(server: McpServer) {
         };
       }
 
-      const bucketIndex = research.bucketLabels.indexOf(bucketName);
+      const bucketLabels = research.bucketTitles;
+      const bucketIndex = bucketLabels.indexOf(bucketName);
       if (bucketIndex === -1) {
         return {
           isError: true,
           content: [{
             type: 'text',
-            text: `Bucket "${bucketName}" not found. Available buckets: ${research.bucketLabels.join(', ')}`,
+            text: `Bucket "${bucketName}" not found. Available buckets: ${bucketLabels.join(', ')}`,
           }],
         };
       }

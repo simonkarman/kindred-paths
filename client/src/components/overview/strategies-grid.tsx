@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import React, { useRef, useState } from 'react';
 import { CardColor, SerializedCard } from 'kindred-paths';
-import { StrategyAggregation, StrategyBucketCell } from 'kindred-paths';
+import { StrategyAggregation, StrategyBucketCell, StrategyFilter } from 'kindred-paths';
 import { getFilterQuery, getFilterWeight } from 'kindred-paths';
 import { typographyColors } from '@/utils/typography';
 import { cardPath } from '@/utils/slugify';
@@ -11,8 +11,8 @@ import { cardPath } from '@/utils/slugify';
 interface StrategiesGridProps {
   aggregation: StrategyAggregation;
   cards: SerializedCard[];
-  bucketLabels?: string[];
   editMode?: boolean;
+  searchText?: string;
   onEdit?: (strategyIndex: number) => void;
   onReorder?: (fromIndex: number, toIndex: number) => void;
   onAddStrategy?: () => void;
@@ -113,18 +113,6 @@ function BucketCellContent({ cell, globalMax }: BucketCellContentProps) {
   );
 }
 
-/** Formats a bucket's names into a readable label (fallback when no override provided). */
-function bucketLabel(bucketNames: string[]): string {
-  if (bucketNames.includes('*')) return '*';
-  const nums = bucketNames
-    .map(n => (n.startsWith('mv:') ? parseInt(n.slice(3), 10) : NaN))
-    .filter(n => !isNaN(n))
-    .sort((a, b) => a - b);
-  if (nums.length === 0) return bucketNames.join(', ');
-  if (nums.length === 1) return `${nums[0]}`;
-  return `${nums[0]}–${nums[nums.length - 1]}`;
-}
-
 /** Small colored swatch circle for a card face. */
 function ColorSwatch({ card, faceIndex }: { card: SerializedCard; faceIndex: number }) {
   const colorKey = getCardColorKey(card, faceIndex);
@@ -154,6 +142,7 @@ type GroupedContribution = {
 type GroupedCardRef = {
   cid: string;
   faceIndex: number;
+  bucketName: string;
   totalContribution: number;
   contributions: GroupedContribution[];
 };
@@ -165,15 +154,19 @@ function groupCellRefs(cell: StrategyBucketCell): GroupedCardRef[] {
     for (const ref of colorEntry.refs) {
       const key = `${ref.cid}-${ref.faceIndex}`;
       if (!map.has(key)) {
-        map.set(key, { cid: ref.cid, faceIndex: ref.faceIndex, totalContribution: 0, contributions: [] });
+        map.set(key, { cid: ref.cid, bucketName: ref.bucketName, faceIndex: ref.faceIndex, totalContribution: 0, contributions: [] });
       }
       const group = map.get(key)!;
       group.totalContribution += ref.contribution;
       group.contributions.push({ color: colorEntry.color, contribution: ref.contribution, filterWeight: ref.filterWeight });
     }
   }
-  // Sort by total contribution descending
-  return [...map.values()].sort((a, b) => b.totalContribution - a.totalContribution);
+  // Sort by total bucket name, and then by contribution descending
+  return [...map.values()].sort((a, b) => {
+    const diff = a.bucketName.localeCompare(b.bucketName);
+    if (diff !== 0) return diff;
+    return b.totalContribution - a.totalContribution;
+  });
 }
 
 /** Drill-down table for a selected cell. */
@@ -181,6 +174,7 @@ function DrillDownPanel({
   cell,
   strategyName,
   bucketLabel: bucketLabelText,
+  filters,
   cardMap,
   onClose,
   colSpan,
@@ -188,6 +182,7 @@ function DrillDownPanel({
   cell: StrategyBucketCell;
   strategyName: string;
   bucketLabel: string;
+  filters: StrategyFilter[];
   cardMap: Map<string, SerializedCard>;
   onClose: () => void;
   colSpan: number;
@@ -207,6 +202,23 @@ function DrillDownPanel({
               <span className="ml-3 text-xs text-slate-400">
                 {cell.total} unique card{cell.total !== 1 ? 's' : ''}
               </span>
+              {filters.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {filters.map((f, fi) => {
+                    const query = getFilterQuery(f);
+                    const weight = getFilterWeight(f);
+                    return (
+                      <code
+                        key={fi}
+                        className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded"
+                        title={weight > 1 ? `weight: ×${weight}` : undefined}
+                      >
+                        {query}{weight > 1 && <span className="ml-1 text-slate-400 font-semibold">×{weight}</span>}
+                      </code>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             <button
               onClick={onClose}
@@ -221,6 +233,7 @@ function DrillDownPanel({
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500">
                   <th className="text-left py-1.5 pr-3 font-medium">Card</th>
+                  <th className="text-left py-1.5 pr-3 font-medium">Match</th>
                   <th className="text-left py-1.5 pr-3 font-medium">Color</th>
                   <th className="text-left py-1.5 font-medium">Contributions</th>
                 </tr>
@@ -246,6 +259,9 @@ function DrillDownPanel({
                         {isSecondaryFace && (
                           <span className="ml-1.5 text-slate-400 font-normal">(back)</span>
                         )}
+                      </td>
+                      <td className="py-1.5 pr-3 font-medium">
+                        {group.bucketName}
                       </td>
                       <td className="py-1.5 pr-3">
                         {card && (
@@ -300,7 +316,15 @@ function DrillDownPanel({
   );
 }
 
-export function StrategiesGrid({ aggregation, cards, bucketLabels, editMode, onEdit, onReorder, onAddStrategy }: StrategiesGridProps) {
+/** Builds the ?q= value for the visual tab link for a given strategy. */
+function buildVisualTabQuery(currentSearch: string, filters: StrategyFilter[]): string {
+  const parts = filters.map(f => getFilterQuery(f));
+  if (parts.length === 0) return currentSearch.trim();
+  const orClause = parts.length === 1 ? parts[0] : `( ${parts.join(' OR ')} )`;
+  return [currentSearch.trim(), orClause].filter(Boolean).join(' ');
+}
+
+export function StrategiesGrid({ aggregation, cards, editMode, searchText = '', onEdit, onReorder, onAddStrategy }: StrategiesGridProps) {
   const { rows, buckets } = aggregation;
   const [selected, setSelected] = useState<{ rowIndex: number; cellIndex: number } | null>(null);
   const [unmatchedOpen, setUnmatchedOpen] = useState(false);
@@ -376,19 +400,12 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels, editMode, onE
             <th className="text-left px-4 py-3 font-semibold text-slate-700 min-w-[200px]">
               Strategy
             </th>
-            {buckets.map((bucketNames, i) => (
+            {buckets.map(bucket => (
               <th
-                key={i}
+                key={bucket.title}
                 className="px-3 py-3 font-semibold text-slate-700 text-center min-w-[80px]"
               >
-                {bucketLabels?.[i] ?? (
-                  <span className="inline-flex items-center gap-1">
-                    {!bucketNames.includes('*') && (
-                      <span className="text-slate-400 text-xs font-normal">MV</span>
-                    )}
-                    {bucketLabel(bucketNames)}
-                  </span>
-                )}
+                {bucket.title}
               </th>
             ))}
             <th className="px-3 py-3 font-semibold text-slate-700 text-center min-w-[60px]">
@@ -439,7 +456,50 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels, editMode, onE
                         </button>
                       )}
                       <div className="min-w-0">
-                        <div className="font-medium text-slate-900">{row.strategy.name}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium text-slate-900">{row.strategy.name}</span>
+                          {!editMode && row.strategy.filters.length > 0 && (
+                            <>
+                              <span className="relative group">
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-slate-400 text-[10px] font-bold cursor-default select-none">
+                                  ?
+                                </span>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 pointer-events-none">
+                                  <div className="bg-gray-900 text-white text-xs rounded py-2 px-3 shadow-lg">
+                                    <div className="font-semibold mb-1.5 text-slate-300">Filters</div>
+                                    <div className="flex flex-col gap-1">
+                                      {row.strategy.filters.map((f, fi) => {
+                                        const query = getFilterQuery(f);
+                                        const weight = getFilterWeight(f);
+                                        return (
+                                          <div key={fi} className="flex items-center gap-1.5">
+                                            <code className="text-xs bg-gray-700 text-slate-200 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                              {query}
+                                            </code>
+                                            {weight > 1 && (
+                                              <span className="text-slate-400 font-semibold whitespace-nowrap">×{weight}</span>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                </div>
+                              </span>
+                              <a
+                                href={`/?tab=visual&q=${encodeURIComponent(buildVisualTabQuery(searchText, row.strategy.filters))}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Open in Visual tab"
+                                className="text-slate-400 hover:text-blue-500 transition-colors"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                              </a>
+                            </>
+                          )}
+                        </div>
                         {row.strategy.description && (
                           <div className="text-xs text-slate-400 mt-0.5 leading-snug">
                             {row.strategy.description}
@@ -496,13 +556,14 @@ export function StrategiesGrid({ aggregation, cards, bucketLabels, editMode, onE
                 {/* Inline drill-down panel — inserted immediately after this row */}
                 {isRowSelected && selected !== null && (() => {
                   const cell = row.buckets[selected.cellIndex];
-                  const label = bucketLabels?.[selected.cellIndex] ?? bucketLabel(buckets[selected.cellIndex]);
+                  const label = buckets[selected.cellIndex].title;
                   return cell ? (
                     <DrillDownPanel
                       key={`drill-${rowIndex}`}
                       cell={cell}
                       strategyName={row.strategy.name}
                       bucketLabel={label}
+                      filters={row.strategy.filters}
                       cardMap={cardMap}
                       onClose={() => setSelected(null)}
                       colSpan={totalCols}

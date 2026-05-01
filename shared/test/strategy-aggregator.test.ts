@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   aggregateStrategies,
+  Bucket,
   BucketConfig,
   getBucketIndex,
   SerializableStrategy,
@@ -31,11 +32,27 @@ function stubToBucketName(
   };
 }
 
-function makeBucketConfig(buckets: string[][], toBucketName: ToBucketNameFn): BucketConfig {
-  return { buckets, toBucketName };
+function makeBucketConfig(buckets: Bucket[] | string[][], toBucketName: ToBucketNameFn): BucketConfig {
+  if ('matches' in buckets[0]) {
+    // Already in Bucket format
+    return {
+      buckets: buckets as Bucket[],
+      toBucketName,
+    };
+  }
+  // Convert from string[][] format
+  return {
+    buckets: (buckets as string[][]).map(b => ({ title: b.join(), matches: b })),
+    toBucketName,
+  };
 }
 
-const SIMPLE_BUCKETS = [['low'], ['mid'], ['high'], ['*']];
+const SIMPLE_BUCKETS = [
+  { title: 'Low', matches: ['low'] },
+  { title: 'Mid', matches: ['mid'] },
+  { title: 'High', matches: ['high'] },
+  { title: '*', matches: ['*'] },
+];
 
 const CREATURE_FACE: SerializedCard['faces'][0] = {
   name: 'Test Creature',
@@ -67,7 +84,11 @@ const GREEN_STRATEGY: SerializableStrategy = {
 // ---------------------------------------------------------------------------
 
 describe('getBucketIndex', () => {
-  const buckets = [['a', 'b'], ['c'], ['*']];
+  const buckets = [
+    { title: 'AB', matches: ['a', 'b'] },
+    { title: 'C', matches: ['c'] },
+    { title: '*', matches: ['*'] },
+  ];
 
   test('finds exact match in first bucket', () => {
     expect(getBucketIndex('a', buckets)).toBe(0);
@@ -83,7 +104,7 @@ describe('getBucketIndex', () => {
   });
 
   test('returns -1 when no * bucket and name not found', () => {
-    expect(getBucketIndex('z', [['a'], ['b']])).toBe(-1);
+    expect(getBucketIndex('z', [{ title: 'A', matches: ['a'] }, { title: 'B', matches: ['b'] }])).toBe(-1);
   });
 
   test('* itself resolves to the * bucket', () => {
@@ -122,7 +143,10 @@ describe('aggregateStrategies', () => {
 
   test('card discarded when bucket name unmatched and no * bucket', () => {
     const card = makeCard('aaaaaaaa', 'normal', [CREATURE_FACE]);
-    const config = makeBucketConfig([['a'], ['b']], stubToBucketName({ aaaaaaaa: 'z' }));
+    const config = makeBucketConfig([
+      { title: 'A', matches: ['a'] },
+      { title: 'B', matches: ['b'] },
+    ], stubToBucketName({ aaaaaaaa: 'z' }));
     const result = aggregateStrategies([card], [GREEN_STRATEGY], config);
 
     result.rows[0].buckets.forEach(b => expect(b.total).toBe(0));
@@ -346,7 +370,7 @@ describe('aggregateStrategies', () => {
 describe('weighted filters', () => {
   const card = makeCard('ffffffff', 'normal', [{ name: 'Token Maker', types: ['sorcery'], manaCost: { green: 1 } }]);
   const config: BucketConfig = {
-    buckets: [['slot'], ['*']],
+    buckets: [{ title: 'Slot', matches: ['slot'] }, { title: 'Catch-All', matches: ['*'] }],
     toBucketName: stubToBucketName({ ffffffff: 'slot' }),
   };
 
@@ -373,8 +397,8 @@ describe('weighted filters', () => {
     const strategy: SerializableStrategy = {
       name: 'S',
       filters: [
-        'type:sorcery',                              // weight 1
-        { query: 'color:green', weight: 3 },          // weight 3
+        'type:sorcery', // weight 1
+        { query: 'color:green', weight: 3 }, // weight 3
       ],
     };
     const result = aggregateStrategies([card], [strategy], config);
@@ -388,8 +412,8 @@ describe('weighted filters', () => {
     const strategy: SerializableStrategy = {
       name: 'S',
       filters: [
-        'type:sorcery',                              // weight 1, matches
-        { query: 'type:instant', weight: 5 },         // weight 5, does NOT match
+        'type:sorcery', // weight 1, matches
+        { query: 'type:instant', weight: 5 }, // weight 5, does NOT match
       ],
     };
     const result = aggregateStrategies([card], [strategy], config);
