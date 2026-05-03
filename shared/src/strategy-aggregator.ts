@@ -1,7 +1,7 @@
-import { filterCardsBasedOnSearch } from './card-filterer';
+import { filterCardsBasedOnSearchWithFaces } from './card-filterer';
 import { SerializedCard } from './serialized-card';
 import { SerializableStrategy, getFilterQuery, getFilterWeight } from './serializable-strategies';
-import { getColorWeights } from './color-weights';
+import { getFaceColorWeights } from './color-weights';
 
 export type Bucket = { title: string, matches: string[] };
 
@@ -89,10 +89,22 @@ export function getBucketIndex(bucketName: string, buckets: Bucket[]): number {
 }
 
 /**
+ * Returns the castable face indices for a card based on its layout.
+ * - normal / transform: only face 0
+ * - modal / adventure:  both faces
+ */
+function getCastableFaceIndices(card: SerializedCard): number[] {
+  if (card.layout === 'modal' || card.layout === 'adventure') {
+    return card.faces.map((_, i) => i);
+  }
+  return [0];
+}
+
+/**
  * Aggregates the given cards against the given strategies and bucket config.
  * For each strategy, a card matches if it satisfies ANY of the strategy's filters (OR logic).
  * When a card matches multiple filters, the highest filter weight is used as a contribution multiplier.
- * Each castable face of a card independently determines its own bucket(s) via toBucketName.
+ * Only faces that both matched a filter AND are castable (per layout) contribute refs.
  * When toBucketName returns N names, the face's color weight is divided by N across those buckets.
  */
 export function aggregateStrategies(
@@ -103,18 +115,25 @@ export function aggregateStrategies(
   const { buckets, toBucketName } = bucketConfig;
 
   const rows: StrategyRow[] = strategies.map(strategy => {
-    // Collect matching cards using OR logic across all filters, tracking max weight per cid
-    const cidMaxWeight = new Map<string, number>();
+    // Collect matching faces using OR logic across all filters, tracking max weight per cid+faceIndex
+    const cidFaceMaxWeight = new Map<string, Map<number, number>>();
     for (const filter of strategy.filters) {
       const query = getFilterQuery(filter);
       const weight = getFilterWeight(filter);
-      const matched = filterCardsBasedOnSearch(cards, query);
-      for (const card of matched) {
-        const current = cidMaxWeight.get(card.cid) ?? 0;
-        if (weight > current) cidMaxWeight.set(card.cid, weight);
+      const matched = filterCardsBasedOnSearchWithFaces(cards, query);
+      for (const { card, matchingFaceIndices } of matched) {
+        let faceMap = cidFaceMaxWeight.get(card.cid);
+        if (!faceMap) {
+          faceMap = new Map();
+          cidFaceMaxWeight.set(card.cid, faceMap);
+        }
+        for (const faceIndex of matchingFaceIndices) {
+          const current = faceMap.get(faceIndex) ?? 0;
+          if (weight > current) faceMap.set(faceIndex, weight);
+        }
       }
     }
-    const matchedCards = cards.filter(c => cidMaxWeight.has(c.cid));
+    const matchedCards = cards.filter(c => cidFaceMaxWeight.has(c.cid));
 
     // Temporary accumulator: bucketIndex -> colorKey -> { count, refs }
     const acc: Map<number, Map<string, { count: number; refs: CardFaceRef[] }>> = new Map();
@@ -126,10 +145,15 @@ export function aggregateStrategies(
     }
 
     for (const card of matchedCards) {
-      const faceWeights = getColorWeights(card);
-      const filterWeight = cidMaxWeight.get(card.cid) ?? 1;
+      const faceMap = cidFaceMaxWeight.get(card.cid)!;
+      const castableFaceIndices = getCastableFaceIndices(card);
 
-      for (const { faceIndex, weights } of faceWeights) {
+      for (const faceIndex of castableFaceIndices) {
+        // Only process faces that both are castable and matched a filter
+        const filterWeight = faceMap.get(faceIndex);
+        if (filterWeight === undefined) continue;
+
+        const weights = getFaceColorWeights(card.faces[faceIndex]);
         const rawNames = toBucketName(card, faceIndex);
         const names = Array.isArray(rawNames) ? rawNames : [rawNames];
         const divisor = names.length;

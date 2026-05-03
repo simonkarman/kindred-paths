@@ -432,3 +432,77 @@ describe('weighted filters', () => {
     expect(result.rows[0].total).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// aggregateStrategies — adventure card face isolation
+// ---------------------------------------------------------------------------
+
+describe('adventure card face isolation', () => {
+  // Only face 0 (the creature) has rules that match; face 1 (the adventure spell)
+  // should NOT appear in the refs even though both faces are castable.
+  const adventureCard = makeCard('gggggggg', 'adventure', [
+    {
+      name: 'Drift Chaplain',
+      types: ['creature'],
+      subtypes: ['human', 'cleric'],
+      manaCost: { generic: 3, white: 1 },
+      pt: { power: 3, toughness: 2 },
+      rules: [
+        { variant: 'keyword', content: 'vigilance' },
+        { variant: 'ability', content: 'When this creature enters, create an Asteroid token.' },
+      ],
+    },
+    {
+      name: 'Shield of Faith',
+      types: ['instant'],
+      subtypes: ['adventure'],
+      manaCost: { white: 1 },
+      rules: [
+        { variant: 'ability', content: 'Target creature you control gets +2/+0 until end of turn. Untap it.' },
+      ],
+    },
+  ]);
+
+  const asteroidStrategy: SerializableStrategy = {
+    name: 'Asteroid Generation',
+    filters: ['rules:"create" rules:"Asteroid token"'],
+  };
+
+  const config: BucketConfig = {
+    buckets: [{ title: 'Slot', matches: ['slot'] }, { title: '*', matches: ['*'] }],
+    toBucketName: stubToBucketName({ gggggggg: 'slot' }, { gggggggg: 'slot' }),
+  };
+
+  test('only the matching face (face 0) produces a ref', () => {
+    const result = aggregateStrategies([adventureCard], [asteroidStrategy], config);
+    const refs = result.rows[0].buckets[0].refs;
+    expect(refs).toHaveLength(1);
+    expect(refs[0].faceIndex).toBe(0);
+  });
+
+  test('non-matching face (face 1) does not appear in refs', () => {
+    const result = aggregateStrategies([adventureCard], [asteroidStrategy], config);
+    const refs = result.rows[0].buckets[0].refs;
+    expect(refs.every(r => r.faceIndex !== 1)).toBe(true);
+  });
+
+  test('card total is still 1 despite only one face contributing', () => {
+    const result = aggregateStrategies([adventureCard], [asteroidStrategy], config);
+    expect(result.rows[0].total).toBe(1);
+    expect(result.rows[0].buckets[0].total).toBe(1);
+  });
+
+  test('query matching both faces produces refs for both faces', () => {
+    // type:instant matches face 1; type:creature matches face 0 — OR logic means both match
+    // but here we use a filter that matches each face individually via separate strategies
+    const bothFacesStrategy: SerializableStrategy = {
+      name: 'White cards',
+      filters: ['color:white'],
+    };
+    const result = aggregateStrategies([adventureCard], [bothFacesStrategy], config);
+    const refs = result.rows[0].buckets[0].refs;
+    // Both faces are white, so both should contribute
+    expect(refs).toHaveLength(2);
+    expect(refs.map(r => r.faceIndex).sort()).toEqual([0, 1]);
+  });
+});

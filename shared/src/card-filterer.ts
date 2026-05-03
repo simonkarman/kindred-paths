@@ -276,14 +276,30 @@ const cardFaceTermResolver = (_card: SerializedCard, faceIndex: number, term: st
 };
 
 export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: string): SerializedCard[] => {
+  return filterCardsBasedOnSearchWithFaces(cards, searchQuery).map(r => r.card);
+};
+
+export const filterCardsBasedOnSearchWithFaces = (
+  cards: SerializedCard[],
+  searchQuery: string,
+): { card: SerializedCard; matchingFaceIndices: number[] }[] => {
   searchQuery = searchQuery.trim();
-  if (!searchQuery || searchQuery === '') return cards;
+  if (!searchQuery || searchQuery === '') {
+    return cards.map(card => ({ card, matchingFaceIndices: card.faces.map((_, i) => i) }));
+  }
 
   const filterQueryHandler = new FilterQueryHandler();
   const searchTokens = filterQueryHandler.tokenize(searchQuery);
 
-  return cards
-    .filter(_card => _card.faces
-      .some((_, faceIndex) => filterQueryHandler
-        .resolve(searchTokens, (term: string) => cardFaceTermResolver(_card, faceIndex, term))));
+  const results: { card: SerializedCard; matchingFaceIndices: number[] }[] = [];
+  for (const card of cards) {
+    const matchingFaceIndices = card.faces
+      .map((_, faceIndex) => faceIndex)
+      .filter(faceIndex => filterQueryHandler
+        .resolve(searchTokens, (term: string) => cardFaceTermResolver(card, faceIndex, term)));
+    if (matchingFaceIndices.length > 0) {
+      results.push({ card, matchingFaceIndices });
+    }
+  }
+  return results;
 };

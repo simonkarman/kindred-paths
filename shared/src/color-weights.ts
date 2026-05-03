@@ -43,7 +43,7 @@ function cartesianProduct<T>(options: [T, T][]): T[][] {
  *   {1}{r/g}{r/g} -> { red: 0.25, 'red+green': 0.5, green: 0.25 }
  *   {1}{r/g}{r/b} -> { red: 0.25, 'black+red': 0.25, 'red+green': 0.25, 'black+green': 0.25 }
  */
-function getFaceColorWeights(face: SerializedCardFace): Map<string, number> {
+export function getFaceColorWeights(face: SerializedCardFace): Map<string, number> {
   // Cards without a mana cost use givenColors (lands, tokens, etc.)
   if (face.manaCost === undefined) {
     const given = face.givenColors ?? [];

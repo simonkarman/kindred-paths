@@ -320,8 +320,11 @@ function DrillDownPanel({
 function buildVisualTabQuery(currentSearch: string, filters: StrategyFilter[]): string {
   const parts = filters.map(f => getFilterQuery(f));
   if (parts.length === 0) return currentSearch.trim();
-  const orClause = parts.length === 1 ? parts[0] : `( ${parts.join(' OR ')} )`;
-  return [currentSearch.trim(), orClause].filter(Boolean).join(' ');
+  const orClause = parts.map(p => `(${p})`).join(' or ');
+  return [
+    currentSearch.trim(),
+    (orClause.length > 0 && parts.length > 1) ? `(${orClause})` : '',
+  ].filter(Boolean).join(' and ');
 }
 
 export function StrategiesGrid({ aggregation, cards, editMode, searchText = '', onEdit, onReorder, onAddStrategy }: StrategiesGridProps) {
