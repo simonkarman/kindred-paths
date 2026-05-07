@@ -71,14 +71,36 @@ function formatTypeLine(face: SerializedCardFace): string {
   return parts.join(' ');
 }
 
+function formatColorAnnotation(colors: Research['rows'][number]['buckets'][number]['colors']): string {
+  if (!colors || colors.length === 0) return '';
+  const colorAbbrev: Record<string, string> = {
+    white: 'W', blue: 'U', black: 'B', red: 'R', green: 'G', colorless: 'C',
+  };
+  const parts = colors
+    .map(e => {
+      const rounded = Math.round(e.count);
+      if (rounded === 0) return null;
+      // Abbreviate each part of a multi-color key (e.g. "red+black" -> "R+B")
+      const abbrevKey = e.color.split('+').map(c => colorAbbrev[c] ?? c).join('+');
+      return `${abbrevKey}:${rounded}`;
+    })
+    .filter((p): p is string => p !== null);
+  return parts.length > 0 ? ` (${parts.join(' ')})` : '';
+}
+
 function renderSummaryTable(research: Research): string {
   const { strategyFilename, cardFilter, createdAt, bucketTitles, rows, totalCards, id } = research;
   const bucketLabels = bucketTitles;
 
+  // Build annotated cell strings: "16 (G:9 R:4 U:3)"
+  const cellStrings = rows.map(r =>
+    r.buckets.map(b => `${b.total}${formatColorAnnotation(b.colors)}`),
+  );
+
   // Column widths
   const nameCol = Math.max(20, ...rows.map(r => r.strategyName.length));
   const bucketCols = bucketLabels.map((label, i) =>
-    Math.max(label.length, ...rows.map(r => String(r.buckets[i]?.total ?? 0).length)),
+    Math.max(label.length, ...cellStrings.map(cs => cs[i]?.length ?? 0)),
   );
   const totalColWidth = Math.max(5, ...rows.map(r => String(r.total).length));
 
@@ -93,9 +115,9 @@ function renderSummaryTable(research: Research): string {
 
   const sep = '─'.repeat(header.length);
 
-  const dataRows = rows.map(r => [
+  const dataRows = rows.map((r, ri) => [
     pad(r.strategyName, nameCol),
-    ...r.buckets.map((b, i) => padL(String(b.total), bucketCols[i])),
+    ...cellStrings[ri].map((cell, i) => padL(cell, bucketCols[i])),
     padL(String(r.total), totalColWidth),
   ].join(' | '));
 
@@ -170,6 +192,7 @@ export function registerResearchTools(server: McpServer) {
           ...(row.strategy.description ? { strategyDescription: row.strategy.description } : {}),
           buckets: row.buckets.map(cell => ({
             total: cell.total,
+            colors: cell.colors,
             refs: cell.refs,
           })),
           total: row.total,

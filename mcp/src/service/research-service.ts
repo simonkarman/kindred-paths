@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { CardFaceRef } from 'kindred-paths';
+import { CardFaceRef, StrategyColorEntry } from 'kindred-paths';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -10,6 +10,7 @@ const cacheDirectory = resolve(__dirname, '../.cache');
 
 export type ResearchBucket = {
   total: number;
+  colors: StrategyColorEntry[];
   refs: CardFaceRef[];
 };
 
