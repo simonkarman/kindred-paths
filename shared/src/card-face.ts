@@ -12,6 +12,7 @@ export const cardSuperTypes = [undefined, 'basic', 'legendary'] as const;
 export type CardType = 'enchantment' | 'artifact' | 'instant' | 'sorcery' | 'creature' | 'land' | 'planeswalker';
 export const cardTypes = ['enchantment', 'artifact', 'creature', 'land', 'instant', 'sorcery', 'planeswalker'] as const;
 export const permanentTypes = ['enchantment', 'artifact', 'creature', 'land', 'planeswalker'] as const;
+export type PermanentType = typeof permanentTypes[number];
 
 export type TokenCardType = Exclude<CardType, 'instant' | 'sorcery' | 'planeswalker'>;
 export const tokenCardTypes = ['enchantment', 'artifact', 'creature', 'land'] as const;

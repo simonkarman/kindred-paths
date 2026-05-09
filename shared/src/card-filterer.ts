@@ -3,6 +3,7 @@ import { Card } from './card';
 import { CardColor, CardColorCharacter, colorToLong, isHybridMana, Mana, wubrg } from './colors';
 import { filterDefinitions } from './filter-definitions';
 import { FilterQueryHandler } from './filter-query-handler';
+import { PermanentType, permanentTypes } from './card-face';
 
 const check = (
   keys: string[],
@@ -87,6 +88,7 @@ const cardFaceTermResolver = (_card: SerializedCard, faceIndex: number, term: st
       ...cardFace.types,
       ...(cardFace.subtypes ?? []),
       ...(cardFace.supertype ? [cardFace.supertype] : []),
+      ...(permanentTypes.includes(cardFace.types[0] as PermanentType) ? ['permanent'] : []),
     ].some(t => t.startsWith(typeNeedle))),
 
     check(getFilterKeys('rarity'), rarityNeedle => rarityNeedle.length === 1
