@@ -86,16 +86,24 @@ describe('getColorWeights', () => {
   });
 
   describe('multi-color cards (no hybrid)', () => {
-    test('{1}{r}{b} -> black+red: 1', () => {
-      expect(weightsOf(cardWithCost({ generic: 1, red: 1, black: 1 }))).toEqual({ 'black+red': 1 });
+    test('{1}{r}{b} -> red: 0.5, black: 0.5', () => {
+      expect(weightsOf(cardWithCost({ generic: 1, red: 1, black: 1 }))).toEqual({ red: 0.5, black: 0.5 });
     });
 
-    test('{r}{g} -> red+green: 1', () => {
-      expect(weightsOf(cardWithCost({ red: 1, green: 1 }))).toEqual({ 'red+green': 1 });
+    test('{r}{g} -> red: 0.5, green: 0.5', () => {
+      expect(weightsOf(cardWithCost({ red: 1, green: 1 }))).toEqual({ red: 0.5, green: 0.5 });
     });
 
-    test('{w}{u}{b}{r}{g} -> white+blue+black+red+green: 1 (5-color)', () => {
-      expect(weightsOf(cardWithCost({ white: 1, blue: 1, black: 1, red: 1, green: 1 }))).toEqual({ 'white+blue+black+red+green': 1 });
+    test('{2}{r}{u}{u} -> red: 0.333, blue: 0.667 (pip-proportional)', () => {
+      const weights = weightsOf(cardWithCost({ generic: 2, red: 1, blue: 2 }));
+      expect(weights.red).toBeCloseTo(1 / 3);
+      expect(weights.blue).toBeCloseTo(2 / 3);
+    });
+
+    test('{w}{u}{b}{r}{g} -> each color: 0.2 (5-color)', () => {
+      expect(weightsOf(cardWithCost({ white: 1, blue: 1, black: 1, red: 1, green: 1 }))).toEqual({
+        white: 0.2, blue: 0.2, black: 0.2, red: 0.2, green: 0.2,
+      });
     });
   });
 
@@ -110,37 +118,26 @@ describe('getColorWeights', () => {
   });
 
   describe('two hybrid pips of the same type', () => {
-    test('{1}{r/g}{r/g} -> red: 0.25, red+green: 0.5, green: 0.25', () => {
-      // permutations: (r,r), (r,g), (g,r), (g,g)
-      expect(weightsOf(cardWithCost({ generic: 1, 'red/green': 2 }))).toEqual({
-        red: 0.25,
-        'red+green': 0.5,
-        green: 0.25,
-      });
+    test('{1}{r/g}{r/g} -> red: 0.5, green: 0.5', () => {
+      expect(weightsOf(cardWithCost({ generic: 1, 'red/green': 2 }))).toEqual({ red: 0.5, green: 0.5 });
     });
   });
 
   describe('two hybrid pips of different types', () => {
-    test('{1}{r/g}{r/b} -> red: 0.25, black+red: 0.25, red+green: 0.25, black+green: 0.25', () => {
-      // permutations: (r,r), (r,b), (g,r), (g,b)
+    test('{1}{r/g}{r/b} -> red: 0.5, green: 0.25, black: 0.25', () => {
       expect(weightsOf(cardWithCost({ generic: 1, 'red/green': 1, 'black/red': 1 }))).toEqual({
-        red: 0.25,
-        'black+red': 0.25,
-        'red+green': 0.25,
-        'black+green': 0.25,
+        red: 0.5, green: 0.25, black: 0.25,
       });
     });
   });
 
   describe('hybrid pips combined with non-hybrid colors', () => {
-    test('{r}{r/g} -> red: 0.5, red+green: 0.5 (hybrid redundant with existing red)', () => {
-      // permutations: (r), (g) merged with fixed [red]
-      // (red + r -> red), (red + g -> red+green)
-      expect(weightsOf(cardWithCost({ red: 1, 'red/green': 1 }))).toEqual({ red: 0.5, 'red+green': 0.5 });
+    test('{r}{r/g} -> red: 0.75, green: 0.25', () => {
+      expect(weightsOf(cardWithCost({ red: 1, 'red/green': 1 }))).toEqual({ red: 0.75, green: 0.25 });
     });
 
-    test('{w}{r/g} -> red+white: 0.5, green+white: 0.5', () => {
-      expect(weightsOf(cardWithCost({ white: 1, 'red/green': 1 }))).toEqual({ 'red+white': 0.5, 'green+white': 0.5 });
+    test('{w}{r/g} -> white: 0.5, red: 0.25, green: 0.25', () => {
+      expect(weightsOf(cardWithCost({ white: 1, 'red/green': 1 }))).toEqual({ white: 0.5, red: 0.25, green: 0.25 });
     });
   });
 
@@ -157,8 +154,8 @@ describe('getColorWeights', () => {
       expect(weightsOf(cardWithGivenColors(['green']))).toEqual({ green: 1 });
     });
 
-    test('no manaCost, givenColors [red, green] -> red+green: 1', () => {
-      expect(weightsOf(cardWithGivenColors(['red', 'green']))).toEqual({ 'red+green': 1 });
+    test('no manaCost, givenColors [red, green] -> red: 0.5, green: 0.5', () => {
+      expect(weightsOf(cardWithGivenColors(['red', 'green']))).toEqual({ red: 0.5, green: 0.5 });
     });
   });
 

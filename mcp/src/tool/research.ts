@@ -1,30 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { aggregateStrategies, BucketConfig, SerializedCard, SerializedCardFace } from 'kindred-paths';
+import { aggregateStrategies, BucketConfigs, DefaultBucketConfigName, SerializedCardFace } from 'kindred-paths';
 import { CardService } from '../service/card-service.js';
 import { StrategyService } from '../service/strategy-service.js';
 import { Research, ResearchService } from '../service/research-service.js';
-
-// ---------------------------------------------------------------------------
-// Hardcoded MV bucket config (same as the client)
-// ---------------------------------------------------------------------------
-
-const MV_BUCKET_CONFIG: BucketConfig = {
-  buckets: [
-    { title: 'MV <2', matches: ['mv:0', 'mv:1', 'mv:2'] },
-    { title: 'MV 3', matches: ['mv:3'] },
-    { title: 'MV 4-5', matches: ['mv:4', 'mv:5'] },
-    { title: 'MV >6', matches: ['*'] },
-  ],
-  toBucketName: (card: SerializedCard, faceIndex: number) => {
-    const face = card.faces[faceIndex];
-    const mv = Object.entries(face?.manaCost ?? {}).reduce(
-      (sum, [type, amount]) => sum + (type === 'x' ? 0 : (amount ?? 0)),
-      0,
-    );
-    return `mv:${mv}`;
-  },
-};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -160,15 +139,26 @@ export function registerResearchTools(server: McpServer) {
     {
       description:
         'Run a strategy file against a filtered subset of cards. ' +
-        'Aggregates how many cards in each strategy fall into each mana value bucket. ' +
+        'Aggregates how many cards in each strategy fall into each bucket. ' +
         'Saves the result as a research file and returns a summary table. ' +
+        `Valid bucket configs: ${Object.keys(BucketConfigs).join(', ')}. ` +
         'Use get_research_cell with the returned research ID to drill into individual cells.',
       inputSchema: {
         filename: z.string().describe('The strategy filename without extension (e.g. "shx")'),
         cardFilter: z.string().describe('A card search filter string to select the card pool (e.g. "set:SHX")'),
+        bucketConfig: z.string().optional().describe(`How to group cards into columns. Valid values: ${Object.keys(BucketConfigs).join(', ')}. Defaults to "${DefaultBucketConfigName}".`),
       },
     },
-    async ({ filename, cardFilter }) => {
+    async ({ filename, cardFilter, bucketConfig: bucketConfigName }) => {
+      const resolvedBucketConfigName = bucketConfigName ?? DefaultBucketConfigName;
+      const bucketConfig = BucketConfigs[resolvedBucketConfigName];
+      if (!bucketConfig) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Unknown bucket config "${resolvedBucketConfigName}". Valid values: ${Object.keys(BucketConfigs).join(', ')}.` }],
+        };
+      }
+
       const config = await strategyService.get(filename);
       if (!config) {
         return {
@@ -179,14 +169,14 @@ export function registerResearchTools(server: McpServer) {
 
       const cards = await cardService.all(cardFilter);
 
-      const aggregation = aggregateStrategies(cards, config.strategies, MV_BUCKET_CONFIG);
+      const aggregation = aggregateStrategies(cards, config.strategies, bucketConfig);
 
       const research: Research = {
         id: `${filename}-${Date.now()}`,
         strategyFilename: filename,
         cardFilter,
         createdAt: new Date().toISOString(),
-        bucketTitles: MV_BUCKET_CONFIG.buckets.map(b => b.title),
+        bucketTitles: bucketConfig.buckets.map(b => b.title),
         rows: aggregation.rows.map(row => ({
           strategyName: row.strategy.name,
           ...(row.strategy.description ? { strategyDescription: row.strategy.description } : {}),

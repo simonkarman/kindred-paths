@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   aggregateStrategies,
-  BucketConfig,
+  BucketConfigs,
+  DefaultBucketConfigName,
   SerializableStrategiesConfig,
   SerializableStrategiesConfigSchema,
   SerializedCard,
@@ -77,23 +78,7 @@ async function deleteStrategyFile(filename: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 const LS_KEY = 'kindred-paths:strategies:selected';
-
-const MV_BUCKET_CONFIG: BucketConfig = {
-  buckets: [
-    { title: 'MV <2', matches: ['mv:0', 'mv:1', 'mv:2'] },
-    { title: 'MV 3', matches: ['mv:3'] },
-    { title: 'MV 4-5', matches: ['mv:4', 'mv:5'] },
-    { title: 'MV >6', matches: ['*'] },
-  ],
-  toBucketName: (card, faceIndex) => {
-    const face = card.faces[faceIndex];
-    const mv = Object.entries(face.manaCost ?? {}).reduce(
-      (sum, [type, amount]) => sum + (type === 'x' ? 0 : (amount ?? 0)),
-      0,
-    );
-    return `mv:${mv}`;
-  },
-};
+const LS_BUCKET_KEY = 'kindred-paths:strategies:bucket-config';
 
 // ---------------------------------------------------------------------------
 // Component
@@ -112,6 +97,18 @@ export function StrategiesTab(props: { cards: SerializedCard[]; searchText?: str
     try { return localStorage.getItem(LS_KEY); } catch { return null; }
   });
   const [staleSelected, setStaleSelected] = useState<string | null>(null);
+
+  const [selectedBucketConfig, setSelectedBucketConfig] = useState<string>(() => {
+    try {
+      const stored = localStorage.getItem(LS_BUCKET_KEY);
+      return (stored && stored in BucketConfigs) ? stored : DefaultBucketConfigName;
+    } catch { return DefaultBucketConfigName; }
+  });
+
+  function handleBucketConfigChange(name: string) {
+    setSelectedBucketConfig(name);
+    localStorage.setItem(LS_BUCKET_KEY, name);
+  }
 
   const [config, setConfig] = useState<SerializableStrategiesConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(false);
@@ -332,8 +329,8 @@ export function StrategiesTab(props: { cards: SerializedCard[]; searchText?: str
 
   const aggregation: StrategyAggregation | null = useMemo(() => {
     if (!config?.strategies || config.strategies.length === 0) return null;
-    return aggregateStrategies(props.cards, config.strategies, MV_BUCKET_CONFIG);
-  }, [props.cards, config]);
+    return aggregateStrategies(props.cards, config.strategies, BucketConfigs[selectedBucketConfig]);
+  }, [props.cards, config, selectedBucketConfig]);
 
   const strategyCount = config?.strategies?.length ?? null;
 
@@ -688,6 +685,7 @@ export function StrategiesTab(props: { cards: SerializedCard[]; searchText?: str
             strategy={null}
             strategyIndex={null}
             cards={props.cards}
+            bucketConfig={BucketConfigs[selectedBucketConfig]}
             onSave={handlePanelSave}
             onClose={() => setPanelOpen(false)}
           />
@@ -707,6 +705,8 @@ export function StrategiesTab(props: { cards: SerializedCard[]; searchText?: str
           cards={props.cards}
           editMode={editMode}
           searchText={props.searchText}
+          selectedBucketConfig={selectedBucketConfig}
+          onBucketConfigChange={handleBucketConfigChange}
           onEdit={handleOpenPanel}
           onReorder={handleReorder}
           onAddStrategy={() => handleOpenPanel(null)}
@@ -719,6 +719,7 @@ export function StrategiesTab(props: { cards: SerializedCard[]; searchText?: str
           strategy={panelStrategyIndex !== null ? (config.strategies[panelStrategyIndex] ?? null) : null}
           strategyIndex={panelStrategyIndex}
           cards={props.cards}
+          bucketConfig={BucketConfigs[selectedBucketConfig]}
           onSave={handlePanelSave}
           onClose={() => setPanelOpen(false)}
         />

@@ -29,30 +29,10 @@ interface Props {
   strategy: SerializableStrategy | null; // null = new
   strategyIndex: number | null;          // null = new
   cards: SerializedCard[];
+  bucketConfig: BucketConfig;
   onSave: (updatedConfig: SerializableStrategiesConfig) => void;
   onClose: () => void;
 }
-
-// ---------------------------------------------------------------------------
-// Bucket config (same as strategies-tab)
-// ---------------------------------------------------------------------------
-
-const MV_BUCKET_CONFIG: BucketConfig = {
-  buckets: [
-    { title: 'MV <2', matches: ['mv:0', 'mv:1', 'mv:2'] },
-    { title: 'MV 3', matches: ['mv:3'] },
-    { title: 'MV 4-5', matches: ['mv:4', 'mv:5'] },
-    { title: 'MV >6', matches: ['*'] },
-  ],
-  toBucketName: (card, faceIndex) => {
-    const face = card.faces[faceIndex];
-    const mv = Object.entries(face.manaCost ?? {}).reduce(
-      (sum, [type, amount]) => sum + (type === 'x' ? 0 : (amount ?? 0)),
-      0,
-    );
-    return `mv:${mv}`;
-  },
-};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -100,7 +80,7 @@ async function saveConfig(filename: string, config: SerializableStrategiesConfig
 // Mini preview grid
 // ---------------------------------------------------------------------------
 
-function MiniPreviewGrid({ strategy, cards }: { strategy: SerializableStrategy | null; cards: SerializedCard[] }) {
+function MiniPreviewGrid({ strategy, cards, bucketConfig }: { strategy: SerializableStrategy | null; cards: SerializedCard[]; bucketConfig: BucketConfig }) {
   const aggregation = useMemo(() => {
     if (!strategy || strategy.filters.length === 0) return null;
     // Filter out empty queries
@@ -108,11 +88,11 @@ function MiniPreviewGrid({ strategy, cards }: { strategy: SerializableStrategy |
     if (validFilters.length === 0) return null;
     const s = { ...strategy, filters: validFilters };
     try {
-      return aggregateStrategies(cards, [s], MV_BUCKET_CONFIG);
+      return aggregateStrategies(cards, [s], bucketConfig);
     } catch {
       return null;
     }
-  }, [strategy, cards]);
+  }, [strategy, cards, bucketConfig]);
 
   if (!aggregation) {
     return (
@@ -175,7 +155,7 @@ function MiniPreviewGrid({ strategy, cards }: { strategy: SerializableStrategy |
 // Main panel
 // ---------------------------------------------------------------------------
 
-export function StrategyEditorPanel({ filename, config, strategy, strategyIndex, cards, onSave, onClose }: Props) {
+export function StrategyEditorPanel({ filename, config, strategy, strategyIndex, cards, bucketConfig, onSave, onClose }: Props) {
   const isNew = strategy === null;
 
   const [name, setName] = useState(strategy?.name ?? '');
@@ -410,7 +390,7 @@ export function StrategyEditorPanel({ filename, config, strategy, strategyIndex,
           <div>
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Live preview</p>
             <div className="bg-slate-50 border border-slate-200 rounded-md p-3">
-              <MiniPreviewGrid strategy={draftStrategy} cards={cards} />
+              <MiniPreviewGrid strategy={draftStrategy} cards={cards} bucketConfig={bucketConfig} />
             </div>
           </div>
 

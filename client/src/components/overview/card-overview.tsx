@@ -21,7 +21,7 @@ export function CardOverview(props: {
   showCreate?: boolean,
 }) {
   const { showCreate = true } = props;
-  const [activeTab, setActiveTab] = useUrlParam('tab', 'table') as [TabType, (v: TabType) => void];
+  const [activeTab, setActiveTab] = useUrlParam('tab', 'visual') as [TabType, (v: TabType) => void];
 
   const [searchText, setSearchText] = useUrlParam('q', '');
   usePrintTitle('KPA ' + searchText + ' date=' + new Date().toISOString().substring(0, 19).replaceAll(/[^\d]/g, '-'));
@@ -29,8 +29,8 @@ export function CardOverview(props: {
   const cards = filterCardsBasedOnSearch(props.cards, searchText);
 
   const TAB_DEFS: { id: TabType; label: string }[] = [
-    { id: 'table', label: 'Table' },
     { id: 'visual', label: 'Visual' },
+    { id: 'table', label: 'Table' },
     { id: 'text', label: 'Text' },
     { id: 'strategies', label: 'Strategies' },
     { id: 'statistics', label: 'Statistics' },

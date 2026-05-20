@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import React, { useRef, useState } from 'react';
-import { CardColor, SerializedCard } from 'kindred-paths';
+import { BucketConfigs, CardColor, SerializedCard } from 'kindred-paths';
 import { StrategyAggregation, StrategyBucketCell, StrategyFilter } from 'kindred-paths';
 import { getFilterQuery, getFilterWeight } from 'kindred-paths';
 import { typographyColors } from '@/utils/typography';
@@ -13,6 +13,8 @@ interface StrategiesGridProps {
   cards: SerializedCard[];
   editMode?: boolean;
   searchText?: string;
+  selectedBucketConfig: string;
+  onBucketConfigChange: (name: string) => void;
   onEdit?: (strategyIndex: number) => void;
   onReorder?: (fromIndex: number, toIndex: number) => void;
   onAddStrategy?: () => void;
@@ -62,17 +64,21 @@ function getCardColorKey(card: SerializedCard, faceIndex: number): string {
   return colors.join('+');
 }
 
-const BUBBLE_BASE_REM = 2.5;
-const BUBBLE_MIN_REM = 1.25;
+const BUBBLE_MAX_REM = 3.0;
 const BUBBLE_LABEL_MIN_REM = 1.5;
+const BUBBLE_CAP_MIN_CARDS = 75;
+const BUBBLE_CAP_MAX_CARDS = 250;
+const BUBBLE_CAP_PCT_SMALL = 0.15;
+const BUBBLE_CAP_PCT_LARGE = 0.05;
 
 interface BucketCellContentProps {
   cell: StrategyBucketCell;
-  globalMax: number;
+  totalCards: number;
+  bubbleCapPercentage: number;
 }
 
 /** Renders the colored circles in a single bucket cell (no click handling — handled by <td>). */
-function BucketCellContent({ cell, globalMax }: BucketCellContentProps) {
+function BucketCellContent({ cell, totalCards, bubbleCapPercentage }: BucketCellContentProps) {
   const isEmpty = cell.total === 0;
   const sorted = [...cell.colors].sort((a, b) => b.count - a.count);
 
@@ -83,8 +89,7 @@ function BucketCellContent({ cell, globalMax }: BucketCellContentProps) {
   return (
     <div className="flex flex-wrap gap-1 justify-center">
       {sorted.map(({ color, count }) => {
-        const scale = globalMax > 0 ? Math.sqrt(count / globalMax) : 1;
-        const sizeRem = Math.max(BUBBLE_MIN_REM, BUBBLE_BASE_REM * scale);
+        const sizeRem = Math.min(BUBBLE_MAX_REM, Math.sqrt(count / (totalCards * bubbleCapPercentage)) * BUBBLE_MAX_REM);
         const showLabel = sizeRem >= BUBBLE_LABEL_MIN_REM;
         return (
           <span
@@ -327,7 +332,7 @@ function buildVisualTabQuery(currentSearch: string, filters: StrategyFilter[]): 
   ].filter(Boolean).join(' and ');
 }
 
-export function StrategiesGrid({ aggregation, cards, editMode, searchText = '', onEdit, onReorder, onAddStrategy }: StrategiesGridProps) {
+export function StrategiesGrid({ aggregation, cards, editMode, searchText = '', selectedBucketConfig, onBucketConfigChange, onEdit, onReorder, onAddStrategy }: StrategiesGridProps) {
   const { rows, buckets } = aggregation;
   const [selected, setSelected] = useState<{ rowIndex: number; cellIndex: number } | null>(null);
   const [unmatchedOpen, setUnmatchedOpen] = useState(false);
@@ -339,15 +344,10 @@ export function StrategiesGrid({ aggregation, cards, editMode, searchText = '', 
   // Build a cid → card lookup map
   const cardMap = new Map<string, SerializedCard>(cards.map(c => [c.cid!, c]));
 
-  // Compute global max count across all cells and colors for bubble scaling
-  let globalMax = 0;
-  for (const row of rows) {
-    for (const cell of row.buckets) {
-      for (const { count } of cell.colors) {
-        if (count > globalMax) globalMax = count;
-      }
-    }
-  }
+  // Total card count used for bubble percentage scaling
+  const totalCards = cards.length;
+  const t = Math.max(0, Math.min(1, (totalCards - BUBBLE_CAP_MIN_CARDS) / (BUBBLE_CAP_MAX_CARDS - BUBBLE_CAP_MIN_CARDS)));
+  const bubbleCapPercentage = BUBBLE_CAP_PCT_SMALL + t * (BUBBLE_CAP_PCT_LARGE - BUBBLE_CAP_PCT_SMALL);
 
   // Compute unmatched cards (not present in any strategy row's refs)
   const matchedCids = new Set<string>();
@@ -396,6 +396,18 @@ export function StrategiesGrid({ aggregation, cards, editMode, searchText = '', 
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-x-auto">
+      <div className="flex items-center justify-end px-4 py-2 border-b border-slate-100 bg-slate-50">
+        <label className="text-xs text-slate-500 mr-2 font-medium">Group by</label>
+        <select
+          value={selectedBucketConfig}
+          onChange={e => onBucketConfigChange(e.target.value)}
+          className="text-xs border border-slate-200 rounded px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+        >
+          {Object.keys(BucketConfigs).map(name => (
+            <option key={name} value={name}>{name}</option>
+          ))}
+        </select>
+      </div>
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50">
@@ -543,7 +555,7 @@ export function StrategiesGrid({ aggregation, cards, editMode, searchText = '', 
                           isCellSelected ? 'bg-blue-100 ring-2 ring-inset ring-blue-400' : '',
                         ].join(' ')}
                       >
-                        <BucketCellContent cell={cell} globalMax={globalMax} />
+                        <BucketCellContent cell={cell} totalCards={totalCards} bubbleCapPercentage={bubbleCapPercentage} />
                       </td>
                     );
                   })}
