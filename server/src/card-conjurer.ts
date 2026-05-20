@@ -257,6 +257,7 @@ export class CardConjurer {
         const framePrefix = isFront ? 'm15/transform/regular/front' : 'm15/transform/regular/new/back';
 
         const isLand = renderable.types.includes('land');
+        const isArtifact = renderable.types.includes('artifact');
         const isVehicle = renderable.subtypes.includes('vehicle');
         const colors = isLand ? renderable.producibleColors.filter(c => c !== 'colorless') : renderable.color;
         const [left, right] = getFrameColors(isLand, colors);
@@ -278,6 +279,9 @@ export class CardConjurer {
           }
           await addFrameImage(`${framePrefix}${left.toUpperCase()}`, { mask: 'Pinline' });
           await addFrameImage(`${framePrefix}${right.toUpperCase()}`, { placement: 'addToRightHalf', mask: 'Pinline' });
+        }
+        if (isArtifact) {
+          await addFrameImage(`${framePrefix}A`, { mask: 'Frame' });
         }
         if (isLand) {
           await addFrameImage(`${framePrefix}L`, { mask: 'Title' });
