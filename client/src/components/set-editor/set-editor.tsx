@@ -48,6 +48,7 @@ type CardEditorSettings = {
   archetypeIndex: number,
   cycleKey: string,
   card: SerializedCard,
+  isNewCard: boolean,
   blueprints: SerializableBlueprintWithSource[],
 }
 
@@ -310,6 +311,7 @@ export function SetEditor(props: SetEditorProps) {
           archetypeIndex,
           cycleKey,
           card,
+          isNewCard: false,
           blueprints: matrix.findSlotBlueprints(archetypeIndex, cycleKey),
         });
       }
@@ -317,10 +319,13 @@ export function SetEditor(props: SetEditorProps) {
   }
 
   const createCard = (archetypeIndex: number , cycleKey: string) => {
+    const card = Card.new('normal').toJson();
+    card.tags = { ...card.tags, set: serializableSet.name };
     setCardEditorSettings({
       archetypeIndex,
       cycleKey,
-      card: Card.new('normal').toJson(),
+      card,
+      isNewCard: true,
       blueprints: matrix.findSlotBlueprints(archetypeIndex, cycleKey),
     });
   }
@@ -411,7 +416,7 @@ export function SetEditor(props: SetEditorProps) {
           <div className="w-full max-w-[1200px] rounded-xl shadow-2xl overflow-hidden">
             <CardEditor
               initialCard={cardEditorSettings.card}
-              isNewCard={false}
+              isNewCard={cardEditorSettings.isNewCard}
               validate={{
                 blueprints: cardEditorSettings.blueprints,
                 metadata: matrix.getArchetype(cardEditorSettings.archetypeIndex).metadata,

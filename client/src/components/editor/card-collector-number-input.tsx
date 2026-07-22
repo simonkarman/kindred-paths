@@ -1,6 +1,5 @@
 import { InputHeader } from '@/components/editor/input-header';
 import { useCallback, useState } from 'react';
-import { useSetNameFromSearch } from '@/utils/use-search';
 import { CollectorNumberInfo, getOrganizeCollectorNumbers } from '@/utils/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCompass, faSpinner } from '@fortawesome/free-solid-svg-icons';
@@ -68,18 +67,18 @@ export const CardCollectorNumberInput = (props: {
   getErrorMessage: () => string | undefined,
   isChanged: boolean,
   revert: () => void,
+  setName?: string,
 }) => {
-  const { collectorNumber, setCollectorNumber, renderedTypeLine, cid } = props;
+  const { collectorNumber, setCollectorNumber, renderedTypeLine, cid, setName } = props;
 
   const [showCollectorNumbers, setShowCollectorNumbers] = useState(false);
   const [collectorNumbers, setCollectorNumbers] = useState<CollectorNumberInfo[]>([]);
   const [fetching, setFetching] = useState(false);
 
-  const setNameFromSearch = useSetNameFromSearch();
   const update = useCallback(async (autoAssign: boolean) => {
     setFetching(true);
     try {
-      const collectorNumbers = (await getOrganizeCollectorNumbers(setNameFromSearch ? `set:${setNameFromSearch}` : ''))
+      const collectorNumbers = (await getOrganizeCollectorNumbers(setName ? `set:${setName}` : ''))
         .filter(c => c.cid !== cid);
       setCollectorNumbers(collectorNumbers);
       if (autoAssign) {
@@ -89,7 +88,7 @@ export const CardCollectorNumberInput = (props: {
     } finally {
       setFetching(false);
     }
-  }, [setNameFromSearch, renderedTypeLine, setCollectorNumber, cid]);
+  }, [setName, renderedTypeLine, setCollectorNumber, cid]);
 
   return <div className="space-y-1">
     <InputHeader propertyName="collector number" isChanged={props.isChanged} revert={props.revert} />
@@ -116,7 +115,7 @@ export const CardCollectorNumberInput = (props: {
           }}
         >
           {collectorNumbers.length > 0 ? (
-            `Found ${collectorNumbers.length} cards ${setNameFromSearch ? `in 'set:${setNameFromSearch}'.` : 'in collection.'}`
+            `Found ${collectorNumbers.length} cards ${setName ? `in 'set:${setName}'.` : 'in collection.'}`
           ) : (
             fetching ? 'Fetching collector numbers...' : 'Show collector numbers overview.'
           )}

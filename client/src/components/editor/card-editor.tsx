@@ -34,7 +34,6 @@ import { CardArtInput } from '@/components/editor/card-art-input';
 import { CardGivenColorsInput } from '@/components/editor/card-given-colors-input';
 import { CardLoyaltyInput } from '@/components/editor/card-loyalty-input';
 import { CardLayoutInput } from '@/components/editor/card-layout-input';
-import { useDeckNameFromSearch, useSetNameFromSearch } from '@/utils/use-search';
 
 type CardEditorProps = {
   isNewCard: boolean;
@@ -273,19 +272,6 @@ export function CardEditor({ initialCard, isNewCard, validate, onSave, onCancel,
     setSelectedFaceIndex(0);
   };
 
-  // Set tags based on set and deck name
-  const set = useSetNameFromSearch();
-  const deck = useDeckNameFromSearch();
-  useEffect(() => {
-    if (mode === 'create' && (set || deck)) {
-      updateCardProperty('tags', tags => ({
-        ...tags,
-        ...(set ? { set } : {}),
-        ...(deck ? { [`deck/${deck}`]: 1 } : {}),
-      }));
-    }
-  }, [mode, deck, set, updateCardProperty]);
-
   // Build current serialized card
   const currentCard: SerializedCard = {
     cid: state.cid,
@@ -474,6 +460,7 @@ export function CardEditor({ initialCard, isNewCard, validate, onSave, onCancel,
             revert={() => initialCard && updateCardProperty('collectorNumber', initialCard.collectorNumber)}
             renderedTypeLine={card?.faces[0].renderTypeLine() ?? ''}
             cid={state.cid}
+            setName={typeof state.tags?.set === 'string' ? state.tags.set : undefined}
           />
 
           <CardTagsInput

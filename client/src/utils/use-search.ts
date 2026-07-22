@@ -39,7 +39,6 @@ const useValueFromHomeSearch = (keys: string[]): string | undefined => {
 };
 
 export const useDeckNameFromSearch = () => useValueFromHomeSearch(['deck', 'd']);
-export const useSetNameFromSearch = () => useValueFromHomeSearch(['set', 's'])?.toUpperCase();
 
 export const replaceKeysInSearchText = (searchText: string, keys: string[], value: string | undefined) => {
   const searchTerms = searchText.trim().toLowerCase().split(/\s+/).filter(term => {
