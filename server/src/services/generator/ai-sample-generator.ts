@@ -138,7 +138,7 @@ Prompt: ${basePrompt}`;
 
         // Call Claude Opus 4
         const msg = await this.anthropic.messages.create({
-          model: 'claude-opus-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: this.maxTokens,
           temperature: 1,
           system: this.systemPrompt,

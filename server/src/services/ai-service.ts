@@ -51,7 +51,7 @@ export class AIService {
     const card = new Card(cardData);
     const cardInfo = getAIReadyCardInfo(card, faceIndex);
     const msg = await this.anthropic.messages.create({
-      model: 'claude-opus-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       temperature: 1,
       system: "You're an expert in coming up with creative names for custom Magic the Gathering cards. " +
@@ -105,7 +105,7 @@ export class AIService {
 
     const cardInfo = getAIReadyCardInfo(card, faceIndex);
     const msg = await this.anthropic.messages.create({
-      model: 'claude-opus-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       temperature: 1,
       system: "You're an expert in coming up with creative art settings for custom Magic the Gathering cards based on a given card. " +
