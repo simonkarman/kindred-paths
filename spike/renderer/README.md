@@ -4,6 +4,22 @@ Proves the v2 renderer approach from `docs/v2-architecture.md` §4: drive CardCo
 **same-origin iframe** and read the finished card straight off its canvas — **no Docker, no
 Playwright in production, no `#downloadAlt`, no 49GB render cache.**
 
+## 🕹️ Interactive dashboard (start here)
+
+A single page to *feel* the renderer and browse every spike's results + images:
+
+```bash
+node spike/renderer/serve.mjs      # then open http://127.0.0.1:4199/dashboard.html
+```
+
+- **Live editor** — a warm in-browser CardConjurer. Edit the text fields → ~1ms **patches**;
+  change mana/color → a **full render** (reload). The timing readout shows the difference.
+  Full renders are ~0.5-0.9s and blit at **native 2010×2814 resolution** (crisp on any display).
+- **Server render (CC-in-Node)** — renders the card in a pure Node process (Phase 0.8), ~1s
+  per unique card, then content-hash cached (instant repeat).
+- **Spike results** — the 0.5/0.6/0.7/0.8 result tables, rendered.
+- **Image gallery** — every PNG the spikes produced.
+
 ## Result: PASS
 
 Full, correct cards render end-to-end, and reloading the iframe fully resets state between
@@ -73,6 +89,17 @@ node spike/renderer/serve.mjs   # then open http://127.0.0.1:4199/harness.html
 Requires the CardConjurer clone at `server/.cardconjurer` (created by `server/card-conjurer.sh`)
 and Playwright installed in `server/` (used only for spike validation, not production).
 
+## Later spikes (0.5–0.8)
+
+Each is a standalone script writing its own results file:
+
+| Phase | What | Run | Result |
+|---|---|---|---|
+| 0.5 | Performance decomposition (warm, direct draw) | `node spike/renderer/perf.mjs` | `perf-results.md` (~1ms interactive edit) |
+| 0.6 | Interactive-patch feasibility (patch vs clean) | `node spike/renderer/patch.mjs` | `patch-results.md` (text patches pixel-identical; color/type diverge) |
+| 0.7 | Hidden-render + scaling to 16 + cross-talk | `node spike/renderer/scale.mjs` | `scale-results.md` (all hide modes OK; 16 instances, <0.7% cross-talk) |
+| 0.8 | **CardConjurer-in-Node** (no browser) | `node spike/renderer/cc-node.mjs` | `cc-node-results.md` (renders a correct card in pure Node via @napi-rs/canvas) |
+
 ## Notes / follow-ups for Phase 1
 
 - **Production won't full-reload per keystroke.** Frame-affecting changes
@@ -86,3 +113,23 @@ and Playwright installed in `server/` (used only for spike validation, not produ
   the card still renders every field correctly. Resolve when porting the full driver.
 - The full multi-layout driver (adventure/transform/MDFC/token/planeswalker) is Phase 1 —
   this spike only exercises the default `autoFrame` path, which alone proves the mechanism.
+
+## Two bugs found and fixed post-spike (both required for Phase 1b)
+
+1. **The `drawFrames` storm (~26-39 redundant composites per render, and a racy missing frame).**
+   CardConjurer wires `image.onload = drawFrames` on every frame/mask image, and `drawFrames()`
+   calls `drawCard()`. Fix: suppress both during the build, wait for the *real* completion signal
+   (each image's `decode()` promise in Node; CardConjurer's own `ImageLoadTracker`/
+   `FontLoadTracker` in the browser), then do exactly one composite. Full renders: Node
+   ~8.4s → ~1.0s, browser ~1.8s → ~0.5-0.9s, and the frame is now **always** present (previously
+   always missing server-side, sometimes missing in the browser). See `cc-node-results.md`.
+2. **Font-load race → intermittent "tofu" (missing-glyph boxes).** CardConjurer draws text
+   synchronously and has no font-load-then-redraw of its own; a fresh reload means `@font-face`
+   isn't guaranteed ready when `drawText()` first runs. Fix (browser only — Node's
+   `GlobalFonts.registerFromPath` is synchronous, immune): after waiting for
+   `ImageLoadTracker`/`FontLoadTracker`/`document.fonts.ready`, **redraw text once more** before
+   the single composite. Verified with glyph-heavy titles (`k`/`w`/`x`/`y`/`z`) across repeated
+   full renders — see `out-dashboard-tofu-check.png`.
+
+Both fixes are applied in `dashboard.html` and `harness.html`, and covered by regression checks
+in `dashboard-verify.mjs` (native-resolution assertion + a glyph-heavy-title determinism check).

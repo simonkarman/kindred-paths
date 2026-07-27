@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>KP v2 — interactive patch feasibility (Phase 0.6)</title>
+  <style> body { margin: 0; background: #222; } iframe { width: 720px; height: 1000px; border: 0; } </style>
+</head>
+<body>
+  <iframe id="a" src="/"></iframe>
+  <iframe id="b" src="/"></iframe>
+  <script>
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const win = (id) => document.getElementById(id).contentWindow;
+    const doc = (id) => document.getElementById(id).contentDocument;
+    const byText = (root, sel, text) => [...root.querySelectorAll(sel)].find(e => (e.textContent || '').trim().toLowerCase().includes(text.toLowerCase()));
+
+    function setField(cd, section, value) {
+      const h4 = byText(cd, '#text-options h4', section); if (!h4) return;
+      h4.click();
+      const ed = cd.querySelector('#text-editor'); if (!ed) return;
+      ed.value = value; ed.dispatchEvent(new Event('input', { bubbles: true })); ed.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    function clickTab(cd, t) { const h3 = byText(cd, '#creator-menu-tabs h3', t); if (h3) h3.click(); }
+
+    async function waitForCreator(id, timeout = 30000) {
+      const start = Date.now();
+      while (Date.now() - start < timeout) {
+        const cw = win(id), cd = doc(id);
+        if (cw && cd && cw.cardCanvas && cw.cardCanvas.width > 0 && cd.querySelector('#autoFrame') && cd.querySelector('#text-editor')) {
+          try { await cw.document.fonts.ready; } catch (e) {}
+          return;
+        }
+        await sleep(120);
+      }
+      throw new Error('creator not ready: ' + id);
+    }
+    function reload(id) {
+      return new Promise((res, rej) => {
+        const f = document.getElementById(id);
+        try { f.contentWindow.localStorage.clear(); } catch (e) {}
+        let done = false; const on = () => { if (!done) { done = true; f.removeEventListener('load', on); res(); } };
+        f.addEventListener('load', on); f.src = '/?n=' + Date.now() + id;
+        setTimeout(() => { if (!done) { done = true; rej(new Error('reload timeout')); } }, 30000);
+      });
+    }
+    async function settle(id, maxMs = 15000, stableFor = 400) {
+      const cw = win(id); let last = '', since = 0, out = ''; const start = Date.now();
+      while (Date.now() - start < maxMs) {
+        out = cw.cardCanvas.toDataURL('image/png'); const now = Date.now();
+        if (out === last) { if (now - since >= stableFor) return; } else { last = out; since = now; }
+        await sleep(70);
+      }
+    }
+    // full clean render into an iframe from a card spec (reload -> drive -> settle)
+    async function driveClean(id, spec) {
+      await reload(id); await waitForCreator(id);
+      const cw = win(id), cd = doc(id);
+      // deterministically ensure the default frame/text loaded (card.text populated)
+      let t0 = Date.now();
+      while (!cw.card.text && Date.now() - t0 < 6000) {
+        const btn = cd.querySelector('#loadFrameVersion');
+        if (btn && typeof btn.onclick === 'function') { try { await btn.onclick(); } catch (e) {} }
+        await sleep(150);
+      }
+      const af = cd.querySelector('#autoFrame'); af.value = 'M15RegularNew'; af.dispatchEvent(new Event('change', { bubbles: true }));
+      clickTab(cd, 'Text'); await sleep(120);
+      if (spec.mana) setField(cd, 'Mana Cost', spec.mana);
+      if (spec.title) setField(cd, 'Title', spec.title);
+      if (spec.type) setField(cd, 'Type', spec.type);
+      if ('rules' in spec) setField(cd, 'Rules Text', spec.rules);
+      if (spec.pt) setField(cd, 'Power/Toughness', spec.pt);
+      // deterministic: run autoFrame + drawText directly (don't rely on the 500ms debounce)
+      try { cw.autoFrame(); } catch (e) {}
+      await sleep(700); // frame images load
+      try { await cw.drawText(); } catch (e) {}
+      await settle(id);
+    }
+    // fast patch: mutate card.text directly + drawText (bypass debounce, no autoFrame)
+    async function patch(id, mutations) {
+      const cw = win(id);
+      for (const [key, value] of Object.entries(mutations)) { if (cw.card.text[key]) cw.card.text[key].text = value; }
+      await cw.drawText();
+      await settle(id, 4000, 200);
+    }
+    // snapshot a canvas's pixels (copied, survives later reloads)
+    function snapshot(id) {
+      const c = win(id).cardCanvas; const w = c.width, h = c.height;
+      return { data: new Uint8ClampedArray(c.getContext('2d').getImageData(0, 0, w, h).data), w, h };
+    }
+    function diffSnaps(p, c) {
+      const a = p.data, b = c.data; let dp = 0; const n = a.length / 4;
+      for (let i = 0; i < a.length; i += 4) {
+        if (Math.abs(a[i] - b[i]) > 12 || Math.abs(a[i + 1] - b[i + 1]) > 12 || Math.abs(a[i + 2] - b[i + 2]) > 12) dp++;
+      }
+      return { pct: (100 * dp) / n };
+    }
+
+    const BASE = { mana: '{2}{G}', title: 'Node Ranger', type: 'Creature — Elf Ranger', rules: 'Vigilance', pt: '3/3' };
+    const LONG = 'Flying, vigilance, lifelink\nWhen Node Ranger enters the battlefield, draw two cards, then discard a card.\n{2}{G}, {T}: Target creature gets +2/+2 until end of turn.';
+
+    // Compare, IN THE SAME iframe, a patched render vs a clean render of the same target.
+    window.runScenarios = async function () {
+      const results = [];
+      const THRESH = 0.15;
+      // control: two independent clean BASE renders — measures reload determinism
+      await driveClean('a', BASE); const ctrl1 = snapshot('a');
+      await driveClean('a', BASE); const ctrl2 = snapshot('a');
+      const cd = diffSnaps(ctrl1, ctrl2);
+      results.push({ name: 'control-clean-vs-clean', expect: 'match', pctDiff: +cd.pct.toFixed(3), verdict: cd.pct < THRESH ? 'match' : 'diverge' });
+
+      const run = async (name, base, mut, target, expect) => {
+        await driveClean('a', base); await patch('a', mut); const P = snapshot('a');
+        await driveClean('a', target); const C = snapshot('a');
+        const d = diffSnaps(P, C);
+        results.push({ name, expect, pctDiff: +d.pct.toFixed(3), verdict: d.pct < THRESH ? 'match' : 'diverge' });
+      };
+
+      await run('name', BASE, { title: 'Node Warden' }, { ...BASE, title: 'Node Warden' }, 'match');
+      try { window.__dbgA = win('a').cardCanvas.toDataURL('image/png'); } catch (e) {}
+      await run('rules-short', BASE, { rules: 'Trample' }, { ...BASE, rules: 'Trample' }, 'match');
+      await run('rules-long-autofit', BASE, { rules: LONG }, { ...BASE, rules: LONG }, 'match');
+      await run('color-change', BASE, { mana: '{2}{R}' }, { ...BASE, mana: '{2}{R}' }, 'diverge');
+      await run('type-change', BASE, { type: 'Instant', pt: '' }, { mana: '{2}{G}', title: 'Node Ranger', type: 'Instant', rules: 'Vigilance' }, 'diverge');
+
+      // sequential patches on one live session vs clean final
+      await driveClean('a', BASE);
+      await patch('a', { title: 'Node Warden' }); await patch('a', { rules: 'Trample' }); await patch('a', { rules: LONG });
+      const P = snapshot('a');
+      await driveClean('a', { ...BASE, title: 'Node Warden', rules: LONG });
+      const C = snapshot('a');
+      const d = diffSnaps(P, C);
+      results.push({ name: 'sequential-stability', expect: 'match', pctDiff: +d.pct.toFixed(3), verdict: d.pct < THRESH ? 'match' : 'diverge' });
+      return results;
+    };
+  </script>
+</body>
+</html>

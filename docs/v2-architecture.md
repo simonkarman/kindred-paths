@@ -1,8 +1,11 @@
 # Kindred Paths v2 — Architecture & Refactor Plan
 
-Status: **agreed, not yet implemented**. This document is the source of truth for the v2
-refactor. It captures the decisions made during planning, the target architecture, and a
-phased roadmap. Implementation starts with a Phase 0 spike that de-risks the renderer.
+Status: **settled; spiking on the `v2` branch.** This document is the source of truth for the
+v2 refactor — decisions, target architecture, and phased roadmap. Phase 0 (mechanism) and
+Phase 0.5 (performance) are done and passed (see `spike/renderer/`). The renderer architecture
+is settled (pluggable; canonical server-side render + on-disk cache; interactive browser mode
+as an editing accelerator). Next spikes: 0.8 (CardConjurer-in-Node), 0.6 (interactive patch),
+0.7 (hidden/scaling/cross-talk).
 
 ---
 
@@ -15,8 +18,9 @@ entirely in the **presentation and rendering layers**, plus features that are no
 - **Rendering is slow and heavy.** Each render drives a Dockerized CardConjurer via
   Playwright: two full page loads, ~28 serialized `networkidle` waits, and ~5.15s of
   hardcoded `sleep()` calls per render (`server/src/card-conjurer.ts`). Result: 3–7s per
-  edit, which makes the whole app feel sluggish. The file cache has grown to **~49 GB**
-  (`server/.cache/renders`) with no eviction (hand-pruned into `old/`, `old2/`, `old3/`).
+  edit, which makes the whole app feel sluggish. (The on-disk PNG cache — ~49 GB in
+  `server/.cache/renders` — is *fine* and stays; the pain is the Docker+Playwright pipeline
+  that produces the renders, not the cache.)
 - **The web UI carries legacy.** Duplicated page pairs, a 1,034-line set editor, a
   650-line card editor with a fragile 165-line auto-adjust reducer, `alert()/prompt()`
   UX, latency papered over with hardcoded timeouts.
@@ -28,13 +32,20 @@ entirely in the **presentation and rendering layers**, plus features that are no
   collection git UI, collector-number surfacing.
 
 ### Goals for v2
-- **Near-instant rendering** and a live editing feel; inline rendering in AI surfaces.
+- **Near-instant editing feedback** — a warm in-browser CardConjurer gives ~1ms live text
+  re-renders while editing; canonical images come from a fast server renderer.
 - **AI on every relevant surface** — ask for a change and it happens; generate cards and
   cycles; bulk edits.
 - **Wide, power-user UI** (no forced max container width); multi-editor; navigate while
   editing.
 - **Simpler surface** — remove legacy features; one match language (search DSL).
 - **Keep the good core** — the domain model and the on-disk JSON format are preserved.
+- **Keep the on-disk PNG cache** — canonical renders persist to `.cache` (content-hash keyed,
+  + thumbnails) and are served as static files for the UI, other programs, and external tools.
+- **Renderer independence** — the renderer is pluggable behind an interface; CardConjurer is
+  the current implementation, a non-proprietary renderer can be added later.
+- **Benefit from CardConjurer updates** — a `git pull` of CC can be adopted (pinned + validated
+  by the golden-image suite); code changes on our side at update time are acceptable.
 - **Effects/overlays** on cards, cleanly separated from the base CardConjurer render.
 
 ### Non-goals (explicit)
@@ -42,6 +53,8 @@ entirely in the **presentation and rendering layers**, plus features that are no
 - Not vendoring MTG frame assets/art into the repo — CardConjurer stays an external,
   downloadable renderer (legal cleanliness + upstream updates).
 - Not rebuilding a general AI coding agent in-app (see the boundary principle).
+- Not requiring *zero-touch* CardConjurer updates — pinning + a validated update process
+  (with occasional code changes) is fine.
 
 ---
 
@@ -52,8 +65,9 @@ entirely in the **presentation and rendering layers**, plus features that are no
 2. **The on-disk JSON is the source of truth.** `collection/` (one JSON per card, `cid` in
    the filename, git-synced) stays exactly as-is. Multiple processes (web app, CLI, harness)
    read/write it.
-3. **CardConjurer stays external.** We only change *how we talk to it* — never vendor its
-   assets, always able to `git pull` upstream updates.
+3. **CardConjurer stays external and pinned.** We never vendor its assets. It's pinned to a
+   known-good commit; adopting a newer CC is a deliberate step validated by the golden-image
+   suite (§4), and may involve code changes on our side — that's acceptable.
 4. **One match language.** The search DSL is the single way to express "which cards match."
    The blueprint criteria DSL is removed.
 5. **Whole-card exchange with AI.** AI always returns complete cards, never diffs/patches.
@@ -63,8 +77,14 @@ entirely in the **presentation and rendering layers**, plus features that are no
    notes. Everything that is "just files / code / repo" belongs to the **external harness**
    (OpenCode / Claude Desktop / Claude Code), which does it natively and better. We do not
    rebuild the harness; switching between the app and the harness is the intended workflow.
-7. **Browser-only rendering.** Rendering happens in the browser. There is no headless
-   browser anywhere. PDF/print is produced in-browser.
+7. **Pluggable renderer.** Rendering sits behind a `Renderer` interface. CardConjurer is the
+   current implementation; a non-proprietary renderer can replace it later without touching
+   the cache, API, or UI.
+8. **Canonical render = server-side; interactive = accelerator.** The authoritative image is
+   produced by the server renderer and persisted to the on-disk content-hash cache. The
+   in-browser CardConjurer is an **editing-preview accelerator** (instant feedback while
+   typing), never the stored artifact. On save, only the card JSON is persisted; the canonical
+   PNG is rendered by the server (lazily, on request).
 
 ---
 
@@ -72,13 +92,14 @@ entirely in the **presentation and rendering layers**, plus features that are no
 
 | Keep (evolve) | Replace | Trim entirely |
 |---|---|---|
-| `shared` domain model (Card/CardFace/Layout) | Render pipeline (Docker+Playwright+CardConjurer server) → same-origin iframe + canvas read + overlay | Table tab, Text tab, Statistics tab |
+| `shared` domain model (Card/CardFace/Layout) | Render *pipeline*: Docker+Playwright driving → pluggable server renderer (CC-in-Node or headless) + interactive browser accelerator | Table tab, Text tab, Statistics tab |
 | Search DSL (`filter-definitions`, `filter-query-handler`, `card-filterer`) | Card editor → compact, live, multi-instance, snapshot undo/redo, dockable AI panel | Strategy (client + server + MCP + shared aggregator/bucket/color-weights) |
 | `collection/` JSON format | Set page blueprint DSL → search-query cells | Inspire-me page (→ in-app assistant / harness) |
-| Card CRUD logic → moves into `core` | Image-gen UX → set-themed, model-switch, overlay-capable | Collection git UI (→ git CLI / harness) |
-| CardConjurer (external clone) | Backend → Next.js server actions | Blueprint criteria DSL (`shared/src/set/criteria/**`, `blueprint-validator.ts`) |
-| Mechanics, colors, sorter, art-prompt-creator, token-extracter, hash | MCP → `kp` CLI + OpenCode skill | Collector-number surfacing (editor + set overview) |
-| | Design docs → integrated set notes (md linked to set) | MCP package (incl. design-doc + research tools); Docker; Playwright; `render-service`; `.cache` |
+| On-disk PNG cache (`.cache`, content-hash + thumbnails) | Render orchestration/cache → renderer-agnostic render API | Collection git UI (→ git CLI / harness) |
+| Card CRUD logic → moves into `core` | Image-gen UX → set-themed, model-switch, overlay-capable | Blueprint criteria DSL (`shared/src/set/criteria/**`, `blueprint-validator.ts`) |
+| CardConjurer (external clone, pinned) | Backend → Next.js server actions + render API | Collector-number surfacing (editor + set overview) |
+| Mechanics, colors, sorter, art-prompt-creator, token-extracter, hash | MCP → `kp` CLI + OpenCode skill | MCP package (design-doc + research tools); **Docker**; the Playwright+Docker driving pipeline |
+| | Design docs → integrated set notes (md linked to set) | |
 
 ### Dependency caveats
 - **Strategy removal touches four packages.** Remove: client `strategies-*.tsx` +
@@ -104,21 +125,37 @@ fields character-by-character on the last key, and waits via ~28 `networkidle` c
 ~5.15s of fixed `sleep()`s before scraping the result `<img>`. The `render-service.ts`
 file/in-flight cache is what makes the app usable at all.
 
-### v2: drive CardConjurer in the browser, read its canvas
-CardConjurer is itself just JavaScript drawing to a `<canvas>`. v2 stops screenshotting it
-through a headless browser and instead runs it **in the user's browser**:
+### The v2 rendering model (two layers, one pluggable interface)
+Rendering sits behind a `Renderer` interface (`render(renderable, faceIndex) → PNG`) with two
+cooperating layers:
+
+- **Canonical (server) rendering** — the authoritative image. A server render API produces the
+  PNG via the active `Renderer` backend and persists it to the on-disk **content-hash cache**
+  (+ a thumbnail). This is what the overview grid, print/export, other programs, and external
+  tools consume. **Save persists JSON only**; the canonical PNG is rendered lazily on request.
+- **Interactive (browser) accelerator** — a warm CardConjurer running *in the user's browser*
+  for ~1ms live feedback while editing. It is **never** the stored artifact.
+
+Both layers use CardConjurer today; the pluggable interface lets a non-proprietary renderer
+replace it later without touching the cache, API, or UI. The rest of §4 covers the CardConjurer
+driving mechanism (shared by both layers), the interactive editing model, the server render +
+cache, how CardConjurer runs server-side, and the CC update workflow.
+
+### The CardConjurer driving mechanism
+CardConjurer is just JavaScript drawing to a `<canvas>`. Instead of screenshotting it through a
+Dockerized headless browser, we run it same-origin and read its canvas directly:
 
 1. **Serve the CardConjurer clone same-origin** with the web app (Next rewrite / static
-   route, or a tiny static server). It stays an external `git clone` we `pull` to update —
+   route, or a tiny static server). It stays an external **pinned** `git clone` —
    **never vendored, never committed** (already `.gitignore`d). This preserves legal
-   cleanliness and upstream updatability.
+   cleanliness and controlled updatability.
 2. **Map the two local mounts** CardConjurer expects (previously Docker read-only volumes)
    to same-origin routes:
    - `collection/art` → `/local_art/…`
    - `collection/symbols` → the custom set-symbol path
      (`/img/setSymbols/official/custom/…`).
 3. **Load CardConjurer in a hidden iframe** and drive it from the parent frame by
-   manipulating its `contentDocument`. Port the existing DOM-driving logic from
+   manipulating its `contentDocument` / calling its globals. Port the driving logic from
    `card-conjurer.ts` (Playwright) into an in-browser controller — same selectors and
    sequence, no network round-trips, no navigation/reloads, no fixed sleeps.
 4. **Read the result directly off the `<canvas>`** via `toDataURL()` / `getImageData()`
@@ -220,30 +257,141 @@ its correctness lives in two years of manual inspection. Reaching trustworthy pa
 requires a golden-image regression harness with v1 as the oracle (see §11, Phase 1a) before the
 faithful port — not just "it renders."
 
-### What this removes
-Docker, Playwright, `server/src/card-conjurer.ts`, `server/src/services/render-service.ts`,
-`.cache/renders` (~49 GB) and `.cache/previews`, the server's boot-time coupling to the
-renderer, and the 3–7s latency.
+### Interactive editing: the RenderSession pool
+The interactive layer keeps CardConjurer **warm** so edits feel instant, and formalizes when a
+cheap patch suffices vs. when a full re-render is needed.
+
+- **Patch vs. full render (frame signature).** A text-only edit (name, rules, type subtypes,
+  P/T value, mana value with unchanged colors, flavor) mutates `card.text.*` and calls
+  `drawText()` directly — ~1ms, no reload. A **frame-affecting** change (color set, card types,
+  P/T presence, supertype/crown, layout, isToken, borderless, vehicle, planeswalker
+  tall↔regular, land colors from rules, set symbol) changes the "frame signature" and needs a
+  **full render** (reload to a clean page). Phase 0.6 validates this boundary empirically.
+- **The pool.** A fixed-size **LRU pool** of hidden warm sessions keeps the *last few edited
+  cards* live. Acquire on edit: **hit** → resume ~1ms patching; **miss** → evict the oldest slot
+  and full-render into it. Pool size **N is derived from the scaling test** (Phase 0.7). The pool
+  is a **render cache; the editor's in-memory card state (with snapshot undo/redo) is the source
+  of truth**, so eviction is always safe.
+- **Double-buffer** frame-affecting changes: render the new-signature card in a spare instance,
+  then swap in — no flicker.
+- **Hiding.** Instances hide via **off-screen positioning** (kept laid out), which keeps canvas
+  drawing + extraction functional; `cardCanvas` is a fixed 2010×2814 regardless of the iframe's
+  on-screen size. (Phase 0.7 confirms off-screen vs `visibility:hidden` vs `display:none`.)
+- **Cross-talk risk.** Same-origin instances share `localStorage`, where CC stores some settings.
+  Phase 0.7 checks N-different-card independence; mitigation is to set those settings explicitly
+  per render (we drive via direct `card.*` + explicit frame ops, sidestepping most of them).
+- **Save** never uses a patched approximation: it persists JSON, and the **server** produces the
+  canonical render (below).
+
+### Canonical rendering: server render API + on-disk cache
+- **Render API** `GET /render/:cid/:face` (query for scale/quality). Key by a **content hash of
+  card props + art bytes** (not `cid`, since cards change). On a hit, serve the static file; on a
+  miss, render via the active `Renderer`, write `.cache/renders/<hash>.png` **and a thumbnail**,
+  then return.
+- **Content-hash filenames** (v1 style): immutable, dedupe, browser-cache-safe. Stale versions
+  accumulate — acceptable (the ~49 GB is fine); an optional GC ("keep only current-card hashes")
+  can be a maintenance command later.
+- **Served as static files** so the UI grid, print/export, other programs, and the `kp` CLI can
+  consume images by URL or straight off disk.
+- **Populated by the server**, not by browser uploads — the interactive layer stays purely an
+  editing accelerator.
+
+### CardConjurer server-side execution (Phase 0.8 decides)
+The server `Renderer` runs CardConjurer without a user browser.
+
+1. **CC-in-Node — PROVEN, feasible AND fast (Phase 0.8, `spike/renderer/cc-node-*`).**
+   CardConjurer's *draw path is almost entirely DOM-free* (verified: `drawFrames()`/`drawText()`
+   touch no DOM; `drawCard()` reads 2 checkboxes; `writeText()` reads 3 elements — the app's 318
+   `document.` refs live in UI/event code). The spike runs CC's **real** code (`main-1.js` +
+   `autoFrame.js` + `creator-23.js` + the dynamically-loaded frame pack) unmodified in a Node `vm`
+   sandbox via **`@napi-rs/canvas`** (Skia) + a generic DOM shim + registered fonts + filesystem
+   image loading — a **correct card, no browser, no Docker** (155 frame images loaded, 0 failures).
+   Because the shim is generic (not CC-logic), a CC pull's new frames keep working → high reuse of
+   CC's own code.
+   **A real bug was found and fixed here, not just measured:** CardConjurer wires
+   `image.onload = drawFrames` on every frame/mask image and `drawFrames()` calls `drawCard()`,
+   so a naive drive triggers **~26-39 redundant full composites per render** — ~8.4s in Node
+   (~1.8s in a browser, same redundancy, faster canvas) — and, because those composites land
+   *asynchronously*, capturing the canvas via a fixed sleep is a **race**: the frame was **always
+   missing** server-side and **sometimes** missing in the browser. The fix: suppress
+   `drawFrames`/`drawCard` during the build, wait for the **real** completion signal (each image's
+   `decode()` promise in Node; CardConjurer's own `ImageLoadTracker`/`FontLoadTracker` — the same
+   primitive its bulk-export uses — in the browser), then do exactly **one** guaranteed-complete
+   composite. Result: **~1.0s full render in Node** (build+decode ~80ms, composite ~290ms, PNG
+   encode ~650ms), **~0.5-0.9s in the browser**, and the frame is now **always present** (verified
+   across repeated renders in both hosts). This technique — suppress, await real completion, single
+   composite — is required for the Phase 1b render module, not an optimization to defer.
+2. **Warm headless browser (fallback).** Runs the *same* driving code (incl. the fix above) in a
+   warm headless browser (Playwright, no Docker, CC served statically). Comparable speed to
+   CC-in-Node now that the redundant-composite bug is fixed; the speed argument for preferring it
+   over CC-in-Node no longer holds. Phase 1 should still compare fidelity on the golden corpus.
+
+Either way Docker is gone, and the mechanism sits behind the `Renderer` interface.
+
+### Two more bugs found and fixed in the browser accelerator (dashboard/harness)
+Building an interactive dashboard to demo the renderer (`spike/renderer/dashboard.html`,
+`harness.html`) surfaced two further defects in the **browser interactive preview path**
+(Node/server rendering was already correct):
+
+1. **Pixelated preview.** The live-preview `<canvas>` blitted CardConjurer's full 2010×2814
+   `cardCanvas` down into a 340px backing store, which the browser then upscaled back up for
+   retina display — lossy twice over. Fix: blit at the card's **native resolution** into the
+   backing store and let CSS (`width:340px`) handle the display-size downscale, which stays crisp
+   at any `devicePixelRatio`. Now matches the server render's crispness; patch cost unaffected
+   (~1-3ms `drawImage`).
+2. **Intermittent font "tofu" (missing-glyph boxes).** CardConjurer draws text synchronously via
+   `writeText()` and has **no font-load-then-redraw mechanism of its own** — it only *registers*
+   fonts for later tracking (`FontLoadTracker.track`). Since a full render reloads the iframe (a
+   fresh page, fresh `@font-face` loads), `drawText()` can run before a font is ready, baking in
+   permanent tofu that no later composite fixes. Node is immune (`GlobalFonts.registerFromPath`
+   is synchronous). Fix: after waiting for `ImageLoadTracker`/`FontLoadTracker`/
+   `document.fonts.ready`, **redraw text once more** before the single composite (still just one
+   extra `drawText()` call, still suppressed compositing until the end). Verified with
+   deliberately glyph-heavy titles (`k`/`w`/`x`/`y`/`z`) across repeated full renders — zero tofu.
+
+Both are applied in `dashboard.html` and `harness.html`, and covered by regression checks in
+`dashboard-verify.mjs` (a native-resolution assertion and a glyph-heavy-title determinism check
+across independent full renders).
+
+### CardConjurer update workflow
+CC is **pinned** to a commit (today `card-conjurer.sh` floats via `git reset --hard && git pull`
+— change to a pin). To adopt a newer CC: bump the pin → run the **golden-image suite** (Phase
+1a) → review diffs, **bless intended improvements** (new/updated frames *should* change goldens)
+and fix real regressions (code changes acceptable) → adopt. The golden suite is the compatibility
+gate: it validates v1↔v2 parity *and* CC version bumps.
+
+### What this removes / keeps
+- **Removes:** Docker, the Playwright+Docker *driving* pipeline (`server/src/card-conjurer.ts`
+  as-is), the boot-time coupling to a running CC container, `.cache/previews`, and the 3–7s
+  per-edit latency.
+- **Keeps (reworked):** a server render path — now pluggable and browser-free (CC-in-Node) or
+  warm-headless — and the on-disk PNG cache `.cache/renders` (content-hash + thumbnails),
+  served as static files.
 
 ### Print / PDF
-Produced in-browser: render N cards to canvases and export. No server, no headless.
+Composed from the cached canonical renders (the render API fills any misses on demand), so
+print sheets use the same authoritative images as the rest of the app.
 
 ---
 
 ## 5. Backend fold-in
 
-With rendering out of the server, the backend shrinks to card CRUD + AI proxy + (optional)
-collection sync. That folds into the Next.js app:
+The backend folds into the Next.js app as server actions + route handlers:
 
 - **Card CRUD, search, verify** → `core` ops (see §6), called from Next server actions.
+- **Render API** → `GET /render/:cid/:face` behind the `Renderer` interface: content-hash cache
+  lookup → render on miss (CC-in-Node or headless) → persist PNG + thumbnail to `.cache/renders`
+  → serve. `.cache/renders` is also served as static files. (This is v1's `render.ts` reworked:
+  renderer-agnostic, no Docker, no boot-time coupling.)
 - **Art generation (Leonardo)** → a Next server action. It's a plain API call (async
   poll is acceptable off the interactive hot path); the image-gen UX is reworked to be
   set-themed, model-switchable, and overlay-capable.
 - **Collection git sync** → the UI is dropped; use the git CLI / harness.
-- **Removed from the server:** `routes/render.ts`, `routes/strategies.ts`, the
-  card-conjurer coupling; `card-service.ts` / `set-service.ts` logic migrates into `core`.
+- **Removed from the server:** `routes/strategies.ts`, the Docker/Playwright *driving* coupling
+  in `card-conjurer.ts`; `card-service.ts` / `set-service.ts` logic migrates into `core`.
 
-The separate Express process, Docker, and the CardConjurer bootstrap script go away.
+The separate Express process, Docker, and the CardConjurer bootstrap-as-container go away; the
+CardConjurer clone is served statically instead.
 
 ---
 
@@ -271,9 +419,10 @@ browser:             CardConjurer iframe render + overlay;
   on save.
 
 ### The `kp` CLI
-Mirrors the retained card operations; `render` is dropped (browser-only). Default output is
-JSON to stdout (easy for AI to parse), with `--format table` for humans; input via JSON
-stdin or `--file`.
+Mirrors the retained card operations. The CLI doesn't render itself, but **images are available
+via the server render API and the on-disk content-hash cache** — a `kp image <cid>` can return
+the cached PNG path/bytes (the server renders on a miss). Default output is JSON to stdout (easy
+for AI to parse), with `--format table` for humans; input via JSON stdin or `--file`.
 
 | Command | Purpose |
 |---|---|
@@ -379,27 +528,52 @@ Anchor on the preserved core rather than two parallel worlds.
   dense rules, planeswalker, transform/MDFC, token). Output: a decomposed timing table + an
   optimization map. Not a go/no-go gate (we're committed to the in-browser renderer regardless);
   it targets optimization and sets expectations.
+- **Phase 0.6 — Interactive-patch feasibility.** Prove text patches (name/rules/auto-fit) into a
+  warm session match a clean render, and that color/type changes diverge (must full-render). Two
+  same-origin iframes, in-browser `getImageData` diff (<0.1%). → `spike/renderer/patch-*`.
+  **DONE — PASSED**: single + sequential text patches are pixel-identical (0%) to clean renders;
+  color change diverges 42.8%, type change shows the lingering P/T box → both must full-render
+  (frame-signature rule confirmed). Determinism control 0.118%.
+- **Phase 0.7 — Hidden + scaling + cross-talk.** Hidden-render correctness (off-screen vs
+  `visibility:hidden` vs `display:none`), scale to 16 instances (time + memory → pool size N),
+  and N-different-card independence (localStorage cross-talk). → results table.
+  **DONE — PASSED**: all three hiding modes render identically to visible (0.118%); 16 hidden
+  instances render with 0 blanks, <0.7% cross-talk, ~8% render-time growth, ~140MB heap → pool of
+  ~6–8 is comfortable. See `spike/renderer/scale-results.md`.
+- **Phase 0.8 — CardConjurer-in-Node.** `@napi-rs/canvas` + minimal DOM shim, **running CC's real
+  `autoFrame.js`**; M1 go/no-go (one card, pixel-diff vs the browser render), M2 (default-path
+  cards, timing + fidelity + % of CC code unmodified). Decides the server renderer = CC-in-Node
+  vs warm headless. → findings. **DONE — renders a correct card in pure Node, no browser/Docker.**
+  Found and fixed a real bug (a `drawFrames`-storm race causing ~26-39 redundant composites per
+  render and a **missing frame on every server render**); corrected: **~1.0s full render, frame
+  always present** (fix also applied and verified in the browser accelerator). Both hosts are now
+  comparably fast; the fix (suppress + await real completion + single composite) is required for
+  Phase 1b. See `spike/renderer/cc-node-results.md`.
 - **Phase 1a — Golden-image regression harness (test-first).** Curated corpus first (~50–80
   cards spanning every layout/color/quirk), then a full 850-card sweep before cutover. **v1 as
   the oracle** (`POST /preview`), **CardConjurer pinned** to a fixed commit, perceptual/pixel
   diff (pixelmatch/odiff) with tolerance + a visual diff report. Acceptance bar: v2 reproduces
-  v1 within tolerance (bug-for-bug parity) plus a human-approved subset.
-- **Phase 1b — Faithful in-browser render module.** Port v1's `card-conjurer.ts` sequence
-  verbatim (fonts wait + forced redraw, last-character commit trick, Edit Bounds, planeswalker
-  geometry, all layouts), driven to parity against the goldens. Reuse the existing `Renderable`
-  contract; map `Card` → `Renderable` via `shared`.
-- **Phase 1c — Optimize under green tests + overview.** Warm-instance/direct-draw, iframe
-  pool/double-buffer, tight settle, direct-canvas preview vs PNG encode — only where the golden
-  diff stays green. Plus the wide card overview (search box, instant renders, sort).
+  v1 within tolerance (bug-for-bug parity) plus a human-approved subset. Gates both the server
+  renderer and the interactive accelerator, and every CC version bump.
+- **Phase 1b — Renderer(s) to parity.** Behind the `Renderer` interface: the **server renderer**
+  (CC-in-Node or headless, per 0.8) with the **content-hash cache + thumbnails**, and the
+  **interactive browser accelerator**. Port v1's `card-conjurer.ts` sequence faithfully (fonts
+  wait + forced redraw, last-character commit, Edit Bounds, planeswalker geometry, all layouts),
+  driven to parity against the goldens. Reuse the `Renderable` contract; map `Card` → `Renderable`
+  via `shared`.
+- **Phase 1c — Optimize under green tests + overview.** Warm-instance/direct-draw, the
+  **RenderSession pool** (LRU + double-buffer, size N from 0.7), tight settle, direct-canvas
+  preview vs PNG encode — only where the golden diff stays green. Plus the wide card overview
+  (search box, instant renders from the cache, sort).
 - **Phase 2 — Compact live editor.** Instant preview, no full-page-nav on save, multi-instance,
   snapshot undo/redo, overlay hook.
 - **Phase 3 — `core` + `kp` CLI + OpenCode skill.** Build the shared ops layer; ship the CLI
   and skill; retire MCP as the external interface.
 - **Phase 4 — In-editor AI assistant.** Dockable panel, whole-card auto-apply, option
   suggestions, self-correction.
-- **Phase 5 — Backend fold-in + trim legacy.** Move CRUD/AI into Next; delete
-  Docker/Playwright/render-service/cache; remove strategy everywhere; remove dead
-  tabs/pages/git-UI/collector surfacing; remove the MCP package.
+- **Phase 5 — Backend fold-in + trim legacy.** Move CRUD/AI into Next; delete Docker and the
+  Playwright+Docker *driving* pipeline (keep the reworked render API + `.cache`); remove strategy
+  everywhere; remove dead tabs/pages/git-UI/collector surfacing; remove the MCP package.
 - **Phase 6 — Set page on search queries + integrated set notes.** Migrate
   `collection/design/`.
 - **Phase 7 — Broaden the assistant.** Overview/chat mass edits with confirm, NL→search-DSL,
@@ -409,24 +583,49 @@ Anchor on the preserved core rather than two parallel worlds.
 
 ## 12. Risks & open questions
 
-- **Draw-settle detection (was the key risk) — RESOLVED.** Proven in the Phase 0 spike via
-  pixel-stability polling; a full card renders end-to-end from a same-origin iframe with
-  untainted same-origin art. See §4 and `spike/renderer/`. Fallback (warm Playwright page)
-  not needed.
+- **Draw-settle detection (was the key risk) — RESOLVED, refined.** Proven in the Phase 0 spike
+  via pixel-stability polling; a full card renders end-to-end from a same-origin iframe with
+  untainted same-origin art. **Refinement (Phase 0.8):** pixel-polling/fixed-sleep alone was found
+  to race against CardConjurer's async `drawFrames`-per-image-load pattern, occasionally capturing
+  a frame-less canvas. The robust signal is CardConjurer's **own** completion primitive
+  (`ImageLoadTracker`/`FontLoadTracker` in the browser; each image's `decode()` promise in Node),
+  combined with suppressing intermediate composites and doing one guaranteed-complete pass. See
+  §4 and `spike/renderer/cc-node-results.md`. Fallback (warm Playwright page) not needed.
 - **Renderer maturity & parity (the real risk).** The mature v1 renderer has **no** JSON→PNG
-  tests; the spike is a proof of mechanism with known gaps (font-fallback bug, minimal
-  `autoFrame`-only driver missing v1's hard-won steps). Mitigation: **golden-image regression
-  harness with v1 as the oracle** (Phase 1a), CardConjurer **pinned** to a fixed commit, a
-  faithful verbatim port (Phase 1b), and parity acceptance before any cutover. This is the
-  gate to trusting v2.
-- **Render performance ceiling.** Most of the spike's latency is CC's 500ms redraw debounce +
-  our scaffolding, all removable via the warm-instance/direct-draw model (§4). Residual: CC's
-  intrinsic draw cost drifts up as upstream adds features. Mitigation: Phase 0.5 measures the
-  decomposed ceiling; pin CC; warm/direct-draw; worst case trim frame packs. Decision: we are
-  committed to the in-browser renderer regardless of the measured numbers.
-- **CardConjurer selector drift.** Upstream UI changes can break the DOM-driving. Mitigation:
-  isolate all CardConjurer interaction behind a thin adapter (our `Renderable` → CC DOM),
-  pin CC to a known-good commit, and run the golden-image suite after each deliberate `git pull`.
+  tests; the spike is a proof of mechanism with known gaps (minimal `autoFrame`-only driver
+  missing v1's hard-won steps for other layouts). The font-fallback and missing-frame bugs found
+  during spiking were root-caused and fixed (§4), not merely worked around. Mitigation: **golden-
+  image regression harness with v1 as the oracle** (Phase 1a), CardConjurer **pinned** to a fixed
+  commit, a faithful verbatim port (Phase 1b), and parity acceptance before any cutover. This is
+  the gate to trusting v2.
+- **Render performance ceiling — MEASURED (Phase 0.5).** On a warm instance with direct draw
+  calls, an interactive text edit is ~1ms and warm boot ~200ms; the real costs are frame-affecting
+  changes (~1s) and PNG encode (~150ms, off the interactive path). Most of the original 2–4s was
+  CC's 500ms debounce + scaffolding, all removed by the warm/direct-draw model (§4). Residual: CC's
+  intrinsic draw cost drifts up as upstream adds features; mitigated by pinning + the two-layer model.
+- **CC-in-Node feasibility (Phase 0.8) — RESOLVED.** Runs CardConjurer's draw path
+  (+ `autoFrame.js`) unmodified in a Node shim; found and fixed a redundant-composite race
+  (see §4) bringing full renders to ~1.0s. Fallback (warm headless browser) remains available but
+  is no longer needed for speed reasons.
+- **Browser preview fidelity (pixelation + font tofu) — RESOLVED.** The interactive dashboard
+  demo surfaced a downscaled preview backing store (pixelated on retina displays) and an
+  intermittent font-load race producing missing-glyph boxes. Both fixed (native-resolution blit;
+  redraw-after-fonts-ready) and covered by regression checks. See §4 and
+  `spike/renderer/dashboard-verify.mjs`.
+- **Renderer fidelity (Skia vs Chromium).** A Node canvas (`@napi-rs/canvas`, Skia) may not be
+  pixel-identical to the browser CC (fonts/AA). Mitigation: goldens are generated by the *canonical*
+  renderer (self-consistent); the interactive browser preview and server canonical are both CC, so
+  they should stay close; the golden tolerance absorbs sub-perceptual diffs.
+- **`localStorage` cross-talk in the pool (Phase 0.7) — MEASURED, low risk.** 16 same-origin warm
+  instances each rendered their own distinct card with <0.7% cross-talk (no wrong-card bleed). We
+  still set frame-affecting settings explicitly per render as a belt-and-braces measure.
+- **Pool sizing / memory (Phase 0.7) — MEASURED.** 16 hidden instances: 0 blanks, ~8% render-time
+  growth, ~140MB JS heap (native canvas extra). A pool of ~6–8 is comfortable; the model is a small
+  LRU pool + cached static images for everything else. Hiding via off-screen positioning (all of
+  off-screen / `visibility:hidden` / `display:none` render correctly; off-screen is the safe default).
+- **CardConjurer update coupling.** Adopting a newer CC may need code changes (accepted, not
+  zero-touch). Mitigation: pin CC; the golden-image suite is the compatibility gate (bless intended
+  changes, fix regressions). The CC-in-Node path maximizes reuse of CC's own code to minimize this.
 - **Overlay compositing performance** on large sets. Mitigation: offscreen canvas; cache
   rendered PNGs client-side keyed by a content hash (reuse the existing `hash`).
 - **v2 app location** — new `web/` workspace (recommended) vs. evolving `client/` in place.

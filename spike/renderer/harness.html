@@ -143,27 +143,38 @@
 
     // Full render of one card: clean reload -> wait -> drive -> settle -> show.
     // Minimal-but-real driver (autoFrame + title/type/rules/PT + optional art).
+    //
+    // CardConjurer wires image.onload = drawFrames on EVERY frame/mask image, and drawFrames()
+    // ends by calling drawCard() — one render triggers ~26-39 of these (a slow, and because it's
+    // timing-dependent, RACY path: a fixed sleep()+pixel-poll can capture the canvas before the
+    // last pass composites, silently producing a frame-less card). We suppress both functions
+    // during the build, wait for CardConjurer's OWN completion signal (ImageLoadTracker /
+    // FontLoadTracker — the same primitive its bulk-export uses, see creator-23.js:3251-3273),
+    // then do exactly ONE guaranteed-complete composite. Faster AND reliable.
     window.renderCard = async function (r) {
       const t0 = Date.now();
       log('reloading iframe for clean state…');
       await resetIframe();
       const bootMs = await waitForCreator();
       log('creator ready (' + bootMs + 'ms); driving "' + r.name + '"…');
-      const cd = iframeDoc();
+      const cw = iframeWin(), cd = iframeDoc();
       const step = async (label, fn) => {
         try { await fn(); } catch (e) { log('STEP FAIL [' + label + ']:', e.message); }
       };
+
+      const realDrawFrames = cw.drawFrames, realDrawCard = cw.drawCard;
+      cw.drawFrames = () => {}; cw.drawCard = () => {};
+      cw.ImageLoadTracker.start(); cw.FontLoadTracker.start();
 
       // 1) autoFrame chooses + places the correct frames automatically.
       await step('autoFrame', async () => {
         const af = cd.querySelector('#autoFrame');
         af.value = r.borderless ? 'Borderless' : 'M15RegularNew';
         af.dispatchEvent(new Event('change', { bubbles: true }));
-        await sleep(400);
       });
 
       // 2) text
-      await step('textTab', async () => { clickTab(cd, 'Text'); await sleep(150); });
+      await step('textTab', async () => { clickTab(cd, 'Text'); });
       await step('manaCost', async () => { if (r.manaCost) setField(cd, 'Mana Cost', r.manaCost); });
       await step('title', async () => { if (r.name) setField(cd, 'Title', r.name); });
       await step('type', async () => { if (r.typeLine) setField(cd, 'Type', r.typeLine); });
@@ -173,15 +184,25 @@
       // 3) art (same-origin -> canvas stays untainted)
       if (r.art) await step('art', async () => {
         clickTab(cd, 'Art');
-        await sleep(150);
         const url = cd.querySelector('#creator-menu-art input[placeholder="Via URL"]');
         if (url) { url.value = r.art; url.dispatchEvent(new Event('change', { bubbles: true })); }
         const artist = cd.querySelector('#creator-menu-art #art-artist');
         if (artist) { artist.value = r.artist || 'Spike'; artist.dispatchEvent(new Event('change', { bubbles: true })); }
-        await sleep(200);
       });
 
-      const dataUrl = await waitForSettle();
+      await step('drawText', async () => { await cw.drawText(); });
+      await Promise.all([cw.ImageLoadTracker.waitForAll(), cw.FontLoadTracker.waitForAll()]);
+      try { await cw.document.fonts.ready; } catch (e) {}
+      cw.ImageLoadTracker.stop(); cw.FontLoadTracker.stop();
+      // drawText() above may have rasterized some glyphs before their @font-face finished loading
+      // (a fresh reload means fonts aren't guaranteed ready yet). CardConjurer has no font-load-
+      // then-redraw of its own, so text drawn too early is permanent "tofu". Redraw once more
+      // now that fonts are confirmed ready, before the single composite.
+      await step('drawText (post-font)', async () => { await cw.drawText(); });
+      cw.drawFrames = realDrawFrames; cw.drawCard = realDrawCard;
+      cw.drawFrames(); // one guaranteed-complete composite (also calls drawCard() internally)
+
+      const dataUrl = cw.cardCanvas.toDataURL('image/png');
       document.getElementById('preview').src = dataUrl;
       log('done in ' + (Date.now() - t0) + 'ms; png bytes ~' + Math.round(dataUrl.length * 0.75));
       return dataUrl;

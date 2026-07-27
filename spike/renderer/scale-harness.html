@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>KP v2 — hidden/scaling/cross-talk (Phase 0.7)</title>
+<style> body { margin: 0; background: #222; } iframe { width: 500px; height: 700px; border: 0; } </style>
+</head>
+<body>
+<div id="visible-slot"></div>
+<script>
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  const byText = (root, sel, text) => [...root.querySelectorAll(sel)].find(e => (e.textContent || '').trim().toLowerCase().includes(text.toLowerCase()));
+  function setField(cd, section, value) { const h4 = byText(cd, '#text-options h4', section); if (!h4) return; h4.click(); const ed = cd.querySelector('#text-editor'); if (!ed) return; ed.value = value; ed.dispatchEvent(new Event('input', { bubbles: true })); ed.dispatchEvent(new Event('change', { bubbles: true })); }
+  function clickTab(cd, t) { const h3 = byText(cd, '#creator-menu-tabs h3', t); if (h3) h3.click(); }
+
+  const HIDE = {
+    visible: (f) => { document.getElementById('visible-slot').appendChild(f); },
+    offscreen: (f) => { f.style.position = 'fixed'; f.style.left = '-99999px'; f.style.top = '0'; document.body.appendChild(f); },
+    visibility: (f) => { f.style.visibility = 'hidden'; f.style.position = 'fixed'; f.style.left = '0'; f.style.top = '0'; document.body.appendChild(f); },
+    display: (f) => { f.style.display = 'none'; document.body.appendChild(f); },
+  };
+  function makeIframe(mode) { const f = document.createElement('iframe'); HIDE[mode](f); f.src = '/?n=' + Date.now() + Math.random(); return f; }
+  function waitLoad(f) { return new Promise((res) => { let d = false; const on = () => { if (!d) { d = true; res(); } }; f.addEventListener('load', on); setTimeout(on, 20000); }); }
+  async function waitCreator(f, timeout = 30000) {
+    const s = Date.now();
+    while (Date.now() - s < timeout) {
+      const cw = f.contentWindow, cd = f.contentDocument;
+      if (cw && cd && cw.cardCanvas && cw.cardCanvas.width > 0 && cd.querySelector('#autoFrame') && cd.querySelector('#text-editor')) { try { await cw.document.fonts.ready; } catch (e) {} return true; }
+      await sleep(120);
+    }
+    return false;
+  }
+  async function settleF(f, maxMs = 12000, stableFor = 350) {
+    const cw = f.contentWindow; let last = '', since = 0, out = ''; const s = Date.now();
+    while (Date.now() - s < maxMs) { try { out = cw.cardCanvas.toDataURL('image/png'); } catch (e) { return; } const now = Date.now(); if (out === last) { if (now - since >= stableFor) return; } else { last = out; since = now; } await sleep(70); }
+  }
+  async function render(f, spec) {
+    const cw = f.contentWindow, cd = f.contentDocument;
+    let t0 = Date.now(); while (!cw.card.text && Date.now() - t0 < 6000) { const b = cd.querySelector('#loadFrameVersion'); if (b && typeof b.onclick === 'function') { try { await b.onclick(); } catch (e) {} } await sleep(150); }
+    const af = cd.querySelector('#autoFrame'); af.value = 'M15RegularNew'; af.dispatchEvent(new Event('change', { bubbles: true }));
+    clickTab(cd, 'Text'); await sleep(100);
+    if (spec.mana) setField(cd, 'Mana Cost', spec.mana);
+    if (spec.title) setField(cd, 'Title', spec.title);
+    if (spec.type) setField(cd, 'Type', spec.type);
+    if ('rules' in spec) setField(cd, 'Rules Text', spec.rules);
+    if (spec.pt) setField(cd, 'Power/Toughness', spec.pt);
+    try { cw.autoFrame(); } catch (e) {}
+    await sleep(650);
+    try { await cw.drawText(); } catch (e) {}
+    await settleF(f);
+  }
+  function snap(f) { const c = f.contentWindow.cardCanvas; const w = c.width, h = c.height; return { data: new Uint8ClampedArray(c.getContext('2d').getImageData(0, 0, w, h).data), w, h, nonBlank: c.getContext('2d').getImageData(0, 0, w, h).data.length }; }
+  function diffSnaps(p, c) { const a = p.data, b = c.data; if (a.length !== b.length) return { pct: 100 }; let dp = 0; for (let i = 0; i < a.length; i += 4) { if (Math.abs(a[i] - b[i]) > 12 || Math.abs(a[i + 1] - b[i + 1]) > 12 || Math.abs(a[i + 2] - b[i + 2]) > 12) dp++; } return { pct: (100 * dp) / (a.length / 4) }; }
+  function isBlank(s) { const d = s.data; let non = 0; for (let i = 0; i < d.length; i += 4) { if (d[i] < 245 || d[i + 1] < 245 || d[i + 2] < 245) { non++; if (non > 2000) return false; } } return true; }
+  const BASE = { mana: '{2}{G}', title: 'Hidden Test', type: 'Creature — Elf Ranger', rules: 'Vigilance', pt: '3/3' };
+  const MANAS = ['{G}', '{R}', '{U}', '{B}', '{W}', '{2}{G}', '{2}{R}', '{1}{U}', '{3}{B}', '{2}{W}', '{G}{U}', '{R}{W}', '{B}{G}', '{U}{R}', '{W}{B}', '{4}{R}'];
+
+  // 1) hidden-render correctness: same card visible vs each hide mode
+  window.testHidden = async function () {
+    const results = [];
+    const fv = makeIframe('visible'); await waitLoad(fv); await waitCreator(fv); await render(fv, BASE); const base = snap(fv);
+    results.push({ mode: 'visible', pctVsVisible: 0, blank: isBlank(base) });
+    for (const mode of ['offscreen', 'visibility', 'display']) {
+      const f = makeIframe(mode); await waitLoad(f); const ready = await waitCreator(f);
+      let row = { mode, pctVsVisible: null, blank: null, ready };
+      if (ready) { await render(f, BASE); const s = snap(f); row.pctVsVisible = +diffSnaps(base, s).pct.toFixed(3); row.blank = isBlank(s); }
+      results.push(row); f.remove();
+    }
+    fv.remove();
+    return results;
+  };
+
+  // 2) scaling + cross-talk: boot K hidden instances, render a DISTINCT card in each, then
+  //    diff each vs a solo ground-truth render of the same card.
+  window.testScale = async function (K) {
+    const mem0 = performance.memory ? performance.memory.usedJSHeapSize : 0;
+    const frames = [], snaps = [], times = [];
+    for (let i = 0; i < K; i++) {
+      const f = makeIframe('offscreen'); await waitLoad(f); await waitCreator(f);
+      const spec = { mana: MANAS[i % MANAS.length], title: 'Card ' + i, type: 'Creature — Elf', rules: 'Vigilance', pt: ((i % 8) + 1) + '/' + ((i % 8) + 1) };
+      const t = performance.now(); await render(f, spec); times.push(performance.now() - t);
+      frames.push({ f, spec }); snaps.push(snap(f));
+    }
+    const mem1 = performance.memory ? performance.memory.usedJSHeapSize : 0;
+    // cross-talk: re-render each spec solo and diff vs the pooled instance's snapshot
+    const solo = makeIframe('offscreen'); await waitLoad(solo); await waitCreator(solo);
+    let maxDiff = 0, blanks = 0;
+    for (let i = 0; i < K; i++) {
+      if (isBlank(snaps[i])) blanks++;
+      await render(solo, frames[i].spec); const gt = snap(solo);
+      const d = diffSnaps(snaps[i], gt).pct; if (d > maxDiff) maxDiff = d;
+    }
+    solo.remove(); frames.forEach(x => x.f.remove());
+    const med = times.slice().sort((a, b) => a - b)[Math.floor(times.length / 2)];
+    return { K, medianRenderMs: +med.toFixed(0), maxRenderMs: +Math.max(...times).toFixed(0), blanks, maxCrossTalkPct: +maxDiff.toFixed(3), heapMB: +((mem1 - mem0) / 1048576).toFixed(1) };
+  };
+</script>
+</body>
+</html>

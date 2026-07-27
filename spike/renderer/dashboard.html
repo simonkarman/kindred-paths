@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Kindred Paths v2 — renderer spike dashboard</title>
+<style>
+  :root { --bg:#0f172a; --panel:#1e293b; --line:#334155; --txt:#e2e8f0; --mut:#94a3b8; --acc:#3b82f6; --good:#22c55e; --warn:#f59e0b; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: ui-sans-serif, system-ui, sans-serif; background:var(--bg); color:var(--txt); }
+  header { padding:16px 24px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:10; }
+  header h1 { margin:0 0 6px; font-size:18px; } header .sub { color:var(--mut); font-size:13px; }
+  nav { margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+  nav a { color:var(--txt); text-decoration:none; font-size:13px; padding:5px 10px; border:1px solid var(--line); border-radius:6px; }
+  nav a:hover { border-color:var(--acc); }
+  main { max-width:1400px; margin:0 auto; padding:24px; }
+  section { margin-bottom:40px; }
+  h2 { font-size:16px; border-bottom:1px solid var(--line); padding-bottom:8px; }
+  .row { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; }
+  label { display:block; font-size:12px; color:var(--mut); margin:10px 0 3px; }
+  input, textarea, button { font-family:inherit; font-size:13px; background:#0b1220; color:var(--txt); border:1px solid var(--line); border-radius:6px; padding:7px 9px; width:100%; }
+  textarea { resize:vertical; min-height:66px; }
+  button { cursor:pointer; background:var(--acc); border-color:var(--acc); color:#fff; font-weight:600; width:auto; padding:8px 16px; }
+  button.secondary { background:transparent; color:var(--txt); }
+  button:disabled { opacity:.5; cursor:default; }
+  .preview { background:#000; border-radius:8px; padding:8px; }
+  canvas.preview-canvas { width:340px; height:auto; display:block; border-radius:6px; }
+  .timing { font-family: ui-monospace, monospace; font-size:13px; margin-top:10px; }
+  .timing b { color:var(--good); } .timing .full { color:var(--warn); }
+  .badge { display:inline-block; font-size:11px; padding:2px 7px; border-radius:999px; border:1px solid var(--line); color:var(--mut); }
+  .hint { color:var(--mut); font-size:12px; }
+  .md h3 { font-size:14px; margin:16px 0 6px; } .md table { border-collapse:collapse; margin:8px 0; font-size:12px; }
+  .md td, .md th { border:1px solid var(--line); padding:4px 9px; text-align:left; } .md th { background:#0b1220; }
+  .md code, .md pre { font-family: ui-monospace, monospace; font-size:12px; }
+  .md pre { background:#0b1220; border:1px solid var(--line); border-radius:6px; padding:10px; overflow:auto; }
+  .gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; }
+  .gallery figure { margin:0; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px; }
+  .gallery img { width:100%; border-radius:4px; background:#000; }
+  .gallery figcaption { font-size:11px; color:var(--mut); margin-top:6px; word-break:break-all; }
+  .tabs { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+  .tabs button { background:transparent; color:var(--mut); border:1px solid var(--line); }
+  .tabs button.active { color:#fff; border-color:var(--acc); background:var(--acc); }
+  #cc { position:fixed; left:-99999px; top:0; width:900px; height:1200px; border:0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Kindred Paths v2 — renderer spike dashboard</h1>
+  <div class="sub">Play with the two-layer renderer: a <b>warm in-browser CardConjurer</b> (instant editing) and a <b>server-side CC-in-Node</b> render — plus every spike's results & images.</div>
+  <nav>
+    <a href="#live">Live editor</a><a href="#server">Server render (Node)</a>
+    <a href="#results">Spike results</a><a href="#gallery">Image gallery</a>
+  </nav>
+</header>
+<main>
+  <!-- hidden warm CardConjurer instance -->
+  <iframe id="cc" src="/"></iframe>
+
+  <section id="live">
+    <h2>1 · Live editor — warm in-browser CardConjurer</h2>
+    <p class="hint">Type in the text fields → the card re-renders by <b>patching</b> the warm instance (~1ms, no reload). Change <b>mana/color</b> → it's frame-affecting, so it does a <b>full render</b> (reload). Watch the timing readout to feel the difference.</p>
+    <div class="row">
+      <div class="panel" style="flex:1; min-width:280px;">
+        <label>Name</label><input id="f-title" value="Dashboard Ranger">
+        <label>Mana cost (color change = full render)</label><input id="f-mana" value="{2}{G}">
+        <label>Type line</label><input id="f-type" value="Creature — Elf Ranger">
+        <label>Rules text</label><textarea id="f-rules">Vigilance
+When Dashboard Ranger enters the battlefield, draw a card.</textarea>
+        <label>Power/Toughness</label><input id="f-pt" value="3/3">
+      </div>
+      <div class="panel">
+        <div class="preview"><canvas id="live-canvas" class="preview-canvas" width="340" height="475"></canvas></div>
+        <div class="timing" id="live-timing">booting warm CardConjurer…</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="server">
+    <h2>2 · Server render — CardConjurer-in-Node (no browser)</h2>
+    <p class="hint">Renders the card above <b>server-side in a pure Node process</b> (Phase 0.8) via <code>@napi-rs/canvas</code>. A unique card renders in <b>~1s</b> (build+decode + one composite + PNG encode); the result is <b>content-hash cached</b>, so re-rendering the same card is instant.</p>
+    <div class="row">
+      <div class="panel">
+        <button id="btn-node" onclick="serverRender()">Render on server (Node)</button>
+        <div class="timing" id="node-timing" style="margin-top:12px;">—</div>
+      </div>
+      <div class="panel"><div class="preview"><img id="node-img" style="width:340px;border-radius:6px;background:#000;" alt=""></div></div>
+    </div>
+  </section>
+
+  <section id="results">
+    <h2>3 · Spike results</h2>
+    <div class="tabs" id="result-tabs"></div>
+    <div class="panel md" id="result-body">loading…</div>
+  </section>
+
+  <section id="gallery">
+    <h2>4 · Image gallery — everything the spikes generated</h2>
+    <div class="gallery" id="gallery-body">loading…</div>
+  </section>
+</main>
+
+<script>
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const $ = (id) => document.getElementById(id);
+const ccWin = () => $('cc').contentWindow;
+const ccDoc = () => $('cc').contentDocument;
+const byText = (root, sel, t) => [...root.querySelectorAll(sel)].find(e => (e.textContent||'').trim().toLowerCase().includes(t.toLowerCase()));
+function setField(cd, section, value) { const h4 = byText(cd, '#text-options h4', section); if(!h4) return; h4.click(); const ed = cd.querySelector('#text-editor'); if(!ed) return; ed.value = value; ed.dispatchEvent(new Event('input',{bubbles:true})); ed.dispatchEvent(new Event('change',{bubbles:true})); }
+function clickTab(cd, t){ const h3 = byText(cd,'#creator-menu-tabs h3',t); if(h3) h3.click(); }
+function spec(){ return { mana:$('f-mana').value, title:$('f-title').value, type:$('f-type').value, rules:$('f-rules').value, pt:$('f-pt').value }; }
+
+async function waitForCreator(timeout=30000){ const s=Date.now(); while(Date.now()-s<timeout){ const cw=ccWin(),cd=ccDoc(); if(cw&&cd&&cw.cardCanvas&&cw.cardCanvas.width>0&&cd.querySelector('#autoFrame')&&cd.querySelector('#text-editor')){ try{await cw.document.fonts.ready}catch(e){} return true;} await sleep(120);} return false; }
+function reload(){ return new Promise((res,rej)=>{ const f=$('cc'); try{f.contentWindow.localStorage.clear()}catch(e){} let d=false; const on=()=>{if(!d){d=true;f.removeEventListener('load',on);res();}}; f.addEventListener('load',on); f.src='/?n='+Date.now(); setTimeout(()=>{if(!d){d=true;rej(new Error('reload timeout'))}},30000); }); }
+async function settle(maxMs=8000, stableFor=300){ const cw=ccWin(); let last='',since=0,out=''; const s=Date.now(); while(Date.now()-s<maxMs){ out=cw.cardCanvas.toDataURL('image/png'); const now=Date.now(); if(out===last){ if(now-since>=stableFor) return;} else {last=out;since=now;} await sleep(60);} }
+function blit(){ const cw=ccWin(); const c=$('live-canvas'); const cc=cw.cardCanvas;
+  // Blit at the card's NATIVE resolution (2010x2814), not the 340px CSS display size — the
+  // canvas backing store was previously downscaled to 340px then upscaled by the browser for
+  // display, producing a pixelated result. CSS (width:340px; height:auto) handles the display
+  // downscale crisply at any devicePixelRatio, matching the server render's <img> crispness.
+  if (c.width !== cc.width || c.height !== cc.height) { c.width = cc.width; c.height = cc.height; }
+  c.getContext('2d').drawImage(cc,0,0); }
+
+async function ensureText(){ const cw=ccWin(),cd=ccDoc(); let t=Date.now(); while(!cw.card.text&&Date.now()-t<6000){ const b=cd.querySelector('#loadFrameVersion'); if(b&&typeof b.onclick==='function'){try{await b.onclick()}catch(e){}} await sleep(150);} }
+
+let lastMana = null;
+async function fullRender(){ const t0=performance.now(); await reload(); await waitForCreator(); await ensureText(); const cd=ccDoc(),cw=ccWin(); const s=spec();
+  // CardConjurer wires image.onload = drawFrames on every frame/mask image, and drawFrames()
+  // ends by calling drawCard() — one render triggers ~26-39 of these (the slow, racy path).
+  // Suppress both during the build, wait for CardConjurer's OWN completion signal
+  // (ImageLoadTracker/FontLoadTracker — the same primitive its bulk-export uses), then do
+  // exactly one guaranteed-complete composite. Faster AND reliable (no more "sometimes no frame").
+  const realDF = cw.drawFrames, realDC = cw.drawCard;
+  cw.drawFrames = () => {}; cw.drawCard = () => {};
+  cw.ImageLoadTracker.start(); cw.FontLoadTracker.start();
+  const af=cd.querySelector('#autoFrame'); af.value='M15RegularNew'; af.dispatchEvent(new Event('change',{bubbles:true}));
+  clickTab(cd,'Text'); await sleep(50);
+  setField(cd,'Mana Cost',s.mana); setField(cd,'Title',s.title); setField(cd,'Type',s.type); setField(cd,'Rules Text',s.rules); if(s.pt) setField(cd,'Power/Toughness',s.pt);
+  try{cw.autoFrame()}catch(e){}
+  try{await cw.drawText()}catch(e){}
+  await Promise.all([cw.ImageLoadTracker.waitForAll(), cw.FontLoadTracker.waitForAll()]);
+  try{await cw.document.fonts.ready}catch(e){}
+  cw.ImageLoadTracker.stop(); cw.FontLoadTracker.stop();
+  // drawText() above may have rasterized some glyphs before their @font-face finished loading
+  // (a fresh reload means fonts aren't guaranteed ready yet) — CardConjurer has no font-load-then-
+  // redraw mechanism of its own, so text drawn too early is permanently "tofu" (missing-glyph
+  // boxes). Now that fonts are confirmed ready, redraw text once more before the single composite.
+  try{await cw.drawText()}catch(e){}
+  cw.drawFrames = realDF; cw.drawCard = realDC;
+  cw.drawFrames(); // one guaranteed-complete composite (also calls drawCard() internally) — synchronous, no need to poll-settle afterwards
+  blit(); lastMana=s.mana; return performance.now()-t0; }
+
+async function patch(){ const t0=performance.now(); const cw=ccWin(); const s=spec();
+  if(cw.card.text.title) cw.card.text.title.text=s.title;
+  if(cw.card.text.type) cw.card.text.type.text=s.type;
+  if(cw.card.text.rules) cw.card.text.rules.text=s.rules;
+  if(cw.card.text.pt) cw.card.text.pt.text=s.pt;
+  await cw.drawText(); blit(); return performance.now()-t0; }
+
+let busy=false, queued=false, lastAppliedKey=null;
+async function onEdit(){ if(busy){ queued=true; return; } busy=true;
+  const s=spec(); const key=JSON.stringify(s);
+  try {
+    // Two fields edited within the same debounce window each schedule their own onEdit() call;
+    // if the first (e.g. a full render for the mana change) already reflects BOTH edits by the
+    // time it runs, the second queued call would otherwise re-run against now-unchanged state —
+    // silently downgrading the status text (e.g. "FULL render" -> a redundant "patch") even
+    // though nothing new happened. Skip if nothing changed since the last applied render.
+    if (key === lastAppliedKey) { busy=false; if(queued){ queued=false; onEdit(); } return; }
+    if(s.mana!==lastMana){ $('live-timing').innerHTML='<span class="full">full render (frame change)…</span>'; const ms=await fullRender(); $('live-timing').innerHTML=`<span class="full">FULL render (color changed): <b>${ms.toFixed(0)}ms</b></span> — reload + autoFrame + drawText`; }
+    else { const ms=await patch(); $('live-timing').innerHTML=`patch (text edit): <b>${ms.toFixed(1)}ms</b> + blit — no reload, warm instance`; }
+    lastAppliedKey=key;
+  } catch(e){ $('live-timing').textContent='error: '+e.message; }
+  busy=false; if(queued){ queued=false; onEdit(); }
+}
+
+async function serverRender(){ const b=$('btn-node'); b.disabled=true; const el=$('node-timing');
+  el.textContent='rendering server-side in Node… (first time ~1s, then cached)';
+  const s=spec(); const q=new URLSearchParams(s).toString(); const t0=performance.now();
+  try {
+    const r=await fetch('/api/render-node?'+q); const blob=await r.blob(); const ms=performance.now()-t0;
+    const timing=JSON.parse(r.headers.get('x-timing')||'{}');
+    $('node-img').src=URL.createObjectURL(blob);
+    el.innerHTML = timing.cached
+      ? `served from <b>content-hash cache</b>: <b>${ms.toFixed(0)}ms</b> (instant repeat)`
+      : `server render (Node): total <b>${ms.toFixed(0)}ms</b> — build+decode <b class="full">${timing.buildMs}ms</b>, composite ${timing.compositeMs}ms, PNG encode ${timing.encodeMs}ms`;
+  } catch(e){ el.textContent='error: '+e.message; }
+  b.disabled=false;
+}
+
+// tiny markdown renderer (headings, tables, code, bold)
+function md2html(md){
+  const lines=md.split('\n'); let html='', i=0;
+  while(i<lines.length){ let l=lines[i];
+    if(l.startsWith('```')){ let code=''; i++; while(i<lines.length&&!lines[i].startsWith('```')){ code+=lines[i]+'\n'; i++; } html+='<pre>'+esc(code)+'</pre>'; i++; continue; }
+    if(l.startsWith('### ')){ html+='<h3>'+inline(l.slice(4))+'</h3>'; i++; continue; }
+    if(l.startsWith('## ')){ html+='<h3>'+inline(l.slice(3))+'</h3>'; i++; continue; }
+    if(l.startsWith('# ')){ html+='<h3>'+inline(l.slice(2))+'</h3>'; i++; continue; }
+    if(l.trim().startsWith('|')){ const rows=[]; while(i<lines.length&&lines[i].trim().startsWith('|')){ rows.push(lines[i]); i++; }
+      const cells=rows.map(r=>r.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim()));
+      const body=cells.filter(r=>!r.every(c=>/^-+$/.test(c)));
+      html+='<table>'+body.map((r,ri)=>'<tr>'+r.map(c=>ri===0?'<th>'+inline(c)+'</th>':'<td>'+inline(c)+'</td>').join('')+'</tr>').join('')+'</table>'; continue; }
+    if(l.trim()===''){ i++; continue; }
+    html+='<p>'+inline(l)+'</p>'; i++;
+  }
+  return html;
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function inline(s){ return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`(.+?)`/g,'<code>$1</code>'); }
+}
+
+async function loadResults(){
+  const data=await (await fetch('/api/results')).json();
+  const tabs={ ccNode:'0.8 CC-in-Node', perf:'0.5 Performance', patch:'0.6 Patch', scale:'0.7 Hidden/Scale' };
+  const tabsEl=$('result-tabs'); const bodyEl=$('result-body');
+  const show=(k,btn)=>{ [...tabsEl.children].forEach(c=>c.classList.remove('active')); btn.classList.add('active'); bodyEl.innerHTML=data[k]?md2html(data[k]):'(no result file)'; };
+  Object.entries(tabs).forEach(([k,label],idx)=>{ const btn=document.createElement('button'); btn.textContent=label; btn.onclick=()=>show(k,btn); tabsEl.appendChild(btn); if(idx===0) show(k,btn); });
+}
+async function loadGallery(){
+  const {files}=await (await fetch('/api/images')).json();
+  $('gallery-body').innerHTML=files.map(f=>`<figure><img loading="lazy" src="/spike/${f.name}"><figcaption>${f.name} · ${(f.size/1024).toFixed(0)} KB</figcaption></figure>`).join('');
+}
+
+// wire live editor inputs
+['f-title','f-mana','f-type','f-rules','f-pt'].forEach(id=>{ let t; $(id).addEventListener('input',()=>{ clearTimeout(t); t=setTimeout(onEdit,120); }); });
+
+(async function init(){
+  loadResults(); loadGallery();
+  await waitForCreator(); $('live-timing').textContent='warm — rendering initial card…';
+  await fullRender(); $('live-timing').innerHTML='ready — edit the text fields to feel <b>~1ms patches</b>; change mana to force a full render.';
+})();
+</script>
+</body>
+</html>

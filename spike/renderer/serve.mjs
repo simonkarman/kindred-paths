@@ -3,8 +3,8 @@
 // which is what makes iframe-driving and cardCanvas.toDataURL() extraction possible.
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve, join, extname, normalize } from 'node:path';
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { dirname, resolve, join, extname, normalize, basename } from 'node:path';
+import { createReadStream, existsSync, statSync, readFileSync, readdirSync } from 'node:fs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, '../..');
@@ -54,14 +54,74 @@ function safeJoin(root, urlPath) {
   return p.startsWith(root) ? p : null;
 }
 
+// --- dashboard API: results md, image list, and a live CC-in-Node server render ---
+let nodeRendererPromise = null; // lazy warm renderer
+const nodeCache = new Map();    // content-hash cache (in-memory)
+const RESULT_FILES = { perf: 'perf-results.md', patch: 'patch-results.md', scale: 'scale-results.md', ccNode: 'cc-node-results.md' };
+
+function readJson(res, obj) {
+  const body = JSON.stringify(obj);
+  res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*' });
+  res.end(body);
+}
+
+async function handleApi(req, res, urlPath, query) {
+  if (urlPath === '/api/results') {
+    const out = {};
+    for (const [k, f] of Object.entries(RESULT_FILES)) { const p = join(HERE, f); out[k] = existsSync(p) ? readFileSync(p, 'utf8') : null; }
+    return readJson(res, out);
+  }
+  if (urlPath === '/api/images') {
+    const files = readdirSync(HERE).filter((f) => /\.(png|jpe?g)$/i.test(f))
+      .map((f) => ({ name: f, size: statSync(join(HERE, f)).size })).sort((a, b) => a.name.localeCompare(b.name));
+    return readJson(res, { files });
+  }
+  if (urlPath === '/api/render-node') {
+    const spec = { mana: query.get('mana') || '', title: query.get('title') || '', type: query.get('type') || '', rules: query.get('rules') || '', pt: query.get('pt') || '' };
+    const key = JSON.stringify(spec);
+    if (nodeCache.has(key)) {
+      const c = nodeCache.get(key);
+      res.writeHead(200, { 'content-type': 'image/png', 'access-control-allow-origin': '*', 'x-timing': JSON.stringify({ ...c.timing, cached: true }) });
+      return res.end(c.png);
+    }
+    try {
+      if (!nodeRendererPromise) nodeRendererPromise = import('./cc-node-renderer.mjs').then((m) => m.createNodeRenderer());
+      const renderer = await nodeRendererPromise;
+      const r = await renderer.render(spec);
+      const timing = { buildMs: r.buildMs, compositeMs: r.compositeMs, encodeMs: r.encodeMs, cached: false };
+      nodeCache.set(key, { png: r.png, timing });
+      res.writeHead(200, { 'content-type': 'image/png', 'access-control-allow-origin': '*', 'x-timing': JSON.stringify(timing) });
+      return res.end(r.png);
+    } catch (e) {
+      res.writeHead(500, { 'content-type': 'text/plain', 'access-control-allow-origin': '*' });
+      return res.end('render error: ' + e.message);
+    }
+  }
+  res.writeHead(404, { 'content-type': 'text/plain' });
+  res.end('no such api');
+}
+
 export function createRequestHandler() {
-  return (req, res) => {
+  return async (req, res) => {
     res.on('error', () => {});
     try {
-      const urlPath = (req.url || '/').split('?')[0];
+      const u = new URL(req.url || '/', 'http://localhost');
+      const urlPath = u.pathname;
 
-      // The harness page (parent frame) lives at /harness.html, same-origin as CC.
-      if (urlPath === '/harness.html') return serveFile(res, join(HERE, 'harness.html'));
+      // Dashboard APIs
+      if (urlPath.startsWith('/api/')) return await handleApi(req, res, urlPath, u.searchParams);
+
+      // Spike assets (generated PNGs, result markdown) live in this dir.
+      if (urlPath.startsWith('/spike/')) {
+        const p = safeJoin(HERE, urlPath.slice('/spike'.length));
+        return p ? serveFile(res, p) : res.end('bad path');
+      }
+
+      // Spike HTML pages (dashboard.html, harness.html, …) live in this dir, same-origin as CC.
+      if (urlPath.endsWith('.html')) {
+        const p = join(HERE, basename(urlPath));
+        if (existsSync(p)) return serveFile(res, p);
+      }
 
       // Same-origin art (required: cross-origin art taints the canvas -> toDataURL throws).
       // Art lives flat in collection/art, so resolve by basename regardless of how CC
