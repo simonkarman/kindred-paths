@@ -675,6 +675,14 @@ becomes untestable without Next — enforce by lint rule or code review.
     - `test:golden` (full scope) does a membership check (missing/orphan PNGs) then pixel-diffs
       via pixelmatch with a tolerance. `test:golden --card <cid>` skips membership and only
       diffs the specified card(s); fails with an actionable message if no PNG exists.
+    - **Both commands always force a fresh render**, bypassing the on-disk render cache
+      (`KP_CACHE_DIR`). Otherwise a golden regen after a renderer code change would silently
+      return the cached PNG from the previous build and pass every diff. In v1 terms this is
+      `GET /render/:cid/:faceIndex?force=true`; in v2 the renderer interface exposes an
+      equivalent `render(card, { skipCache: true })` option.
+    - **Browsing the golden set:** `http://localhost:4100/?q=tag%3Agolden` opens the v1
+      overview filtered to golden cards. The v2 overview page (Phase 1c) must accept the same
+      URL query so this bookmark keeps working.
   Emits an HTML report grouped by renderer. Zero v1 dependency at runtime. Also scaffolds the
   minimal v2 workspace (`pnpm-workspace.yaml`, `packages/shared/` port, `packages/renderer/`
   with interface + registry + cardconjurer node bridge, empty `apps/web/` skeleton). Gates
