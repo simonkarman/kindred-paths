@@ -96,9 +96,9 @@ entirely in the **presentation and rendering layers**, plus features that are no
 | Search DSL (`filter-definitions`, `filter-query-handler`, `card-filterer`) | Card editor → compact, live, multi-instance, snapshot undo/redo, dockable AI panel | Strategy (client + server + MCP + shared aggregator/bucket/color-weights) |
 | `collection/` JSON format | Set page blueprint DSL → search-query cells | Inspire-me page (→ in-app assistant / harness) |
 | On-disk PNG cache (`.cache`, content-hash + thumbnails) | Render orchestration/cache → renderer-agnostic render API | Collection git UI (→ git CLI / harness) |
-| Card CRUD logic → moves into `core` | Image-gen UX → set-themed, model-switch, overlay-capable | Blueprint criteria DSL (`shared/src/set/criteria/**`, `blueprint-validator.ts`) |
-| CardConjurer (external clone, pinned) | Backend → Next.js server actions + render API | Collector-number surfacing (editor + set overview) |
-| Mechanics, colors, sorter, art-prompt-creator, token-extracter, hash | MCP → `kp` CLI + OpenCode skill | MCP package (design-doc + research tools); **Docker**; the Playwright+Docker driving pipeline |
+| Card CRUD logic → moves into `apps/web/src/core/` | Image-gen UX → set-themed, model-switch, overlay-capable | Blueprint criteria DSL (`shared/src/set/criteria/**`, `blueprint-validator.ts`) |
+| CardConjurer (external clone, pinned) | Backend → Next.js route handlers + `src/core/` ops | Collector-number surfacing (editor + set overview) |
+| Mechanics, colors, sorter, art-prompt-creator, token-extracter, hash | Old MCP → SDK + `kp` CLI + thin MCP wrapper + OpenCode skill | v1 `mcp/` package (design-doc + research tools); **Docker**; the Playwright+Docker driving pipeline |
 | | Design docs → integrated set notes (md linked to set) | |
 
 ### Dependency caveats
@@ -140,6 +140,18 @@ Both layers use CardConjurer today; the pluggable interface lets a non-proprieta
 replace it later without touching the cache, API, or UI. The rest of §4 covers the CardConjurer
 driving mechanism (shared by both layers), the interactive editing model, the server render +
 cache, how CardConjurer runs server-side, and the CC update workflow.
+
+### The Renderer interface + registry
+Each renderer exposes a stable **`name`** (filesystem-safe: `[a-z0-9-]+`) alongside its render
+function. `packages/renderer/src/index.ts` holds a central `renderers` registry mapping name →
+implementation; today it has one entry (`cardconjurer`). Adding a future renderer means
+implementing the interface and adding one line to the registry — the golden test harness (§11
+Phase 1a) discovers renderers from this registry and iterates over all of them, so no test-
+harness changes are needed.
+
+Goldens are stored per-renderer under `collection/goldens/<renderer-name>/<cid>.png` (see §10),
+so a second registered renderer automatically gets its own goldens subtree the first time
+`pnpm generate-goldens` runs.
 
 ### The CardConjurer driving mechanism
 CardConjurer is just JavaScript drawing to a `<canvas>`. Instead of screenshotting it through a
@@ -355,10 +367,21 @@ across independent full renders).
 
 ### CardConjurer update workflow
 CC is **pinned** to a commit (today `card-conjurer.sh` floats via `git reset --hard && git pull`
-— change to a pin). To adopt a newer CC: bump the pin → run the **golden-image suite** (Phase
-1a) → review diffs, **bless intended improvements** (new/updated frames *should* change goldens)
-and fix real regressions (code changes acceptable) → adopt. The golden suite is the compatibility
-gate: it validates v1↔v2 parity *and* CC version bumps.
+— change to a pin). Any renderer-affecting change — a CC pin bump, a fix in our CC driver, a
+font swap — goes through the same executable flow:
+
+1. Make the change (bump `packages/renderer/src/cardconjurer/pin.ts`, or edit driver code).
+2. `pnpm generate-goldens` — regenerates `collection/goldens/<renderer>/` for every registered
+   renderer (wipes each renderer dir first, then rewrites PNGs for every `tag:golden` card).
+3. `cd collection && git diff -- goldens/` — visually review each pixel change.
+4. If diffs are intended improvements (e.g. new/updated CC frames rendering as expected), commit
+   both the code change and the new PNGs together in a linked PR. If diffs are regressions, fix
+   the code, re-run `generate-goldens`, re-check.
+5. During iteration on a single card, use the surgical flag: `pnpm generate-goldens --card <cid>`
+   overwrites only that one PNG; `pnpm test:golden --card <cid>` diffs only that one card.
+
+The golden suite (Phase 1a) is the compatibility gate: it validates v1↔v2 parity *and* CC version
+bumps *and* driver changes. See §11 Phase 1a for the full command semantics.
 
 ### What this removes / keeps
 - **Removes:** Docker, the Playwright+Docker *driving* pipeline (`server/src/card-conjurer.ts`
@@ -376,22 +399,25 @@ print sheets use the same authoritative images as the rest of the app.
 
 ## 5. Backend fold-in
 
-The backend folds into the Next.js app as server actions + route handlers:
+The backend folds into the Next.js app (`apps/web`) as route handlers under `src/app/api/`,
+calling pure node ops under `src/core/` (see §6 and §10):
 
-- **Card CRUD, search, verify** → `core` ops (see §6), called from Next server actions.
-- **Render API** → `GET /render/:cid/:face` behind the `Renderer` interface: content-hash cache
-  lookup → render on miss (CC-in-Node or headless) → persist PNG + thumbnail to `.cache/renders`
-  → serve. `.cache/renders` is also served as static files. (This is v1's `render.ts` reworked:
-  renderer-agnostic, no Docker, no boot-time coupling.)
-- **Art generation (Leonardo)** → a Next server action. It's a plain API call (async
-  poll is acceptable off the interactive hot path); the image-gen UX is reworked to be
+- **Card CRUD, search, verify** → `src/core/ops/` (see §6), called from route handlers.
+- **Render API** → `GET /api/render/:cid/:face` behind the `@kindred-paths/renderer` interface:
+  content-hash cache lookup → render on miss (CC-in-Node or headless) → persist PNG + thumbnail
+  to `KP_CACHE_DIR` → serve. Cache dir is also served as static files. (This is v1's `render.ts`
+  reworked: renderer-agnostic, no Docker, no boot-time coupling.)
+- **Art generation (Leonardo)** → a route handler calling `src/core/ai/`. It's a plain API call
+  (async poll is acceptable off the interactive hot path); the image-gen UX is reworked to be
   set-themed, model-switchable, and overlay-capable.
 - **Collection git sync** → the UI is dropped; use the git CLI / harness.
 - **Removed from the server:** `routes/strategies.ts`, the Docker/Playwright *driving* coupling
-  in `card-conjurer.ts`; `card-service.ts` / `set-service.ts` logic migrates into `core`.
+  in `card-conjurer.ts`; `card-service.ts` / `set-service.ts` logic migrates into
+  `apps/web/src/core/ops/`.
 
 The separate Express process, Docker, and the CardConjurer bootstrap-as-container go away; the
-CardConjurer clone is served statically instead.
+CardConjurer clone lives under `packages/renderer/external/cardconjurer/` and is served
+statically by `apps/web`.
 
 ---
 
@@ -401,37 +427,42 @@ Both the in-app UI and the external harness manipulate cards, over a **single sh
 implementation** so there is no drift.
 
 ```
-shared (isomorphic): domain model + search DSL                     [browser + node]
-core   (node):       collection FS ops + AI handlers               [node only]
-                     - whole-card create / update / delete / search / verify / assist
-                     - set-notes read / write
-   ├── CLI (kp …)            → OpenCode / Claude via a skill        (replaces MCP)
-   └── Next server actions   → dockable AI assistant + UI
-browser:             CardConjurer iframe render + overlay;
-                     editor = full-card state + snapshot undo/redo;
-                     AI returns whole cards that replace editor state
+shared (isomorphic):     domain model + search DSL                    [browser + node]
+apps/web:                Next.js UI + /api/* routes + src/core/ ops   [node only]
+                         - whole-card create / update / delete / search / verify / assist
+                         - set-notes read / write
+sdk (HTTP client):       typed functions over apps/web /api/*         [any node process]
+   ├── CLI (kp …)                → uses sdk → OpenCode via a skill    (replaces old MCP)
+   └── MCP wrapper (packages/mcp) → uses sdk → Claude Desktop et al.  (kept, thin)
+browser:                 CardConjurer iframe render + overlay;
+                         editor = full-card state + snapshot undo/redo;
+                         AI returns whole cards that replace editor state
 ```
 
 - **`shared`** stays isomorphic (also runs in the browser for the live editor). No FS deps.
-- **`core`** is Node-only (filesystem ops over `collection/`, plus AI tool handlers). Built
-  once, consumed by the CLI and the Next server actions.
-- **In-app editing** operates on **in-memory card state**; persistence goes through `core`
-  on save.
+- **`apps/web/src/core/`** is Node-only (filesystem ops over `collection/`, plus AI handlers).
+  Consumed **only** by `apps/web`'s route handlers — never imported by CLI or MCP directly.
+- **`sdk`** is the only way anything outside `apps/web` reaches core ops. CLI and MCP are HTTP
+  clients; local dev requires `pnpm dev` (or a remote `KP_SERVER_URL`).
+- **In-app editing** operates on **in-memory card state**; persistence goes through
+  `POST /api/cards/:cid` (which calls into `src/core/ops/`).
 
 ### The `kp` CLI
-Mirrors the retained card operations. The CLI doesn't render itself, but **images are available
-via the server render API and the on-disk content-hash cache** — a `kp image <cid>` can return
-the cached PNG path/bytes (the server renders on a miss). Default output is JSON to stdout (easy
-for AI to parse), with `--format table` for humans; input via JSON stdin or `--file`.
+Mirrors the retained card operations via the SDK. The CLI doesn't render itself, but **images
+are available via the server render API and the on-disk content-hash cache** — a `kp image <cid>`
+returns the cached PNG path/bytes (the server renders on a miss). Default output is JSON to
+stdout (easy for AI to parse), with `--format table` for humans; input via JSON stdin or `--file`.
 
 | Command | Purpose |
 |---|---|
+| `kp init` | first-run wizard: clone existing / start fresh / point elsewhere |
 | `kp search <query>` | filter the collection via the search DSL |
 | `kp get <cid…>` | fetch full card JSON |
 | `kp create` | create card(s) from JSON (stdin/`--file`) |
 | `kp update <cid>` | update a card (full JSON; partial flags as a shell ergonomic) |
 | `kp delete <cid…>` | soft-delete (`tags.deleted = true`) |
 | `kp verify` | validate + human-readable explanation |
+| `kp image <cid>` | return cached PNG path/bytes (renders on miss via `/api/render`) |
 | `kp collector-number next --set X [--count N]` | first free collector number(s) |
 
 An **OpenCode skill** (markdown under `.opencode/`) documents `kp` and instructs the AI to
@@ -456,7 +487,7 @@ the active surface. Fits wide screens and multi-editor.
 - **Self-correction:** after applying, `new Card(...)` validates; on failure the error is fed
   back and a corrected whole card is requested (the loop the current
   `ai-sample-generator.ts` already uses).
-- **Mass edits:** handled by the **chat**, not a patch engine — the AI uses `core` over whole
+- **Mass edits:** handled by the **chat**, not a patch engine — the AI uses core ops over whole
   cards, shows the result, and asks to confirm.
 - **Semantic search:** translate natural language → a search-DSL query (reuses the existing
   DSL). True embeddings are a later upgrade.
@@ -497,21 +528,98 @@ into the set page rather than a loose notepad wrapped in MCP tooling.
 
 Anchor on the preserved core rather than two parallel worlds.
 
-- **Keep** `shared` + `collection` as the shared foundation for both v1 and v2.
-- **Introduce new workspaces:** `core` (node ops), `cli` (`kp`), and the v2 web app.
-  Recommended layout (confirm before Phase 1):
+### Target layout (locked)
 
-  ```
-  shared/   (keep, evolve)      core/   (new)      cli/   (new, kp)
-  web/      (new, v2 Next app)  client/ server/ mcp/  (v1, retired over time)
-  collection/  cardconjurer/ (external clone, served same-origin)
-  ```
+pnpm workspaces, `packages/` for libraries, `apps/` for deployables, all packages scoped
+`@kindred-paths/*`.
 
+```
+kindred-paths/
+├── pnpm-workspace.yaml
+├── package.json                        workspace scripts (dev, build, test, lint)
+├── .opencode/skills/kp.md              OpenCode skill (replaces MCP as OC's front door)
+├── docs/
+├── scripts/                            dev helpers
+├── spike/                              kept until Phase 1c, then deleted
+│
+├── packages/                           libraries (@kindred-paths/*)
+│   ├── shared/                         isomorphic: card model, DSL, hashing, colors,
+│   │                                   typography, layouts (browser + node safe; no fs, no fetch)
+│   ├── renderer/                       pluggable Renderer interface + impls
+│   │   ├── src/interface.ts            Renderer contract (Node + Browser variants)
+│   │   ├── src/cardconjurer/{node,browser,pin.ts}
+│   │   ├── external/cardconjurer/      cloned by script, gitignored, pinned SHA
+│   │   └── scripts/setup.sh
+│   ├── sdk/                            hand-written HTTP client over apps/web /api/*
+│   ├── cli/                            `kp` bin — HTTP-only via sdk
+│   └── mcp/                            MCP server — HTTP-only via sdk
+│
+└── apps/
+    └── web/                            Next.js 15 — the whole backend
+        ├── src/app/                    UI pages
+        ├── src/app/api/                HTTP surface (the ONLY http boundary)
+        ├── src/core/                   node ops (see convention below)
+        │   ├── collection/  cache/  ai/  init/  ops/
+        └── src/lib/                    web-only glue (config, etc.)
+
+# External, env-configurable, gitignored if inside the repo:
+KP_COLLECTION_PATH    default ./collection    (git repo, plain dir, or empty)
+KP_CACHE_DIR          default ./.cache        (content-hashed PNGs)
+KP_CARDCONJURER_PATH  default packages/renderer/external/cardconjurer
+KP_SERVER_URL         default http://localhost:3000    (used by sdk)
+
+# New subdirectory inside the existing collection (no new env var needed):
+collection/goldens/<renderer-name>/<cid>.png   golden PNGs, one per card per registered renderer
+```
+
+**Count: 5 packages + 1 app.**
+
+### Architecture in one sentence
+
+> **`apps/web` is the whole backend**; `packages/{shared, renderer, sdk, cli, mcp}` are the
+> libraries around it, with `sdk` being the sole way anything talks to it over HTTP.
+
+### Locked decisions
+
+| Decision | Choice |
+|---|---|
+| Package manager | pnpm workspaces (no Turborepo yet — add later if CI slow) |
+| Package granularity | 5 packages + 1 app |
+| Renderer | Interface + one impl (CardConjurer); pluggable for future impls |
+| CardConjurer location | `packages/renderer/external/cardconjurer/`, pinned SHA, gitignored |
+| Core code home | `apps/web/src/core/` — folded into web (one consumer today) |
+| CLI → server | HTTP-only via SDK. Requires running server (local `pnpm dev` or remote `KP_SERVER_URL`) |
+| MCP fate | Kept as thin wrapper — `packages/mcp/` uses the same SDK as CLI |
+| SDK style | Hand-written, ~10 typed functions, imports `shared` for types |
+| Package naming | `@kindred-paths/*` scope; CLI bin = `kp` |
+| Convention | `packages/` for libraries, `apps/` for deployables |
+| Collection dir | External, addressed by `KP_COLLECTION_PATH`; works with git repo OR plain dir OR empty/nonexistent; first-run wizard offers clone-existing / start-fresh / point-elsewhere |
+| Goldens location | `collection/goldens/<renderer-name>/<cid>.png` — inside the existing collection repo. No separate goldens repo, no new env var. Cards are marked `tags: { golden: true }`. Git handles diff/history/audit. See §11 Phase 1a for command semantics |
+| Dev orchestration | `pnpm dev` starts `apps/web`; CLI + MCP hit `http://localhost:3000` |
+| Hosting | Deferred — no `CollectionSource`/`RenderCache` interfaces upfront, no auth scaffolding. Add when actually hosting |
+| Spike code | Keep under `spike/` until Phase 1c completes, then delete |
+
+### Critical convention
+
+Files under `apps/web/src/core/` are **pure node modules** — no `next/*` imports, no
+`Request`/`Response` types, no route-handler concerns. Only `app/api/*/route.ts` may translate
+between HTTP and core ops. This preserves core's testability (import directly into vitest with no
+Next.js in the loop) without the ceremony of a separate package. If the convention drifts, core
+becomes untestable without Next — enforce by lint rule or code review.
+
+### Strangler cutover
+
+- **Keep** the existing `collection/` external repo mechanic and the `shared` v1 module as the
+  source of truth during migration; new `packages/shared/` is populated by porting from v1
+  `shared/` (not by rewriting from scratch).
+- **v1 dirs stay put** (`client/`, `server/`, `mcp/`, `shared/`) at repo root during migration.
 - **Cut over feature-by-feature.** v1 pages keep working until v2 covers them. Delete v1
-  `client`/`server`, Docker, the MCP package, and the trimmed `shared` modules once v2 is
+  `client/`, `server/`, Docker, the old `mcp/`, and the trimmed `shared/` modules once v2 is
   trusted and you no longer fall back to v1.
 - **Data compatibility:** the card JSON format is unchanged; sets gain notes;
   `collection/strategies/` and `collection/design/` are retired (design → set notes).
+- **Deferred hosting**: designed to be addable later without restructuring, but no interfaces or
+  auth code lands until hosting is actually built.
 
 ---
 
@@ -549,12 +657,29 @@ Anchor on the preserved core rather than two parallel worlds.
   always present** (fix also applied and verified in the browser accelerator). Both hosts are now
   comparably fast; the fix (suppress + await real completion + single composite) is required for
   Phase 1b. See `spike/renderer/cc-node-results.md`.
-- **Phase 1a — Golden-image regression harness (test-first).** Curated corpus first (~50–80
-  cards spanning every layout/color/quirk), then a full 850-card sweep before cutover. **v1 as
-  the oracle** (`POST /preview`), **CardConjurer pinned** to a fixed commit, perceptual/pixel
-  diff (pixelmatch/odiff) with tolerance + a visual diff report. Acceptance bar: v2 reproduces
-  v1 within tolerance (bug-for-bug parity) plus a human-approved subset. Gates both the server
-  renderer and the interactive accelerator, and every CC version bump.
+- **Phase 0.9 — Initial golden capture from v1.** Curate ~80 cards (advisory selection script by
+  coverage rules; human final pick), tag them `tags: { golden: true }` in `collection/cards/`,
+  then run a throwaway `spike/goldens/initial-capture.mjs` that POSTs each to v1's render
+  endpoint and writes PNGs to `collection/goldens/cardconjurer/<cid>.png`. Deliverable:
+  populated `collection/goldens/cardconjurer/` committed to the collection repo. Prerequisite:
+  v1 is functional (it is today). This is the only phase that needs v1 alive; all subsequent
+  golden regeneration runs use v2's renderer.
+- **Phase 1a — Golden diff harness (test-first).** Ship `pnpm generate-goldens` and
+  `pnpm test:golden` in the v2 workspace. Both **discover renderers from the
+  `packages/renderer/src/index.ts` registry** and iterate over all of them (today just
+  `cardconjurer`; future renderers auto-included). Both accept `--renderer <name>` and
+  `--card <cid>` (repeatable or comma-separated) scope flags:
+    - `generate-goldens` (full scope) wipes each affected renderer dir, then rewrites PNGs for
+      every `tag:golden` card. `generate-goldens --card <cid>` is surgical: overwrites only the
+      specified files, no wipe.
+    - `test:golden` (full scope) does a membership check (missing/orphan PNGs) then pixel-diffs
+      via pixelmatch with a tolerance. `test:golden --card <cid>` skips membership and only
+      diffs the specified card(s); fails with an actionable message if no PNG exists.
+  Emits an HTML report grouped by renderer. Zero v1 dependency at runtime. Also scaffolds the
+  minimal v2 workspace (`pnpm-workspace.yaml`, `packages/shared/` port, `packages/renderer/`
+  with interface + registry + cardconjurer node bridge, empty `apps/web/` skeleton). Gates
+  both the server renderer and the interactive accelerator, and every CC version bump. See §4
+  CardConjurer update workflow for the executable regen/diff/PR flow.
 - **Phase 1b — Renderer(s) to parity.** Behind the `Renderer` interface: the **server renderer**
   (CC-in-Node or headless, per 0.8) with the **content-hash cache + thumbnails**, and the
   **interactive browser accelerator**. Port v1's `card-conjurer.ts` sequence faithfully (fonts
@@ -567,13 +692,16 @@ Anchor on the preserved core rather than two parallel worlds.
   (search box, instant renders from the cache, sort).
 - **Phase 2 — Compact live editor.** Instant preview, no full-page-nav on save, multi-instance,
   snapshot undo/redo, overlay hook.
-- **Phase 3 — `core` + `kp` CLI + OpenCode skill.** Build the shared ops layer; ship the CLI
-  and skill; retire MCP as the external interface.
+- **Phase 3 — SDK + `kp` CLI + MCP wrapper + OpenCode skill.** Solidify `apps/web/src/core/`
+  ops behind route handlers, ship the hand-written `@kindred-paths/sdk` over them, then build
+  `@kindred-paths/cli` (`kp` bin) and the thin `@kindred-paths/mcp` wrapper on the SDK. Ship
+  the OpenCode skill; retire the old `mcp/` package.
 - **Phase 4 — In-editor AI assistant.** Dockable panel, whole-card auto-apply, option
   suggestions, self-correction.
-- **Phase 5 — Backend fold-in + trim legacy.** Move CRUD/AI into Next; delete Docker and the
-  Playwright+Docker *driving* pipeline (keep the reworked render API + `.cache`); remove strategy
-  everywhere; remove dead tabs/pages/git-UI/collector surfacing; remove the MCP package.
+- **Phase 5 — Backend fold-in + trim legacy.** Move remaining v1 CRUD/AI into `apps/web`
+  (`src/app/api/` + `src/core/`); delete Docker, the Playwright+Docker *driving* pipeline, and
+  v1 `server/` (keep the reworked render API + cache dir); remove strategy everywhere; remove
+  dead tabs/pages/git-UI/collector surfacing; delete v1 `client/`, v1 `mcp/`, v1 `shared/`.
 - **Phase 6 — Set page on search queries + integrated set notes.** Migrate
   `collection/design/`.
 - **Phase 7 — Broaden the assistant.** Overview/chat mass edits with confirm, NL→search-DSL,
