@@ -131,7 +131,7 @@ export class RenderService {
       types: cardFace.types,
       subtypes: cardFace.subtypes,
       supertype: cardFace.supertype,
-      hasRules: cardFace.rules.length > 0,
+      hasRules: cardFace.renderRules().length > 0,
       rules: cardFace.renderRules(),
       pt: cardFace.pt,
       loyalty: cardFace.loyalty,
