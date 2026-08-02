@@ -13,7 +13,9 @@
     "dev:shared": "npm run --prefix shared dev",
     "dev:server": "npm run --prefix server dev",
     "dev:client": "npm run --prefix client dev",
-    "dev:mcp": "npm run --prefix mcp dev"
+    "dev:mcp": "npm run --prefix mcp dev",
+    "generate-goldens": "node scripts/generate-goldens.mjs",
+    "test:golden": "node scripts/test-goldens.mjs"
   },
   "repository": {
     "type": "git",
@@ -33,7 +35,10 @@
     "npm-run-all": "^4.1.5"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19"
+    "@kindred-paths/renderer": "workspace:*",
+    "@types/cors": "^2.8.19",
+    "pixelmatch": "^5.3.0",
+    "pngjs": "^7.0.0"
   },
   "husky": {
     "hooks": {

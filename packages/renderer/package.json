@@ -1,0 +1,17 @@
+{
+  "name": "@kindred-paths/renderer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pluggable Renderer interface + implementations. Today: cardconjurer (node bridge over the proven Phase 0.8 spike). Future impls register themselves in src/index.js.",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./interface": "./src/interface.js",
+    "./cardconjurer/node": "./src/cardconjurer/node.js",
+    "./cardconjurer/pin": "./src/cardconjurer/pin.js"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.60"
+  }
+}

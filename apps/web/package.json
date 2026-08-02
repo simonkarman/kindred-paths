@@ -1,0 +1,7 @@
+{
+  "name": "@kindred-paths/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Kindred Paths v2 Next.js app — the whole backend. Empty skeleton in Phase 1a; scaffolded properly in Phase 1b/1c.",
+  "scripts": {}
+}
