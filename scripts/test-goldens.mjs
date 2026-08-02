@@ -38,6 +38,11 @@ const GOLDENS_ROOT = join(REPO, 'collection/goldens/renderers');
 const REPORT_DIR = join(REPO, 'collection/goldens/.report');
 const REPORT_HTML = join(REPO, 'collection/goldens/report.html');
 
+// The v1-captured goldens were rendered on this date; freeze v2 to match so the collector
+// info date stamp doesn't drift daily. Overridable via KP_RENDER_DATE. See driver.js and
+// scripts/generate-goldens.mjs.
+if (!process.env.KP_RENDER_DATE) process.env.KP_RENDER_DATE = '2026-07-31';
+
 // Per-pixel diff tolerance (pixelmatch threshold 0..1, higher = more lenient). Overall
 // PASS/FAIL threshold is the fraction of differing pixels; anything above MAX_DIFF_RATIO
 // counts as a mismatch. Values chosen to absorb sub-perceptual anti-aliasing drift between

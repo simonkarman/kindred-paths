@@ -17,6 +17,7 @@
 // server/src/card-conjurer.ts:78-126 for the source-of-truth shape.
 
 import { Card, capitalize, colorToShort, enumerate } from '@kindred-paths/shared';
+import { getSetMetadataForCard } from './set-metadata.js';
 
 /**
  * Build a Renderable from a v1 Card JSON object at a given face index. Accepts either the
@@ -117,9 +118,12 @@ export function cardToRenderable(cardJsonOrInstance, faceIndex = 0) {
     },
     rarity: card.rarity,
     collectorNumber: card.collectorNumber,
-    // set metadata comes in Wave 6 (set symbol wiring). Leaving undefined means CC skips
-    // the set-symbol and collector-info blocks — cards still render, just without a symbol.
-    set: undefined,
+    // Set metadata (author, shortName, symbol string, collectorNumberOffset). The SYMBOL
+    // itself may not render if the host can't decode it — SVG rasterization for
+    // /img/setSymbols/official/custom/<set>-<rarity>.svg is Wave 6 in the Node host. But
+    // author + shortName + collectorNumberOffset are needed NOW for the collector info
+    // block to match v1 pixel-for-pixel.
+    set: getSetMetadataForCard(cardJsonOrInstance),
     mdfc,
     adventure,
     transform,

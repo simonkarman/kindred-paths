@@ -42,6 +42,14 @@ const REPO = dirname(HERE);
 const CARDS_DIR = join(REPO, 'collection/cards');
 const GOLDENS_ROOT = join(REPO, 'collection/goldens/renderers');
 
+// The v1-captured goldens were rendered on this date. The collector info block includes
+// today's date via v1's `new Date().toISOString()`, so every renderer must render on the
+// same date or the diff on every card will include a shifting date stamp. Baked in here as
+// a default so `pnpm generate-goldens` and `pnpm test:golden` reproduce the v1 baseline
+// exactly. Override via KP_RENDER_DATE if you want to bless a new capture date across the
+// whole set (which then requires regenerating every card's golden). See driver.js.
+if (!process.env.KP_RENDER_DATE) process.env.KP_RENDER_DATE = '2026-07-31';
+
 // ---- args ----------------------------------------------------------------------------------
 
 const args = process.argv.slice(2);
