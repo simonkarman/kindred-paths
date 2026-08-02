@@ -1,5 +1,6 @@
-// Host-agnostic CardConjurer driver. Takes a Renderable + a CCHandle and drives the sandbox
-// to produce a fully-composed card canvas. Same driver, two hosts (Node + Browser).
+// Host-agnostic CardConjurer driver. Takes a Renderable + a CCContext ({sandbox, card,
+// document, loadFrameScript}) and drives the sandbox to produce a fully-composed card
+// canvas. Same driver, two hosts (Node + Browser).
 //
 // This is the port of v1 `server/src/card-conjurer.ts renderCard()` (lines 155-722), but
 // translated from Playwright DOM operations (`page.click`, `page.fill`, `page.selectOption`)
@@ -7,14 +8,14 @@
 //
 //   v1 Playwright                                        our driver
 //   ─────────────────────────────────────────────────    ────────────────────────────────────
-//   page.selectOption('#autoFrame', 'M15RegularNew')     h.document.querySelector('#autoFrame').value = ...
+//   page.selectOption('#autoFrame', 'M15RegularNew')     ctx.document.querySelector('#autoFrame').value = ...
 //   page.click('#text-options h4:has-text("Title")')     (no-op: we address card.text.title directly)
-//   page.fill('#text-editor', renderable.name)           h.card.text.title.text = renderable.name
+//   page.fill('#text-editor', renderable.name)           ctx.card.text.title.text = renderable.name
 //   page.click('button:has-text("Edit Bounds")')         (no-op)
-//   page.fill('#textbox-editor-y', '1782')               h.card.text.rules.y = 1782 / h.card.height
-//   page.fill('#info-set', 'gld')                        h.document.querySelector('#info-set').value = 'gld'
-//   click enableNewCollectorStyle checkbox + wait        h.document.querySelector('#enableNewCollectorStyle').checked = true; await setBottomInfoStyle()
-//   page.click('#downloadAlt') + scrape img              h.sandbox.cardCanvas.toBuffer('image/png') (host does this)
+//   page.fill('#textbox-editor-y', '1782')               ctx.card.text.rules.y = 1782 / CARD_HEIGHT
+//   page.fill('#info-set', 'gld')                        ctx.document.querySelector('#info-set').value = 'gld'
+//   click enableNewCollectorStyle checkbox + wait        ctx.document.querySelector('#enableNewCollectorStyle').checked = true; await setBottomInfoStyle()
+//   page.click('#downloadAlt') + scrape img              ctx.sandbox.cardCanvas.toBuffer('image/png') (host does this)
 //
 // The "last character commit" trick (v1 fills all but last char, sleeps 500ms, then focuses
 // and types the last char) exists in v1 to force CC's 500ms debounce (`drawTextBuffer`,
@@ -22,10 +23,16 @@
 // explicitly, so the debounce is bypassed entirely and the last-character trick is unnecessary.
 // See docs/v2-architecture.md §4 "Performance model & the speed ceiling".
 //
+// **State assumption**: `ctx` is guaranteed to be a fresh CC bootstrap — v1's `context.newPage()`
+// equivalent. The Node host boots a new sandbox for every render; the browser host (Phase 1b-int)
+// reloads its iframe on any frame-affecting change. This means the driver does NOT need to
+// reset per-render state like `card.frames`, `card.text.pt.text`, `sandbox.art.src`, etc. —
+// they are guaranteed to be at CC's initial defaults on entry.
+//
 // Wave 2 scope: default-autoFrame path only (v1 card-conjurer.ts:447-449 fallthrough branch).
 // The specialised branches (transform / adventure / MDFC / planeswalker / token / borderless
-// basic land / basic land icon) come in Waves 3-5. Deferred to Wave 6: art loading, set
-// symbol (needs SVG rasterization for the golden set), high-collector-number formatting.
+// basic land / basic land icon) come in Waves 3-5. Deferred to Wave 6: SVG set-symbol
+// rasterization, high-collector-number formatting.
 
 import { computePlaneswalkerData } from './planeswalker-data.js';
 
@@ -35,20 +42,13 @@ const CARD_HEIGHT = 2814;
 /**
  * Build a fully-drawn card into the sandbox's `cardCanvas`. Called inside the host's
  * `buildAndComposite` so all mutations happen with drawFrames/drawCard suppressed; on return
- * the host does exactly ONE composite pass. Never touches host-specific globals.
+ * the host does exactly ONE composite pass.
  *
  * @param {any} renderable  see packages/renderer/src/cardconjurer/renderable.js
- * @param {import('./hosts/node-handle.js').createNodeHandle extends () => Promise<infer T> ? T : never} h
+ * @param {{ sandbox: any, card: any, document: any, loadFrameScript: (src: string) => void }} ctx
  */
-export async function driveRender(renderable, h) {
-  const { sandbox, card, document } = h;
-
-  // Reset any previous render's state that autoFrame stacks and doesn't clear itself.
-  // v1 sidesteps this by using a fresh Playwright page per render. Our warm sandbox needs
-  // an explicit reset for the frame layers (extension frames + stamps get preserved by
-  // autoFrameUnified's `filterFrames`, but stale color/geometry from a prior render must
-  // go). Empty `card.frames` before autoFrame() runs; it repopulates from scratch.
-  card.frames = [];
+export async function driveRender(renderable, ctx) {
+  const { sandbox, card, document } = ctx;
 
   const planeswalkerData = computePlaneswalkerData(renderable);
 
@@ -227,29 +227,15 @@ export async function driveRender(renderable, h) {
 
     // Call CC's own uploadArt('autoFit'). It installs an onload that runs autoFitArt then
     // artEdited. Our DomImage tracks the decode into pendingDecodes; buildAndComposite
-    // awaits it before the single composite runs.
+    // awaits it before the single composite runs. On decode:
+    //   1. DomImage.decode() microtask resolves         — awaited by pendingDecodes
+    //   2. onload fires → autoFitArt() → artEdited()    — inside step 1's `.then()`
+    //   3. buildAndComposite's Promise.all(pendingDecodes) completes
+    //   4. one composite runs with the correct card.artX/Y/Zoom
     sandbox.uploadArt(artUrl, 'autoFit');
-
-    // uploadArt returns immediately; the actual decode + autoFit runs when the DomImage's
-    // decode() microtask resolves and fires our synthesized onload. buildAndComposite's
-    // Promise.all(pendingDecodes) already covers this — but the decode also fires
-    // artEdited() which reads #art-x/y/zoom (populated by autoFitArt) into card.artX/Y/Zoom.
-    // The order is:
-    //   1. art.src = artUrl                       — driver line above
-    //   2. DomImage.decode() microtask            — awaited by pendingDecodes
-    //   3. onload → autoFitArt() → artEdited()    — fires INSIDE step 2's `.then()`
-    //   4. buildAndComposite awaits pendingDecodes → all 3 complete
-    //   5. one composite runs, using the correct card.artX/Y/Zoom
-    // So no explicit wait is needed here.
-  } else {
-    // No art on this card. Reset sandbox.art to /img/blank.png — otherwise the warm
-    // sandbox retains card N-1's decoded art, and CC's drawCard() (creator-23.js:3049)
-    // reads sandbox.art directly, blitting the previous card's art over this render.
-    // Matches CC's own init at creator-23.js:158. Use uploadArt to also route through
-    // artEdited() which zeros card.artX/Y (autoFit isn't triggered without the flag).
-    sandbox.uploadArt('/img/blank.png');
-    card.artX = 0; card.artY = 0; card.artZoom = 1; card.artRotate = 0;
   }
+  // No-art case: fresh sandbox already has sandbox.art.src = /img/blank.png and
+  // card.artX/Y/Zoom at defaults (creator-23.js:158), so no reset needed.
 
   // TODO Wave 3: basic land icon (supertype=basic + non-borderless + land + no rules → land icon)
 

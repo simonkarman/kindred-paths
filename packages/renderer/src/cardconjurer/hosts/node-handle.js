@@ -1,22 +1,46 @@
-// Node host adapter for CardConjurer — returns a CCHandle backed by a `vm` sandbox that runs
-// CC's real code (main-1.js + autoFrame.js + creator-23.js + dynamically-loaded frame packs)
-// on @napi-rs/canvas + a minimal DOM shim. Proven in Phase 0.8; see docs/v2-architecture.md §4.
+// Node host adapter for CardConjurer — boots a **fresh** CC sandbox per render on
+// @napi-rs/canvas + a minimal DOM shim, runs CC's real code (main-1.js + autoFrame.js +
+// creator-23.js + dynamically-loaded frame packs), and returns the composed PNG.
+//
+// **Per-render isolation** (Wave 2.1 change from the previous warm design):
+//
+// Every call to `buildAndComposite(build)` constructs a new vm sandbox, runs the CC bootstrap
+// (default M15 frame pack + loadFrameVersion), invokes the build callback against that fresh
+// sandbox, does exactly one composite, and drops the sandbox. This mirrors v1's per-render
+// Playwright `context.newPage()` model — every render starts from CC's initial state, no cross-
+// render leaks (P/T text from a previous creature, rules text from a previous card with rules,
+// stale art, stale frame stack — all impossible by construction).
+//
+// The measured cost of a fresh boot on this machine (warm caches, node v22): ~330ms median.
+// Font registration (~20 fonts via `GlobalFonts.registerFromPath`) is a `@napi-rs/canvas`
+// process-global and runs exactly once, amortized across all sandboxes.
+//
+// **Why not warm?** Warm was tried in Wave 2 and produced two silent state-leak classes: P/T
+// text carrying from creatures to instants (Golden Four), and rules text carrying from
+// spells to basic lands (Golden Plains). Both bugs came from CC's `drawText()` iterating
+// every entry in `card.text` unconditionally — anything left over from render N-1 gets
+// re-drawn in render N. Fixing this via snapshot/restore was possible but fragile: a new
+// mutable CC global (or one we forgot to snapshot) would silently leak again. Fresh sandbox
+// per render trades ~330ms for guaranteed correctness and order-independence. See
+// docs/v2-architecture.md §4 and Wave 2.1 commit.
+//
+// **The warm path still exists** for the interactive editor (Phase 1b-int, browser host).
+// There it's safe: only text-only edits (name/rules/type) stay warm, and those overwrite
+// the same-named field that's already there — no cross-card-shape leaks are possible. The
+// browser host adapter provides its own warm CCHandle backed by an iframe; this Node host
+// deliberately does NOT.
 //
 // The CCHandle contract (see docs/v2-architecture.md §4 "Two hosts, one driver"):
 //   {
-//     sandbox: any,                     // sandbox with CC's globals (card, drawText, drawCard, ...)
-//     card: any,                        // shortcut for sandbox.card
-//     document: any,                    // shortcut for sandbox.document
-//     loadFrameScript(src): void,       // execute a CC-relative script (e.g. '/js/frames/packM15Regular-1.js')
-//     buildAndComposite(build): Promise // await `build`, then wait for real image decodes,
-//                                       //   then do exactly ONE guaranteed-complete composite.
-//                                       //   Suppresses CC's per-image-load composite storm
-//                                       //   (see Phase 0.8 "drawFrames-storm race" fix).
+//     buildAndComposite(build): Promise<Buffer>
+//         — boots a fresh sandbox, calls `build(ctx)` where ctx = { sandbox, card, document,
+//           loadFrameScript }, awaits all image decodes, does one guaranteed-complete
+//           composite, returns the PNG buffer, drops the sandbox.
 //   }
 //
-// The browser host (Phase 1b-int) will provide the same shape backed by a real iframe/window.
-// The driver (packages/renderer/src/cardconjurer/driver.js) is written to this contract and
-// works identically in both hosts — one driver, two hosts, same rendered pixels.
+// The driver (packages/renderer/src/cardconjurer/driver.js) receives `ctx` from the build
+// callback and never sees the sandbox lifecycle. Same driver, two hosts (Node + Browser),
+// same rendered pixels.
 
 import { createCanvas, GlobalFonts, Image as NapiImage, Path2D, ImageData, DOMMatrix } from '@napi-rs/canvas';
 import vm from 'node:vm';
@@ -30,6 +54,12 @@ const REPO = resolve(HERE, '../../../../..');
 const CC = process.env.KP_CARDCONJURER_PATH || join(REPO, 'server/.cardconjurer');
 const ART = join(REPO, 'collection/art');
 const CanvasRenderingContext2D = createCanvas(1, 1).getContext('2d').constructor;
+
+// ---- process-global font registration -----------------------------------------------------
+//
+// @napi-rs/canvas's GlobalFonts registry is process-global. Registering the same font twice
+// is a no-op; registering thousands of times is wasteful. Guard behind a boolean so multiple
+// fresh sandboxes share one registration pass. This is the ONLY per-process state we keep.
 
 let fontsRegistered = false;
 function registerFonts() {
@@ -55,19 +85,20 @@ function registerFonts() {
   }
 }
 
-/**
- * Boot a warm CardConjurer sandbox and return a CCHandle. First-render latency; subsequent
- * renders reuse the same sandbox. Idempotent within a process.
- *
- * @returns {Promise<{ sandbox: any, card: any, document: any, loadFrameScript: (src: string) => void, buildAndComposite: (build: () => Promise<any>) => Promise<void> }>}
- */
-export async function createNodeHandle() {
-  registerFonts();
-  process.on('unhandledRejection', () => {}); // CC's external CDN script loads reject; ignore
-
+// ---- per-render sandbox boot -------------------------------------------------------------
+//
+// Constructs a fresh vm sandbox, DOM shim, and image-decoding infrastructure, then runs
+// CC's core scripts + default M15 frame pack bootstrap. Returns an object exposing the CC
+// context ({sandbox, card, document, loadFrameScript}) plus the drawFrames-storm-fix
+// primitives (getPendingDecodes, resetDecodes, setTrackDecodes) that buildAndComposite
+// wraps around the user's build callback.
+//
+// Called by buildAndComposite once per render. The sandbox and everything hanging off it
+// is dropped when buildAndComposite returns, allowing GC to reclaim it.
+async function bootFreshSandbox() {
   const noop = () => {};
 
-  // ---- image path resolution (art + CC assets) ---------------------------------------------
+  // ---- image path resolution (art + CC assets) -------------------------------------------
 
   function resolveSrc(src) {
     if (!src) return null;
@@ -233,33 +264,8 @@ export async function createNodeHandle() {
     await new Promise((r) => setTimeout(r, 150));
   }
 
-  // ---- The CCHandle ------------------------------------------------------------------------
-
   function loadFrameScript(src) {
     ccScriptRunner({ _src: src, onload: null, onerror: null });
-  }
-
-  /**
-   * Execute `build` (the driver's field-setup + autoFrame + drawText sequence) with CC's
-   * per-image-load composite storm suppressed. Track every real image decode, wait for them
-   * all, then do exactly ONE guaranteed-complete composite. See Phase 0.8 findings.
-   */
-  async function buildAndComposite(build) {
-    const realDrawFrames = sandbox.drawFrames;
-    const realDrawCard = sandbox.drawCard;
-    sandbox.drawFrames = () => {}; sandbox.drawCard = () => {};
-    pendingDecodes = []; trackDecodes = true;
-
-    try {
-      await build();
-      await Promise.all(pendingDecodes); // real decode completion, not a guessed sleep
-    } finally {
-      trackDecodes = false;
-      sandbox.drawFrames = realDrawFrames;
-      sandbox.drawCard = realDrawCard;
-    }
-
-    sandbox.drawFrames(); // one guaranteed-complete composite (also calls drawCard() internally)
   }
 
   return {
@@ -267,6 +273,59 @@ export async function createNodeHandle() {
     card: sandbox.card,
     document: sandbox.document,
     loadFrameScript,
-    buildAndComposite,
+    // Storm-fix primitives — used by buildAndComposite to bracket the build phase:
+    getPendingDecodes: () => pendingDecodes,
+    resetDecodes: () => { pendingDecodes = []; },
+    setTrackDecodes: (v) => { trackDecodes = v; },
   };
+}
+
+/**
+ * Create a Node CCHandle. The handle exposes a single method — `buildAndComposite(build)` —
+ * which boots a fresh CC sandbox on each call. The returned handle can be reused across
+ * many renders in one process; each render is independent.
+ *
+ * @returns {Promise<{ buildAndComposite: (build: (ctx: { sandbox: any, card: any, document: any, loadFrameScript: (src: string) => void }) => Promise<any>) => Promise<Buffer> }>}
+ */
+export async function createNodeHandle() {
+  registerFonts();
+  // CC's dynamic frame-pack loader appends <script> tags whose "load" fires an onload — some
+  // upstream CDN scripts reject; ignore process-wide rather than in every sandbox.
+  process.on('unhandledRejection', () => {});
+
+  /**
+   * Boot a fresh sandbox, run the build against it, do one guaranteed-complete composite,
+   * return the PNG buffer, drop the sandbox. Every call is independent — no state carries
+   * over between renders. Matches v1's per-render Playwright page model.
+   *
+   * @param {(ctx: { sandbox: any, card: any, document: any, loadFrameScript: (src: string) => void }) => Promise<any>} build
+   * @returns {Promise<Buffer>}  the composed card PNG
+   */
+  async function buildAndComposite(build) {
+    const ctx = await bootFreshSandbox();
+    const { sandbox } = ctx;
+
+    // Suppress CC's per-image-load composite storm (Phase 0.8 fix): CC wires
+    // image.onload = drawFrames on every frame/mask image (~26-39 loads per render, each
+    // triggering a full composite). We suppress drawFrames + drawCard during build, track
+    // every image decode, wait for them all, then do exactly one composite.
+    const realDrawFrames = sandbox.drawFrames;
+    const realDrawCard = sandbox.drawCard;
+    sandbox.drawFrames = () => {}; sandbox.drawCard = () => {};
+    ctx.resetDecodes(); ctx.setTrackDecodes(true);
+
+    try {
+      await build(ctx);
+      await Promise.all(ctx.getPendingDecodes());
+    } finally {
+      ctx.setTrackDecodes(false);
+      sandbox.drawFrames = realDrawFrames;
+      sandbox.drawCard = realDrawCard;
+    }
+
+    sandbox.drawFrames(); // one guaranteed-complete composite (also calls drawCard() internally)
+    return sandbox.cardCanvas.toBuffer('image/png');
+  }
+
+  return { buildAndComposite };
 }

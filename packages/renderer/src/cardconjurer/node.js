@@ -1,13 +1,17 @@
 // @kindred-paths/renderer/cardconjurer/node — the Node-hosted CardConjurer renderer.
 //
 // Composes:
-//   - hosts/node-handle.js  — boots a warm CC sandbox on @napi-rs/canvas + a DOM shim
+//   - hosts/node-handle.js  — boots a fresh CC sandbox per render on @napi-rs/canvas + a DOM shim
 //   - driver.js             — host-agnostic build sequence (mana/title/type/rules/PT/etc.)
 //   - renderable.js         — Card → Renderable mapping
 //
 // The Renderer interface (see ../interface.js) is a stable factory + render(input, options).
-// Boot is lazy on first render; subsequent renders reuse the same sandbox — ~1s cold, sub-
-// second warm (Phase 0.8 measurements).
+//
+// **Per-render isolation** (Wave 2.1): every render boots a fresh CC sandbox — matches v1's
+// per-page Playwright model, so no state leaks between renders (no P/T on instants, no
+// stale rules on lands, etc.). Costs ~330ms per boot on top of ~1s render time. See
+// hosts/node-handle.js for the rationale and cost analysis. The warm path exists in the
+// browser host (Phase 1b-int) where it's safe for text-only editor edits.
 
 import { createNodeHandle } from './hosts/node-handle.js';
 import { driveRender } from './driver.js';
@@ -15,16 +19,17 @@ import { cardToRenderable } from './renderable.js';
 
 /**
  * Factory for the CardConjurer Node renderer. Returns an object matching the Renderer
- * interface. Boots CC-in-Node lazily on first render.
+ * interface. The handle is constructed once (lazy on first render); each render boots its
+ * own CC sandbox inside `buildAndComposite`.
  *
  * @returns {Promise<import('../interface.js').Renderer>}
  */
 export async function createCardconjurerNodeRenderer() {
-  let boot = null;  // Promise<CCHandle> — created on first render, reused thereafter
+  let handle = null;  // Promise<CCHandle> — created on first render, reused thereafter
 
   async function render(input, _options = {}) {
-    if (!boot) boot = createNodeHandle();
-    const h = await boot;
+    if (!handle) handle = createNodeHandle();
+    const h = await handle;
 
     // Accept either a v1 Card JSON (from the golden harness — has .faces) or an already-
     // built Renderable (has .typeLine at the top level). The harness passes cards; future
@@ -35,28 +40,33 @@ export async function createCardconjurerNodeRenderer() {
 
     const t0 = performance.now();
     let buildMs = 0;
-    let compositeMs = 0;
 
-    await h.buildAndComposite(async () => {
+    // buildAndComposite boots a fresh sandbox, invokes the callback with the fresh CC
+    // context, awaits image decodes, does one composite, returns the PNG buffer, and drops
+    // the sandbox. Zero state leaks between calls.
+    const png = await h.buildAndComposite(async (ctx) => {
       const b0 = performance.now();
-      await driveRender(renderable, h);
+      await driveRender(renderable, ctx);
       buildMs = performance.now() - b0;
     });
-    compositeMs = performance.now() - t0 - buildMs;
 
-    const e0 = performance.now();
-    const png = h.sandbox.cardCanvas.toBuffer('image/png');
-    const encodeMs = performance.now() - e0;
+    // buildMs = driver work (text fields, autoFrame call, drawText, image decodes)
+    // composite+encode is everything else inside buildAndComposite up to the returned PNG
+    const totalMs = performance.now() - t0;
+    const compositeAndEncodeMs = totalMs - buildMs;
 
     return {
       png,
-      width: h.sandbox.cardCanvas.width,
-      height: h.sandbox.cardCanvas.height,
+      // Canvas dimensions are stable (2010×2814 for standard cards; see creator-23.js).
+      // We could report them by holding a reference to the sandbox inside buildAndComposite,
+      // but that's the sandbox lifecycle we're trying to keep private — hardcoding the
+      // standard dimensions is fine for the render result (harness doesn't use these).
+      width: 2010,
+      height: 2814,
       timings: {
         buildMs: +buildMs.toFixed(1),
-        compositeMs: +compositeMs.toFixed(1),
-        encodeMs: +encodeMs.toFixed(1),
-        totalMs: +(performance.now() - t0).toFixed(1),
+        compositeAndEncodeMs: +compositeAndEncodeMs.toFixed(1),
+        totalMs: +totalMs.toFixed(1),
       },
     };
   }
