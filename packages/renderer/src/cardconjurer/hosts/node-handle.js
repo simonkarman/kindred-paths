@@ -43,6 +43,7 @@
 // same rendered pixels.
 
 import { createCanvas, GlobalFonts, Image as NapiImage, Path2D, ImageData, DOMMatrix } from '@napi-rs/canvas';
+import sharp from 'sharp';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join, basename } from 'node:path';
@@ -52,7 +53,9 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 // packages/renderer/src/cardconjurer/hosts/ → repo root is 5 levels up
 const REPO = resolve(HERE, '../../../../..');
 const CC = process.env.KP_CARDCONJURER_PATH || join(REPO, 'server/.cardconjurer');
-const ART = join(REPO, 'collection/art');
+const COLLECTION = process.env.KP_COLLECTION_PATH || join(REPO, 'collection');
+const ART = join(COLLECTION, 'art');
+const SYMBOLS = join(COLLECTION, 'symbols');
 const CanvasRenderingContext2D = createCanvas(1, 1).getContext('2d').constructor;
 
 // ---- process-global font registration -----------------------------------------------------
@@ -116,8 +119,49 @@ async function bootFreshSandbox() {
       const flat = join(ART, basename(path));
       return existsSync(flat) ? { path: flat } : null;
     }
+    if (path.startsWith('/img/setSymbols/official/custom/')) {
+      // Mirrors v1's Docker mount (server/card-conjurer.sh):
+      //   -v "collection/symbols:/usr/share/nginx/html/img/setSymbols/official/custom:ro"
+      // CC's fetchSetSymbol() requests this path for any set whose symbol isn't a built-in
+      // official set (see set-metadata.js: symbol = `custom/<shortName>` when a custom SVG
+      // exists on disk). Without this mapping the request silently 404s and CC falls back
+      // to a blank symbol — the set symbol was simply missing from every render.
+      const sub = path.slice('/img/setSymbols/official/custom/'.length);
+      const p = join(SYMBOLS, sub);
+      return existsSync(p) ? { path: p } : null;
+    }
     const p = join(CC, path.replace(/^\//, ''));
     return existsSync(p) ? { path: p } : null;
+  }
+
+  // ---- SVG rasterization ---------------------------------------------------------------
+  //
+  // @napi-rs/canvas bundles `resvg` for SVG decoding, and it has a genuine rendering bug
+  // (not just a reuse quirk): for paths that combine a fill AND a stroke with certain
+  // self-intersecting arc-flag combinations (confirmed with collection/symbols/*.svg's
+  // `A rx ry 0 1 0 ...` large-arc/negative-sweep arcs), resvg renders ONLY the stroke and
+  // drops the fill entirely (every fill pixel comes back fully transparent, verified via
+  // raw pixel sampling — 0 white pixels, only black-stroke and transparent). A real browser
+  // (verified with Playwright/Chromium — the same engine v1 used to capture goldens) renders
+  // the identical SVG correctly, with the white fill visible. This is a resvg limitation, not
+  // something fixable by changing our SVG markup (future custom set symbols could hit the
+  // same shape class), so we route SVG decoding through `sharp` (bundles `librsvg`, a much
+  // more spec-compliant SVG renderer) instead of `@napi-rs/canvas`'s built-in decoder, and
+  // feed the rasterized PNG bytes into the `@napi-rs/canvas` Image afterward. Verified
+  // pixel-for-pixel visual match against the Playwright reference render.
+  //
+  // (@napi-rs/canvas's `Image` ALSO has a separate, unrelated reuse bug: an instance whose
+  // `.src` was already assigned once cannot decode SVG bytes correctly again, even ignoring
+  // the fill bug above — width/height get stuck and pixels come back blank. This doesn't
+  // matter for us anymore since `sharp` produces plain PNG bytes, and PNG-into-a-reused-
+  // instance is reliable. Worth knowing if resvg's fill bug ever gets fixed upstream and
+  // someone's tempted to revert to the built-in decoder.)
+  function looksLikeSvg(buf) {
+    const head = buf.subarray(0, 256).toString('utf8').trimStart().toLowerCase();
+    return head.startsWith('<?xml') || head.startsWith('<svg');
+  }
+  async function rasterizeSvg(buf) {
+    return sharp(buf).png().toBuffer();
   }
 
   // Tracks in-flight image decode promises during buildAndComposite's build phase — the
@@ -132,15 +176,31 @@ async function bootFreshSandbox() {
       this._src = v;
       const r = resolveSrc(v);
       if (!r) { queueMicrotask(() => this.onerror && this.onerror(new Error('unmapped'))); return; }
-      try {
-        super.src = r.buf || readFileSync(r.path);
-        // @napi-rs/canvas decodes asynchronously; onload MUST fire only after decode() resolves,
-        // otherwise the mask/frame is painted from a not-yet-decoded image and comes out blank.
-        const p = this.decode()
-          .then(() => { if (this.onload) this.onload(); })
-          .catch((e) => { if (this.onerror) this.onerror(e); });
-        if (trackDecodes) pendingDecodes.push(p);
-      } catch (e) { queueMicrotask(() => this.onerror && this.onerror(e)); }
+      const rawBuf = r.buf || readFileSync(r.path);
+      // See the "SVG rasterization" block above resolveSrc for why SVG buffers are
+      // pre-rasterized (via sharp/librsvg) before ever reaching `this` — resvg (bundled by
+      // @napi-rs/canvas) renders some SVG fills incorrectly.
+      //
+      // IMPORTANT: @napi-rs/canvas's native Image binding fires `.onload`/`.onerror`
+      // AUTOMATICALLY and asynchronously once `super.src = ...` finishes decoding — it does
+      // NOT need us to call `.decode()` and invoke onload ourselves. Verified empirically:
+      // assigning `.onload` then `.src` on a bare `Image` fires onload with no explicit
+      // `.decode()` call anywhere. We still call `.decode()` here, but ONLY to get a promise
+      // we can push into `pendingDecodes` (so buildAndComposite's `Promise.all` knows when
+      // this load is done) — we must NOT also invoke `this.onload()` from that promise, or
+      // onload fires twice (once native, once ours). A previous version of this code did
+      // exactly that; it was harmless when both firings observed identical state, but once
+      // this method started doing async work before `super.src =` (the SVG rasterization
+      // path), the two firings could observe DIFFERENT state (e.g. a later `.src` reassignment
+      // on the same reused instance racing with an earlier decode's stale onload firing),
+      // corrupting art/set-symbol placement. Letting native onload be the ONLY trigger fixes
+      // this at the root.
+      const p = (async () => {
+        const finalBuf = looksLikeSvg(rawBuf) ? await rasterizeSvg(rawBuf) : rawBuf;
+        super.src = finalBuf; // native onload/onerror fire on their own once this decodes
+        await this.decode();  // tracked for pendingDecodes only; do NOT call onload from this
+      })().catch((e) => { if (this.onerror) this.onerror(e); });
+      if (trackDecodes) pendingDecodes.push(p);
     }
     get src() { return this._src; }
     addEventListener(t, cb) { if (t === 'load') this.onload = cb; if (t === 'error') this.onerror = cb; }
