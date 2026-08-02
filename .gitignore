@@ -1,3 +1,6 @@
 collection
 node_modules
 .envrc
+
+# Build outputs from v2 workspace packages (packages/*/dist/)
+packages/*/dist/

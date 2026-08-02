@@ -12,6 +12,7 @@
     "./cardconjurer/pin": "./src/cardconjurer/pin.js"
   },
   "dependencies": {
+    "@kindred-paths/shared": "workspace:*",
     "@napi-rs/canvas": "^0.1.60"
   }
 }

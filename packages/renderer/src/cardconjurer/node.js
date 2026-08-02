@@ -30,6 +30,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join, basename } from 'node:path';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 
+import { cardToRenderable } from './renderable.js';
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 // packages/renderer/src/cardconjurer/ → repo root is 4 levels up
 const REPO = resolve(HERE, '../../../..');
@@ -225,75 +227,6 @@ async function bootSandbox() {
   return { sandbox, getPendingDecodes: () => pendingDecodes, resetDecodes: () => { pendingDecodes = []; }, setTrackDecodes: (v) => { trackDecodes = v; } };
 }
 
-// ---- Card JSON → minimal render spec --------------------------------------------------------
-// v1 Card JSON shape (see collection/cards/*.json). This is the *minimal* Phase 1a mapping —
-// enough for the harness. Faithful mapping (with `renderable.transform` / `.mdfc` / `.adventure`
-// etc.) is Phase 1b, at which point this bridge starts to consume a proper `Renderable` produced
-// by @kindred-paths/shared.
-
-const COLOR_TO_LETTER = { white: 'w', blue: 'u', black: 'b', red: 'r', green: 'g' };
-
-function manaCostToString(manaCost) {
-  if (!manaCost) return '';
-  const parts = [];
-  const generic = manaCost.generic || 0;
-  if (generic > 0) parts.push(`{${generic}}`);
-  if (manaCost.x) parts.push('{x}'.repeat(manaCost.x));
-  for (const [k, n] of Object.entries(manaCost)) {
-    if (k === 'generic' || k === 'x' || k === 'colorless') continue;
-    if (k.includes('/')) {
-      // hybrid: "white/blue" → {w/u}
-      const [a, b] = k.split('/').map((c) => COLOR_TO_LETTER[c] || c[0]);
-      for (let i = 0; i < (n || 0); i++) parts.push(`{${a}/${b}}`);
-    } else {
-      const letter = COLOR_TO_LETTER[k];
-      if (letter) for (let i = 0; i < (n || 0); i++) parts.push(`{${letter}}`);
-    }
-  }
-  const c = manaCost.colorless || 0;
-  for (let i = 0; i < c; i++) parts.push('{c}');
-  return parts.join('');
-}
-
-function typeLine(face) {
-  const supers = face.supertype ? [face.supertype[0].toUpperCase() + face.supertype.slice(1)] : [];
-  const types = (face.types || []).map((t) => t[0].toUpperCase() + t.slice(1));
-  const subs = face.subtypes || [];
-  let line = [...supers, ...types].join(' ');
-  if (subs.length > 0) line += ' — ' + subs.map((s) => s[0].toUpperCase() + s.slice(1)).join(' ');
-  return line;
-}
-
-function rulesText(face) {
-  const rules = face.rules || [];
-  const lines = [];
-  for (const r of rules) {
-    if (r.variant === 'keyword') lines.push(r.content[0].toUpperCase() + r.content.slice(1));
-    else if (r.variant === 'inline-reminder') lines[lines.length - 1] = (lines[lines.length - 1] || '') + ` {i}(${r.content}){/i}`;
-    else if (r.variant === 'flavor') lines.push('{flavor}' + r.content);
-    else lines.push(r.content);
-  }
-  return lines.join('\n');
-}
-
-function ptString(face) {
-  if (!face.pt) return '';
-  return `${face.pt.power}/${face.pt.toughness}`;
-}
-
-function cardToSpec(card, faceIndex = 0) {
-  const face = card.faces?.[faceIndex];
-  if (!face) throw new Error(`card has no face at index ${faceIndex}`);
-  return {
-    mana: manaCostToString(face.manaCost),
-    title: face.name || '',
-    type: typeLine(face),
-    rules: rulesText(face),
-    pt: ptString(face),
-    borderless: card.tags?.borderless === true,
-  };
-}
-
 // ---- The Renderer ---------------------------------------------------------------------------
 
 /**
@@ -309,9 +242,12 @@ export async function createCardconjurerNodeRenderer() {
     if (!boot) boot = bootSandbox();
     const { sandbox, getPendingDecodes, resetDecodes, setTrackDecodes } = await boot;
 
-    // Input is either a raw card JSON (from generate-goldens) or an already-mapped spec.
-    // Detect: cards have `.faces`; specs have `.title` at the top level.
-    const spec = input && input.faces ? cardToSpec(input, input.__faceIndex || 0) : input;
+    // Accept either a v1 Card JSON (from the golden harness — has .faces) or an already-built
+    // Renderable (has .typeLine at the top level). This is transitional: once Phase 1b Wave 2's
+    // driver.js lands, only Renderable is accepted and mapping moves into the harness.
+    const renderable = input && input.faces
+      ? cardToRenderable(input, input.__faceIndex || 0)
+      : input;
     const card = sandbox.card;
     const setT = (k, v) => { if (card.text && card.text[k]) card.text[k].text = v ?? ''; };
 
@@ -330,13 +266,17 @@ export async function createCardconjurerNodeRenderer() {
     sandbox.drawFrames = () => {}; sandbox.drawCard = () => {};
     resetDecodes(); setTrackDecodes(true);
 
-    setT('mana', spec.mana);
-    setT('title', spec.title);
-    setT('type', spec.type);
-    setT('rules', spec.rules);
-    setT('pt', spec.pt);
+    // Wave 1 driver: only the default autoFrame path. Reads Renderable fields directly. The
+    // faithful port (all frame branches — transform/adventure/planeswalker/tokens/mdfc — plus
+    // Edit Bounds, planeswalker geometry, set symbol, collector info, art loading) lands in
+    // Wave 2+ via driver.js.
+    setT('mana', renderable.manaCost);
+    setT('title', renderable.name);
+    setT('type', renderable.typeLine);
+    setT('rules', renderable.rules);
+    setT('pt', renderable.pt ? `${renderable.pt.power}/${renderable.pt.toughness}` : '');
     try {
-      sandbox.document.querySelector('#autoFrame').value = spec.borderless ? 'Borderless' : 'M15RegularNew';
+      sandbox.document.querySelector('#autoFrame').value = renderable.tags.borderless ? 'Borderless' : 'M15RegularNew';
     } catch { /* ignore */ }
 
     const b0 = performance.now();

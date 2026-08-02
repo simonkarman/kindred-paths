@@ -1,5 +1,24 @@
-// @kindred-paths/shared — isomorphic domain model.
+// @kindred-paths/shared — isomorphic domain (browser + node safe; no fs, no fetch).
 //
-// Phase 1a: stub. The real port from v1 `shared/src/` lands in Phase 1b when the renderer
-// needs `Card` → `Renderable` mapping. See docs/v2-architecture.md §10.
-export const SHARED_VERSION = '0.0.0';
+// Wave 1a of Phase 1b: the minimum set of modules ported from v1 `shared/` needed by
+// the renderer's Card → Renderable mapping. Everything else in v1 shared (strategy,
+// bucket, blueprint criteria, set matrix, statistics, filter DSL, etc.) is deliberately
+// NOT ported yet:
+//   - strategy/bucket/color-weights are removed entirely in Phase 5 (§3 Keep/Replace/Trim).
+//   - blueprint criteria + set matrix change shape in Phase 6 (§9 set page rework).
+//   - filter DSL + statistics wait until apps/web needs them (Phase 1c overview + editor).
+//
+// Adding a module here is a deliberate act — port it from v1 verbatim, then let the
+// exports below re-export it. Do NOT rewrite; the v1 semantics are the contract during
+// migration (§10 strangler cutover).
+export * from './card';
+export * from './card-face';
+export * from './card-id';
+export * from './colors';
+export * from './hash';
+export * from './layout';
+export * from './mechanics';
+export * from './serialized-card';
+export * from './serialized-card-face';
+export * from './token-extracter';
+export * from './typography';
