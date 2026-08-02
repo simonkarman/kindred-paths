@@ -150,14 +150,25 @@ async function bootFreshSandbox() {
   // ---- generic DOM shim (unchanged from Phase 0.8) -----------------------------------------
 
   function makeStub() {
+    // A stub DOM element that swallows most mutations and returns stubs for common lookups.
+    // Key design points for CC compat:
+    //   - `firstChild` / `lastChild` return a fresh stub so `.click()` chains don't throw
+    //     when CC does things like `document.querySelector('#text-options').firstChild.click()`
+    //     (creator-23.js:1204). The stub's click() is a no-op unless onclick is set.
+    //   - `children[0]` etc. via Proxy fallback returns undefined; CC uses this only in a
+    //     handful of places where the resulting throw is caught (or the code path guards).
+    //   - `prepend` / `append` are no-ops; `appendChild` returns the child unchanged so
+    //     `elt.appendChild(x); x.foo = ...` patterns work.
     const el = {
       style: {}, dataset: {}, value: '', checked: false, innerHTML: '', textContent: '',
       className: '', id: '', children: [], childNodes: [], files: [],
+      get firstChild() { return makeStub(); },
+      get lastChild() { return makeStub(); },
       classList: { add: noop, remove: noop, toggle: noop, contains: () => false },
       addEventListener: noop, removeEventListener: noop, dispatchEvent: noop,
       focus: noop, blur: noop,
       click() { if (typeof this.onclick === 'function') return this.onclick(); },
-      appendChild: (c) => c, removeChild: (c) => c, insertBefore: (c) => c, remove: noop,
+      appendChild: (c) => c, removeChild: (c) => c, insertBefore: (c) => c, prepend: noop, append: noop, remove: noop,
       cloneNode() { return makeStub(); },
       setAttribute: noop, getAttribute: () => null, hasAttribute: () => false, removeAttribute: noop,
       querySelector: () => makeStub(), querySelectorAll: () => [], closest: () => null,

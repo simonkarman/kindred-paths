@@ -29,12 +29,16 @@
 // reset per-render state like `card.frames`, `card.text.pt.text`, `sandbox.art.src`, etc. —
 // they are guaranteed to be at CC's initial defaults on entry.
 //
-// Wave 2 scope: default-autoFrame path only (v1 card-conjurer.ts:447-449 fallthrough branch).
-// The specialised branches (transform / adventure / MDFC / planeswalker / token / borderless
-// basic land / basic land icon) come in Waves 3-5. Deferred to Wave 6: SVG set-symbol
-// rasterization, high-collector-number formatting.
+// Wave 2 scope: default-autoFrame path (v1 card-conjurer.ts:447-449 fallthrough branch).
+// Wave 3 scope: borderless basic lands (v1 :438-445) and the basic-land-icon overlay
+// (v1 :614-633).
+// The remaining specialised branches (transform / adventure / MDFC / planeswalker / token)
+// come in Waves 4-5. Deferred to Wave 6: SVG set-symbol rasterization, high-collector-number
+// formatting.
 
 import { computePlaneswalkerData } from './planeswalker-data.js';
+import { addFrameImage, loadFramePack } from './frame.js';
+import { colorToShort, landSubtypeToColor } from '@kindred-paths/shared';
 
 const CARD_WIDTH = 2010;
 const CARD_HEIGHT = 2814;
@@ -54,23 +58,67 @@ export async function driveRender(renderable, ctx) {
 
   // ---- 1. Frame selection --------------------------------------------------------------
   //
-  // Wave 2 only handles the default-autoFrame branch. Everything below is a stub: cards
-  // that need transform/adventure/MDFC/planeswalker/token/borderless-basic-land frames
-  // will render as regular autoFrame cards until Waves 3-5 land them.
+  // v1 (card-conjurer.ts:171) disables autoFrame at the top of every render, then re-enables
+  // it only in the default fallthrough branch. Specialised branches (transform, adventure,
+  // MDFC, planeswalker, token, borderless basic) stack their frames manually via
+  // addFrameImage and never invoke autoFrame(). We replicate the same discipline.
+  document.querySelector('#autoFrame').value = 'false';
+
+  // Flags set by the specialised branches that later stages read (e.g. token branch sets
+  // forceTitleColorToBlack for the white token; planeswalker + token branches set
+  // isFullArt to trigger the art focus-preset code in the art block).
   //
   // TODO Wave 5: renderable.adventure branch
   // TODO Wave 5: renderable.transform branch
   // TODO Wave 5: renderable.mdfc branch
   // TODO Wave 4: renderable.isToken branch (sets `forceTitleColorToBlack`, `isFullArt`)
   // TODO Wave 4: planeswalkerData branch (sets `isFullArt`)
-  // TODO Wave 3: renderable.supertype === 'basic' && borderless → TextlessBasics2022
   const forceTitleColorToBlack = false;
   const isFullArt = false;
   const rulesTextHeaderTitle = 'rules';   // == v1's 'Rules Text' text option → 'rules' key
   const typeLinePrefix = '';
 
-  const autoFrameValue = renderable.tags?.borderless ? 'Borderless' : 'M15RegularNew';
-  try { document.querySelector('#autoFrame').value = autoFrameValue; } catch { /* ignore */ }
+  // A branch may want to skip the default autoFrame() call at the end of driveRender.
+  // Borderless basic lands do this — they stack frames manually and never autoFrame.
+  let useAutoFrame = true;
+
+  const isBasic = renderable.supertype === 'basic';
+  const isBorderless = renderable.tags?.borderless === true;
+  const isBorderlessBasic = isBasic && isBorderless;
+
+  if (isBorderlessBasic) {
+    // v1 card-conjurer.ts:438-445. Basic land rendered as a textless borderless frame:
+    //   - Load the TextlessBasics2022 pack and fire its #loadFrameVersion.onclick handler,
+    //     which installs its stripped-down text template (just {mana, title, type} at the
+    //     right coordinates for a full-art textless card). In v1's browser this happens
+    //     automatically because #autoLoadFrameVersion defaults to checked (creator/index.html:
+    //     `<input id='autoLoadFrameVersion' ... checked>`), which flips localStorage
+    //     'autoLoadFrameVersion' to 'true' at CC boot, and loadFramePack() at the bottom of
+    //     the pack script honors it. Our stub inputs start unchecked, so we drive the
+    //     #loadFrameVersion.onclick fire explicitly.
+    //   - Add the color's frame image (textless/2022/<c>) as the base layer
+    //   - Add the color's mana symbol overlay (textless/2022/s<c>)
+    // The producibleColors list drives the color choice — this handles WU dual-basics etc.
+    // Basic lands typically have exactly one producible color; use the first.
+    await loadFramePack(ctx, 'TextlessBasics2022', { fireLoadFrameVersion: true });
+    const pc = renderable.producibleColors[0];
+    const c = pc === 'colorless' ? 'c' : colorToShort(pc);
+    await addFrameImage(ctx, `textless/2022/${c}`);
+    await addFrameImage(ctx, `textless/2022/s${c}`);
+    useAutoFrame = false;
+  }
+  // TODO Wave 3: other specialised branches (borderless textless is only one so far)
+  // else if (renderable.adventure) { … } — Wave 5
+  // else if (renderable.transform) { … } — Wave 5
+  // else if (renderable.mdfc) { … } — Wave 5
+  // else if (renderable.isToken) { … } — Wave 4
+  // else if (planeswalkerData) { … } — Wave 4
+  else {
+    // Default branch (v1 card-conjurer.ts:446-449): let CC's autoFrame pick the frame based
+    // on mana cost / type / colors. Re-enable autoFrame (was set to 'false' above).
+    const autoFrameValue = isBorderless ? 'Borderless' : 'M15RegularNew';
+    document.querySelector('#autoFrame').value = autoFrameValue;
+  }
 
   // ---- 2. Text fields (mana, title, type, rules, PT) -----------------------------------
   //
@@ -237,12 +285,52 @@ export async function driveRender(renderable, ctx) {
   // No-art case: fresh sandbox already has sandbox.art.src = /img/blank.png and
   // card.artX/Y/Zoom at defaults (creator-23.js:158), so no reset needed.
 
-  // TODO Wave 3: basic land icon (supertype=basic + non-borderless + land + no rules → land icon)
+  // ---- Basic land icon overlay (Wave 3) ----------------------------------------------
+  //
+  // v1 card-conjurer.ts:614-633. Non-borderless basic lands with no rules text get an
+  // additional frame image on top: the basic-land-color icon (from the M15 Lands pack).
+  // v1 clicks the "Frame" menu tab, then #selectFramePack='Lands' + sleep(500) — no
+  // #loadFrameVersion invocation (packM15Lands.js sets loadFrameVersion.onclick = null
+  // and disables the button; it's an additive-only pack). Then clicks the color's
+  // watermark frame option and #addToFull.
+  //
+  // The condition: basic + non-borderless + land + no rules (v1:615-618).
+  if (
+    isBasic
+    && !isBorderless
+    && renderable.types.includes('land')
+    && renderable.rules.length === 0
+  ) {
+    // Note: v1 does this AFTER autoFrame has run (i.e. after the default land frame is
+    // already on the card). We haven't called autoFrame yet — that happens below. Ordering
+    // works out because addFrameImage pushes into card.frames.unshift(...) at the front of
+    // the array (creator-23.js:940), then when we call autoFrame afterwards it *appends*
+    // additional layers behind the ones we already added. That's the wrong stacking order.
+    //
+    // Correct order: run autoFrame FIRST (default land frame goes on card.frames), THEN
+    // add the icon overlay. So we invoke autoFrame here for the basic-land case only,
+    // then add the icon, then set useAutoFrame=false so the trailing autoFrame call below
+    // doesn't run twice.
+    sandbox.autoFrame();
+    useAutoFrame = false;
+
+    // Note: v1 passes 'Lands' (the option LABEL); the corresponding VALUE (which becomes
+    // the pack script filename) is 'M15Lands'. We use the value directly since our
+    // loadFramePack builds the script path from the pack name.
+    await loadFramePack(ctx, 'M15Lands', { fireLoadFrameVersion: false });
+    const landColor = colorToShort(landSubtypeToColor(renderable.subtypes[0]) ?? 'white');
+    // The Lands pack names its icons as watermark entries; their src is /img/frames/m15/basics/<c>.png
+    await addFrameImage(ctx, `m15/basics/${landColor}`);
+  }
 
   // ---- 5. Layout autoFrame + drawText -------------------------------------------------
   //
   // Order matters: autoFrame reads the mana/type text to detect colors, so text must be set
   // first. drawText composites text into textCanvas (which drawFrames blits on top).
-  try { sandbox.autoFrame(); } catch { /* frame errors don't block; drawText still runs */ }
+  // Specialised branches (borderless basic; basic land icon which called autoFrame early)
+  // set useAutoFrame = false so we skip it here.
+  if (useAutoFrame) {
+    try { sandbox.autoFrame(); } catch { /* frame errors don't block; drawText still runs */ }
+  }
   await sandbox.drawText();
 }
