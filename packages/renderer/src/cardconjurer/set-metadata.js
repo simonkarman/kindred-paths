@@ -7,10 +7,9 @@
 //     `configuration.symbolDir`. Falls back to symbols/ under collection.
 //   - Returns a plain object (no zod schema); we trust the metadata file's shape as v1 does.
 //
-// Set symbol RASTERIZATION is a separate concern — that's Wave 6 (SVG → PNG via resvg-js or
-// similar, since @napi-rs/canvas doesn't decode SVG natively). This module only tells CC
-// which symbol string to use; whether the symbol actually appears in the render depends on
-// the host being able to decode the referenced SVG.
+// SVG symbol RASTERIZATION (via sharp/librsvg) is implemented in hosts/node-handle.js
+// (see line 139+). This module only tells CC which symbol string to use; decoding happens
+// in the host.
 
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

@@ -8,10 +8,12 @@
 //
 // Ported verbatim from v1 `server/src/card-conjurer.ts` (the Renderable type) and
 // `server/src/services/render-service.ts` (the Card → Renderable mapping in getRender()),
-// with two changes:
+// with one adaptation:
 //   - JavaScript instead of TypeScript (matches the rest of the renderer package)
-//   - the `set` metadata (author, symbol, offset, shortName) is left undefined for now;
-//     it comes in during Wave 6 when set symbols land. Cards without a symbol render fine.
+//
+// Set metadata (author, shortName, symbol, collectorNumberOffset) is resolved via
+// getSetMetadataForCard(). Cards without a symbol render fine; the symbol decoding happens
+// in the Node host via sharp/librsvg (see hosts/node-handle.js line 139+).
 //
 // See docs/v2-architecture.md §4 (renderer architecture) and the Renderable type in
 // server/src/card-conjurer.ts:78-126 for the source-of-truth shape.
@@ -118,11 +120,11 @@ export function cardToRenderable(cardJsonOrInstance, faceIndex = 0) {
     },
     rarity: card.rarity,
     collectorNumber: card.collectorNumber,
-    // Set metadata (author, shortName, symbol string, collectorNumberOffset). The SYMBOL
-    // itself may not render if the host can't decode it — SVG rasterization for
-    // /img/setSymbols/official/custom/<set>-<rarity>.svg is Wave 6 in the Node host. But
-    // author + shortName + collectorNumberOffset are needed NOW for the collector info
-    // block to match v1 pixel-for-pixel.
+    // Set metadata (author, shortName, symbol string, collectorNumberOffset). The symbol
+    // is rasterized via sharp/librsvg in the Node host (see hosts/node-handle.js line 139+),
+    // which avoids a resvg fill bug that would corrupt some SVG stroke+fill combinations.
+    // Author + shortName + collectorNumberOffset are needed for the collector info block
+    // to match v1 pixel-for-pixel.
     set: getSetMetadataForCard(cardJsonOrInstance),
     mdfc,
     adventure,
