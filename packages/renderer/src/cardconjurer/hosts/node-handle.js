@@ -252,11 +252,30 @@ async function bootFreshSandbox() {
       classList: { add: noop, remove: noop, toggle: noop, contains: () => false },
       addEventListener: noop, removeEventListener: noop, dispatchEvent: noop,
       focus: noop, blur: noop,
-      click() { if (typeof this.onclick === 'function') return this.onclick(); },
+      // Pass a synthetic event with `target` set to the element itself — mirrors a real
+      // DOM click event closely enough for CC's onclick handlers that read `event.target`
+      // (e.g. main-1.js's `notify()` schedules `setTimeout(() => close.click(), seconds *
+      // 1000)` for its auto-dismiss timer; `closeNotification(event)` then does
+      // `event.target.closest('.notification').classList.add(...)`). Without a target, that
+      // crashes on `undefined.closest`. This auto-dismiss timer is real: packM15CIPips.js
+      // (loaded by Wave 5's transform-back branch) calls `notify(msg, 15)`, and the 15s
+      // Node-level timer outlives the sandbox that scheduled it (each render boots a FRESH
+      // sandbox, but setTimeout is a real Node event-loop timer, not sandboxed) — it can fire
+      // in the MIDDLE of a later card's render within the same test process. Harmless no-op
+      // either way (it only ever toggles a notification-banner DOM node we never render), so
+      // making it not-throw is the only requirement.
+      click() { if (typeof this.onclick === 'function') return this.onclick({ target: this }); },
       appendChild: (c) => c, removeChild: (c) => c, insertBefore: (c) => c, prepend: noop, append: noop, remove: noop,
       cloneNode() { return makeStub(); },
       setAttribute: noop, getAttribute: () => null, hasAttribute: () => false, removeAttribute: noop,
-      querySelector: () => makeStub(), querySelectorAll: () => [], closest: () => null,
+      // closest() returns a fresh swallow-everything stub rather than null: real DOM
+      // `.closest()` only returns null when no ancestor matches, but several CC handlers
+      // (closeNotification above, frameOptionClicked, dropEnter/dropLeave, etc.) call
+      // `.classList`/other methods on the result unconditionally. None of those OTHER call
+      // sites are ever exercised by our driver (we call CC's internal functions directly
+      // instead of simulating real clicks/drags), so widening this from null is safe for us
+      // and prevents exactly this class of crash for any future incidental `.click()` call.
+      querySelector: () => makeStub(), querySelectorAll: () => [], closest: () => makeStub(),
       getBoundingClientRect: () => ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 }),
       getContext: () => null, offsetWidth: 0, offsetHeight: 0, options: [], selectedIndex: 0,
       disabled: false, scrollIntoView: noop,

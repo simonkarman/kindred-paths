@@ -34,12 +34,22 @@
 // (v1 :614-633).
 // Wave 4 scope: tokens (v1 :376-410) and planeswalkers (v1 :411-437, :519-567), including
 // the isFullArt art-focus-preset override (v1 :643-664) both branches trigger.
-// The remaining specialised branches (transform / adventure / MDFC) come in Wave 5.
+// Wave 5 scope: adventure (v1 :208-251, :480-499), transform front/back (v1 :252-326,
+// :607-611), and MDFC/modal (v1 :328-374, :470-478), including the shared MDFC rules-box
+// height override (v1 :586, ported generically in Wave 3/4 already) and the transform-back
+// color-identity pips + type-line shift.
 // Deferred to Wave 6: high-collector-number formatting, remaining polish.
 
 import { computePlaneswalkerData } from './planeswalker-data.js';
 import { addFrameImage, loadFramePack } from './frame.js';
-import { getFrameColors, curlyQuotes } from './helpers.js';
+import {
+  getFrameColors,
+  getPowerToughnessColor,
+  getModalFrameColors,
+  getModalPowerToughnessColor,
+  getModalLegendaryCrownColor,
+  curlyQuotes,
+} from './helpers.js';
 import { colorToShort, landSubtypeToColor } from '@kindred-paths/shared';
 
 const CARD_WIDTH = 2010;
@@ -70,13 +80,18 @@ export async function driveRender(renderable, ctx) {
   // forceTitleColorToBlack for the white token; planeswalker + token branches set
   // isFullArt to trigger the art focus-preset code in the art block).
   //
-  // TODO Wave 5: renderable.adventure branch
-  // TODO Wave 5: renderable.transform branch
-  // TODO Wave 5: renderable.mdfc branch
+  // Wave 5: adventure / transform / mdfc branches (below) also participate here. Note that
+  // although v1 gives each of these branches its own display label for the rules-text field
+  // ('Rules Text (Right)' for adventure, plain 'Rules Text' for transform/mdfc), the
+  // underlying `card.text` KEY is 'rules' in every one of those packs' loadTextOptions calls
+  // (see packAdventure.js/packM15TransformFront.js/packModalRegular.js) — only the display
+  // name differs, which we don't model. So rulesTextHeaderTitle stays 'rules' unconditionally.
   let forceTitleColorToBlack = false;
   let isFullArt = false;
   const rulesTextHeaderTitle = 'rules';   // == v1's 'Rules Text' text option → 'rules' key
-  const typeLinePrefix = '';
+  // transform-back (multi-color) prefixes the type line with '{right88}' to make room for
+  // the color-identity pips (v1 card-conjurer.ts:313) — set inside the transform branch below.
+  let typeLinePrefix = '';
 
   // A branch may want to skip the default autoFrame() call at the end of driveRender.
   // Borderless basic lands do this — they stack frames manually and never autoFrame.
@@ -191,11 +206,218 @@ export async function driveRender(renderable, ctx) {
     await addFrameImage(ctx, `textless/2022/${c}`);
     await addFrameImage(ctx, `textless/2022/s${c}`);
     useAutoFrame = false;
-  }
-  // TODO Wave 5: renderable.adventure branch
-  // TODO Wave 5: renderable.transform branch
-  // TODO Wave 5: renderable.mdfc branch
-  else {
+  } else if (renderable.adventure) {
+    // v1 card-conjurer.ts:208-251. Adventure cards stack a "book" frame (regular color
+    // frame(s) + a Rules-Left/Rules-Left-Multicolor mask carrying the adventure spell's own
+    // color) on top of the base creature frame. v1 selects '#selectFrameGroup'='Adventure'
+    // purely to populate the pack dropdown (a UI convenience with no functional effect for
+    // us — see frame.js's loadFramePack doc comment) then relies on the real browser's
+    // autoLoadFrameVersion default to fire '#loadFrameVersion' the moment the pack script
+    // loads (packAdventure.js:62's trailing `loadFramePack()` call checks
+    // `localStorage.autoLoadFrameVersion`, which creator-23.js:4941-4944 defaults to 'true'
+    // at boot). Our stub starts unchecked, so — same as every other specialised branch —
+    // we fire it explicitly via loadFramePack's fireLoadFrameVersion option.
+    await loadFramePack(ctx, 'Adventure', { fireLoadFrameVersion: true });
+
+    const isLand = renderable.types.includes('land');
+    const colors = isLand ? renderable.producibleColors.filter((c) => c !== 'colorless') : renderable.color;
+    const [left, right] = getFrameColors(isLand, colors);
+    const [adventureLeft, adventureRight] = getFrameColors(false, renderable.adventure.color);
+    const ptColor = renderable.pt ? getPowerToughnessColor(isLand, colors) : undefined;
+    const addLegendaryCrown = renderable.supertype === 'legendary';
+
+    // Base frame: single color/colorless/land → one image; two colors → multicolor base +
+    // each color's pinline masked to its half.
+    if (!right) {
+      await addFrameImage(ctx, `adventure/regular/${left}`);
+    } else {
+      await addFrameImage(ctx, 'adventure/regular/m');
+      await addFrameImage(ctx, `adventure/regular/${left}`, { mask: 'Pinline' });
+      await addFrameImage(ctx, `adventure/regular/${right}`, { placement: 'addToRightHalf', mask: 'Pinline' });
+    }
+    if (isLand) {
+      await addFrameImage(ctx, 'adventure/regular/l', { mask: 'Title' });
+      await addFrameImage(ctx, 'adventure/regular/l', { mask: 'Type' });
+    }
+    // The "book" (adventure spell panel) is split into a Left half (always the adventure
+    // spell's own color) and, only when the MAIN face is 2-colored, a Right half carrying
+    // the main face's colors instead (v1's rulesTextHeaderTitle 'Rules Text (Right)' name
+    // refers to this same box — it's the adventure spell's rules text, drawn over the
+    // right-hand book panel regardless of whether these Right masks are applied).
+    if (right) {
+      await addFrameImage(ctx, `adventure/regular/${left}`, { mask: 'Rules (Right)' });
+      await addFrameImage(ctx, `adventure/regular/${right}`, { mask: 'Rules (Right, Multicolor)' });
+    }
+    await addFrameImage(ctx, `adventure/regular/${adventureLeft}`, { mask: 'Rules (Left)' });
+    if (adventureRight) {
+      await addFrameImage(ctx, `adventure/regular/${adventureRight}`, { mask: 'Rules (Left, Multicolor)' });
+    }
+    if (ptColor) {
+      // No framePack override (unlike most other branches' PT frame images) — the Adventure
+      // pack's own availableFrames already lists the m15PT<Color> images (packAdventure.js:
+      // 14-21), at the same /img/frames/m15/regular/m15PT<Color>.png src the M15Regular-1
+      // pack uses, so no pack switch is needed here.
+      await addFrameImage(ctx, `m15/regular/m15PT${ptColor.toUpperCase()}`);
+    }
+    if (addLegendaryCrown) {
+      // Adventure's legendary crown always uses the plain M15LegendCrowns pack (v1 never
+      // reassigns legendaryCrownsFramePack in this branch — only transform/mdfc do).
+      await addFrameImage(ctx, `m15/crowns/m15Crown${left.toUpperCase()}`, { framePack: 'M15LegendCrowns' });
+      if (right) {
+        await addFrameImage(ctx, `m15/crowns/m15Crown${right.toUpperCase()}`, {
+          framePack: 'M15LegendCrowns',
+          placement: 'addToRightHalf',
+        });
+      }
+    }
+    useAutoFrame = false;
+  } else if (renderable.transform) {
+    // v1 card-conjurer.ts:252-326. Transform front/back share the same shape logic
+    // (color-count × isLand × isVehicle × isArtifact × legendary) but pull frame images from
+    // different prefixes and — back only — add color-identity pips + a type-line shift.
+    const isFront = renderable.transform.side === 'front';
+    const framePackName = isFront ? 'M15TransformFront' : 'M15TransformBackNew';
+    const legendaryCrownsFramePack = 'TransformLegendCrowns';
+    const framePrefix = isFront ? 'm15/transform/regular/front' : 'm15/transform/regular/new/back';
+
+    await loadFramePack(ctx, framePackName, { fireLoadFrameVersion: true });
+
+    const isLand = renderable.types.includes('land');
+    const isArtifact = renderable.types.includes('artifact');
+    const isVehicle = renderable.subtypes.includes('vehicle');
+    const colors = isLand ? renderable.producibleColors.filter((c) => c !== 'colorless') : renderable.color;
+    const [left, right] = getFrameColors(isLand, colors);
+    const ptColor = renderable.pt ? getPowerToughnessColor(isLand, colors) : undefined;
+    const addLegendaryCrown = renderable.supertype === 'legendary';
+
+    if (!right) {
+      await addFrameImage(ctx, `${framePrefix}${left.toUpperCase()}`);
+    } else {
+      // Note (ported as-is from v1): the Vehicle-specific 'V' base frame is only used here,
+      // for 2-color vehicles. A mono-color or colorless vehicle instead falls into the plain
+      // `!right` branch above with no vehicle-specific base image at all — only the
+      // isArtifact overlay below adds any vehicle-adjacent texture. This looks like it could
+      // be a v1 quirk, but we replicate it faithfully rather than "fixing" it.
+      if (isLand) {
+        await addFrameImage(ctx, `${framePrefix}L`);
+        await addFrameImage(ctx, `${framePrefix}${left.toUpperCase()}`, { mask: 'Rules' });
+        await addFrameImage(ctx, `${framePrefix}${right.toUpperCase()}`, { placement: 'addToRightHalf', mask: 'Rules' });
+      } else if (isVehicle) {
+        await addFrameImage(ctx, `${framePrefix}V`);
+      } else {
+        await addFrameImage(ctx, `${framePrefix}M`);
+      }
+      await addFrameImage(ctx, `${framePrefix}${left.toUpperCase()}`, { mask: 'Pinline' });
+      await addFrameImage(ctx, `${framePrefix}${right.toUpperCase()}`, { placement: 'addToRightHalf', mask: 'Pinline' });
+    }
+    if (isArtifact) {
+      await addFrameImage(ctx, `${framePrefix}A`, { mask: 'Frame' });
+    }
+    if (isLand) {
+      await addFrameImage(ctx, `${framePrefix}L`, { mask: 'Title' });
+      await addFrameImage(ctx, `${framePrefix}L`, { mask: 'Type' });
+    }
+    if (ptColor) {
+      const ptPrefix = isFront ? 'm15/regular/m15PT' : 'm15/transform/regular/pt';
+      await addFrameImage(ctx, `${ptPrefix}${ptColor.toUpperCase()}`);
+    }
+    if (addLegendaryCrown) {
+      // Note the lack of .toUpperCase() here — unlike the base color frames above, the
+      // transform crown pack's image filenames are lowercase (packTransformLegendCrowns.js:
+      // '/img/frames/m15/transform/crowns/regular/w.png' etc), matching v1 exactly.
+      const legendaryFramePrefix = isFront
+        ? 'm15/transform/crowns/regular/'
+        : 'm15/transform/crowns/regular/new/';
+      await addFrameImage(ctx, `${legendaryFramePrefix}${left}`, { framePack: legendaryCrownsFramePack });
+      if (right) {
+        await addFrameImage(ctx, `${legendaryFramePrefix}${right}`, {
+          framePack: legendaryCrownsFramePack,
+          placement: 'addToRightHalf',
+        });
+      }
+    }
+    // Color-identity pips: back face only, 1-3 colors (v1 card-conjurer.ts:311-326). Also
+    // sets typeLinePrefix so the type line shifts right to make room (applied in the text
+    // section below).
+    if (renderable.transform.side === 'back' && renderable.color.length >= 1 && renderable.color.length <= 3) {
+      typeLinePrefix = '{right88}';
+      const pipsPack = 'M15CIPips';
+      const pipsPrefix = 'm15/ciPips/';
+      const [a, b, c] = renderable.color.map((col) => colorToShort(col));
+      await addFrameImage(ctx, `${pipsPrefix}${a}`, { framePack: pipsPack });
+      if (b) {
+        if (c) {
+          await addFrameImage(ctx, `${pipsPrefix}${b}`, { framePack: pipsPack, mask: 'Second Third' });
+          await addFrameImage(ctx, `${pipsPrefix}${c}`, { framePack: pipsPack, mask: 'Third Third' });
+        } else {
+          await addFrameImage(ctx, `${pipsPrefix}${b}`, { framePack: pipsPack, mask: 'Second Half' });
+        }
+      }
+    }
+    useAutoFrame = false;
+  } else if (renderable.mdfc) {
+    // v1 card-conjurer.ts:328-374. MDFC/Modal front and back share one frame pack
+    // (ModalRegular carries both front AND back frame images — see packModalRegular.js —
+    // unlike transform, which uses two distinct packs for front/back).
+    await loadFramePack(ctx, 'ModalRegular', { fireLoadFrameVersion: true });
+
+    const side = renderable.mdfc.side;
+    const backPrefix = side === 'back' ? 'back/' : '';
+    const [left, right] = getModalFrameColors(renderable);
+    const addLegendaryCrown = renderable.supertype === 'legendary';
+    const overlayMulticolor = right !== undefined;
+    const overlayVehicleFrame = renderable.subtypes.includes('vehicle');
+    const ptColor = renderable.pt
+      ? getModalPowerToughnessColor(renderable.color, overlayVehicleFrame)
+      : undefined;
+    const otherFrameColor = renderable.mdfc.otherFrameColor;
+
+    await addFrameImage(ctx, `modal/regular/${backPrefix}${left}`);
+    if (right) {
+      await addFrameImage(ctx, `modal/regular/${backPrefix}${right}`, { placement: 'addToRightHalf' });
+    }
+    if (overlayMulticolor) {
+      // Dual-color modal faces overlay a single multicolor (or multicolor-land) frame's
+      // Title/Type/Frame masks on top of the two individual color halves added above.
+      const m = `modal/regular/${backPrefix}${renderable.types.includes('land') ? 'l' : 'm'}`;
+      await addFrameImage(ctx, m, { mask: 'Title' });
+      await addFrameImage(ctx, m, { mask: 'Type' });
+      await addFrameImage(ctx, m, { mask: 'Frame' });
+    }
+    if (overlayVehicleFrame) {
+      await addFrameImage(ctx, `modal/regular/${backPrefix}v`, { mask: 'Frame' });
+    }
+    if (addLegendaryCrown) {
+      await addFrameImage(ctx, `modal/crowns/regular/${getModalLegendaryCrownColor(left)}`, { framePack: 'ModalLegendCrowns' });
+      if (right) {
+        await addFrameImage(ctx, `modal/crowns/regular/${getModalLegendaryCrownColor(right)}`, {
+          placement: 'addToRightHalf',
+          framePack: 'ModalLegendCrowns',
+        });
+      }
+    }
+    if (ptColor) {
+      // Explicit framePack: 'ModalRegular' here (unlike other branches' PT calls) because
+      // the legendary-crown call just above may have switched the "current" pack to
+      // ModalLegendCrowns — v1's addFrameImage helper always falls back to a closure-level
+      // `defaultFramePack` var when no framePack is given, so an omitted framePack there
+      // means "ModalRegular" regardless of what the immediately-preceding call touched. Our
+      // addFrameImage has no such fallback (it only switches pack when told to), so we must
+      // say so explicitly whenever a preceding call in the same branch used framePack to
+      // switch away from the branch's own default pack.
+      await addFrameImage(
+        ctx,
+        `m15/${side === 'back' ? 'transform/regular/pt' : 'regular/m15PT'}${ptColor.toUpperCase()}`,
+        { framePack: 'ModalRegular' },
+      );
+    }
+    // Flipside indicator: a small icon in the OTHER face's color, masked onto THIS side's
+    // frame (v1 card-conjurer.ts:374). otherFrameColor is always a single FrameColor letter
+    // (never a pair) — the flipside icon can only show one color. Same explicit-framePack
+    // reasoning as the ptColor call above.
+    await addFrameImage(ctx, `modal/regular/${backPrefix}${otherFrameColor}`, { mask: 'Flipside', framePack: 'ModalRegular' });
+    useAutoFrame = false;
+  } else {
     // Default branch (v1 card-conjurer.ts:446-449): let CC's autoFrame pick the frame based
     // on mana cost / type / colors. Re-enable autoFrame (was set to 'false' above).
     const autoFrameValue = isBorderless ? 'Borderless' : 'M15RegularNew';
@@ -227,8 +449,26 @@ export async function driveRender(renderable, ctx) {
   const title = (forceTitleColorToBlack ? '{fontcolor#000000}' : '') + renderable.name;
   setText('title', title);
 
+  // MDFC-only extra text fields (v1 card-conjurer.ts:470-478): the flipside face's type
+  // ('Land' or PT-prefixed subtype/type) and its rendered text (mana cost, or the land's
+  // "{t}: Add ..." line). Key names come from packModalRegular.js's loadTextOptions.
+  if (renderable.mdfc) {
+    setText('flipsideType', renderable.mdfc.otherCardType);
+    setText('flipSideReminder', renderable.mdfc.otherText);
+  }
+
+  // Adventure-only extra text fields (v1 card-conjurer.ts:481-499): the adventure spell's
+  // own mana cost/title/type/rules, drawn in the left-hand "book" panel. Key names come
+  // from packAdventure.js's loadTextOptions (mana2/title2/type2/rules2).
+  if (renderable.adventure) {
+    setText('mana2', renderable.adventure.manaCost);
+    setText('title2', renderable.adventure.title);
+    setText('type2', renderable.adventure.type);
+    setText('rules2', renderable.adventure.rules);
+  }
+
   // Type line: v1 prepends typeLinePrefix (e.g. '{right88}' for transform-back CI pips) —
-  // Wave 5's job.
+  // set by the transform branch above.
   setText('type', typeLinePrefix + renderable.typeLine);
 
   // Edit Bounds: widen the type-line textbox to 1550 (v1 card-conjurer.ts:511-517).
@@ -375,7 +615,13 @@ export async function driveRender(renderable, ctx) {
       const prefix = !renderable.isToken && isArtifactVehicle ? '{fontcolor#fff}' : '';
       setText('pt', prefix + renderable.pt.power + '/' + renderable.pt.toughness);
     }
-    // TODO Wave 5: transform-front → set text.reversePt to renderable.transform.flipText
+    // Transform-front "Reverse PT": a small grey PT preview of the back face, drawn near
+    // the bottom of the card (v1 card-conjurer.ts:607-611). The pack's key for this field
+    // is 'reminder' (display name "Reverse PT" — see packM15TransformFront.js's
+    // loadTextOptions), not 'reversePt'.
+    if (renderable.transform && renderable.transform.side === 'front') {
+      setText('reminder', renderable.transform.flipText);
+    }
   }
 
   // ---- 4. Collector info (bottom-info block) ------------------------------------------

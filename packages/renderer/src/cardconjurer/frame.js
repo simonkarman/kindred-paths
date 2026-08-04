@@ -103,18 +103,23 @@ export async function addFrameImage(ctx, image, opts = {}) {
     throw new Error(`addFrameImage: sandbox.availableFrames is empty (frame pack not loaded?). image=${image}`);
   }
 
-  // Find the frame whose src ends with /<image>.png. v1 matches by thumbnail path in the
-  // DOM click selector (`img[src="/img/frames/<image>Thumb.png"]`); we match by full src
-  // instead — same identity but skips a suffix substitution.
-  const targetSrcSuffix = `/${image}.png`;
-  const frameIndex = available.findIndex((f) => f.src && f.src.endsWith(targetSrcSuffix));
+  // Find the frame whose src ends with /<image>.png (or .svg — v1's CI-pip frame images
+  // are SVG-sourced, e.g. /img/frames/m15/ciPips/w.svg; every other frame pack we've hit so
+  // far happens to be PNG-only). v1 matches by THUMBNAIL path in the DOM click selector
+  // (`img[src="/img/frames/<image>Thumb.png"]`), which works uniformly regardless of the
+  // real asset's extension because creator-23.js:583-587 always names thumbnails
+  // `...Thumb.png` even for SVG sources. We match by full src instead — same identity, but
+  // must check both possible extensions on the real (non-thumbnail) src ourselves.
+  const targetSrcSuffixes = [`/${image}.png`, `/${image}.svg`];
+  const frameIndex = available.findIndex((f) => f.src && targetSrcSuffixes.some((suffix) => f.src.endsWith(suffix)));
   if (frameIndex < 0) {
     const sample = available.slice(0, 5).map((f) => f.src).join(', ');
     throw new Error(
-      `addFrameImage: no frame in availableFrames ends with "${targetSrcSuffix}". ` +
+      `addFrameImage: no frame in availableFrames ends with "${targetSrcSuffixes.join('" or "')}". ` +
       `Sample srcs: ${sample}. Did you load the right framePack?`
     );
   }
+
 
   // Resolve mask name → 1-based index (0 = "No Mask"; see creator-23.js:645-646).
   let maskIndex = 0;
