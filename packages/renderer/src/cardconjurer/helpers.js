@@ -81,3 +81,30 @@ export function getModalLegendaryCrownColor(color) {
   if (color === 'v') return 'a';
   return color;
 }
+
+/**
+ * Converts straight quotes/apostrophes to typographic curly ones. Ported verbatim from
+ * CC's own `curlyQuotes()` (server/.cardconjurer/js/creator-23.js:2460-2462).
+ *
+ * CC applies this to EVERY text field whenever text is set via its UI editor
+ * (creator-23.js:1227: `card.text[...].text = curlyQuotes(document.querySelector('#text-editor').value);`)
+ * — regardless of which field is currently selected (title, rules, abilities, mana cost,
+ * etc. all go through the same code path). Our driver writes `card.text[key].text`
+ * directly, bypassing CC's UI entirely, so we must apply this transform ourselves or any
+ * card text containing a straight quote/apostrophe renders with the wrong glyph (visibly
+ * different width — Wave 4 found this via card 47's ability text, which contains `"`).
+ * @param {string} input
+ * @returns {string}
+ */
+export function curlyQuotes(input) {
+  return input
+    .replace(/ '/g, ' \u2018')
+    .replace(/^'/, '\u2018')
+    .replace(/'/g, '\u2019')
+    .replace(/ "/g, ' \u201c')
+    .replace(/" /g, '\u201d ')
+    .replace(/\."/, '.\u201d')
+    .replace(/"$/, '\u201d')
+    .replace(/"\)/g, '\u201d)')
+    .replace(/"/g, '\u201c');
+}

@@ -221,20 +221,26 @@ for (const [rendererName, factory] of rendererEntries) {
       const goldenFile = join(reportDirRenderer, `${base}.golden.png`);
       const diffFile = diff.diffPng ? join(reportDirRenderer, `${base}.diff.png`) : null;
 
+      // Always write the golden/actual/diff thumbnails to the report dir — this lets the
+      // HTML report show side-by-side images for passing cards too (useful for eyeballing
+      // "does this actually look right" rather than trusting the pixel-diff ratio alone),
+      // not just failures.
+      writeFileSync(actualFile, actual);
+      writeFileSync(goldenFile, goldenBuf);
+      if (diffFile) writeFileSync(diffFile, diff.diffPng);
+
+      const files = {
+        actualFile: `./.report/${rendererName}/${base}.actual.png`,
+        goldenFile: `./.report/${rendererName}/${base}.golden.png`,
+        diffFile: diffFile ? `./.report/${rendererName}/${base}.diff.png` : undefined,
+      };
+
       if (diff.match) {
         console.log(`ok (${diff.reason})`);
-        results[rendererName].push({ cid, faceIndex, name: face0Name, status: 'pass', reason: diff.reason });
+        results[rendererName].push({ cid, faceIndex, name: face0Name, status: 'pass', reason: diff.reason, ...files });
       } else {
         console.log(`FAIL ${diff.reason}`);
-        writeFileSync(actualFile, actual);
-        writeFileSync(goldenFile, goldenBuf);
-        if (diffFile) writeFileSync(diffFile, diff.diffPng);
-        results[rendererName].push({
-          cid, faceIndex, name: face0Name, status: 'fail', reason: diff.reason,
-          actualFile: `./.report/${rendererName}/${base}.actual.png`,
-          goldenFile: `./.report/${rendererName}/${base}.golden.png`,
-          diffFile: diffFile ? `./.report/${rendererName}/${base}.diff.png` : undefined,
-        });
+        results[rendererName].push({ cid, faceIndex, name: face0Name, status: 'fail', reason: diff.reason, ...files });
         anyFail = true;
       }
     }
@@ -278,6 +284,8 @@ function renderReport(results) {
     .imgs figcaption { font-size: 11px; color: #aaa; text-align: center; }
     .imgs img { width: 200px; height: auto; display: block; background: #000; border: 1px solid #444; }
     .reason { font-family: monospace; color: #cc9; }
+    tr.pass details { margin-top: .3rem; }
+    tr.pass summary { cursor: pointer; color: #8c8; font-size: 12px; }
   `;
   let body = '';
   for (const [name, rows] of Object.entries(results)) {
@@ -288,14 +296,20 @@ function renderReport(results) {
     body += `<h2>${escapeHtml(name)} — <span class="reason">${p} pass · ${f} fail · ${m} missing · ${e} error</span></h2>`;
     body += `<table><thead><tr><th>Card</th><th>Face</th><th>Name</th><th>Status</th><th>Details</th></tr></thead><tbody>`;
     for (const r of rows) {
-      const details = r.status === 'fail'
-        ? `<div class="reason">${escapeHtml(r.reason || '')}</div>
-           <div class="imgs">
-             <figure><img src="${r.goldenFile}"><figcaption>golden</figcaption></figure>
-             <figure><img src="${r.actualFile}"><figcaption>actual</figcaption></figure>
-             ${r.diffFile ? `<figure><img src="${r.diffFile}"><figcaption>diff</figcaption></figure>` : ''}
+      const imgs = r.goldenFile
+        ? `<div class="imgs">
+             <figure><img src="${r.goldenFile}" loading="lazy"><figcaption>golden</figcaption></figure>
+             <figure><img src="${r.actualFile}" loading="lazy"><figcaption>actual</figcaption></figure>
+             ${r.diffFile ? `<figure><img src="${r.diffFile}" loading="lazy"><figcaption>diff</figcaption></figure>` : ''}
            </div>`
-        : `<span class="reason">${escapeHtml(r.reason || '')}</span>`;
+        : '';
+      const reasonLine = `<span class="reason">${escapeHtml(r.reason || '')}</span>`;
+      // Passing rows collapse the thumbnails behind a <details> toggle so the report stays
+      // scannable even with dozens of passing cards; failing/error/missing rows show them
+      // open by default since that's the whole point of looking at the report.
+      const details = r.status === 'pass'
+        ? `${reasonLine}${imgs ? `<details><summary>view images</summary>${imgs}</details>` : ''}`
+        : `<div class="reason">${r.reason ? escapeHtml(r.reason) : ''}</div>${imgs}`;
       body += `<tr class="${r.status}"><td>${escapeHtml(r.cid)}</td><td>${r.faceIndex}</td><td>${escapeHtml(r.name)}</td><td>${r.status}</td><td>${details}</td></tr>`;
     }
     body += '</tbody></table>';

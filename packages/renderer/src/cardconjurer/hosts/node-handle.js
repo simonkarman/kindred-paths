@@ -171,11 +171,11 @@ async function bootFreshSandbox() {
   let trackDecodes = false;
 
   class DomImage extends NapiImage {
-    constructor() { super(); this.onload = null; this.onerror = null; }
+    constructor() { super(); this.onload = null; this.onerror = null; this._pendingDecode = null; }
     set src(v) {
       this._src = v;
       const r = resolveSrc(v);
-      if (!r) { queueMicrotask(() => this.onerror && this.onerror(new Error('unmapped'))); return; }
+      if (!r) { this._pendingDecode = null; queueMicrotask(() => this.onerror && this.onerror(new Error('unmapped'))); return; }
       const rawBuf = r.buf || readFileSync(r.path);
       // See the "SVG rasterization" block above resolveSrc for why SVG buffers are
       // pre-rasterized (via sharp/librsvg) before ever reaching `this` — resvg (bundled by
@@ -195,12 +195,37 @@ async function bootFreshSandbox() {
       // on the same reused instance racing with an earlier decode's stale onload firing),
       // corrupting art/set-symbol placement. Letting native onload be the ONLY trigger fixes
       // this at the root.
+      //
+      // `this._pendingDecode` (returned by our overridden `decode()` below, see that method's
+      // doc comment for the bug this fixes) is the SAME promise pushed into `pendingDecodes` —
+      // both trackers must observe the real completion of `super.src = finalBuf`, not just
+      // "some decode() call resolved".
       const p = (async () => {
         const finalBuf = looksLikeSvg(rawBuf) ? await rasterizeSvg(rawBuf) : rawBuf;
         super.src = finalBuf; // native onload/onerror fire on their own once this decodes
-        await this.decode();  // tracked for pendingDecodes only; do NOT call onload from this
+        await super.decode(); // tracked for pendingDecodes/_pendingDecode only; do NOT call onload from this
       })().catch((e) => { if (this.onerror) this.onerror(e); });
+      this._pendingDecode = p;
       if (trackDecodes) pendingDecodes.push(p);
+    }
+    // Overridden so that ANY caller of `.decode()` — not just buildAndComposite's internal
+    // `pendingDecodes` bookkeeping — actually waits for our async SVG-rasterization pipeline
+    // (see `set src` above) to finish assigning real pixel bytes via `super.src =`, not just
+    // for whatever the *native* binding considers "decoded" at the moment `.decode()` is
+    // called. Without this override, calling `.decode()` on a freshly-`.src`-assigned SVG
+    // image from OUTSIDE this class (e.g. a driver.js that awaits several images before
+    // reading `.complete`/`.width`/`.height`) can resolve IMMEDIATELY and spuriously — the
+    // native side has nothing in flight yet because `super.src` hasn't actually been set
+    // (rasterizeSvg is still pending, since it awaits real sharp/libvips work, not just a
+    // microtask). The caller then sees `.complete === true` with `.width === 0, .height === 0`
+    // and proceeds as if the image were ready. Discovered via CardConjurer's planeswalker
+    // ability-box highlight mask (`planeswalkerTextMask`, an SVG `destination-in` mask):
+    // `drawImage(mask, ...)` with a zero-size source silently no-ops per the Canvas spec, so
+    // the mask never actually clipped anything, leaving the highlight bands' -0.1-card-height
+    // top overflow (an intentional overdraw margin meant to be invisible, normally hidden by
+    // this exact mask) visible bleeding into the art above the type line.
+    decode() {
+      return this._pendingDecode || super.decode();
     }
     get src() { return this._src; }
     addEventListener(t, cb) { if (t === 'load') this.onload = cb; if (t === 'error') this.onerror = cb; }
