@@ -422,6 +422,33 @@ export async function driveRender(renderable, ctx) {
     // on mana cost / type / colors. Re-enable autoFrame (was set to 'false' above).
     const autoFrameValue = isBorderless ? 'Borderless' : 'M15RegularNew';
     document.querySelector('#autoFrame').value = autoFrameValue;
+
+    // Explicitly install this pack's text/art/symbol/watermark template up front. In v1's
+    // real browser, `autoFrame()` (autoFrame.js) lazy-loads `pack<autoFrameValue>.js` via
+    // `loadScript()`, whose trailing generic `loadFramePack()` call auto-fires
+    // `#loadFrameVersion` because `autoLoadFrameVersion` defaults to 'true' at CC boot
+    // (creator-23.js:4941-4944) — same mechanism every OTHER specialised branch in this file
+    // works around explicitly (see frame.js's loadFramePack doc comment); this default
+    // branch is the only one that didn't, because it was easy to miss: `sandbox.autoFrame()`
+    // itself DOES call `loadScript()` for the target pack unconditionally, so the pack's
+    // `availableFrames`/frame IMAGES always end up correct even without this fix — only the
+    // TEXT template (mana/title/type coordinates, setSymbolBounds) silently stayed on
+    // whatever pack was active before (the sandbox's actual boot pack is `M15Regular-1`, an
+    // older near-identical-but-not-quite template — see node-handle.js's
+    // `bootFreshSandbox` — not `M15RegularNew`).
+    //   - `M15RegularNew` vs `M15Regular-1`: coordinates differ by a few pixels (e.g. mana
+    //     y=176/2814≈0.0625 vs 0.0613, title y=145/2814≈0.0515 vs 0.0522) — small but real,
+    //     not covered by the generic rules-box Edit Bounds override (which only touches the
+    //     rules field). This was likely misattributed to pure font-AA drift before this fix.
+    //   - `Borderless` vs `M15Regular-1`: MUCH bigger difference — Borderless's template sets
+    //     `color:'white'` on title/type/rules/pt (dark full-bleed art needs light text);
+    //     without this fix every borderless card silently rendered with M15Regular-1's
+    //     default BLACK text, invisible against the dark rules-box gradient.
+    // loadTextOptions() preserves any already-set `.text` content across the swap (it copies
+    // matching keys' old `.text` into the new template — see creator-23.js:1179-1207), and
+    // at this point in driveRender nothing has been set yet (section 2 runs after this), so
+    // there's nothing to lose either way.
+    await loadFramePack(ctx, autoFrameValue, { fireLoadFrameVersion: true });
   }
 
   // ---- 2. Text fields (mana, title, type, rules, PT) -----------------------------------
