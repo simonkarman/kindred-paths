@@ -69,6 +69,24 @@ const CARD_HEIGHT = 2814;
 export async function driveRender(renderable, ctx) {
   const { sandbox, card, document } = ctx;
 
+  // Force-disable CC's own rounded-corner cutout (creator-23.js drawCard(), the
+  // "cutout the corners" block). That code cuts each of the 4 corners via
+  // `globalCompositeOperation = 'destination-out'` + `drawImage(corner, ...)`, rotating the
+  // canvas context 90° between each of the 4 draws to reuse one mask image. `@napi-rs/canvas`
+  // (skia) has a bug/limitation where `destination-out` (and other alpha-erasing composite
+  // ops) silently no-ops once a non-identity transform (rotate) is active on the context —
+  // verified in isolation with a bare fillRect, no CC code involved at all. The net effect:
+  // only the first (unrotated) corner gets cut; the other 3 render fully opaque/black instead
+  // of transparent, a regression from v1 (real Chromium via Playwright, no such bug).
+  //
+  // Rather than patch this in our vendored CC fork (server/.cardconjurer tracks upstream
+  // joshbirnholz/cardconjurer unmodified) or reimplement the cut ourselves here, we simply
+  // disable it — every v2 render gets consistent square corners on all 4 sides. Rounded
+  // corners, if/when needed, are a presentation-layer concern applied later on top of the
+  // finished square PNG (e.g. CSS border-radius for on-screen display, or a dedicated
+  // non-rotated post-process for exported files) — deliberately NOT CardConjurer's job.
+  card.noCorners = true;
+
   const planeswalkerData = computePlaneswalkerData(renderable);
 
   // ---- 1. Frame selection --------------------------------------------------------------
