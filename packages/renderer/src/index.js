@@ -13,6 +13,8 @@
 
 import { createCardconjurerNodeRenderer } from './cardconjurer/node.js';
 
+export { withCache, computeCacheKey } from './cache.js';
+
 /**
  * Map of renderer name → async factory returning a Renderer.
  * Names are filesystem-safe ([a-z0-9-]+) and become the goldens subdirectory name.

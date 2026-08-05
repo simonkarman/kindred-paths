@@ -407,6 +407,25 @@ calling pure node ops under `src/core/` (see §6 and §10):
   content-hash cache lookup → render on miss (CC-in-Node or headless) → persist PNG + thumbnail
   to `KP_CACHE_DIR` → serve. Cache dir is also served as static files. (This is v1's `render.ts`
   reworked: renderer-agnostic, no Docker, no boot-time coupling.)
+  - The cache itself is **not** inside any specific renderer — it's a decorator,
+    `withCache(renderer, { cacheDir, version? })` in `packages/renderer/src/cache.js`, that
+    wraps *any* `Renderer` (see `interface.js`) and returns one with the same shape. `apps/web`
+    composes it once per registry factory: `withCache(await createCardconjurerNodeRenderer(),
+    { cacheDir: process.env.KP_CACHE_DIR ?? './.cache' })`. The golden harness
+    (`generate-goldens`/`test:golden`) never wraps a renderer this way — it always uses the bare
+    registry factory, so `skipCache` is moot there by construction.
+  - Cache key = sha256 of `{ rendererName, rendererVersion, input, options }` (`skipCache`
+    excluded — it's a behavior switch, not part of render identity). `rendererVersion` is the
+    renderer's own declared `Renderer.version` (an 8-char sha1 of its source files, e.g.
+    `cardconjurer/version.js`, which also covers `pin.js` — so a CC pin bump auto-invalidates
+    every cached render, no manual cache-clearing step). `options.skipCache: true` is a full
+    bypass (no read, no write), for the "just changed the renderer, want an uncached look"
+    workflow.
+  - Files land at `<cacheDir>/renders/<hash>.png` + `<hash>.thumb.webp` (488×684 WebP q80,
+    via `sharp`, sized for the overview grid, Phase 1c).
+  - Not yet handled: pruning stale entries left behind by an old renderer version (leaked, not
+    overwritten) — a follow-up `kp cache prune` command.
+
 - **Art generation (Leonardo)** → a route handler calling `src/core/ai/`. It's a plain API call
   (async poll is acceptable off the interactive hot path); the image-gen UX is reworked to be
   set-themed, model-switchable, and overlay-capable.
@@ -689,7 +708,8 @@ becomes untestable without Next — enforce by lint rule or code review.
   both the server renderer and the interactive accelerator, and every CC version bump. See §4
   CardConjurer update workflow for the executable regen/diff/PR flow.
 - **Phase 1b — Renderer(s) to parity.** Behind the `Renderer` interface: the **server renderer**
-  (CC-in-Node or headless, per 0.8) with the **content-hash cache + thumbnails**, and the
+  (CC-in-Node or headless, per 0.8) with the **content-hash cache + thumbnails** (landed early,
+  as `withCache` in `packages/renderer/src/cache.js` — see §5 for the design), and the
   **interactive browser accelerator**. Port v1's `card-conjurer.ts` sequence faithfully (fonts
   wait + forced redraw, last-character commit, Edit Bounds, planeswalker geometry, all layouts),
   driven to parity against the goldens. Reuse the `Renderable` contract; map `Card` → `Renderable`

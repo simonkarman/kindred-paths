@@ -5,9 +5,13 @@
   "description": "Pluggable Renderer interface + implementations. Today: cardconjurer (node bridge over the proven Phase 0.8 spike). Future impls register themselves in src/index.js.",
   "type": "module",
   "main": "src/index.js",
+  "scripts": {
+    "test": "node --test test/**/*.test.mjs"
+  },
   "exports": {
     ".": "./src/index.js",
     "./interface": "./src/interface.js",
+    "./cache": "./src/cache.js",
     "./cardconjurer/node": "./src/cardconjurer/node.js",
     "./cardconjurer/pin": "./src/cardconjurer/pin.js"
   },

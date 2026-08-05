@@ -16,6 +16,7 @@
 import { createNodeHandle } from './hosts/node-handle.js';
 import { driveRender } from './driver.js';
 import { cardToRenderable } from './renderable.js';
+import { computeCardconjurerVersion } from './version.js';
 
 /**
  * Factory for the CardConjurer Node renderer. Returns an object matching the Renderer
@@ -26,6 +27,7 @@ import { cardToRenderable } from './renderable.js';
  */
 export async function createCardconjurerNodeRenderer() {
   let handle = null;  // Promise<CCHandle> — created on first render, reused thereafter
+  const version = computeCardconjurerVersion();  // computed once; see ./version.js
 
   async function render(input, _options = {}) {
     if (!handle) handle = createNodeHandle();
@@ -71,5 +73,5 @@ export async function createCardconjurerNodeRenderer() {
     };
   }
 
-  return { name: 'cardconjurer', render };
+  return { name: 'cardconjurer', version, render };
 }

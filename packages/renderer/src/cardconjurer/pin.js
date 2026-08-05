@@ -9,5 +9,11 @@
 // Phase 1a: `null` means "use whatever is currently in packages/renderer/external/cardconjurer/",
 // which today is bootstrapped by the v1 script `server/card-conjurer.sh` (unpinned `git pull`).
 // The pin lands with the setup.sh rewrite; see scripts/setup.sh.
+//
+// This file's contents feed the CC bridge's cache-invalidation token (see ./version.js and
+// ../cache.js's `withCache`): bumping CARDCONJURER_PIN changes that hash, which changes every
+// downstream cache key, so a CC upgrade automatically invalidates every previously-cached
+// render — no manual cache-clearing step needed alongside the `pnpm renderer:setup` /
+// `pnpm generate-goldens` workflow above.
 
 export const CARDCONJURER_PIN = null;
