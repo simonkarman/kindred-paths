@@ -13,7 +13,7 @@
 
 import { createCardconjurerNodeRenderer } from './cardconjurer/node.js';
 
-export { withCache, computeCacheKey } from './cache.js';
+export { withCache, computeCacheKey, renderCachePaths } from './cache.js';
 
 /**
  * Map of renderer name → async factory returning a Renderer.

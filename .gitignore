@@ -4,3 +4,6 @@ node_modules
 
 # Build outputs from v2 workspace packages (packages/*/dist/)
 packages/*/dist/
+
+# Render cache (KP_CACHE_DIR default) — content-hashed PNGs + thumbnails, not source.
+.cache/

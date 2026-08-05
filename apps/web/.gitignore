@@ -1,0 +1,7 @@
+# Next.js
+.next/
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# dependencies
+node_modules

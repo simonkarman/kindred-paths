@@ -72,6 +72,42 @@ export function computeCacheKey({ rendererName, rendererVersion, input, options 
  *   thumbnail dimensions + WebP quality. Defaults to 488×684 @ q80 (matches v1's overview scale).
  * @returns {import('./interface.js').Renderer}
  */
+/**
+ * Computes the on-disk paths for a given render request's cache entry, without touching the
+ * filesystem. Exported so consumers that need to serve a cached variant directly (e.g.
+ * apps/web's render API serving `.thumb.webp` for the overview grid, Phase 1c) can check
+ * existence / read the file themselves, using the exact same key derivation `withCache` uses
+ * internally — avoiding a second, potentially-drifting definition of "where does this render
+ * live on disk".
+ *
+ * @param {{ cacheDir: string, rendererName: string, rendererVersion: string, input: any, options?: object }} args
+ * @returns {{ key: string, pngPath: string, thumbPath: string }}
+ */
+export function renderCachePaths({ cacheDir, rendererName, rendererVersion, input, options = {} }) {
+  const rendersDir = join(cacheDir, 'renders');
+  const key = computeCacheKey({ rendererName, rendererVersion, input, options });
+  return {
+    key,
+    pngPath: join(rendersDir, `${key}.png`),
+    thumbPath: join(rendersDir, `${key}.thumb.webp`),
+  };
+}
+
+/**
+ * Wraps a Renderer with a content-hash on-disk cache. Returns a new Renderer with the same
+ * `name`; `render()` looks up `<cacheDir>/renders/<hash>.png` before delegating to `inner`, and
+ * persists the PNG + a downscaled WebP thumbnail after a miss.
+ *
+ * @param {import('./interface.js').Renderer} inner
+ * @param {Object} opts
+ * @param {string} opts.cacheDir                 root cache dir (renders live under `<cacheDir>/renders/`)
+ * @param {string} [opts.version]                overrides `inner.version` as the invalidation token.
+ *   Required if `inner.version` is not set — throws otherwise, since an unversioned cache can
+ *   never distinguish "renderer changed" from "renderer unchanged", which is the whole point.
+ * @param {{ width?: number, height?: number, quality?: number }} [opts.thumbnail]
+ *   thumbnail dimensions + WebP quality. Defaults to 488×684 @ q80 (matches v1's overview scale).
+ * @returns {import('./interface.js').Renderer}
+ */
 export function withCache(inner, { cacheDir, version, thumbnail = DEFAULT_THUMBNAIL } = {}) {
   if (!cacheDir) throw new Error('withCache requires a cacheDir');
   const rendererVersion = version ?? inner.version;
@@ -85,9 +121,9 @@ export function withCache(inner, { cacheDir, version, thumbnail = DEFAULT_THUMBN
   const rendersDir = join(cacheDir, 'renders');
 
   async function render(input, options = {}) {
-    const key = computeCacheKey({ rendererName: inner.name, rendererVersion, input, options });
-    const pngPath = join(rendersDir, `${key}.png`);
-    const thumbPath = join(rendersDir, `${key}.thumb.webp`);
+    const { pngPath, thumbPath } = renderCachePaths({
+      cacheDir, rendererName: inner.name, rendererVersion, input, options,
+    });
 
     if (!options.skipCache && existsSync(pngPath)) {
       const t0 = performance.now();

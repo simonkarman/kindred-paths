@@ -58,11 +58,22 @@ const ART = join(COLLECTION, 'art');
 const SYMBOLS = join(COLLECTION, 'symbols');
 const CanvasRenderingContext2D = createCanvas(1, 1).getContext('2d').constructor;
 
+// ---- process-global SVG raster cache -------------------------------------------------------
+//
+// Keyed by absolute on-disk path (see rasterizeSvg below). CardConjurer's inline mana/tap/
+// colorless symbols and any custom set symbols are the same bytes on every render — once one
+// process-lifetime sharp/librsvg rasterization pass has happened for a given path, every
+// subsequent sandbox (i.e. every subsequent render, since each render boots a fresh sandbox)
+// reuses the decoded PNG bytes instead of re-rasterizing. This is the ONLY thing besides fonts
+// (see below) that persists across renders in this file — safe because it's purely a content-
+// addressed cache of static asset bytes, not card-specific state.
+const svgRasterCache = new Map();
+
 // ---- process-global font registration -----------------------------------------------------
 //
 // @napi-rs/canvas's GlobalFonts registry is process-global. Registering the same font twice
 // is a no-op; registering thousands of times is wasteful. Guard behind a boolean so multiple
-// fresh sandboxes share one registration pass. This is the ONLY per-process state we keep.
+// fresh sandboxes share one registration pass. This is the ONLY other per-process state we keep.
 
 let fontsRegistered = false;
 function registerFonts() {
@@ -92,9 +103,9 @@ function registerFonts() {
 //
 // Constructs a fresh vm sandbox, DOM shim, and image-decoding infrastructure, then runs
 // CC's core scripts + default M15 frame pack bootstrap. Returns an object exposing the CC
-// context ({sandbox, card, document, loadFrameScript}) plus the drawFrames-storm-fix
-// primitives (getPendingDecodes, resetDecodes, setTrackDecodes) that buildAndComposite
-// wraps around the user's build callback.
+// context ({sandbox, card, document, loadFrameScript}) plus `getPendingDecodes`, the
+// drawFrames-storm-fix primitive that buildAndComposite awaits once, covering every image
+// decode kicked off since this sandbox was created (boot AND build phase alike).
 //
 // Called by buildAndComposite once per render. The sandbox and everything hanging off it
 // is dropped when buildAndComposite returns, allowing GC to reclaim it.
@@ -160,15 +171,41 @@ async function bootFreshSandbox() {
     const head = buf.subarray(0, 256).toString('utf8').trimStart().toLowerCase();
     return head.startsWith('<?xml') || head.startsWith('<svg');
   }
-  async function rasterizeSvg(buf) {
+  // rasterizeSvg is memoized per absolute path in a PROCESS-GLOBAL cache (svgRasterCache,
+  // defined at module scope below, outside bootFreshSandbox) — CardConjurer's inline mana/
+  // tap/colorless symbols (~150 static SVGs under collection/symbols and CC's own /img/
+  // manaSymbols/) are identical bytes on every single render, so re-rasterizing them via
+  // sharp/librsvg on every fresh sandbox boot is pure waste once the process has already
+  // done it once. Only cacheable when we have a stable on-disk path (`cacheKey`); data: URI
+  // buffers (no stable identity) always rasterize fresh.
+  async function rasterizeSvg(buf, cacheKey) {
+    if (cacheKey) {
+      const cached = svgRasterCache.get(cacheKey);
+      if (cached) return cached;
+      const promise = sharp(buf).png().toBuffer();
+      svgRasterCache.set(cacheKey, promise);
+      return promise;
+    }
     return sharp(buf).png().toBuffer();
   }
 
-  // Tracks in-flight image decode promises during buildAndComposite's build phase — the
-  // suppress-composite-storm fix from Phase 0.8. See spike/renderer/cc-node-results.md
-  // and docs/v2-architecture.md §4 "Two more bugs found and fixed".
+  // Tracks in-flight image decode promises for the ENTIRE lifetime of this sandbox — from
+  // the moment creator-23.js first runs through the end of the driver's build phase.
+  // CardConjurer's `loadManaSymbols()` (creator-23.js:423-435) fires ~150 `new Image()`
+  // decodes for every inline mana/tap/colorless symbol synchronously while creator-23.js is
+  // loaded (line ~367 below) — well before this file used to flip a `trackDecodes` flag on
+  // (previously only set true inside buildAndComposite's build phase, i.e. after boot had
+  // already finished). Those boot-time decodes were therefore never tracked or awaited at
+  // all; they were "covered" only by a fixed 150ms sleep later in this function, which is a
+  // probabilistic buffer, not a real completion signal — exactly why symbols (mana cost,
+  // {t}, {c}, etc.) intermittently failed to draw under real concurrency (many renders at
+  // once, e.g. the web overview grid): `drawImage()` silently no-ops on an undecoded image
+  // (Canvas spec), so a symbol that hadn't finished its sharp/librsvg rasterization by the
+  // time `writeText()` ran simply never appeared, non-deterministically. Tracking
+  // unconditionally from the very first line of this function and awaiting the full list
+  // once (see buildAndComposite) replaces that race with a real guarantee, and removes the
+  // need for the old 150ms sleep entirely.
   let pendingDecodes = [];
-  let trackDecodes = false;
 
   class DomImage extends NapiImage {
     constructor() { super(); this.onload = null; this.onerror = null; this._pendingDecode = null; }
@@ -201,12 +238,12 @@ async function bootFreshSandbox() {
       // both trackers must observe the real completion of `super.src = finalBuf`, not just
       // "some decode() call resolved".
       const p = (async () => {
-        const finalBuf = looksLikeSvg(rawBuf) ? await rasterizeSvg(rawBuf) : rawBuf;
+        const finalBuf = looksLikeSvg(rawBuf) ? await rasterizeSvg(rawBuf, r.path) : rawBuf;
         super.src = finalBuf; // native onload/onerror fire on their own once this decodes
         await super.decode(); // tracked for pendingDecodes/_pendingDecode only; do NOT call onload from this
       })().catch((e) => { if (this.onerror) this.onerror(e); });
       this._pendingDecode = p;
-      if (trackDecodes) pendingDecodes.push(p);
+      pendingDecodes.push(p);
     }
     // Overridden so that ANY caller of `.decode()` — not just buildAndComposite's internal
     // `pendingDecodes` bookkeeping — actually waits for our async SVG-rasterization pipeline
@@ -240,13 +277,25 @@ async function bootFreshSandbox() {
     //   - `firstChild` / `lastChild` return a fresh stub so `.click()` chains don't throw
     //     when CC does things like `document.querySelector('#text-options').firstChild.click()`
     //     (creator-23.js:1204). The stub's click() is a no-op unless onclick is set.
-    //   - `children[0]` etc. via Proxy fallback returns undefined; CC uses this only in a
-    //     handful of places where the resulting throw is caught (or the code path guards).
+    //   - `children[N]` (any index) also returns a fresh stub rather than `undefined` — CC's
+    //     own bundled `loadFramePack()` (creator-23.js:569) unconditionally does
+    //     `document.querySelector('#frame-picker').children[0].click()` as pure UI-picker
+    //     bookkeeping we don't care about (our driver selects frames directly via
+    //     addFrameImage/loadFramePack in frame.js, never through this UI). Left as plain
+    //     `children: []`, `.children[0]` is `undefined` and `.click()` on it throws
+    //     synchronously inside the vm-executed pack script; ccScriptRunner's catch turns that
+    //     into `script.onerror()` → CC's own `loadScript()` promise `reject()` (no argument) —
+    //     and since `loadFramePack()`/`loadScript()` are called fire-and-forget at CC's
+    //     top level (never awaited by anything that could `.catch()` them), that surfaces as
+    //     a genuine `unhandledRejection` (reason `undefined`) on every single render. Same
+    //     fix philosophy as `closest()` below: widen the stub so the incidental `.click()`
+    //     never throws in the first place.
     //   - `prepend` / `append` are no-ops; `appendChild` returns the child unchanged so
     //     `elt.appendChild(x); x.foo = ...` patterns work.
     const el = {
       style: {}, dataset: {}, value: '', checked: false, innerHTML: '', textContent: '',
-      className: '', id: '', children: [], childNodes: [], files: [],
+      className: '', id: '', childNodes: [], files: [],
+      get children() { return makeChildrenStub(); },
       get firstChild() { return makeStub(); },
       get lastChild() { return makeStub(); },
       classList: { add: noop, remove: noop, toggle: noop, contains: () => false },
@@ -283,6 +332,19 @@ async function bootFreshSandbox() {
     return new Proxy(el, {
       get(t, k) { if (k in t) return t[k]; if (typeof k === 'string' && /^on/.test(k)) return null; return undefined; },
       set(t, k, v) { t[k] = v; return true; },
+    });
+  }
+  // Array-like stub for `.children`: reports `.length === 0` (so any real "are there children"
+  // check still sees an empty element) but returns a fresh `makeStub()` for ANY numeric index
+  // — so `el.children[0].click()` (or `[5]`, `[99]`, ...) never throws, matching the
+  // `firstChild`/`lastChild`/`closest()` philosophy above.
+  function makeChildrenStub() {
+    const arr = [];
+    return new Proxy(arr, {
+      get(t, k) {
+        if (typeof k === 'string' && /^\d+$/.test(k)) return makeStub();
+        return t[k];
+      },
     });
   }
   function makeCanvas(w = 10, h = 10) {
@@ -364,6 +426,21 @@ async function bootFreshSandbox() {
   };
 
   const load = (rel) => vm.runInContext(readFileSync(join(CC, 'js', rel), 'utf8'), sandbox, { filename: rel });
+
+  // Pre-seed #selectFramePack's value BEFORE creator-23.js ever runs. creator-23.js's own
+  // top-level bootstrap (its tail `loadScript('/js/frames/groupStandard-3.js')` synchronously
+  // triggers that file's `loadFramePacks([...])`, which reads
+  // `#selectFramePack.value` and requests `/js/frames/pack<value>.js`) executes long before
+  // this function's own explicit `#selectFramePack.value = 'M15Regular-1'` line below — our
+  // stub's default `value` is `''`, so without this, CC ends up requesting the nonexistent
+  // `/js/frames/pack.js`. That throws inside the vm-executed script; ccScriptRunner's catch
+  // turns it into `script.onerror()` → CC's own `loadScript()` `reject()` (no argument) — and
+  // since `loadFramePacks()`/`loadScript()` are invoked fire-and-forget at CC's top level
+  // (nothing anywhere awaits or `.catch()`es them), that surfaces as a genuine
+  // `unhandledRejection` on every single render. Harmless functionally either way (our driver
+  // never depends on this UI-picker bookkeeping — frame images are always loaded explicitly
+  // via frame.js's addFrameImage/loadFramePack), but avoidable noise.
+  documentShim.querySelector('#selectFramePack').value = 'M15Regular-1';
   load('main-1.js'); load('autoFrame.js'); load('creator-23.js');
 
   // Bootstrap: load the default M15 frame pack so card.text.{mana,title,type,rules,pt,...}
@@ -374,9 +451,17 @@ async function bootFreshSandbox() {
       sandbox.document.querySelector('#selectFramePack').value = 'M15Regular-1';
       ccScriptRunner({ _src: '/js/frames/packM15Regular-1.js', onload: null, onerror: null });
       const btn = sandbox.document.querySelector('#loadFrameVersion');
+      // `await btn.onclick()` here is now the ONLY wait this bootstrap needs: any image
+      // decodes the handler kicks off synchronously (autoFitArt/resetSetSymbol/
+      // resetWatermark assigning blank-placeholder `.src`s) are tracked into pendingDecodes
+      // (tracking is unconditionally on from the top of this function) and get awaited,
+      // together with every other boot + build decode, by buildAndComposite below. The
+      // previous fixed `await new Promise(r => setTimeout(r, 150))` here was never actually
+      // about this handler — it was an accidental, unreliable buffer for the completely
+      // unrelated (and completely untracked) mana-symbol decodes from `loadManaSymbols()`
+      // above; removed now that those are tracked+awaited for real.
       if (typeof btn.onclick === 'function') await btn.onclick();
     } catch { /* frame init failed; render will fail more visibly below */ }
-    await new Promise((r) => setTimeout(r, 150));
   }
 
   function loadFrameScript(src) {
@@ -388,10 +473,10 @@ async function bootFreshSandbox() {
     card: sandbox.card,
     document: sandbox.document,
     loadFrameScript,
-    // Storm-fix primitives — used by buildAndComposite to bracket the build phase:
+    // Every image decode since this sandbox was created (boot-time mana/tap/colorless
+    // symbols + everything driveRender's build phase touches) — buildAndComposite awaits
+    // this whole list exactly once, right before its single guaranteed-complete composite.
     getPendingDecodes: () => pendingDecodes,
-    resetDecodes: () => { pendingDecodes = []; },
-    setTrackDecodes: (v) => { trackDecodes = v; },
   };
 }
 
@@ -420,6 +505,17 @@ export async function createNodeHandle() {
     const ctx = await bootFreshSandbox();
     const { sandbox } = ctx;
 
+    // Await boot-time symbol decodes (mana/tap/colorless — fired synchronously by creator-
+    // 23.js's loadManaSymbols() calls inside bootFreshSandbox, above) BEFORE calling into
+    // `build`. This is load-bearing, not just belt-and-braces: `build` is `driveRender`,
+    // whose LAST line is `await sandbox.drawText()` — the ONE place these symbol images
+    // ever get drawn (`lineContext.drawImage(symbol.image, ...)`, creator-23.js:2096).
+    // `drawImage` silently no-ops on an undecoded image (Canvas spec) and drawText() is
+    // never called again afterwards, so awaiting these decodes any LATER than this point
+    // (e.g. only after `build(ctx)` resolves, as this code used to) is already too late —
+    // by then drawText() already ran and permanently skipped whatever wasn't decoded yet.
+    await Promise.all(ctx.getPendingDecodes());
+
     // Suppress CC's per-image-load composite storm (Phase 0.8 fix): CC wires
     // image.onload = drawFrames on every frame/mask image (~26-39 loads per render, each
     // triggering a full composite). We suppress drawFrames + drawCard during build, track
@@ -427,13 +523,16 @@ export async function createNodeHandle() {
     const realDrawFrames = sandbox.drawFrames;
     const realDrawCard = sandbox.drawCard;
     sandbox.drawFrames = () => {}; sandbox.drawCard = () => {};
-    ctx.resetDecodes(); ctx.setTrackDecodes(true);
 
     try {
       await build(ctx);
+      // Await everything ELSE this render kicked off since the boot-decode await above —
+      // frame images, art, set symbol, planeswalker assets, masks — before the single
+      // composite. (Re-awaiting the already-resolved boot symbols here too is harmless;
+      // `getPendingDecodes()` returns the same growing array, and an already-settled
+      // promise resolves instantly.)
       await Promise.all(ctx.getPendingDecodes());
     } finally {
-      ctx.setTrackDecodes(false);
       sandbox.drawFrames = realDrawFrames;
       sandbox.drawCard = realDrawCard;
     }
