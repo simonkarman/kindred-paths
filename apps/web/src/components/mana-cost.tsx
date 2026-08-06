@@ -6,8 +6,9 @@ export const pipColors = new Map<string, string>([
   ['g', 'rgb(156, 212, 176)'],
 ]);
 const colorlessPip = 'rgb(238, 236, 235)';
+const colorLetters = new Set(['w', 'u', 'b', 'r', 'g']);
 
-function colorFor(char: string): string {
+export function colorFor(char: string): string {
   return pipColors.get(char.toLowerCase()) ?? colorlessPip;
 }
 
@@ -21,12 +22,36 @@ function parseManaSymbols(cost: string): string[] {
   return symbols;
 }
 
-function ManaSymbol({ symbol }: { symbol: string }) {
+/**
+ * Splits a hybrid-looking symbol (e.g. "b/r", "2b", "wb") into its two parts.
+ * Returns null if the symbol isn't a recognized hybrid shape.
+ */
+function splitHybrid(symbol: string): [string, string] | null {
   if (symbol.includes('/')) {
-    const [colorA, colorB] = symbol.split('/');
+    const [a, b] = symbol.split('/');
+    return [a, b];
+  }
+  if (symbol.length === 2) {
+    const [a, b] = symbol;
+    // shorthand generic/color hybrid, e.g. "2b" -> generic 2 or black
+    if (/\d/.test(a) && colorLetters.has(b)) return [a, b];
+    // shorthand color/color hybrid, e.g. "wb" -> white or black
+    if (colorLetters.has(a) && colorLetters.has(b)) return [a, b];
+  }
+  return null;
+}
+
+export function ManaSymbol({ symbol, size = 'md' }: { symbol: string; size?: 'sm' | 'md' }) {
+  const dimensions =
+    size === 'sm'
+      ? 'h-[1.45em] w-[1.45em] mx-px align-[0.04em] text-[0.78em]'
+      : 'h-5 w-5 text-xs';
+  const hybrid = splitHybrid(symbol);
+  if (hybrid) {
+    const [colorA, colorB] = hybrid;
     return (
       <span
-        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-navy-300 text-center text-[0.55rem] font-bold uppercase text-navy-900"
+        className={`inline-flex items-center justify-center rounded-full border border-navy-300 text-center font-bold uppercase leading-none text-navy-900 ${dimensions} ${size === 'sm' ? 'text-[0.62em]' : ''}`}
         style={{ background: `linear-gradient(135deg, ${colorFor(colorA)} 50%, ${colorFor(colorB)} 50%)` }}
       >
         {colorA}/{colorB}
@@ -35,7 +60,7 @@ function ManaSymbol({ symbol }: { symbol: string }) {
   }
   return (
     <span
-      className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-navy-300 text-center text-xs font-bold uppercase text-navy-900"
+      className={`inline-flex items-center justify-center rounded-full border border-navy-300 text-center font-bold uppercase leading-none text-navy-900 ${dimensions}`}
       style={{ backgroundColor: colorFor(symbol) }}
     >
       {symbol === 'c' ? '◇' : symbol}

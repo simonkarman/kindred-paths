@@ -1,4 +1,15 @@
+import type { Metadata } from 'next';
 import { CardGrid } from './card-grid';
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}): Promise<Metadata> {
+  const { q } = await searchParams;
+  if (!q || !q.trim()) return {};
+  return { title: q };
+}
 
 export default async function SearchPage({
   searchParams,

@@ -3,7 +3,10 @@ import './globals.css';
 import { BackgroundShapes } from '@/components/background-shapes';
 
 export const metadata: Metadata = {
-  title: 'Kindred Paths',
+  title: {
+    default: 'Kindred Paths',
+    template: '%s - Kindred Paths',
+  },
   description: 'Kindred Paths v2 — card overview',
 };
 

@@ -1,9 +1,25 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Card, capitalize } from '@kindred-paths/shared';
 import { getCardByCid } from '@/core/collection/cards';
 import { ManaCost } from '@/components/mana-cost';
 import { CardImage } from '@/components/card-image';
+import { RulesText } from '@/components/rules-text';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ cid: string }>;
+}): Promise<Metadata> {
+  const { cid } = await params;
+  const serializedCard = await getCardByCid(cid);
+  if (!serializedCard) return {};
+
+  const card = new Card(serializedCard);
+  const title = card.faces.map((face) => face.name).join(' // ');
+  return { title };
+}
 
 export default async function CardDetailPage({
   params,
@@ -36,7 +52,7 @@ export default async function CardDetailPage({
           <p className="-mt-3 text-sm text-muted">{face.renderTypeLine()}</p>
 
           {face.rules.length > 0 && (
-            <div className="space-y-1.5">
+            <div className="space-y-3">
               {face.rules.map((rule, index) => (
                 <p
                   key={index}
@@ -46,7 +62,7 @@ export default async function CardDetailPage({
                       : 'text-sm leading-relaxed italic text-muted'
                   }
                 >
-                  {rule.variant === 'keyword' ? capitalize(rule.content) : rule.content}
+                  <RulesText content={rule.variant === 'keyword' ? capitalize(rule.content) : rule.content} />
                 </p>
               ))}
             </div>
