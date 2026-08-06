@@ -2,29 +2,47 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { filterCardsBasedOnSearch, type SerializedCard } from '@kindred-paths/shared';
+import { filterCardsBasedOnSearch, Layout, type SerializedCard } from '@kindred-paths/shared';
+import { FlipButton } from '@/components/flip-button';
 
 const BATCH_SIZE = 48;
 
 function CardTile({ card }: { card: SerializedCard }) {
   const [loaded, setLoaded] = useState(false);
-  const face = card.faces[0];
+  const [faceIndex, setFaceIndex] = useState(0);
+  const isDual = useMemo(() => new Layout(card.layout).isDualRenderLayout(), [card.layout]);
+  const face = card.faces[faceIndex] ?? card.faces[0];
+  const href = faceIndex === 0 ? `/card/${card.cid}` : `/card/${card.cid}?face=${faceIndex}`;
 
   return (
     <Link
-      href={`/card/${card.cid}`}
-      className="relative block aspect-[488/684] w-full overflow-hidden rounded-lg border border-line bg-navy-50 shadow-sm transition-shadow hover:shadow-md"
+      href={href}
+      className="group relative block aspect-[488/684] w-full"
     >
-      {!loaded && <div className="absolute inset-0 animate-pulse bg-navy-100" />}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={`/api/render/${card.cid}/0?variant=thumb`}
-        alt={face.name}
-        loading="lazy"
-        decoding="async"
-        onLoad={() => setLoaded(true)}
-        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-      />
+      <div className="absolute inset-0 overflow-hidden rounded-lg border border-line bg-navy-50 shadow-sm transition-shadow group-hover:shadow-md">
+        {!loaded && <div className="absolute inset-0 animate-pulse bg-navy-100" />}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          key={faceIndex}
+          src={`/api/render/${card.cid}/${faceIndex}?variant=thumb`}
+          alt={face.name}
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setLoaded(true)}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        />
+      </div>
+      {isDual && (
+        <FlipButton
+          className="absolute -right-1.5 top-11.5 opacity-0 transition-opacity group-hover:opacity-100"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setLoaded(false);
+            setFaceIndex((i) => (i + 1) % card.faces.length);
+          }}
+        />
+      )}
     </Link>
   );
 }
@@ -99,7 +117,7 @@ export function CardGrid({ initialQuery }: { initialQuery: string }) {
         <p className="mb-4 text-sm text-muted">Loading collection…</p>
       )}
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {visibleCards.map((card) => (
           <CardTile key={card.cid} card={card} />
         ))}
