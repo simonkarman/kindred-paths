@@ -39,7 +39,7 @@ export default async function CardDetailPage({
           <p className="-mt-3 text-sm text-muted">{face.renderTypeLine()}</p>
 
           {face.rules.length > 0 && (
-            <div className="space-y-1.5 rounded-lg bg-navy-50/40 px-3 py-2.5">
+            <div className="space-y-1.5 rounded-lg bg-navy-50/25 px-4 py-3 border border-navy-50/70">
               {face.rules.map((rule, index) => (
                 <p
                   key={index}
