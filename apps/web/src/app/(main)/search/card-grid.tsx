@@ -98,11 +98,6 @@ export function CardGrid({ initialQuery }: { initialQuery: string }) {
       {!allCards && !loadError && (
         <p className="mb-4 text-sm text-muted">Loading collection…</p>
       )}
-      {allCards && (
-        <p className="mb-4 text-sm text-muted">
-          {filtered.length} of {allCards.length} card{allCards.length === 1 ? '' : 's'}
-        </p>
-      )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {visibleCards.map((card) => (
@@ -111,6 +106,12 @@ export function CardGrid({ initialQuery }: { initialQuery: string }) {
       </div>
 
       {hasMore && <div ref={sentinelRef} className="h-1" />}
+
+      {allCards && (
+        <p className="w-full text-right text-sm text-muted mt-4">
+          {filtered.length} of {allCards.length} card{allCards.length === 1 ? '' : 's'}
+        </p>
+      )}
     </div>
   );
 }

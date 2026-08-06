@@ -7,11 +7,15 @@
 //     ones. On a cache hit we skip the render pipeline entirely and stream the thumb file
 //     straight off disk.
 //
-// Concurrency: a small semaphore (4) bounds how many renders run at once. This is NOT
-// needed for correctness anymore (the CardConjurer-in-Node symbol-decode race is fixed —
-// see packages/renderer/src/cardconjurer/hosts/node-handle.js), only as a latency/memory
+// Concurrency: a small semaphore bounds how many renders run at once. This is NOT needed
+// for correctness anymore (the CardConjurer-in-Node symbol-decode race is fixed — see
+// packages/renderer/src/cardconjurer/hosts/node-handle.js), only as a latency/memory
 // safeguard: each cache-miss render boots a fresh CardConjurer sandbox (~1.3s, tens of MB),
-// and a cold overview grid can trigger a burst of many simultaneous misses.
+// and a cold overview grid can trigger a burst of many simultaneous misses. The limit is
+// configurable via KP_RENDER_CONCURRENCY (default 8) so it can be tuned to the deployment
+// machine's core count — see next.config.ts, which sizes UV_THREADPOOLSIZE to match (the
+// heavy SVG/PNG encode work inside a render is largely libuv-threadpool-bound, so raising
+// this without also raising UV_THREADPOOLSIZE would not add real parallelism).
 
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
@@ -21,7 +25,8 @@ import { getCacheDir } from '../config';
 import { getRenderer } from './renderer';
 import { createSemaphore } from './semaphore';
 
-const renderSemaphore = createSemaphore(4);
+const RENDER_CONCURRENCY = Number(process.env.KP_RENDER_CONCURRENCY) || 8;
+const renderSemaphore = createSemaphore(RENDER_CONCURRENCY);
 
 export type RenderVariant = 'png' | 'thumb';
 

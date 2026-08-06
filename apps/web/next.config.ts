@@ -16,6 +16,13 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 process.env.KP_COLLECTION_PATH ??= join(REPO_ROOT, 'collection');
 process.env.KP_CACHE_DIR ??= join(REPO_ROOT, '.cache');
 process.env.KP_CARDCONJURER_PATH ??= join(REPO_ROOT, 'server/.cardconjurer');
+// The render pipeline (core/render/render-card-face.ts) offloads its heavy SVG rasterization
+// (sharp) and PNG encode (@napi-rs/canvas) work onto libuv's threadpool, whose default size
+// is only 4 OS threads — raising the render concurrency semaphore (KP_RENDER_CONCURRENCY)
+// without also raising this would just queue more work behind the same 4 threads, not add
+// real parallelism. Must be set before any native module (sharp/@napi-rs/canvas) is first
+// imported, same as the KP_* paths above.
+process.env.UV_THREADPOOLSIZE ??= '8';
 
 const nextConfig: NextConfig = {
   // The renderer pipeline (CardConjurer-in-Node) pulls in native node addons
