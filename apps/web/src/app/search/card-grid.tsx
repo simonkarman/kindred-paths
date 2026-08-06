@@ -2,40 +2,31 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { filterCardsBasedOnSearch, type SerializedCard } from '@kindred-paths/shared';
 
 const BATCH_SIZE = 48;
-
-function typeLine(face: SerializedCard['faces'][number]): string {
-  const parts = [
-    face.supertype,
-    ...face.types,
-    ...(face.subtypes && face.subtypes.length > 0 ? ['—', ...face.subtypes] : []),
-  ].filter(Boolean);
-  return parts.join(' ');
-}
 
 function CardTile({ card }: { card: SerializedCard }) {
   const [loaded, setLoaded] = useState(false);
   const face = card.faces[0];
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="relative aspect-[488/684] w-full overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900">
-        {!loaded && <div className="absolute inset-0 animate-pulse bg-neutral-800" />}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`/api/render/${card.cid}/0?variant=thumb`}
-          alt={face.name}
-          loading="lazy"
-          decoding="async"
-          onLoad={() => setLoaded(true)}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-        />
-      </div>
-      <span className="truncate text-sm font-medium">{face.name}</span>
-      <span className="truncate text-xs text-neutral-400">{typeLine(face)}</span>
-    </div>
+    <Link
+      href={`/card/${card.cid}`}
+      className="relative block aspect-[488/684] w-full overflow-hidden rounded-lg border border-line bg-navy-50 shadow-sm transition-shadow hover:shadow-md"
+    >
+      {!loaded && <div className="absolute inset-0 animate-pulse bg-navy-100" />}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`/api/render/${card.cid}/0?variant=thumb`}
+        alt={face.name}
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      />
+    </Link>
   );
 }
 
@@ -118,17 +109,17 @@ export function CardGrid({ initialQuery }: { initialQuery: string }) {
         value={query}
         onChange={(e) => updateQuery(e.target.value)}
         placeholder='Search (e.g. "tag:golden", "color:red", "type:creature")'
-        className="mb-6 w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-400 focus:outline-none"
+        className="mb-6 w-full rounded-full border border-navy-200 bg-surface px-5 py-3 text-sm text-ink shadow-sm placeholder:text-muted focus:border-navy-400 focus:shadow-md focus:outline-none"
       />
 
       {loadError && (
-        <p className="mb-4 text-sm text-red-400">Failed to load cards: {loadError}</p>
+        <p className="mb-4 text-sm text-red-600">Failed to load cards: {loadError}</p>
       )}
       {!allCards && !loadError && (
-        <p className="mb-4 text-sm text-neutral-400">Loading collection…</p>
+        <p className="mb-4 text-sm text-muted">Loading collection…</p>
       )}
       {allCards && (
-        <p className="mb-4 text-sm text-neutral-400">
+        <p className="mb-4 text-sm text-muted">
           {filtered.length} of {allCards.length} card{allCards.length === 1 ? '' : 's'}
         </p>
       )}
