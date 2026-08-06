@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { filterCardsBasedOnSearch, type SerializedCard } from '@kindred-paths/shared';
 
@@ -31,15 +30,17 @@ function CardTile({ card }: { card: SerializedCard }) {
 }
 
 export function CardGrid({ initialQuery }: { initialQuery: string }) {
-  const pathname = usePathname();
-
   const [allCards, setAllCards] = useState<SerializedCard[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // The header's search bar drives navigation (?q=...); when it changes, sync local state.
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
 
   // Load the full (visible) collection once, client-side — the search box then filters
   // in-memory with zero network round-trips per keystroke.
@@ -89,29 +90,8 @@ export function CardGrid({ initialQuery }: { initialQuery: string }) {
     return () => observer.disconnect();
   }, [hasMore]);
 
-  // The search box is pure client state — never routed through the server (no
-  // router.replace / RSC refetch), so typing never fights a re-render for caret position.
-  // The URL still updates (via the native History API) for shareable/bookmarkable links,
-  // debounced so fast typing doesn't spam history entries.
-  const updateQuery = (value: string) => {
-    setQuery(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      const search = value ? `?q=${encodeURIComponent(value)}` : '';
-      window.history.replaceState(null, '', `${pathname}${search}`);
-    }, 250);
-  };
-
   return (
     <div>
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => updateQuery(e.target.value)}
-        placeholder='Search (e.g. "tag:golden", "color:red", "type:creature")'
-        className="mb-6 w-full rounded-full border border-navy-200 bg-surface px-5 py-3 text-sm text-ink shadow-sm placeholder:text-muted focus:border-navy-400 focus:shadow-md focus:outline-none"
-      />
-
       {loadError && (
         <p className="mb-4 text-sm text-red-600">Failed to load cards: {loadError}</p>
       )}

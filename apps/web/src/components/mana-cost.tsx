@@ -1,4 +1,4 @@
-const pipColors = new Map<string, string>([
+export const pipColors = new Map<string, string>([
   ['w', 'rgb(236, 230, 179)'],
   ['u', 'rgb(171, 225, 250)'],
   ['b', 'rgb(204, 195, 192)'],

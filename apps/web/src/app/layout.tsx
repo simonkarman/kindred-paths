@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { BackgroundShapes } from '@/components/background-shapes';
 
 export const metadata: Metadata = {
   title: 'Kindred Paths',
@@ -9,7 +10,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="antialiased bg-canvas text-ink">{children}</body>
+      <body className="antialiased bg-canvas text-ink">
+        <BackgroundShapes />
+        {children}
+      </body>
     </html>
   );
 }

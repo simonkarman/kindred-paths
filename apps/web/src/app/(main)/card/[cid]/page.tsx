@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { Card, capitalize } from '@kindred-paths/shared';
 import { getCardByCid } from '@/core/collection/cards';
 import { ManaCost } from '@/components/mana-cost';
@@ -20,10 +19,6 @@ export default async function CardDetailPage({
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
-      <Link href="/" className="mb-6 inline-block text-xl font-semibold tracking-tight text-navy-700">
-        Kindred Paths
-      </Link>
-
       <div className="flex flex-col items-center gap-8 md:flex-row md:items-start">
         {/* Left: card image */}
         <div className="w-full max-w-md shrink-0 md:w-95 lg:w-105">
@@ -31,7 +26,7 @@ export default async function CardDetailPage({
         </div>
 
         {/* Right: rules panel */}
-        <div className="w-full space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-sm">
+        <div className="w-full space-y-4 rounded-lg border border-line bg-surface p-6 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-2xl font-semibold text-ink">{face.name}</h1>
             {manaCost && <ManaCost cost={manaCost} />}

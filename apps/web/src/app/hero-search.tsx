@@ -1,11 +1,14 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useSearchShortcut } from '@/components/use-search-shortcut';
 
 export function HeroSearch() {
   const router = useRouter();
   const [value, setValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  useSearchShortcut(inputRef);
 
   const submit = () => {
     const search = value.trim() ? `?q=${encodeURIComponent(value.trim())}` : '';
@@ -25,6 +28,7 @@ export function HeroSearch() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
         </svg>
         <input
+          ref={inputRef}
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}

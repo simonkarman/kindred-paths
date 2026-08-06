@@ -27,7 +27,10 @@
 }
 
 body {
-  background: linear-gradient(180deg, var(--color-navy-50) 0%, var(--color-canvas) 45%, var(--color-canvas) 100%);
+  background:
+    radial-gradient(ellipse 900px 500px at 12% 8%, color-mix(in srgb, var(--color-gold-400) 12%, transparent) 0%, transparent 60%),
+    radial-gradient(ellipse 1000px 600px at 88% 100%, color-mix(in srgb, var(--color-navy-400) 18%, transparent) 0%, transparent 65%),
+    linear-gradient(180deg, var(--color-navy-100) 0%, var(--color-canvas) 45%, var(--color-canvas) 100%);
   background-attachment: fixed;
   color: var(--color-ink);
 }

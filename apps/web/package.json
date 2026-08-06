@@ -10,9 +10,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@icons-pack/react-simple-icons": "^13.13.0",
     "@kindred-paths/renderer": "workspace:*",
     "@kindred-paths/shared": "workspace:*",
     "@napi-rs/canvas": "^0.1.60",
+    "lucide-react": "^1.29.0",
     "next": "15.3.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
