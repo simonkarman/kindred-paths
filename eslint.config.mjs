@@ -35,8 +35,10 @@ export const baseIgnores = globalIgnores([
   // via `pnpm --filter @kindred-paths/web lint` (also invoked by `pnpm lint:all`). Ignoring
   // here avoids the root run trying to apply Next-specific rules with no plugin loaded.
   'apps/web/',
-  // The collection is a separate repo cloned in; not our source.
-  'collection/',
+  // The collection is a separate repo cloned in; not our source. Leading slash anchors
+  // this to the repo root — without it, this (like .gitignore's bare 'collection' bug,
+  // fixed alongside this) would also match apps/web/src/core/collection/.
+  '/collection/',
   // CardConjurer clone lives under packages/renderer/external (already covered by
   // '**/external/' above), plus rendered PNG cache and static-export artifacts.
   '.cache/',
