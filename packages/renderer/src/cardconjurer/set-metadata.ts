@@ -7,7 +7,7 @@
 //     `configuration.symbolDir`. Falls back to symbols/ under collection.
 //   - Returns a plain object (no zod schema); we trust the metadata file's shape as v1 does.
 //
-// SVG symbol RASTERIZATION (via sharp/librsvg) is implemented in hosts/node-handle.js
+// SVG symbol RASTERIZATION (via sharp/librsvg) is implemented in hosts/node-handle.ts
 // (see line 139+). This module only tells CC which symbol string to use; decoding happens
 // in the host.
 
@@ -16,34 +16,56 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-// packages/renderer/src/cardconjurer/ → repo root is 4 levels up
+// packages/renderer/dist/cardconjurer/ → repo root is 4 levels up (matches src/ layout too).
 const REPO_ROOT = resolve(HERE, '../../../..');
 
-function symbolsDir() {
+function symbolsDir(): string {
   return process.env.KP_COLLECTION_PATH
     ? join(process.env.KP_COLLECTION_PATH, 'symbols')
     : join(REPO_ROOT, 'collection/symbols');
 }
 
-const UnknownSet = () => ({
+export type SetMetadata = {
+  author: string;
+  shortName: string;
+  symbol?: string;
+  collectorNumberOffset?: number;
+  theme: string;
+};
+
+const UnknownSet = (): SetMetadata => ({
   shortName: 'SET',
   author: 'Simon Karman',
   theme: 'simple',
 });
 
+type SetOnDisk = {
+  author?: string;
+  collectorNumberOffset?: number;
+  theme?: string;
+};
+
+type CardTagsLike = {
+  set?: unknown;
+  author?: unknown;
+  [key: string]: unknown;
+};
+
+type CardMetadataInput = {
+  tags?: CardTagsLike;
+  rarity?: string;
+};
+
 /**
  * Look up the CardConjurer set metadata for a Card (or card-shaped JSON). Returns author,
  * shortName, symbol (CC url fragment), collectorNumberOffset, theme.
- *
- * @param {any} cardOrJson  a Card instance or the JSON that would be passed to new Card()
- * @returns {{ author: string, shortName: string, symbol?: string, collectorNumberOffset?: number, theme: string }}
  */
-export function getSetMetadataForCard(cardOrJson) {
+export function getSetMetadataForCard(cardOrJson: CardMetadataInput): SetMetadata {
   const tags = cardOrJson.tags ?? {};
   const rarity = cardOrJson.rarity ?? 'common';
 
   const shortName = typeof tags.set === 'string' && tags.set.length === 3
-    ? tags.set.toLowerCase()
+    ? (tags.set as string).toLowerCase()
     : undefined;
 
   const unknown = UnknownSet();
@@ -51,10 +73,13 @@ export function getSetMetadataForCard(cardOrJson) {
 
   const dir = symbolsDir();
   const metaPath = join(dir, `${shortName}-metadata.json`);
-  let onDisk;
+  let onDisk: SetOnDisk | undefined;
   if (existsSync(metaPath)) {
-    try { onDisk = JSON.parse(readFileSync(metaPath, 'utf-8')); }
-    catch { /* v1 warns; we silently fall back to unknown metadata */ }
+    try {
+      onDisk = JSON.parse(readFileSync(metaPath, 'utf-8')) as SetOnDisk;
+    } catch {
+      /* v1 warns; we silently fall back to unknown metadata */
+    }
   }
 
   const rarityLetter = rarity[0];
@@ -63,7 +88,7 @@ export function getSetMetadataForCard(cardOrJson) {
 
   let author = onDisk?.author ?? unknown.author;
   const authorTag = tags.author;
-  if (authorTag && typeof authorTag === 'string' && authorTag.trim().length > 0) {
+  if (typeof authorTag === 'string' && authorTag.trim().length > 0) {
     author = authorTag;
   }
 

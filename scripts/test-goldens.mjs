@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 
-import { renderers } from '../packages/renderer/src/index.js';
+import { renderers } from '../packages/renderer/dist/index.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = dirname(HERE);

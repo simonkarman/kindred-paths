@@ -6,14 +6,11 @@
 // non-CC renderer wouldn't use these — so they live here, not in shared.
 
 import { colorToShort } from '@kindred-paths/shared';
+import type { CardColor } from '@kindred-paths/shared';
+import type { Renderable } from './renderable.js';
 
-/**
- * Regular (non-modal) frame colors: 0 → (l/a), 1 → color, 2 → both, 3+ → m.
- * @param {boolean} isLand
- * @param {string[]} colors
- * @returns {[string, string|undefined]}
- */
-export function getFrameColors(isLand, colors) {
+/** Regular (non-modal) frame colors: 0 → (l/a), 1 → color, 2 → both, 3+ → m. */
+export function getFrameColors(isLand: boolean, colors: CardColor[]): [string, string | undefined] {
   const c = colors.map(colorToShort);
   if (c.length === 0) return [isLand ? 'l' : 'a', undefined];
   if (c.length === 1) return [c[0], undefined];
@@ -21,13 +18,8 @@ export function getFrameColors(isLand, colors) {
   return ['m', undefined];
 }
 
-/**
- * Power/toughness frame color: 0 → (c/a), 1 → color, 2+ → m.
- * @param {boolean} isLand
- * @param {string[]} colors
- * @returns {string}
- */
-export function getPowerToughnessColor(isLand, colors) {
+/** Power/toughness frame color: 0 → (c/a), 1 → color, 2+ → m. */
+export function getPowerToughnessColor(isLand: boolean, colors: CardColor[]): string {
   if (colors.length === 0) return isLand ? 'c' : 'a';
   if (colors.length === 1) return colorToShort(colors[0]);
   return 'm';
@@ -36,13 +28,11 @@ export function getPowerToughnessColor(isLand, colors) {
 /**
  * Modal-face frame colors. Same idea as getFrameColors but with an 'l' suffix on lands
  * (e.g. 'wl' = white-land) and 'ml' for multi-land.
- * @param {any} renderable
- * @returns {[string, string|undefined]}
  */
-export function getModalFrameColors(renderable) {
+export function getModalFrameColors(renderable: Renderable): [string, string | undefined] {
   const isLand = renderable.types.includes('land');
   const source = isLand ? renderable.producibleColors : renderable.color;
-  const color = source.map((c) => (c === 'colorless' ? '' : colorToShort(c)));
+  const color = source.map((c) => (c === 'colorless' ? '' : colorToShort(c as CardColor)));
 
   if (color.length === 0) return [isLand ? 'l' : 'a', undefined];
 
@@ -57,13 +47,8 @@ export function getModalFrameColors(renderable) {
   return [isLand ? 'ml' : 'm', undefined];
 }
 
-/**
- * Modal P/T frame color: vehicle → 'v', else 0 → 'a', 1 → color, 2+ → 'm'.
- * @param {string[]} color
- * @param {boolean} isVehicle
- * @returns {string}
- */
-export function getModalPowerToughnessColor(color, isVehicle) {
+/** Modal P/T frame color: vehicle → 'v', else 0 → 'a', 1 → color, 2+ → 'm'. */
+export function getModalPowerToughnessColor(color: CardColor[], isVehicle: boolean): string {
   if (isVehicle) return 'v';
   if (color.length === 0) return 'a';
   if (color.length === 1) return colorToShort(color[0]);
@@ -73,10 +58,8 @@ export function getModalPowerToughnessColor(color, isVehicle) {
 /**
  * Modal legendary crown color: dual-color-land → first color letter; vehicle → 'a';
  * otherwise → the modal color letter unchanged.
- * @param {string} color
- * @returns {string}
  */
-export function getModalLegendaryCrownColor(color) {
+export function getModalLegendaryCrownColor(color: string): string {
   if (color.length > 1 && color.endsWith('l')) return color.charAt(0);
   if (color === 'v') return 'a';
   return color;
@@ -93,10 +76,8 @@ export function getModalLegendaryCrownColor(color) {
  * directly, bypassing CC's UI entirely, so we must apply this transform ourselves or any
  * card text containing a straight quote/apostrophe renders with the wrong glyph (visibly
  * different width — Wave 4 found this via card 47's ability text, which contains `"`).
- * @param {string} input
- * @returns {string}
  */
-export function curlyQuotes(input) {
+export function curlyQuotes(input: string): string {
   return input
     .replace(/ '/g, ' \u2018')
     .replace(/^'/, '\u2018')

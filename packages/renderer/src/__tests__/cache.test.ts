@@ -1,6 +1,6 @@
-// Unit tests for the withCache decorator (../src/cache.js). Uses a mock inner Renderer (no
-// real CC boot) and a tmp dir per test file run. Run via `pnpm -F @kindred-paths/renderer test`
-// (node's built-in test runner — no extra devDependency needed).
+// Unit tests for the withCache decorator (../cache.ts). Uses a mock inner Renderer (no
+// real CC boot) and a tmp dir per test file run. Run via `pnpm -F @kindred-paths/renderer
+// test` (which builds first, then runs node's built-in test runner against dist/).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -9,31 +9,36 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import sharp from 'sharp';
 
-import { withCache, computeCacheKey } from '../src/cache.js';
+import { withCache, computeCacheKey } from '../cache.js';
+import type { Renderer, RenderInput, RenderOptions, RenderResult } from '../interface.js';
 
 /** A tiny valid PNG (4x4, solid color) — sharp can decode this to make a real thumbnail. */
-async function makePng(rgb = [200, 50, 50]) {
+async function makePng(rgb: [number, number, number] = [200, 50, 50]): Promise<Buffer> {
   return sharp({
     create: { width: 4, height: 4, channels: 3, background: { r: rgb[0], g: rgb[1], b: rgb[2] } },
   }).png().toBuffer();
 }
 
+type MockRenderer = { renderer: Renderer; getCalls: () => number };
+
 /** Builds a mock Renderer whose render() returns a fresh PNG and counts invocations. */
-function makeMockRenderer({ name = 'mock', version = 'v1' } = {}) {
+function makeMockRenderer({ name = 'mock', version = 'v1' }: { name?: string; version?: string } = {}): MockRenderer {
   let calls = 0;
-  const renderer = {
+  const renderer: Renderer = {
     name,
     version,
-    async render(input, options) {
+    async render(_input: RenderInput, _options?: RenderOptions): Promise<RenderResult> {
+      void _input;
+      void _options;
       calls++;
       const png = await makePng();
       return { png, width: 4, height: 4, timings: { totalMs: 1 } };
     },
   };
-  return { renderer, getCalls: () => calls };
+  return { renderer, getCalls: (): number => calls };
 }
 
-async function withTmpDir(fn) {
+async function withTmpDir(fn: (cacheDir: string) => Promise<void>): Promise<void> {
   const dir = await mkdtemp(join(tmpdir(), 'kp-render-cache-'));
   try {
     await fn(dir);
@@ -49,11 +54,11 @@ test('miss then hit: second call for the same input/options is a cache hit and d
     const input = { faces: [{ name: 'Card A' }] };
 
     const first = await cached.render(input, {});
-    assert.equal(first.timings.cacheHit, false);
+    assert.equal(first.timings?.cacheHit, false);
     assert.equal(getCalls(), 1);
 
     const second = await cached.render(input, {});
-    assert.equal(second.timings.cacheHit, true);
+    assert.equal(second.timings?.cacheHit, true);
     assert.equal(getCalls(), 1, 'inner renderer must not be called again on a cache hit');
     assert.deepEqual(second.png, first.png);
   });
@@ -132,7 +137,7 @@ test('a version bump invalidates: same input/renderer name, different version mi
 
     const cachedV2 = withCache(rendererV2, { cacheDir });
     const result = await cachedV2.render(input, {});
-    assert.equal(result.timings.cacheHit, false);
+    assert.equal(result.timings?.cacheHit, false);
     assert.equal(getCallsV2(), 1, 'a different version must be treated as a fresh renderer, not a cache hit');
   });
 });
@@ -153,11 +158,11 @@ test('explicit { version } option overrides inner.version', async () => {
 });
 
 test('throws a clear error when neither inner.version nor an explicit version is provided', () => {
-  const renderer = { name: 'no-version', async render() { return { png: Buffer.alloc(0) }; } };
+  const renderer: Renderer = { name: 'no-version', async render(): Promise<RenderResult> { return { png: Buffer.alloc(0) }; } };
   assert.throws(() => withCache(renderer, { cacheDir: '/tmp/unused' }), /requires a version/);
 });
 
 test('throws when cacheDir is missing', () => {
   const { renderer } = makeMockRenderer();
-  assert.throws(() => withCache(renderer, {}), /requires a cacheDir/);
+  assert.throws(() => withCache(renderer, { cacheDir: '' }), /requires a cacheDir/);
 });

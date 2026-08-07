@@ -3,7 +3,7 @@
 //
 // Regenerate golden PNGs for every registered renderer. Replaces the throwaway
 // spike/goldens/initial-capture.mjs (which hit v1's HTTP endpoint) with a v2-native runner
-// that discovers renderers from packages/renderer/src/index.js and calls each renderer
+// that discovers renderers from packages/renderer/dist/index.js and calls each renderer
 // directly. Zero v1 dependency at runtime.
 //
 // See docs/v2-architecture.md §11 Phase 1a for the full semantics:
@@ -35,7 +35,7 @@ import { readdirSync, readFileSync, writeFileSync, mkdirSync, rmSync, existsSync
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { renderers } from '../packages/renderer/src/index.js';
+import { renderers } from '../packages/renderer/dist/index.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = dirname(HERE);

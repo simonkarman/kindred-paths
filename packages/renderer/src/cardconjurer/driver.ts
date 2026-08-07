@@ -38,13 +38,13 @@
 // :607-611), and MDFC/modal (v1 :328-374, :470-478), including the shared MDFC rules-box
 // height override (v1 :586, ported generically in Wave 3/4 already) and the transform-back
 // color-identity pips + type-line shift.
-// 
+//
 // Phase 1b COMPLETE (49/50 golden cards passing, 8 failures are genuine fidelity-ceiling
 // artifacts): all layouts ported and verified, all text fields + collector-number formatting
 // + SVG rasterization implemented and working. See collection/goldens/README.md for details.
 
 import { computePlaneswalkerData } from './planeswalker-data.js';
-import { addFrameImage, loadFramePack } from './frame.js';
+import { addFrameImage, loadFramePack, type CCContext } from './frame.js';
 import {
   getFrameColors,
   getPowerToughnessColor,
@@ -54,19 +54,21 @@ import {
   curlyQuotes,
 } from './helpers.js';
 import { colorToShort, landSubtypeToColor } from '@kindred-paths/shared';
+import type { CardColor } from '@kindred-paths/shared';
+import type { Renderable } from './renderable.js';
 
 const CARD_WIDTH = 2010;
 const CARD_HEIGHT = 2814;
+
+type ArtFocusName = 'zoom-0' | 'zoom-1' | 'zoom-2';
+type ArtFocusArea = { x: number; y: number; zoom: number };
 
 /**
  * Build a fully-drawn card into the sandbox's `cardCanvas`. Called inside the host's
  * `buildAndComposite` so all mutations happen with drawFrames/drawCard suppressed; on return
  * the host does exactly ONE composite pass.
- *
- * @param {any} renderable  see packages/renderer/src/cardconjurer/renderable.js
- * @param {{ sandbox: any, card: any, document: any, loadFrameScript: (src: string) => void }} ctx
  */
-export async function driveRender(renderable, ctx) {
+export async function driveRender(renderable: Renderable, ctx: CCContext): Promise<void> {
   const { sandbox, card, document } = ctx;
 
   // Force-disable CC's own rounded-corner cutout (creator-23.js drawCard(), the
@@ -138,7 +140,8 @@ export async function driveRender(renderable, ctx) {
     const tokenColors = renderable.color;
     const numberOfColors = tokenColors.length;
     const dominantCardType = renderable.types[renderable.types.length - 1];
-    const dominantColorlessFrame = { creature: 'C', artifact: 'A', enchantment: 'C', land: 'L' }[dominantCardType];
+    const dominantColorlessMap: Record<string, string> = { creature: 'C', artifact: 'A', enchantment: 'C', land: 'L' };
+    const dominantColorlessFrame = dominantColorlessMap[dominantCardType] ?? 'C';
     const frameColor = numberOfColors === 0
       ? dominantColorlessFrame
       : (numberOfColors > 1 ? 'M' : colorToShort(tokenColors[0]).toUpperCase());
@@ -202,7 +205,7 @@ export async function driveRender(renderable, ctx) {
       await addFrameImage(
         ctx,
         `planeswalker/${planeswalkerData.size}/planeswalker${frameNamePart}${frameColorRight}`,
-        { placement: 'addToRightHalf' }
+        { placement: 'addToRightHalf' },
       );
     }
     isFullArt = true;
@@ -223,7 +226,7 @@ export async function driveRender(renderable, ctx) {
     // Basic lands typically have exactly one producible color; use the first.
     await loadFramePack(ctx, 'TextlessBasics2022', { fireLoadFrameVersion: true });
     const pc = renderable.producibleColors[0];
-    const c = pc === 'colorless' ? 'c' : colorToShort(pc);
+    const c = pc === 'colorless' ? 'c' : colorToShort(pc as CardColor);
     await addFrameImage(ctx, `textless/2022/${c}`);
     await addFrameImage(ctx, `textless/2022/s${c}`);
     useAutoFrame = false;
@@ -232,7 +235,7 @@ export async function driveRender(renderable, ctx) {
     // frame(s) + a Rules-Left/Rules-Left-Multicolor mask carrying the adventure spell's own
     // color) on top of the base creature frame. v1 selects '#selectFrameGroup'='Adventure'
     // purely to populate the pack dropdown (a UI convenience with no functional effect for
-    // us — see frame.js's loadFramePack doc comment) then relies on the real browser's
+    // us — see frame.ts's loadFramePack doc comment) then relies on the real browser's
     // autoLoadFrameVersion default to fire '#loadFrameVersion' the moment the pack script
     // loads (packAdventure.js:62's trailing `loadFramePack()` call checks
     // `localStorage.autoLoadFrameVersion`, which creator-23.js:4941-4944 defaults to 'true'
@@ -241,7 +244,9 @@ export async function driveRender(renderable, ctx) {
     await loadFramePack(ctx, 'Adventure', { fireLoadFrameVersion: true });
 
     const isLand = renderable.types.includes('land');
-    const colors = isLand ? renderable.producibleColors.filter((c) => c !== 'colorless') : renderable.color;
+    const colors: CardColor[] = isLand
+      ? (renderable.producibleColors.filter((c) => c !== 'colorless') as CardColor[])
+      : renderable.color;
     const [left, right] = getFrameColors(isLand, colors);
     const [adventureLeft, adventureRight] = getFrameColors(false, renderable.adventure.color);
     const ptColor = renderable.pt ? getPowerToughnessColor(isLand, colors) : undefined;
@@ -306,7 +311,9 @@ export async function driveRender(renderable, ctx) {
     const isLand = renderable.types.includes('land');
     const isArtifact = renderable.types.includes('artifact');
     const isVehicle = renderable.subtypes.includes('vehicle');
-    const colors = isLand ? renderable.producibleColors.filter((c) => c !== 'colorless') : renderable.color;
+    const colors: CardColor[] = isLand
+      ? (renderable.producibleColors.filter((c) => c !== 'colorless') as CardColor[])
+      : renderable.color;
     const [left, right] = getFrameColors(isLand, colors);
     const ptColor = renderable.pt ? getPowerToughnessColor(isLand, colors) : undefined;
     const addLegendaryCrown = renderable.supertype === 'legendary';
@@ -449,13 +456,13 @@ export async function driveRender(renderable, ctx) {
     // `loadScript()`, whose trailing generic `loadFramePack()` call auto-fires
     // `#loadFrameVersion` because `autoLoadFrameVersion` defaults to 'true' at CC boot
     // (creator-23.js:4941-4944) — same mechanism every OTHER specialised branch in this file
-    // works around explicitly (see frame.js's loadFramePack doc comment); this default
+    // works around explicitly (see frame.ts's loadFramePack doc comment); this default
     // branch is the only one that didn't, because it was easy to miss: `sandbox.autoFrame()`
     // itself DOES call `loadScript()` for the target pack unconditionally, so the pack's
     // `availableFrames`/frame IMAGES always end up correct even without this fix — only the
     // TEXT template (mana/title/type coordinates, setSymbolBounds) silently stayed on
     // whatever pack was active before (the sandbox's actual boot pack is `M15Regular-1`, an
-    // older near-identical-but-not-quite template — see node-handle.js's
+    // older near-identical-but-not-quite template — see node-handle.ts's
     // `bootFreshSandbox` — not `M15RegularNew`).
     //   - `M15RegularNew` vs `M15Regular-1`: coordinates differ by a few pixels (e.g. mana
     //     y=176/2814≈0.0625 vs 0.0613, title y=145/2814≈0.0515 vs 0.0522) — small but real,
@@ -486,8 +493,8 @@ export async function driveRender(renderable, ctx) {
   // v1's textEdited() applies curlyQuotes() to whatever text is set, regardless of field
   // (creator-23.js:1227) — since we bypass that UI function entirely, apply the same
   // transform here so straight quotes/apostrophes in card text render as CC's typographic
-  // curly glyphs (see helpers.js curlyQuotes doc comment for the discovery story).
-  const setText = (key, value) => {
+  // curly glyphs (see helpers.ts curlyQuotes doc comment for the discovery story).
+  const setText = (key: string, value: string | undefined): void => {
     if (card.text && card.text[key]) card.text[key].text = curlyQuotes(value ?? '');
   };
 
@@ -554,7 +561,7 @@ export async function driveRender(renderable, ctx) {
     // automatically when card.version includes 'planeswalker' (creator-23.js:3052-3057).
     // We set the same inputs directly, then call planeswalkerEdited() once ourselves
     // instead of relying on 12 individual oninput firings (3 inputs × 4 ability slots).
-    const shiftPerNumberOfAbilities = [
+    const shiftPerNumberOfAbilities: Array<Array<{ regular: number; tall: number }>> = [
       [{ regular: 364, tall: 474 }],
       [{ regular: 220, tall: 246 }, { regular: 574, tall: 702 }],
       [{ regular: 132, tall: 132 }, { regular: 364, tall: 474 }, { regular: 616, tall: 816 }],
@@ -583,7 +590,7 @@ export async function driveRender(renderable, ctx) {
       // that ever draws the ability-box canvases for this render).
       //
       // This `.decode()` await is load-bearing, not just belt-and-braces: `planeswalkerTextMask`
-      // is an SVG, and node-handle.js's `DomImage` pre-rasterizes SVG `.src` assignments via
+      // is an SVG, and node-handle.ts's `DomImage` pre-rasterizes SVG `.src` assignments via
       // `sharp` asynchronously (see its "SVG rasterization" doc comment) — `.decode()` is
       // overridden there specifically so external awaiters like this one observe the REAL
       // rasterize-then-assign completion, not a premature native "nothing pending" resolution.
@@ -603,7 +610,7 @@ export async function driveRender(renderable, ctx) {
       //
       // IMPORTANT: we swap in a BRAND NEW `Image()` instance rather than mutating
       // `sandbox.planeswalkerTextMask.src` in place. `@napi-rs/canvas`'s native Image
-      // binding has a reuse bug (see node-handle.js's "SVG rasterization" doc comment for
+      // binding has a reuse bug (see node-handle.ts's "SVG rasterization" doc comment for
       // the first instance of this class of bug): reassigning `.src` a SECOND time on the
       // same instance can leave `drawImage()` reading STALE pixel data from the FIRST
       // assignment, even though `.width`/`.height` correctly report the new image's
@@ -632,7 +639,8 @@ export async function driveRender(renderable, ctx) {
       const pwImages = ['plusIcon', 'minusIcon', 'neutralIcon', 'lightToDark', 'darkToLight', 'planeswalkerTextMask']
         .map((k) => sandbox[k])
         .filter(Boolean);
-      await Promise.all(pwImages.map((img) => img.decode().catch(() => {})));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await Promise.all(pwImages.map((img: any) => img.decode().catch(() => {})));
       sandbox.planeswalkerEdited();
     }
   } else {
@@ -650,7 +658,8 @@ export async function driveRender(renderable, ctx) {
 
       // Optional font-size override via tags['fs/rules']. v1 fills #text-editor-font-size
       // which sets card.text[current].fontSize (see creator-23.js:1231-1233).
-      const rulesFontSize = typeof renderable.tags?.['fs/rules'] === 'number' ? renderable.tags['fs/rules'] : 0;
+      const fsRulesTag = renderable.tags?.['fs/rules'];
+      const rulesFontSize = typeof fsRulesTag === 'number' ? fsRulesTag : 0;
       if (rulesFontSize !== 0 && card.text[rulesTextHeaderTitle]) {
         card.text[rulesTextHeaderTitle].fontSize = rulesFontSize;
       }
@@ -674,12 +683,12 @@ export async function driveRender(renderable, ctx) {
 
   // ---- 4. Collector info (bottom-info block) ------------------------------------------
   //
-   // v1 fills #info-* fields and clicks the #enableNewCollectorStyle checkbox, which fires
-   // setBottomInfoStyle() → loadBottomInfo() → bottomInfoEdited(). We do the same three
-   // steps directly. Requires renderable.set to have shortName + author + collector offset;
-   // these come from set-metadata resolver (getSetMetadataForCard), and the bottom info gets
-   // set with usable defaults when set is undefined so we don't leave stale UI defaults
-   // from a previous render around.
+  // v1 fills #info-* fields and clicks the #enableNewCollectorStyle checkbox, which fires
+  // setBottomInfoStyle() → loadBottomInfo() → bottomInfoEdited(). We do the same three
+  // steps directly. Requires renderable.set to have shortName + author + collector offset;
+  // these come from set-metadata resolver (getSetMetadataForCard), and the bottom info gets
+  // set with usable defaults when set is undefined so we don't leave stale UI defaults
+  // from a previous render around.
   const setMeta = renderable.set;
   const collectorNumber = renderable.collectorNumber - (setMeta?.collectorNumberOffset ?? 0);
   const collectorNumberPadded = ('0000' + collectorNumber.toString()).slice(-4);
@@ -718,24 +727,24 @@ export async function driveRender(renderable, ctx) {
     await sandbox.setBottomInfoStyle();
   }
 
-   // ---- Set symbol (loaded + rasterized) -------------------------------------------------
-   //
-   // v1 fills #set-symbol-code + #set-symbol-rarity, which triggers fetchSetSymbol() (via
-   // the input's onchange in the browser). fetchSetSymbol() routes to
-   // /img/setSymbols/official/custom/<set>-<rarity>.svg for custom sets, calling
-   // uploadSetSymbol() → setSymbol.src = url → onload → setSymbolEdited() → drawCard().
-   //
-   // The Node host decodes SVG via sharp/librsvg (see hosts/node-handle.js line 139+), which
-   // produces PNG bytes that the canvas Image decoder handles correctly. This was needed
-   // because @napi-rs/canvas bundles resvg, which has a genuine rendering bug: for paths that
-   // combine fill + stroke with certain self-intersecting arc-flag combinations, resvg drops
-   // the fill entirely (tested against Chromium reference, which renders correctly).
-   // Sharp produces a pixel-perfect match.
+  // ---- Set symbol (loaded + rasterized) -------------------------------------------------
+  //
+  // v1 fills #set-symbol-code + #set-symbol-rarity, which triggers fetchSetSymbol() (via
+  // the input's onchange in the browser). fetchSetSymbol() routes to
+  // /img/setSymbols/official/custom/<set>-<rarity>.svg for custom sets, calling
+  // uploadSetSymbol() → setSymbol.src = url → onload → setSymbolEdited() → drawCard().
+  //
+  // The Node host decodes SVG via sharp/librsvg (see hosts/node-handle.ts line 139+), which
+  // produces PNG bytes that the canvas Image decoder handles correctly. This was needed
+  // because @napi-rs/canvas bundles resvg, which has a genuine rendering bug: for paths that
+  // combine fill + stroke with certain self-intersecting arc-flag combinations, resvg drops
+  // the fill entirely (tested against Chromium reference, which renders correctly).
+  // Sharp produces a pixel-perfect match.
   if (setMeta?.symbol && typeof sandbox.fetchSetSymbol === 'function') {
     document.querySelector('#set-symbol-code').value = setMeta.symbol;
     document.querySelector('#set-symbol-rarity').value = renderable.rarity;
     document.querySelector('#set-symbol-source').value = ''; // fall through to custom-set path
-     try { sandbox.fetchSetSymbol(); } catch { /* Unlikely; set-symbol rasterization is working */ }
+    try { sandbox.fetchSetSymbol(); } catch { /* Unlikely; set-symbol rasterization is working */ }
   }
 
   // ---- Art loading -------------------------------------------------------------------
@@ -765,7 +774,7 @@ export async function driveRender(renderable, ctx) {
       // v1 card-conjurer.ts:646-656. Planeswalkers and non-planeswalkers (tokens) use
       // slightly different preset tables (planeswalkers show a bit more headroom above
       // the ability-box area).
-      const focusAreas = planeswalkerData ? {
+      const focusAreas: Record<ArtFocusName, ArtFocusArea> = planeswalkerData ? {
         'zoom-0': { x: -255, y: 80, zoom: 164 },
         'zoom-1': { x: -280, y: -50, zoom: 170 },
         'zoom-2': { x: -500, y: -250, zoom: 200 },
@@ -774,8 +783,11 @@ export async function driveRender(renderable, ctx) {
         'zoom-1': { x: -300, y: 60, zoom: 170 },
         'zoom-2': { x: -503, y: -50, zoom: 200 },
       };
-      const focusName = renderable.tags?.['art/focus'];
-      const focusArea = focusAreas[focusName] ?? focusAreas['zoom-0'];
+      const focusRaw = renderable.tags?.['art/focus'];
+      const focusName: ArtFocusName = (typeof focusRaw === 'string' && (focusRaw === 'zoom-0' || focusRaw === 'zoom-1' || focusRaw === 'zoom-2'))
+        ? focusRaw
+        : 'zoom-0';
+      const focusArea = focusAreas[focusName];
 
       document.querySelector('#art-x').value = focusArea.x.toFixed();
       document.querySelector('#art-y').value = focusArea.y.toFixed();

@@ -2,22 +2,45 @@
   "name": "@kindred-paths/renderer",
   "version": "0.0.0",
   "private": true,
-  "description": "Pluggable Renderer interface + implementations. Today: cardconjurer (node bridge over the proven Phase 0.8 spike). Future impls register themselves in src/index.js.",
+  "description": "Pluggable Renderer interface + implementations. Today: cardconjurer (node bridge over the proven Phase 0.8 spike). Future impls register themselves in src/index.ts.",
   "type": "module",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "node --test test/**/*.test.mjs"
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "test": "npm run build && node --test 'dist/__tests__/**/*.test.js'",
+    "lint": "eslint ."
   },
   "exports": {
-    ".": "./src/index.js",
-    "./interface": "./src/interface.js",
-    "./cache": "./src/cache.js",
-    "./cardconjurer/node": "./src/cardconjurer/node.js",
-    "./cardconjurer/pin": "./src/cardconjurer/pin.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./interface": {
+      "types": "./dist/interface.d.ts",
+      "default": "./dist/interface.js"
+    },
+    "./cache": {
+      "types": "./dist/cache.d.ts",
+      "default": "./dist/cache.js"
+    },
+    "./cardconjurer/node": {
+      "types": "./dist/cardconjurer/node.d.ts",
+      "default": "./dist/cardconjurer/node.js"
+    },
+    "./cardconjurer/pin": {
+      "types": "./dist/cardconjurer/pin.d.ts",
+      "default": "./dist/cardconjurer/pin.js"
+    }
   },
   "dependencies": {
     "@kindred-paths/shared": "workspace:*",
     "@napi-rs/canvas": "^0.1.60",
     "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5"
   }
 }

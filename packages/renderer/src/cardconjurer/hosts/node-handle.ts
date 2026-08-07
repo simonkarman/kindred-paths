@@ -38,9 +38,10 @@
 //           composite, returns the PNG buffer, drops the sandbox.
 //   }
 //
-// The driver (packages/renderer/src/cardconjurer/driver.js) receives `ctx` from the build
+// The driver (packages/renderer/src/cardconjurer/driver.ts) receives `ctx` from the build
 // callback and never sees the sandbox lifecycle. Same driver, two hosts (Node + Browser),
 // same rendered pixels.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createCanvas, GlobalFonts, Image as NapiImage, Path2D, ImageData, DOMMatrix } from '@napi-rs/canvas';
 import sharp from 'sharp';
@@ -49,8 +50,10 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join, basename } from 'node:path';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 
+import type { CCContext } from '../frame.js';
+
 const HERE = dirname(fileURLToPath(import.meta.url));
-// packages/renderer/src/cardconjurer/hosts/ → repo root is 5 levels up
+// packages/renderer/dist/cardconjurer/hosts/ → repo root is 5 levels up (matches src/ layout).
 const REPO = resolve(HERE, '../../../../..');
 const CC = process.env.KP_CARDCONJURER_PATH || join(REPO, 'packages/renderer/external/cardconjurer');
 const COLLECTION = process.env.KP_COLLECTION_PATH || join(REPO, 'collection');
@@ -67,7 +70,7 @@ const CanvasRenderingContext2D = createCanvas(1, 1).getContext('2d').constructor
 // reuses the decoded PNG bytes instead of re-rasterizing. This is the ONLY thing besides fonts
 // (see below) that persists across renders in this file — safe because it's purely a content-
 // addressed cache of static asset bytes, not card-specific state.
-const svgRasterCache = new Map();
+const svgRasterCache = new Map<string, Promise<Buffer>>();
 
 // ---- process-global font registration -----------------------------------------------------
 //
@@ -76,12 +79,12 @@ const svgRasterCache = new Map();
 // fresh sandboxes share one registration pass. This is the ONLY other per-process state we keep.
 
 let fontsRegistered = false;
-function registerFonts() {
+function registerFonts(): void {
   if (fontsRegistered) return;
   fontsRegistered = true;
   const fontsDir = join(CC, 'fonts');
   if (!existsSync(fontsDir)) return;
-  const map = {
+  const map: Record<string, string> = {
     belerenb: 'beleren-b.ttf', belerenbsc: 'beleren-bsc.ttf',
     mplantin: 'mplantin.ttf', mplantini: 'mplantin-i.ttf',
     matrix: 'matrix.ttf', matrixb: 'matrix-b.ttf',
@@ -109,12 +112,17 @@ function registerFonts() {
 //
 // Called by buildAndComposite once per render. The sandbox and everything hanging off it
 // is dropped when buildAndComposite returns, allowing GC to reclaim it.
-async function bootFreshSandbox() {
-  const noop = () => {};
+
+type BootedSandbox = CCContext & { getPendingDecodes: () => Promise<unknown>[] };
+
+async function bootFreshSandbox(): Promise<BootedSandbox> {
+  const noop = (): void => { /* no-op */ };
 
   // ---- image path resolution (art + CC assets) -------------------------------------------
 
-  function resolveSrc(src) {
+  type ResolvedSrc = { path: string } | { buf: Buffer };
+
+  function resolveSrc(src: string | null | undefined): ResolvedSrc | null {
     if (!src) return null;
     if (src.startsWith('data:')) return { buf: Buffer.from(src.split(',')[1] || '', 'base64') };
     let path = src;
@@ -134,7 +142,7 @@ async function bootFreshSandbox() {
       // Mirrors v1's Docker mount (server/card-conjurer.sh):
       //   -v "collection/symbols:/usr/share/nginx/html/img/setSymbols/official/custom:ro"
       // CC's fetchSetSymbol() requests this path for any set whose symbol isn't a built-in
-      // official set (see set-metadata.js: symbol = `custom/<shortName>` when a custom SVG
+      // official set (see set-metadata.ts: symbol = `custom/<shortName>` when a custom SVG
       // exists on disk). Without this mapping the request silently 404s and CC falls back
       // to a blank symbol — the set symbol was simply missing from every render.
       const sub = path.slice('/img/setSymbols/official/custom/'.length);
@@ -167,7 +175,7 @@ async function bootFreshSandbox() {
   // matter for us anymore since `sharp` produces plain PNG bytes, and PNG-into-a-reused-
   // instance is reliable. Worth knowing if resvg's fill bug ever gets fixed upstream and
   // someone's tempted to revert to the built-in decoder.)
-  function looksLikeSvg(buf) {
+  function looksLikeSvg(buf: Buffer): boolean {
     const head = buf.subarray(0, 256).toString('utf8').trimStart().toLowerCase();
     return head.startsWith('<?xml') || head.startsWith('<svg');
   }
@@ -178,7 +186,7 @@ async function bootFreshSandbox() {
   // sharp/librsvg on every fresh sandbox boot is pure waste once the process has already
   // done it once. Only cacheable when we have a stable on-disk path (`cacheKey`); data: URI
   // buffers (no stable identity) always rasterize fresh.
-  async function rasterizeSvg(buf, cacheKey) {
+  async function rasterizeSvg(buf: Buffer, cacheKey?: string): Promise<Buffer> {
     if (cacheKey) {
       const cached = svgRasterCache.get(cacheKey);
       if (cached) return cached;
@@ -205,15 +213,28 @@ async function bootFreshSandbox() {
   // unconditionally from the very first line of this function and awaiting the full list
   // once (see buildAndComposite) replaces that race with a real guarantee, and removes the
   // need for the old 150ms sleep entirely.
-  let pendingDecodes = [];
+  const pendingDecodes: Promise<unknown>[] = [];
 
-  class DomImage extends NapiImage {
-    constructor() { super(); this.onload = null; this.onerror = null; this._pendingDecode = null; }
-    set src(v) {
+  // We extend `NapiImage` for the runtime behavior (canvas can call `drawImage` on it),
+  // but override several properties (`src`, `onload`, `onerror`, `decode`) in ways that
+  // don't precisely match `@napi-rs/canvas`'s TS declarations for those members. Cast the
+  // base to `any` so TS doesn't try to validate the overrides against the strict native
+  // shapes — the JS runtime handles late binding correctly regardless.
+  class DomImage extends (NapiImage as unknown as new () => any) {
+    onload: ((this: DomImage) => void) | null = null;
+    onerror: ((this: DomImage, err: Error) => void) | null = null;
+    private _pendingDecode: Promise<unknown> | null = null;
+    private _src = '';
+    constructor() { super(); }
+    set src(v: string) {
       this._src = v;
       const r = resolveSrc(v);
-      if (!r) { this._pendingDecode = null; queueMicrotask(() => this.onerror && this.onerror(new Error('unmapped'))); return; }
-      const rawBuf = r.buf || readFileSync(r.path);
+      if (!r) {
+        this._pendingDecode = null;
+        queueMicrotask(() => this.onerror && this.onerror.call(this, new Error('unmapped')));
+        return;
+      }
+      const rawBuf = 'buf' in r ? r.buf : readFileSync(r.path);
       // See the "SVG rasterization" block above resolveSrc for why SVG buffers are
       // pre-rasterized (via sharp/librsvg) before ever reaching `this` — resvg (bundled by
       // @napi-rs/canvas) renders some SVG fills incorrectly.
@@ -237,11 +258,22 @@ async function bootFreshSandbox() {
       // doc comment for the bug this fixes) is the SAME promise pushed into `pendingDecodes` —
       // both trackers must observe the real completion of `super.src = finalBuf`, not just
       // "some decode() call resolved".
+      // Capture references to the native base-class members before entering the async
+      // IIFE — inside `async () => {`, `super.*` is not accessible (TS2855), and we need to
+      // reach the *native* `src` setter/decode() (not our own overrides) to fire the actual
+      // decode. Grab them via property descriptors from the base prototype.
+      const baseProto = Object.getPrototypeOf(Object.getPrototypeOf(this));
+      const nativeSrcSetter = Object.getOwnPropertyDescriptor(baseProto, 'src')?.set;
+      const self = this;
       const p = (async () => {
-        const finalBuf = looksLikeSvg(rawBuf) ? await rasterizeSvg(rawBuf, r.path) : rawBuf;
-        super.src = finalBuf; // native onload/onerror fire on their own once this decodes
-        await super.decode(); // tracked for pendingDecodes/_pendingDecode only; do NOT call onload from this
-      })().catch((e) => { if (this.onerror) this.onerror(e); });
+        const finalBuf = looksLikeSvg(rawBuf) ? await rasterizeSvg(rawBuf, 'path' in r ? r.path : undefined) : rawBuf;
+        // Call the NATIVE setter directly with the (possibly-rasterized) buffer bytes so
+        // native onload/onerror fire on their own once decode completes.
+        if (nativeSrcSetter) nativeSrcSetter.call(self, finalBuf as unknown as string);
+        // Native decode() — tracked for pendingDecodes/_pendingDecode only; do NOT call
+        // onload from this. Base class's own `decode` lives on the prototype.
+        await (baseProto.decode as () => Promise<void>).call(self);
+      })().catch((e: Error) => { if (self.onerror) self.onerror.call(self, e); });
       this._pendingDecode = p;
       pendingDecodes.push(p);
     }
@@ -250,7 +282,7 @@ async function bootFreshSandbox() {
     // (see `set src` above) to finish assigning real pixel bytes via `super.src =`, not just
     // for whatever the *native* binding considers "decoded" at the moment `.decode()` is
     // called. Without this override, calling `.decode()` on a freshly-`.src`-assigned SVG
-    // image from OUTSIDE this class (e.g. a driver.js that awaits several images before
+    // image from OUTSIDE this class (e.g. a driver.ts that awaits several images before
     // reading `.complete`/`.width`/`.height`) can resolve IMMEDIATELY and spuriously — the
     // native side has nothing in flight yet because `super.src` hasn't actually been set
     // (rasterizeSvg is still pending, since it awaits real sharp/libvips work, not just a
@@ -261,17 +293,18 @@ async function bootFreshSandbox() {
     // the mask never actually clipped anything, leaving the highlight bands' -0.1-card-height
     // top overflow (an intentional overdraw margin meant to be invisible, normally hidden by
     // this exact mask) visible bleeding into the art above the type line.
-    decode() {
-      return this._pendingDecode || super.decode();
+    decode(): Promise<void> {
+      const baseProto = Object.getPrototypeOf(Object.getPrototypeOf(this));
+      return (this._pendingDecode as Promise<void>) || (baseProto.decode as () => Promise<void>).call(this);
     }
-    get src() { return this._src; }
-    addEventListener(t, cb) { if (t === 'load') this.onload = cb; if (t === 'error') this.onerror = cb; }
-    removeEventListener() {}
+    get src(): string { return this._src; }
+    addEventListener(t: string, cb: any): void { if (t === 'load') this.onload = cb; if (t === 'error') this.onerror = cb; }
+    removeEventListener(): void { /* no-op */ }
   }
 
   // ---- generic DOM shim (unchanged from Phase 0.8) -----------------------------------------
 
-  function makeStub() {
+  function makeStub(): any {
     // A stub DOM element that swallows most mutations and returns stubs for common lookups.
     // Key design points for CC compat:
     //   - `firstChild` / `lastChild` return a fresh stub so `.click()` chains don't throw
@@ -281,7 +314,7 @@ async function bootFreshSandbox() {
     //     own bundled `loadFramePack()` (creator-23.js:569) unconditionally does
     //     `document.querySelector('#frame-picker').children[0].click()` as pure UI-picker
     //     bookkeeping we don't care about (our driver selects frames directly via
-    //     addFrameImage/loadFramePack in frame.js, never through this UI). Left as plain
+    //     addFrameImage/loadFramePack in frame.ts, never through this UI). Left as plain
     //     `children: []`, `.children[0]` is `undefined` and `.click()` on it throws
     //     synchronously inside the vm-executed pack script; ccScriptRunner's catch turns that
     //     into `script.onerror()` → CC's own `loadScript()` promise `reject()` (no argument) —
@@ -292,13 +325,13 @@ async function bootFreshSandbox() {
     //     never throws in the first place.
     //   - `prepend` / `append` are no-ops; `appendChild` returns the child unchanged so
     //     `elt.appendChild(x); x.foo = ...` patterns work.
-    const el = {
+    const el: any = {
       style: {}, dataset: {}, value: '', checked: false, innerHTML: '', textContent: '',
       className: '', id: '', childNodes: [], files: [],
-      get children() { return makeChildrenStub(); },
-      get firstChild() { return makeStub(); },
-      get lastChild() { return makeStub(); },
-      classList: { add: noop, remove: noop, toggle: noop, contains: () => false },
+      get children(): any { return makeChildrenStub(); },
+      get firstChild(): any { return makeStub(); },
+      get lastChild(): any { return makeStub(); },
+      classList: { add: noop, remove: noop, toggle: noop, contains: (): boolean => false },
       addEventListener: noop, removeEventListener: noop, dispatchEvent: noop,
       focus: noop, blur: noop,
       // Pass a synthetic event with `target` set to the element itself — mirrors a real
@@ -313,10 +346,13 @@ async function bootFreshSandbox() {
       // in the MIDDLE of a later card's render within the same test process. Harmless no-op
       // either way (it only ever toggles a notification-banner DOM node we never render), so
       // making it not-throw is the only requirement.
-      click() { if (typeof this.onclick === 'function') return this.onclick({ target: this }); },
-      appendChild: (c) => c, removeChild: (c) => c, insertBefore: (c) => c, prepend: noop, append: noop, remove: noop,
-      cloneNode() { return makeStub(); },
-      setAttribute: noop, getAttribute: () => null, hasAttribute: () => false, removeAttribute: noop,
+      click(this: any): any { if (typeof this.onclick === 'function') return this.onclick({ target: this }); },
+      appendChild: (c: any) => c,
+      removeChild: (c: any) => c,
+      insertBefore: (c: any) => c,
+      prepend: noop, append: noop, remove: noop,
+      cloneNode(): any { return makeStub(); },
+      setAttribute: noop, getAttribute: (): null => null, hasAttribute: (): boolean => false, removeAttribute: noop,
       // closest() returns a fresh swallow-everything stub rather than null: real DOM
       // `.closest()` only returns null when no ancestor matches, but several CC handlers
       // (closeNotification above, frameOptionClicked, dropEnter/dropLeave, etc.) call
@@ -324,79 +360,84 @@ async function bootFreshSandbox() {
       // sites are ever exercised by our driver (we call CC's internal functions directly
       // instead of simulating real clicks/drags), so widening this from null is safe for us
       // and prevents exactly this class of crash for any future incidental `.click()` call.
-      querySelector: () => makeStub(), querySelectorAll: () => [], closest: () => makeStub(),
+      querySelector: (): any => makeStub(),
+      querySelectorAll: (): any[] => [],
+      closest: (): any => makeStub(),
       getBoundingClientRect: () => ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 }),
-      getContext: () => null, offsetWidth: 0, offsetHeight: 0, options: [], selectedIndex: 0,
+      getContext: (): null => null, offsetWidth: 0, offsetHeight: 0, options: [], selectedIndex: 0,
       disabled: false, scrollIntoView: noop,
     };
     return new Proxy(el, {
-      get(t, k) { if (k in t) return t[k]; if (typeof k === 'string' && /^on/.test(k)) return null; return undefined; },
-      set(t, k, v) { t[k] = v; return true; },
+      get(t: any, k: any): any { if (k in t) return t[k]; if (typeof k === 'string' && /^on/.test(k)) return null; return undefined; },
+      set(t: any, k: any, v: any): boolean { t[k] = v; return true; },
     });
   }
   // Array-like stub for `.children`: reports `.length === 0` (so any real "are there children"
   // check still sees an empty element) but returns a fresh `makeStub()` for ANY numeric index
   // — so `el.children[0].click()` (or `[5]`, `[99]`, ...) never throws, matching the
   // `firstChild`/`lastChild`/`closest()` philosophy above.
-  function makeChildrenStub() {
-    const arr = [];
+  function makeChildrenStub(): any {
+    const arr: any[] = [];
     return new Proxy(arr, {
-      get(t, k) {
+      get(t: any, k: any): any {
         if (typeof k === 'string' && /^\d+$/.test(k)) return makeStub();
         return t[k];
       },
     });
   }
-  function makeCanvas(w = 10, h = 10) {
-    const c = createCanvas(w, h);
-    c.style = {}; c.classList = { add: noop, remove: noop, toggle: noop, contains: () => false };
-    c.addEventListener = noop; c.setAttribute = noop; c.getAttribute = () => null;
-    c.appendChild = (x) => x; c.remove = noop; c.querySelector = () => makeStub();
+  function makeCanvas(w = 10, h = 10): any {
+    const c: any = createCanvas(w, h);
+    c.style = {}; c.classList = { add: noop, remove: noop, toggle: noop, contains: (): boolean => false };
+    c.addEventListener = noop; c.setAttribute = noop; c.getAttribute = (): null => null;
+    c.appendChild = (x: any): any => x; c.remove = noop; c.querySelector = (): any => makeStub();
     c.getBoundingClientRect = () => ({ width: w, height: h });
     return c;
   }
-  const namedCanvases = {};
-  const canvasFor = (id) => namedCanvases[id] || (namedCanvases[id] = makeCanvas());
-  const stubCache = new Map();
-  const cachedStub = (k) => { if (!stubCache.has(k)) stubCache.set(k, makeStub()); return stubCache.get(k); };
+  const namedCanvases: Record<string, any> = {};
+  const canvasFor = (id: string): any => namedCanvases[id] || (namedCanvases[id] = makeCanvas());
+  const stubCache = new Map<string, any>();
+  const cachedStub = (k: string): any => { if (!stubCache.has(k)) stubCache.set(k, makeStub()); return stubCache.get(k); };
 
-  let ccScriptRunner = null;
-  const headEl = {
-    appendChild: (c) => { if (c && c.__script && ccScriptRunner) ccScriptRunner(c); return c; },
-    insertBefore: (c) => c, removeChild: (c) => c, style: {},
-    classList: { add: noop, remove: noop, contains: () => false },
+  let ccScriptRunner: ((script: any) => void) | null = null;
+  const headEl: any = {
+    appendChild: (c: any): any => { if (c && c.__script && ccScriptRunner) ccScriptRunner(c); return c; },
+    insertBefore: (c: any): any => c, removeChild: (c: any): any => c, style: {},
+    classList: { add: noop, remove: noop, contains: (): boolean => false },
   };
-  const makeScriptEl = () => ({
+  const makeScriptEl = (): any => ({
     __script: true, onload: null, onerror: null, _src: '',
-    setAttribute(k, v) { if (k === 'src') this._src = v; },
-    getAttribute(k) { return k === 'src' ? this._src : null; },
-    set src(v) { this._src = v; }, get src() { return this._src; },
-    addEventListener(t, cb) { if (t === 'load') this.onload = cb; if (t === 'error') this.onerror = cb; },
+    setAttribute(this: any, k: string, v: any): void { if (k === 'src') this._src = v; },
+    getAttribute(this: any, k: string): any { return k === 'src' ? this._src : null; },
+    set src(v: string) { (this as any)._src = v; },
+    get src(): string { return (this as any)._src; },
+    addEventListener(this: any, t: string, cb: any): void { if (t === 'load') this.onload = cb; if (t === 'error') this.onerror = cb; },
   });
 
-  const documentShim = {
+  const documentShim: any = {
     body: makeStub(), head: headEl, documentElement: makeStub(),
-    createElement: (t) => {
+    createElement: (t: string): any => {
       const s = String(t).toLowerCase();
       return s === 'canvas' ? makeCanvas() : s === 'script' ? makeScriptEl() : makeStub();
     },
-    createElementNS: () => makeStub(), createTextNode: (t) => ({ textContent: t }),
-    getElementById: (id) => (/canvas/i.test(id) ? canvasFor(id) : cachedStub('#' + id)),
-    querySelector: (sel) => (/#previewCanvas|canvas/i.test(sel) ? canvasFor(sel) : cachedStub(sel)),
-    querySelectorAll: (sel) => (sel && /head/i.test(sel) ? [headEl] : []),
+    createElementNS: (): any => makeStub(), createTextNode: (t: string): any => ({ textContent: t }),
+    getElementById: (id: string): any => (/canvas/i.test(id) ? canvasFor(id) : cachedStub('#' + id)),
+    querySelector: (sel: string): any => (/#previewCanvas|canvas/i.test(sel) ? canvasFor(sel) : cachedStub(sel)),
+    querySelectorAll: (sel: string): any[] => (sel && /head/i.test(sel) ? [headEl] : []),
     addEventListener: noop, removeEventListener: noop, dispatchEvent: noop,
-    fonts: { ready: Promise.resolve(), load: () => Promise.resolve(), check: () => true, add: noop },
+    fonts: { ready: Promise.resolve(), load: (): Promise<void> => Promise.resolve(), check: (): boolean => true, add: noop },
     cookie: '', title: '', location: { href: 'http://localhost/', search: '', pathname: '/' },
   };
-  const storage = new Map();
+  const storage = new Map<string, string>();
   const localStorageShim = {
-    getItem: (k) => (storage.has(k) ? storage.get(k) : null),
-    setItem: (k, v) => storage.set(k, String(v)),
-    removeItem: (k) => storage.delete(k), clear: () => storage.clear(),
-    key: (i) => [...storage.keys()][i], get length() { return storage.size; },
+    getItem: (k: string): string | null => (storage.has(k) ? storage.get(k) ?? null : null),
+    setItem: (k: string, v: unknown): Map<string, string> => storage.set(k, String(v)),
+    removeItem: (k: string): boolean => storage.delete(k),
+    clear: (): void => storage.clear(),
+    key: (i: number): string | undefined => [...storage.keys()][i],
+    get length(): number { return storage.size; },
   };
 
-  const sandbox = {};
+  const sandbox: any = {};
   Object.assign(sandbox, {
     console, setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask, Promise,
     Math, JSON, Date, parseInt, parseFloat, isNaN, isFinite,
@@ -405,19 +446,20 @@ async function bootFreshSandbox() {
     document: documentShim, localStorage: localStorageShim, Image: DomImage,
     navigator: { userAgent: 'node', language: 'en' },
     location: documentShim.location,
-    requestAnimationFrame: (cb) => setTimeout(() => cb(performance.now()), 0),
+    requestAnimationFrame: (cb: (t: number) => void) => setTimeout(() => cb(performance.now()), 0),
     cancelAnimationFrame: clearTimeout,
-    getComputedStyle: () => ({ getPropertyValue: () => '' }),
+    getComputedStyle: () => ({ getPropertyValue: (): string => '' }),
     matchMedia: () => ({ matches: false, addListener: noop, addEventListener: noop }),
-    performance, atob: (s) => Buffer.from(s, 'base64').toString('binary'),
-    btoa: (s) => Buffer.from(s, 'binary').toString('base64'),
+    performance,
+    atob: (s: string): string => Buffer.from(s, 'base64').toString('binary'),
+    btoa: (s: string): string => Buffer.from(s, 'binary').toString('base64'),
     createCanvas,
   });
   sandbox.window = sandbox; sandbox.self = sandbox; sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
 
-  ccScriptRunner = (script) => {
-    const src = script._src || '';
+  ccScriptRunner = (script: any): void => {
+    const src: string = script._src || '';
     if (/^https?:/i.test(src)) { queueMicrotask(() => script.onload && script.onload()); return; }
     try {
       vm.runInContext(readFileSync(join(CC, src.replace(/^\//, '')), 'utf8'), sandbox, { filename: src });
@@ -425,7 +467,9 @@ async function bootFreshSandbox() {
     } catch (e) { queueMicrotask(() => script.onerror && script.onerror(e)); }
   };
 
-  const load = (rel) => vm.runInContext(readFileSync(join(CC, 'js', rel), 'utf8'), sandbox, { filename: rel });
+  const load = (rel: string): void => {
+    vm.runInContext(readFileSync(join(CC, 'js', rel), 'utf8'), sandbox, { filename: rel });
+  };
 
   // Pre-seed #selectFramePack's value BEFORE creator-23.js ever runs. creator-23.js's own
   // top-level bootstrap (its tail `loadScript('/js/frames/groupStandard-3.js')` synchronously
@@ -439,7 +483,7 @@ async function bootFreshSandbox() {
   // (nothing anywhere awaits or `.catch()`es them), that surfaces as a genuine
   // `unhandledRejection` on every single render. Harmless functionally either way (our driver
   // never depends on this UI-picker bookkeeping — frame images are always loaded explicitly
-  // via frame.js's addFrameImage/loadFramePack), but avoidable noise.
+  // via frame.ts's addFrameImage/loadFramePack), but avoidable noise.
   documentShim.querySelector('#selectFramePack').value = 'M15Regular-1';
   load('main-1.js'); load('autoFrame.js'); load('creator-23.js');
 
@@ -449,7 +493,7 @@ async function bootFreshSandbox() {
   if (!card.text) {
     try {
       sandbox.document.querySelector('#selectFramePack').value = 'M15Regular-1';
-      ccScriptRunner({ _src: '/js/frames/packM15Regular-1.js', onload: null, onerror: null });
+      if (ccScriptRunner) ccScriptRunner({ _src: '/js/frames/packM15Regular-1.js', onload: null, onerror: null });
       const btn = sandbox.document.querySelector('#loadFrameVersion');
       // `await btn.onclick()` here is now the ONLY wait this bootstrap needs: any image
       // decodes the handler kicks off synchronously (autoFitArt/resetSetSymbol/
@@ -464,8 +508,8 @@ async function bootFreshSandbox() {
     } catch { /* frame init failed; render will fail more visibly below */ }
   }
 
-  function loadFrameScript(src) {
-    ccScriptRunner({ _src: src, onload: null, onerror: null });
+  function loadFrameScript(src: string): void {
+    if (ccScriptRunner) ccScriptRunner({ _src: src, onload: null, onerror: null });
   }
 
   return {
@@ -476,32 +520,31 @@ async function bootFreshSandbox() {
     // Every image decode since this sandbox was created (boot-time mana/tap/colorless
     // symbols + everything driveRender's build phase touches) — buildAndComposite awaits
     // this whole list exactly once, right before its single guaranteed-complete composite.
-    getPendingDecodes: () => pendingDecodes,
+    getPendingDecodes: (): Promise<unknown>[] => pendingDecodes,
   };
 }
+
+export type NodeCCHandle = {
+  buildAndComposite(build: (ctx: CCContext) => Promise<unknown>): Promise<Buffer>;
+};
 
 /**
  * Create a Node CCHandle. The handle exposes a single method — `buildAndComposite(build)` —
  * which boots a fresh CC sandbox on each call. The returned handle can be reused across
  * many renders in one process; each render is independent.
- *
- * @returns {Promise<{ buildAndComposite: (build: (ctx: { sandbox: any, card: any, document: any, loadFrameScript: (src: string) => void }) => Promise<any>) => Promise<Buffer> }>}
  */
-export async function createNodeHandle() {
+export async function createNodeHandle(): Promise<NodeCCHandle> {
   registerFonts();
   // CC's dynamic frame-pack loader appends <script> tags whose "load" fires an onload — some
   // upstream CDN scripts reject; ignore process-wide rather than in every sandbox.
-  process.on('unhandledRejection', () => {});
+  process.on('unhandledRejection', () => { /* swallow */ });
 
   /**
    * Boot a fresh sandbox, run the build against it, do one guaranteed-complete composite,
    * return the PNG buffer, drop the sandbox. Every call is independent — no state carries
    * over between renders. Matches v1's per-render Playwright page model.
-   *
-   * @param {(ctx: { sandbox: any, card: any, document: any, loadFrameScript: (src: string) => void }) => Promise<any>} build
-   * @returns {Promise<Buffer>}  the composed card PNG
    */
-  async function buildAndComposite(build) {
+  async function buildAndComposite(build: (ctx: CCContext) => Promise<unknown>): Promise<Buffer> {
     const ctx = await bootFreshSandbox();
     const { sandbox } = ctx;
 
@@ -522,7 +565,8 @@ export async function createNodeHandle() {
     // every image decode, wait for them all, then do exactly one composite.
     const realDrawFrames = sandbox.drawFrames;
     const realDrawCard = sandbox.drawCard;
-    sandbox.drawFrames = () => {}; sandbox.drawCard = () => {};
+    sandbox.drawFrames = (): void => { /* suppressed during build */ };
+    sandbox.drawCard = (): void => { /* suppressed during build */ };
 
     try {
       await build(ctx);

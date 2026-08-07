@@ -2,7 +2,7 @@
 // Clears the on-disk render cache (`withCache`'s cache dir — content-hashed PNGs +
 // thumbnails, NOT the goldens under collection/goldens/, which are a separate, git-synced
 // asset). Honors KP_CACHE_DIR (default: <repo root>/.cache), matching
-// packages/renderer/src/cache.js and apps/web/src/core/config.ts's own default resolution.
+// packages/renderer/src/cache.ts and apps/web/src/core/config.ts's own default resolution.
 //
 // Usage: pnpm cache:clear
 

@@ -38,21 +38,44 @@
 // and stay stable across CC updates that add new frames or packs.
 
 /**
+ * Context passed by the host to the driver + these helpers. `sandbox`, `card`, and `document`
+ * are all CardConjurer globals living inside a vm context (Node host) or an iframe's `window`
+ * (browser host). We intentionally type them as `any`: the CC surface we drive is dozens of
+ * loosely-typed globals installed at boot (creator-23.js's ~5000 lines register hundreds of
+ * top-level functions/vars), and re-declaring them all here would provide no real safety.
+ */
+export type CCContext = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sandbox: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  card: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  document: any;
+  loadFrameScript: (src: string) => void;
+};
+
+export type LoadFramePackOptions = {
+  /**
+   * Default true; set false for packs that don't provide a #loadFrameVersion handler
+   * (some CC packs are additive only, e.g. M15CIPips or the M15LegendCrowns overlays).
+   */
+  fireLoadFrameVersion?: boolean;
+};
+
+/**
  * Load a CardConjurer frame pack into the sandbox. If the pack has an `#loadFrameVersion.onclick`
  * handler (the "install this pack's text/geometry template" one), fire it. If not (some packs
  * only add to availableFrames without replacing text), just load the script.
  *
  * v1 equivalent: card-conjurer.ts:187-190 (`page.selectOption('#selectFramePack', framePack)`
  * + implicit CC pack-loading via dropdown onchange). We drive the pack load directly.
- *
- * @param {{ sandbox: any, document: any, loadFrameScript: (src: string) => void }} ctx
- * @param {string} packName  e.g. 'M15Regular-1', 'Lands', 'TextlessBasics2022'
- * @param {{ fireLoadFrameVersion?: boolean }} [opts]  default true; set false for packs
- *     that don't provide a #loadFrameVersion handler (some CC packs are additive only,
- *     e.g. M15CIPips or the M15LegendCrowns overlays)
  */
-export async function loadFramePack(ctx, packName, opts = {}) {
-  const { sandbox, document, loadFrameScript } = ctx;
+export async function loadFramePack(
+  ctx: CCContext,
+  packName: string,
+  opts: LoadFramePackOptions = {},
+): Promise<void> {
+  const { document, loadFrameScript } = ctx;
   const { fireLoadFrameVersion = true } = opts;
 
   document.querySelector('#selectFramePack').value = packName;
@@ -65,20 +88,28 @@ export async function loadFramePack(ctx, packName, opts = {}) {
     // Some packs load additional images in loadFrameVersion; give the microtask queue a
     // moment. buildAndComposite awaits pending decodes after driveRender returns, so this
     // is belt-and-braces, not correctness-critical.
-    await new Promise((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 0));
   }
 }
+
+export type AddFrameImageOptions = {
+  framePack?: string;
+  mask?: string;
+  placement?: 'addToFull' | 'addToRightHalf';
+};
 
 /**
  * Add a frame image on top of the card. Matches v1's `addFrameImage(image, {framePack, mask,
  * placement})` behavior 1:1.
  *
- * @param {{ sandbox: any, document: any, loadFrameScript: (src: string) => void }} ctx
- * @param {string} image  frame image path without `/img/frames/` prefix and `.png` suffix,
- *     e.g. 'm15/regular/lw', 'textless/2022/sw', 'm15/basics/w'
- * @param {{ framePack?: string, mask?: string, placement?: 'addToFull' | 'addToRightHalf' }} [opts]
+ * `image` is a frame image path without the `/img/frames/` prefix and `.png` suffix,
+ * e.g. 'm15/regular/lw', 'textless/2022/sw', 'm15/basics/w'.
  */
-export async function addFrameImage(ctx, image, opts = {}) {
+export async function addFrameImage(
+  ctx: CCContext,
+  image: string,
+  opts: AddFrameImageOptions = {},
+): Promise<void> {
   const { sandbox } = ctx;
   const { framePack, mask, placement = 'addToFull' } = opts;
 
@@ -98,7 +129,8 @@ export async function addFrameImage(ctx, image, opts = {}) {
     }
   }
 
-  const available = sandbox.availableFrames;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const available: Array<{ src?: string; masks?: Array<{ name: string }> }> = sandbox.availableFrames as any;
   if (!Array.isArray(available) || available.length === 0) {
     throw new Error(`addFrameImage: sandbox.availableFrames is empty (frame pack not loaded?). image=${image}`);
   }
@@ -111,12 +143,12 @@ export async function addFrameImage(ctx, image, opts = {}) {
   // `...Thumb.png` even for SVG sources. We match by full src instead — same identity, but
   // must check both possible extensions on the real (non-thumbnail) src ourselves.
   const targetSrcSuffixes = [`/${image}.png`, `/${image}.svg`];
-  const frameIndex = available.findIndex((f) => f.src && targetSrcSuffixes.some((suffix) => f.src.endsWith(suffix)));
+  const frameIndex = available.findIndex((f) => f.src && targetSrcSuffixes.some((suffix) => (f.src as string).endsWith(suffix)));
   if (frameIndex < 0) {
     const sample = available.slice(0, 5).map((f) => f.src).join(', ');
     throw new Error(
       `addFrameImage: no frame in availableFrames ends with "${targetSrcSuffixes.join('" or "')}". ` +
-      `Sample srcs: ${sample}. Did you load the right framePack?`
+      `Sample srcs: ${sample}. Did you load the right framePack?`,
     );
   }
 
@@ -124,7 +156,7 @@ export async function addFrameImage(ctx, image, opts = {}) {
   // Resolve mask name → 1-based index (0 = "No Mask"; see creator-23.js:645-646).
   let maskIndex = 0;
   if (mask) {
-    const masks = available[frameIndex].masks || [];
+    const masks = available[frameIndex].masks ?? [];
     const mi = masks.findIndex((m) => m.name === mask);
     if (mi < 0) {
       const names = masks.map((m) => m.name).join(', ');
