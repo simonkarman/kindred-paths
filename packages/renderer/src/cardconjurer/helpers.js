@@ -84,7 +84,7 @@ export function getModalLegendaryCrownColor(color) {
 
 /**
  * Converts straight quotes/apostrophes to typographic curly ones. Ported verbatim from
- * CC's own `curlyQuotes()` (server/.cardconjurer/js/creator-23.js:2460-2462).
+ * CC's own `curlyQuotes()` (packages/renderer/external/cardconjurer/js/creator-23.js:2460-2462).
  *
  * CC applies this to EVERY text field whenever text is set via its UI editor
  * (creator-23.js:1227: `card.text[...].text = curlyQuotes(document.querySelector('#text-editor').value);`)

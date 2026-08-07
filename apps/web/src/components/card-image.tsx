@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { assetPath, IS_STATIC_EXPORT } from '@/lib/asset-path';
 
 export function CardImage({
   cid,
@@ -13,6 +14,11 @@ export function CardImage({
   faceIndex?: number;
   children?: React.ReactNode;
 }) {
+  // Static export: images live under /renders/<cid>-<face>.png (baked by scripts/export-static.mjs).
+  // Dynamic: streamed from the /api/render route.
+  const src = IS_STATIC_EXPORT
+    ? assetPath(`/renders/${cid}-${faceIndex}.png`)
+    : `/api/render/${cid}/${faceIndex}`;
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
 
@@ -59,7 +65,7 @@ export function CardImage({
               else setErrored(true);
             }
           }}
-          src={`/api/render/${cid}/${faceIndex}`}
+          src={src}
           alt={name}
           onLoad={() => setLoaded(true)}
           onError={() => setErrored(true)}

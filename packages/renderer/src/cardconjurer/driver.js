@@ -79,7 +79,7 @@ export async function driveRender(renderable, ctx) {
   // only the first (unrotated) corner gets cut; the other 3 render fully opaque/black instead
   // of transparent, a regression from v1 (real Chromium via Playwright, no such bug).
   //
-  // Rather than patch this in our vendored CC fork (server/.cardconjurer tracks upstream
+  // Rather than patch this in our vendored CC fork (packages/renderer/external/cardconjurer tracks upstream
   // joshbirnholz/cardconjurer unmodified) or reimplement the cut ourselves here, we simply
   // disable it — every v2 render gets consistent square corners on all 4 sides. Rounded
   // corners, if/when needed, are a presentation-layer concern applied later on top of the
@@ -481,7 +481,7 @@ export async function driveRender(renderable, ctx) {
   // Every text field respects the CC key names in card.text (established when the M15
   // frame pack loads its packText config): mana, title, type, rules, pt, plus optional
   // fields like flipsideType/flipsideText/adventureManaCost/etc that show up when
-  // specialised packs load. See card.text initialization in server/.cardconjurer/js/frames/packM15Regular-1.js.
+  // specialised packs load. See card.text initialization in packages/renderer/external/cardconjurer/js/frames/packM15Regular-1.js.
   //
   // v1's textEdited() applies curlyQuotes() to whatever text is set, regardless of field
   // (creator-23.js:1227) — since we bypass that UI function entirely, apply the same

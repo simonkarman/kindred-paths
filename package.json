@@ -15,6 +15,7 @@
     "dev:client": "npm run --prefix client dev",
     "dev:mcp": "npm run --prefix mcp dev",
     "dev:web": "pnpm --filter @kindred-paths/web dev",
+    "setup:cardconjurer": "node packages/renderer/scripts/setup.mjs",
     "generate-goldens": "node scripts/generate-goldens.mjs",
     "test:golden": "node scripts/test-goldens.mjs",
     "cache:clear": "node scripts/clear-cache.mjs"

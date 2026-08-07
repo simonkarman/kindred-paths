@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ManaCost } from '@/components/mana-cost';
 import { CardImage } from '@/components/card-image';
 import { FlipButton } from '@/components/flip-button';
 import { RulesText } from '@/components/rules-text';
+import { IS_STATIC_EXPORT } from '@/lib/asset-path';
 import { capitalize } from '@kindred-paths/shared';
 
 export type CardDetailFace = {
@@ -32,6 +33,18 @@ export function CardDetailView({
 }) {
   const [faceIndex, setFaceIndex] = useState(initialFaceIndex);
   const activeFace = faces[faceIndex] ?? faces[0];
+
+  // Static export can't read ?face= at build time (initialFaceIndex is always 0), so pick
+  // it up from the URL on mount. Same effect as the server-side read in dynamic mode.
+  useEffect(() => {
+    if (!IS_STATIC_EXPORT || !isDual) return;
+    if (typeof window === 'undefined') return;
+    const face = new URLSearchParams(window.location.search).get('face');
+    const parsed = Number(face);
+    if (Number.isInteger(parsed) && parsed > 0 && parsed < faces.length) {
+      setFaceIndex(parsed);
+    }
+  }, [isDual, faces.length]);
 
   const flip = () => {
     const next = (faceIndex + 1) % faces.length;

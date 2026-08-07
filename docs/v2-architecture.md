@@ -305,6 +305,9 @@ cheap patch suffices vs. when a full re-render is needed.
   can be a maintenance command later.
 - **Served as static files** so the UI grid, print/export, other programs, and the `kp` CLI can
   consume images by URL or straight off disk.
+- **Copyable into static-export bundles** — the same on-disk bytes the dynamic render API serves
+  are exactly what the Phase 1d static export copies (as `<cid>-<face>.png` +
+  `<cid>-<face>.thumb.webp`) into `apps/web/generated/site/renders/`. See §13.
 - **Populated by the server**, not by browser uploads — the interactive layer stays purely an
   editing accelerator.
 
@@ -615,7 +618,7 @@ collection/goldens/<renderer-name>/<cid>.png   golden PNGs, one per card per reg
 | Collection dir | External, addressed by `KP_COLLECTION_PATH`; works with git repo OR plain dir OR empty/nonexistent; first-run wizard offers clone-existing / start-fresh / point-elsewhere |
 | Goldens location | `collection/goldens/<renderer-name>/<cid>.png` — inside the existing collection repo. No separate goldens repo, no new env var. Cards are marked `tags: { golden: true }`. Git handles diff/history/audit. See §11 Phase 1a for command semantics |
 | Dev orchestration | `pnpm dev` starts `apps/web`; CLI + MCP hit `http://localhost:3000` |
-| Hosting | Deferred — no `CollectionSource`/`RenderCache` interfaces upfront, no auth scaffolding. Add when actually hosting |
+| Hosting | Static export supported for read-only publishing (Phase 1d) via `pnpm --filter web export:static` + GitHub Pages. Dynamic hosting still deferred — no `CollectionSource`/`RenderCache` interfaces upfront, no auth scaffolding. Add when actually hosting dynamically |
 | Spike code | Keep under `spike/` until Phase 1c completes, then delete |
 
 ### Critical convention
@@ -718,6 +721,20 @@ becomes untestable without Next — enforce by lint rule or code review.
   **RenderSession pool** (LRU + double-buffer, size N from 0.7), tight settle, direct-canvas
   preview vs PNG encode — only where the golden diff stays green. Plus the wide card overview
   (search box, instant renders from the cache, sort).
+- **Phase 1d — Static read-only export (published to GitHub Pages).** Ship
+  `pnpm --filter web export:static -- [--query <search-DSL>] [--base-path /<subpath>]`
+  that produces a fully static, deployable snapshot of the read-only app at
+  `apps/web/generated/site/`. Also relocate the CardConjurer clone from v1's
+  `server/.cardconjurer/` to the pinned `packages/renderer/external/cardconjurer/`
+  (created by `pnpm setup:cardconjurer` — shallow blobless clone of the pinned SHA,
+  Docker-free) and validate byte-identical goldens against it. Establish the design
+  contract every subsequent phase must follow: `NEXT_PUBLIC_KP_STATIC` flag,
+  `<DynamicOnly>` gate for interactive UI, server-component-baked data (no client
+  fetches in static mode), and `assetPath()` for image URLs. Ship a
+  `workflow_dispatch`-triggered GitHub Action template committed to each collection
+  repo that runs `setup:cardconjurer` + `export:static` and deploys to Pages, with
+  Actions cache for both the CC clone and the render cache. See **§13** and
+  `docs/v2-phase1d-static-export.md`.
 - **Phase 2 — Compact live editor.** Instant preview, no full-page-nav on save, multi-instance,
   snapshot undo/redo, overlay hook.
 - **Phase 3 — SDK + `kp` CLI + MCP wrapper + OpenCode skill.** Solidify `apps/web/src/core/`
@@ -790,3 +807,92 @@ becomes untestable without Next — enforce by lint rule or code review.
   Phase 4.
 - **Image-gen UX** — set-themed prompts and model switching are part of the Phase 5+ rework;
   the current `!`-prefix setting convention is replaced by explicit controls.
+
+---
+
+## 13. Static export & read-only publishing (Phase 1d)
+
+The v2 app is publishable as a **fully static site** — HTML + PNGs + JS bundles, no Node
+runtime, deployable to GitHub Pages or any static host. This is the "reference cube"
+publishing story for finished sets. Full detail lives in **`docs/v2-phase1d-static-export.md`**;
+this section is the normative summary.
+
+### 13.1 Command
+
+```
+pnpm --filter web export:static -- [--query "<search-DSL>"] [--base-path /<subpath>]
+```
+
+- `--query` filters cards using the same search DSL the header/overview use. Empty = every
+  visible card.
+- `--base-path` sub-path for hosting (e.g. `/shx-cube` for GitHub Pages under
+  `https://user.github.io/shx-cube/`). Empty = domain root.
+- Output: `apps/web/generated/site/` (wiped clean on every run). Renders live under
+  `apps/web/generated/renders/` and are copied into `site/renders/` during the build.
+- Preview locally: `python3 -m http.server` (or `npx serve`) inside `generated/site/`.
+
+### 13.2 The design contract (must be respected by every subsequent phase)
+
+Three rules — retrofitting them after Phase 4 would be significantly more invasive:
+
+1. **One capability flag.** `NEXT_PUBLIC_KP_STATIC=true` at build time in the static
+   export build; unset in the dynamic build. Set by `next.config.ts` when the export
+   script sets the env var.
+2. **UI split via `<DynamicOnly>`.** Every interactive feature (editor panel, AI chat,
+   save buttons, image regenerate, etc.) is wrapped in `<DynamicOnly>` (server component,
+   `apps/web/src/components/dynamic-only.tsx`) so it returns `null` and is dead-code-
+   eliminated in the static bundle. **All new features must adopt this.**
+3. **Data via server components + baked HTML, images via `assetPath()`.** Client
+   components never call `/api/*` in static mode. Server components read data at
+   build time and pass it as props (e.g. `search/page.tsx` embeds the full card list
+   into the search HTML in both modes). Images are the sole exception (cannot be
+   inlined); `<CardImage>` and `<CardTile>` dispatch on `NEXT_PUBLIC_KP_STATIC` between
+   `/api/render/...` and `assetPath('/renders/<cid>-<face>.<ext>')`.
+
+Consequence: new APIs go under `app/api/**` (Next.js's `output: 'export'` naturally
+skips them at build time — the export script also moves the folder aside as a
+belt-and-braces measure). New UI wraps in `<DynamicOnly>`. No feature ever "silently
+breaks" the export.
+
+### 13.3 CardConjurer relocation (prerequisite completed in Phase 1d)
+
+- Clone target: `packages/renderer/external/cardconjurer/` (gitignored).
+- Pinned SHA: `packages/renderer/src/cardconjurer/pin.js` exports
+  `CARDCONJURER_PIN = { sha, display, repo }`.
+- Bootstrap: `pnpm setup:cardconjurer` (root script) → runs
+  `packages/renderer/scripts/setup.mjs`. Cross-platform Node, idempotent, uses a
+  **blobless partial clone** (`--filter=blob:none --depth 1`) to avoid downloading
+  CC's multi-GB history.
+- Env: `KP_CARDCONJURER_PATH` (default resolved by `apps/web/next.config.ts` to the
+  clone above). No fallback to v1's `server/.cardconjurer/` — v2 code no longer
+  references v1 paths.
+
+### 13.4 GitHub Pages workflow
+
+Each collection repo publishes its own static site by committing a
+`workflow_dispatch`-triggered workflow at `.github/workflows/publish.yml`.
+
+- Inputs: `query`, `base_path` (default `/<repo-name>`).
+- Two GitHub Actions caches keep re-runs fast:
+  - **CardConjurer clone** keyed on pinned SHA (~cache hit → skip setup entirely).
+  - **Render cache** (`.cache/renders/`) keyed on card JSON + art hash + renderer
+    version, with restore-keys for partial hits.
+- First run: ~25–30 min (all cards fresh render). Steady state: 1–5 min per push (only
+  cards whose content hash changed re-render).
+
+Template lives at `collection/.github/workflows/publish.yml` in the SHX collection —
+copy into each collection repo. Pinned to `simonkarman/kindred-paths@v2`.
+
+### 13.5 What lives where
+
+| File | Role |
+|---|---|
+| `apps/web/scripts/export-static.mjs` | Orchestrator: wipe, load cards, render, stage, `next build`, move, cleanup |
+| `apps/web/next.config.ts` | Layered static-mode config gated on `NEXT_PUBLIC_KP_STATIC` |
+| `apps/web/src/components/dynamic-only.tsx` | The `<DynamicOnly>` gate |
+| `apps/web/src/lib/asset-path.ts` | `assetPath()` helper for image URLs + base-path prefix |
+| `apps/web/generated/` | All export output (wiped/regenerated per run; `.gitignore`d) |
+| `packages/renderer/scripts/setup.mjs` | CardConjurer clone bootstrap |
+| `packages/renderer/src/cardconjurer/pin.js` | Pinned CC SHA |
+| `collection/.github/workflows/publish.yml` | Template Pages workflow for a collection repo |
+

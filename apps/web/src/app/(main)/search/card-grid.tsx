@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { filterCardsBasedOnSearch, Layout, type SerializedCard } from '@kindred-paths/shared';
 import { FlipButton } from '@/components/flip-button';
+import { assetPath, IS_STATIC_EXPORT } from '@/lib/asset-path';
 
 const BATCH_SIZE = 48;
 
@@ -13,6 +14,10 @@ function CardTile({ card }: { card: SerializedCard }) {
   const isDual = useMemo(() => new Layout(card.layout).isDualRenderLayout(), [card.layout]);
   const face = card.faces[faceIndex] ?? card.faces[0];
   const href = faceIndex === 0 ? `/card/${card.cid}` : `/card/${card.cid}?face=${faceIndex}`;
+  // Thumbnails: static → /renders/<cid>-<face>.thumb.webp; dynamic → /api/render with variant=thumb.
+  const src = IS_STATIC_EXPORT
+    ? assetPath(`/renders/${card.cid}-${faceIndex}.thumb.webp`)
+    : `/api/render/${card.cid}/${faceIndex}?variant=thumb`;
 
   return (
     <Link
@@ -24,7 +29,7 @@ function CardTile({ card }: { card: SerializedCard }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           key={faceIndex}
-          src={`/api/render/${card.cid}/${faceIndex}?variant=thumb`}
+          src={src}
           alt={face.name}
           loading="lazy"
           decoding="async"
@@ -47,9 +52,16 @@ function CardTile({ card }: { card: SerializedCard }) {
   );
 }
 
-export function CardGrid({ initialQuery }: { initialQuery: string }) {
-  const [allCards, setAllCards] = useState<SerializedCard[] | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+export function CardGrid({
+  initialQuery,
+  initialCards,
+}: {
+  initialQuery: string;
+  initialCards: SerializedCard[];
+}) {
+  // Cards are provided as a prop by the server component (search/page.tsx) — no runtime
+  // fetch, works identically in dynamic and static export builds. See
+  // docs/v2-phase1d-static-export.md §5.2 for the rationale.
   const [query, setQuery] = useState(initialQuery);
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
 
@@ -60,35 +72,30 @@ export function CardGrid({ initialQuery }: { initialQuery: string }) {
     setQuery(initialQuery);
   }, [initialQuery]);
 
-  // Load the full (visible) collection once, client-side — the search box then filters
-  // in-memory with zero network round-trips per keystroke.
+  // Static export cannot read searchParams at build time, so `initialQuery` is always ''
+  // in that mode. Pick up ?q= from the browser URL on mount so bookmarks + header search
+  // still work in the exported site.
   useEffect(() => {
-    let cancelled = false;
-    fetch('/api/cards')
-      .then((res) => {
-        if (!res.ok) throw new Error(`failed to load cards (${res.status})`);
-        return res.json() as Promise<SerializedCard[]>;
-      })
-      .then((data) => { if (!cancelled) setAllCards(data); })
-      .catch((err) => { if (!cancelled) setLoadError(err instanceof Error ? err.message : 'failed to load cards'); });
-    return () => { cancelled = true; };
+    if (!IS_STATIC_EXPORT) return;
+    if (typeof window === 'undefined') return;
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) setQuery(q);
   }, []);
 
   const filtered = useMemo(() => {
-    if (!allCards) return [];
-    if (!query.trim()) return allCards;
+    if (!query.trim()) return initialCards;
     try {
-      return filterCardsBasedOnSearch(allCards, query);
+      return filterCardsBasedOnSearch(initialCards, query);
     } catch {
       // An invalid/partial query (e.g. a trailing "tag:") should never blank the grid.
-      return allCards;
+      return initialCards;
     }
-  }, [allCards, query]);
+  }, [initialCards, query]);
 
   // A new search resets how far the progressive reveal has scrolled.
   useEffect(() => {
     setVisibleCount(BATCH_SIZE);
-  }, [query, allCards]);
+  }, [query]);
 
   const visibleCards = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
@@ -110,13 +117,6 @@ export function CardGrid({ initialQuery }: { initialQuery: string }) {
 
   return (
     <div>
-      {loadError && (
-        <p className="mb-4 text-sm text-red-600">Failed to load cards: {loadError}</p>
-      )}
-      {!allCards && !loadError && (
-        <p className="mb-4 text-sm text-muted">Loading collection…</p>
-      )}
-
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {visibleCards.map((card) => (
           <CardTile key={card.cid} card={card} />
@@ -125,11 +125,9 @@ export function CardGrid({ initialQuery }: { initialQuery: string }) {
 
       {hasMore && <div ref={sentinelRef} className="h-1" />}
 
-      {allCards && (
-        <p className="w-full text-right text-sm text-muted mt-4">
-          {filtered.length} of {allCards.length} card{allCards.length === 1 ? '' : 's'}
-        </p>
-      )}
+      <p className="w-full text-right text-sm text-muted mt-4">
+        {filtered.length} of {initialCards.length} card{initialCards.length === 1 ? '' : 's'}
+      </p>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 // Env vars, per the v2 architecture doc (§10):
 //   KP_COLLECTION_PATH     default ./collection (repo root)
 //   KP_CACHE_DIR            default ./.cache (repo root)
-//   KP_CARDCONJURER_PATH   default server/.cardconjurer (repo root) — the pinned CC clone
+//   KP_CARDCONJURER_PATH   default packages/renderer/external/cardconjurer (repo root) — the pinned CC clone (created by `pnpm setup:cardconjurer`)
 //
 // `apps/web/next.config.ts` sets all three on `process.env` unconditionally (computed from
 // its own reliable file location) BEFORE any application code — including

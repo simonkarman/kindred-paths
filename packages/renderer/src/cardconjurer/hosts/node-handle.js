@@ -52,7 +52,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs';
 const HERE = dirname(fileURLToPath(import.meta.url));
 // packages/renderer/src/cardconjurer/hosts/ → repo root is 5 levels up
 const REPO = resolve(HERE, '../../../../..');
-const CC = process.env.KP_CARDCONJURER_PATH || join(REPO, 'server/.cardconjurer');
+const CC = process.env.KP_CARDCONJURER_PATH || join(REPO, 'packages/renderer/external/cardconjurer');
 const COLLECTION = process.env.KP_COLLECTION_PATH || join(REPO, 'collection');
 const ART = join(COLLECTION, 'art');
 const SYMBOLS = join(COLLECTION, 'symbols');

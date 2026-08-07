@@ -15,7 +15,11 @@ import { dirname, join, resolve } from 'node:path';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 process.env.KP_COLLECTION_PATH ??= join(REPO_ROOT, 'collection');
 process.env.KP_CACHE_DIR ??= join(REPO_ROOT, '.cache');
-process.env.KP_CARDCONJURER_PATH ??= join(REPO_ROOT, 'server/.cardconjurer');
+// KP_CARDCONJURER_PATH (Phase 1d): the v2 pinned clone lives at
+// packages/renderer/external/cardconjurer/, created by `pnpm setup:cardconjurer`.
+// If you get a "CardConjurer not found" error at render time, run that command first.
+// Explicit env var wins.
+process.env.KP_CARDCONJURER_PATH ??= join(REPO_ROOT, 'packages/renderer/external/cardconjurer');
 // The render pipeline (core/render/render-card-face.ts) offloads its heavy SVG rasterization
 // (sharp) and PNG encode (@napi-rs/canvas) work onto libuv's threadpool, whose default size
 // is only 4 OS threads — raising the render concurrency semaphore (KP_RENDER_CONCURRENCY)
@@ -23,6 +27,18 @@ process.env.KP_CARDCONJURER_PATH ??= join(REPO_ROOT, 'server/.cardconjurer');
 // real parallelism. Must be set before any native module (sharp/@napi-rs/canvas) is first
 // imported, same as the KP_* paths above.
 process.env.UV_THREADPOOLSIZE ??= '8';
+
+// Static export mode (Phase 1d): set by scripts/export-static.mjs. See
+// docs/v2-phase1d-static-export.md. When true we layer `output: 'export'` +
+// friends and inject NEXT_PUBLIC_KP_STATIC / NEXT_PUBLIC_KP_BASE_PATH so the
+// DynamicOnly gate and assetPath helper see them at build time.
+const IS_STATIC_EXPORT = process.env.NEXT_PUBLIC_KP_STATIC === 'true';
+// KP_BASE_PATH is the sub-path for hosting under (e.g. `/my-repo` for GitHub
+// Pages). Empty = domain root. Only meaningful in static-export mode.
+const RAW_BASE_PATH = (process.env.KP_BASE_PATH ?? '').replace(/\/+$/, '');
+const BASE_PATH = RAW_BASE_PATH
+  ? (RAW_BASE_PATH.startsWith('/') ? RAW_BASE_PATH : `/${RAW_BASE_PATH}`)
+  : '';
 
 const nextConfig: NextConfig = {
   // The renderer pipeline (CardConjurer-in-Node) pulls in native node addons
@@ -50,6 +66,24 @@ const nextConfig: NextConfig = {
     config.resolve.symlinks = false;
     return config;
   },
+
+  // Static-export-only overlays (Phase 1d).
+  ...(IS_STATIC_EXPORT ? {
+    output: 'export' as const,
+    // Under `output: 'export'` Next won't run its Image Optimization loader (needs a
+    // server). Disabling explicitly keeps future next/image uses from silently breaking.
+    images: { unoptimized: true },
+    // Every URL ends in `/` so a static host serving `card/<cid>/index.html` responds to
+    // both `/card/<cid>` and `/card/<cid>/`. GitHub Pages needs this.
+    trailingSlash: true,
+    // Sub-path deployment (e.g. https://user.github.io/<repo>/).
+    ...(BASE_PATH ? { basePath: BASE_PATH, assetPrefix: BASE_PATH } : {}),
+    // Client-visible env vars for <DynamicOnly> and assetPath().
+    env: {
+      NEXT_PUBLIC_KP_STATIC: 'true',
+      NEXT_PUBLIC_KP_BASE_PATH: BASE_PATH,
+    },
+  } : {}),
 };
 
 export default nextConfig;
