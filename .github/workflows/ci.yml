@@ -125,6 +125,12 @@ jobs:
         working-directory: kindred-paths
         run: pnpm install --frozen-lockfile
 
+      # setup:cardconjurer reads the pinned SHA from dist/cardconjurer/pin.js, and
+      # test:golden imports the renderers from dist/index.js — both need a build first.
+      - name: Build workspace packages
+        working-directory: kindred-paths
+        run: pnpm build:packages
+
       - name: Read pinned CardConjurer SHA
         id: cc_pin
         working-directory: kindred-paths

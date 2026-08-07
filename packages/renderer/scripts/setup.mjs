@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // packages/renderer/scripts/setup.mjs — CardConjurer clone bootstrap.
 //
-// Fetches the CardConjurer repo at the pinned SHA (see ../src/cardconjurer/pin.js)
+// Fetches the CardConjurer repo at the pinned SHA (see ../dist/cardconjurer/pin.js,
+// built from ../src/cardconjurer/pin.ts)
 // into `packages/renderer/external/cardconjurer/`. Uses a **blobless partial clone**
 // (`--filter=blob:none`) at `--depth 1`, so we never download CC's multi-GB history —
 // we only fetch the blobs needed to check out one commit's worth of files (~5 GB
@@ -9,11 +10,14 @@
 //
 // Idempotent: no-op on cache hit (same SHA already checked out).
 //
+// Requires the renderer package to be built first (`pnpm --filter @kindred-paths/renderer
+// build`, or `pnpm build:packages`), since it reads the pin from the compiled dist/ output.
+//
 // Usage:
-//   pnpm setup:cardconjurer               # from repo root
+//   pnpm build:packages && pnpm setup:cardconjurer   # from repo root
 //   node packages/renderer/scripts/setup.mjs
 //
-// Path rewriting note: the Node bridge (../src/cardconjurer/hosts/node-handle.js)
+// Path rewriting note: the Node bridge (../src/cardconjurer/hosts/node-handle.ts)
 // intercepts CC's requests for `/local_art/*` and `/img/setSymbols/official/custom/*`
 // and reads directly from `KP_COLLECTION_PATH/{art,symbols}` — so we do NOT need to
 // create symlinks or copy art/symbols into the CC clone. That's a Docker-container
@@ -24,7 +28,7 @@ import { mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { CARDCONJURER_PIN } from '../src/cardconjurer/pin.js';
+import { CARDCONJURER_PIN } from '../dist/cardconjurer/pin.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // packages/renderer/scripts/ -> repo root is 3 levels up
@@ -81,7 +85,7 @@ function updateExistingToSha(dir, sha) {
 function main() {
   if (!CARDCONJURER_PIN || !CARDCONJURER_PIN.sha) {
     console.error('setup:cardconjurer: CARDCONJURER_PIN is null; refusing to clone without a pinned SHA.');
-    console.error('                    See packages/renderer/src/cardconjurer/pin.js.');
+    console.error('                    See packages/renderer/src/cardconjurer/pin.ts.');
     process.exit(1);
   }
   const { sha, repo, display } = CARDCONJURER_PIN;
