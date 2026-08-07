@@ -1,5 +1,5 @@
 import { TokenExtractor } from './token-extracter';
-import { CardColor, cardColors, hybridManaColors, hybridManaToShort, isHybridMana, Mana, toOrderedColors, wubrg } from './colors';
+import { CardColor, cardColors, hybridManaToShort, isHybridMana, Mana, toOrderedColors, wubrg } from './colors';
 import { SerializedCardFace } from './serialized-card-face';
 import { capitalize, enumerate } from './typography';
 import {
@@ -439,33 +439,33 @@ export class CardFace {
       };
       let nextRule: Rule | undefined, nextRule2: Rule | undefined;
       switch (rule.variant) {
-      case 'card-type-reminder':
-      case 'inline-reminder':
-        if (rule.content.endsWith('{lns}')) {
-          text += `{i}(${rule.content.substring(0, rule.content.length - 5)}){lns}{/i}\n\n`;
-        } else {
-          text += `{i}(${rule.content}){/i}`;
-        }
-        checkLineEnding();
-        break;
-      case 'keyword':
-        text += capitalize(rule.content);
-        nextRule = peekNext();
-        nextRule2 = peekNext(2);
-        while (nextRule && nextRule.variant === 'keyword' && (nextRule2 === undefined || nextRule2.variant !== 'inline-reminder')) {
-          text += `, ${nextRule.content}`;
-          index += 1;
+        case 'card-type-reminder':
+        case 'inline-reminder':
+          if (rule.content.endsWith('{lns}')) {
+            text += `{i}(${rule.content.substring(0, rule.content.length - 5)}){lns}{/i}\n\n`;
+          } else {
+            text += `{i}(${rule.content}){/i}`;
+          }
+          checkLineEnding();
+          break;
+        case 'keyword':
+          text += capitalize(rule.content);
           nextRule = peekNext();
           nextRule2 = peekNext(2);
-        }
-        checkLineEnding();
-        break;
-      case 'ability':
-        text += rule.content;
-        checkLineEnding();
-        break;
-      case 'flavor':
-        text += `{flavor}${rule.content}`;
+          while (nextRule && nextRule.variant === 'keyword' && (nextRule2 === undefined || nextRule2.variant !== 'inline-reminder')) {
+            text += `, ${nextRule.content}`;
+            index += 1;
+            nextRule = peekNext();
+            nextRule2 = peekNext(2);
+          }
+          checkLineEnding();
+          break;
+        case 'ability':
+          text += rule.content;
+          checkLineEnding();
+          break;
+        case 'flavor':
+          text += `{flavor}${rule.content}`;
       }
     }
     return this.sanitize(text);
@@ -579,7 +579,7 @@ export class CardFace {
       }
     }
     return toOrderedColors([...result]);
-  }
+  };
 
   getReferenceName(): string {
     let referenceName = '';

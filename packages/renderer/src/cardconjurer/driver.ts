@@ -111,7 +111,7 @@ export async function driveRender(renderable: Renderable, ctx: CCContext): Promi
   // name differs, which we don't model. So rulesTextHeaderTitle stays 'rules' unconditionally.
   let forceTitleColorToBlack = false;
   let isFullArt = false;
-  const rulesTextHeaderTitle = 'rules';   // == v1's 'Rules Text' text option → 'rules' key
+  const rulesTextHeaderTitle = 'rules'; // == v1's 'Rules Text' text option → 'rules' key
   // transform-back (multi-color) prefixes the type line with '{right88}' to make room for
   // the color-identity pips (v1 card-conjurer.ts:313) — set inside the transform branch below.
   let typeLinePrefix = '';

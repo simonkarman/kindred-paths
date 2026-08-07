@@ -264,6 +264,11 @@ async function bootFreshSandbox(): Promise<BootedSandbox> {
       // decode. Grab them via property descriptors from the base prototype.
       const baseProto = Object.getPrototypeOf(Object.getPrototypeOf(this));
       const nativeSrcSetter = Object.getOwnPropertyDescriptor(baseProto, 'src')?.set;
+      // Alias `this` so the async IIFE below and the `.catch()` handler can reach it
+      // safely. Arrow functions would preserve `this`, but the IIFE runs in a Promise
+      // continuation and the eslint no-this-alias rule doesn't distinguish — keep the
+      // alias, explicit and documented.
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
       const self = this;
       const p = (async () => {
         const finalBuf = looksLikeSvg(rawBuf) ? await rasterizeSvg(rawBuf, 'path' in r ? r.path : undefined) : rawBuf;

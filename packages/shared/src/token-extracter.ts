@@ -17,7 +17,7 @@ export class TokenExtractor {
   }
 
   extractTokensFromAbility(ability: string, depth = 0): string[] {
-    // eslint-disable-next-line max-len
+
     const match = ability.matchAll(this.regex);
     return Array.from(match).map(m => {
       // return concat of all matches that are not undefined or empty

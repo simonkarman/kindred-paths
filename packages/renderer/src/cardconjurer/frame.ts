@@ -152,7 +152,6 @@ export async function addFrameImage(
     );
   }
 
-
   // Resolve mask name → 1-based index (0 = "No Mask"; see creator-23.js:645-646).
   let maskIndex = 0;
   if (mask) {

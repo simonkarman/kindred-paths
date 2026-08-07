@@ -17,5 +17,5 @@ export const hash = function(str: string, seed = 0) {
   h2 ^= Math.imul(h2 ^ (h1 >>> 15), 0xcaf649a9);
   h1 ^= h2 >>> 16; h2 ^= h1 >>> 16;
   // return 2097152 * (h2 >>> 0) + (h1 >>> 11);
-  return (h2>>>0).toString(16).padStart(8,"0")+(h1>>>0).toString(16).padStart(8,"0");
+  return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
 };

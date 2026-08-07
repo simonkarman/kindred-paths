@@ -48,13 +48,16 @@ process.env.UV_THREADPOOLSIZE ??= '8';
 
 function parseArgs(argv) {
   const args = { query: '', basePath: '', out: join(APP_ROOT, 'generated', 'site') };
-  for (let i = 0; i < argv.length; i++) {
+  for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
-    if (a === '--') continue;  // pnpm passes through the -- separator; ignore it silently.
+    if (a === '--') continue; // pnpm passes through the -- separator; ignore it silently.
+    // eslint-disable-next-line no-plusplus -- deliberate prefix-increment to consume the next argv slot.
     if (a === '--query' || a === '-q') { args.query = argv[++i] ?? ''; }
     else if (a.startsWith('--query=')) { args.query = a.slice('--query='.length); }
+    // eslint-disable-next-line no-plusplus -- see above.
     else if (a === '--base-path' || a === '-b') { args.basePath = argv[++i] ?? ''; }
     else if (a.startsWith('--base-path=')) { args.basePath = a.slice('--base-path='.length); }
+    // eslint-disable-next-line no-plusplus -- see above.
     else if (a === '--out' || a === '-o') { args.out = resolve(argv[++i] ?? args.out); }
     else if (a.startsWith('--out=')) { args.out = resolve(a.slice('--out='.length)); }
     else if (a === '--help' || a === '-h') {
@@ -160,7 +163,7 @@ async function main() {
 
   for (const { card, faceIndex } of faceJobs) {
     const input = { ...card, __faceIndex: faceIndex };
-    let cacheHit = false;
+    let cacheHit;
     try {
       const result = await renderer.render(input, {});
       cacheHit = result?.timings?.cacheHit === true;
@@ -187,8 +190,8 @@ async function main() {
       console.warn(`[3/8]   no thumbnail for ${card.cid}#${faceIndex}; grid will fall back to full PNG`);
     }
 
-    renderedCount++;
-    if (cacheHit) cacheHits++;
+    renderedCount += 1;
+    if (cacheHit) cacheHits += 1;
     if (renderedCount % printProgressEvery === 0 || renderedCount === faceJobs.length) {
       const elapsed = ((Date.now() - started) / 1000).toFixed(1);
       console.log(`[3/8]   ${renderedCount}/${faceJobs.length} (cache hits: ${cacheHits}, ${elapsed}s elapsed)`);

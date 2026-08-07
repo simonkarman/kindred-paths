@@ -142,7 +142,7 @@ export function withCache(
   const rendererVersion = version ?? inner.version;
   if (!rendererVersion) {
     throw new Error(
-      `withCache requires a version: pass { version } explicitly, or the wrapped renderer ` +
+      'withCache requires a version: pass { version } explicitly, or the wrapped renderer ' +
       `must declare Renderer.version. Got renderer "${inner.name}" with no version on either side.`,
     );
   }

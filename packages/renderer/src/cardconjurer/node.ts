@@ -31,7 +31,7 @@ type CardConjurerRenderInput = { faces?: unknown[]; __faceIndex?: number };
  */
 export async function createCardconjurerNodeRenderer(): Promise<Renderer> {
   let handle: ReturnType<typeof createNodeHandle> | null = null;
-  const version = computeCardconjurerVersion();  // computed once; see ./version.ts
+  const version = computeCardconjurerVersion(); // computed once; see ./version.ts
 
   async function render(input: RenderInput, _options: RenderOptions = {}): Promise<RenderResult> {
     void _options;

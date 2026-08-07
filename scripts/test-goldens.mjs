@@ -55,8 +55,12 @@ const MAX_DIFF_RATIO = 0.005; // 0.5% of pixels may differ before we fail a card
 const args = process.argv.slice(2);
 function pickFlag(name) {
   const out = [];
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === name) { const v = args[i + 1]; if (v) out.push(...v.split(',').map((s) => s.trim()).filter(Boolean)); i++; }
+  for (let i = 0; i < args.length; i += 1) {
+    if (args[i] === name) {
+      const v = args[i + 1];
+      if (v) out.push(...v.split(',').map((s) => s.trim()).filter(Boolean));
+      i += 1;
+    }
   }
   return out;
 }
@@ -67,7 +71,7 @@ const scopedByCard = scopedCards.length > 0;
 // ---- renderer selection --------------------------------------------------------------------
 
 const rendererEntries = Object.entries(renderers).filter(([name]) =>
-  scopedRenderers.length === 0 ? true : scopedRenderers.includes(name)
+  scopedRenderers.length === 0 ? true : scopedRenderers.includes(name),
 );
 if (rendererEntries.length === 0) {
   console.error(`No renderers matched. Registered: ${Object.keys(renderers).join(', ')}`);
@@ -294,7 +298,7 @@ function renderReport(results) {
     const m = rows.filter((r) => r.status === 'missing-golden').length;
     const e = rows.filter((r) => r.status === 'error').length;
     body += `<h2>${escapeHtml(name)} — <span class="reason">${p} pass · ${f} fail · ${m} missing · ${e} error</span></h2>`;
-    body += `<table><thead><tr><th>Card</th><th>Face</th><th>Name</th><th>Status</th><th>Details</th></tr></thead><tbody>`;
+    body += '<table><thead><tr><th>Card</th><th>Face</th><th>Name</th><th>Status</th><th>Details</th></tr></thead><tbody>';
     for (const r of rows) {
       const imgs = r.goldenFile
         ? `<div class="imgs">
@@ -310,7 +314,8 @@ function renderReport(results) {
       const details = r.status === 'pass'
         ? `${reasonLine}${imgs ? `<details><summary>view images</summary>${imgs}</details>` : ''}`
         : `<div class="reason">${r.reason ? escapeHtml(r.reason) : ''}</div>${imgs}`;
-      body += `<tr class="${r.status}"><td>${escapeHtml(r.cid)}</td><td>${r.faceIndex}</td><td>${escapeHtml(r.name)}</td><td>${r.status}</td><td>${details}</td></tr>`;
+      body += `<tr class="${r.status}"><td>${escapeHtml(r.cid)}</td><td>${r.faceIndex}</td>`
+        + `<td>${escapeHtml(r.name)}</td><td>${r.status}</td><td>${details}</td></tr>`;
     }
     body += '</tbody></table>';
   }

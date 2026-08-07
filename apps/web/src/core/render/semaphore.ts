@@ -8,20 +8,20 @@ export function createSemaphore(limit: number) {
     if (active >= limit) return;
     const resolve = queue.shift();
     if (!resolve) return;
-    active++;
+    active += 1;
     resolve();
   }
 
   async function run<T>(fn: () => Promise<T>): Promise<T> {
     if (active < limit) {
-      active++;
+      active += 1;
     } else {
       await new Promise<void>((resolve) => queue.push(resolve));
     }
     try {
       return await fn();
     } finally {
-      active--;
+      active -= 1;
       grantNext();
     }
   }

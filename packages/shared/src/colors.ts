@@ -33,21 +33,21 @@ export const isHybridMana = (mana: Mana): mana is HybridMana => {
 
 export const colorToShort = (color: CardColor): CardColorCharacter => {
   switch (color) {
-  case 'white': return 'w';
-  case 'blue': return 'u';
-  case 'black': return 'b';
-  case 'red': return 'r';
-  case 'green': return 'g';
+    case 'white': return 'w';
+    case 'blue': return 'u';
+    case 'black': return 'b';
+    case 'red': return 'r';
+    case 'green': return 'g';
   }
 };
 
 export const colorToLong = (color: CardColorCharacter): CardColor => {
   switch (color) {
-  case 'w': return 'white';
-  case 'u': return 'blue';
-  case 'b': return 'black';
-  case 'r': return 'red';
-  case 'g': return 'green';
+    case 'w': return 'white';
+    case 'u': return 'blue';
+    case 'b': return 'black';
+    case 'r': return 'red';
+    case 'g': return 'green';
   }
 };
 

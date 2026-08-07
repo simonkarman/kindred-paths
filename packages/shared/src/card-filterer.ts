@@ -12,7 +12,7 @@ const check = (
   return (searchTerm: string) => {
     for (const key of keys) {
       // Check for both "key:needle" and "key!:needle" (negation)
-      let needle: string | undefined = undefined;
+      let needle: string | undefined;
       let negate = false;
       if (searchTerm.startsWith(key + '!:') || searchTerm.startsWith(key + '!=')) {
         needle = searchTerm.slice(key.length + 2).toLowerCase();
@@ -277,10 +277,6 @@ const cardFaceTermResolver = (_card: SerializedCard, faceIndex: number, term: st
   return cardFace.name.toLowerCase().includes(searchTerm);
 };
 
-export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: string): SerializedCard[] => {
-  return filterCardsBasedOnSearchWithFaces(cards, searchQuery).map(r => r.card);
-};
-
 export const filterCardsBasedOnSearchWithFaces = (
   cards: SerializedCard[],
   searchQuery: string,
@@ -304,4 +300,8 @@ export const filterCardsBasedOnSearchWithFaces = (
     }
   }
   return results;
+};
+
+export const filterCardsBasedOnSearch = (cards: SerializedCard[], searchQuery: string): SerializedCard[] => {
+  return filterCardsBasedOnSearchWithFaces(cards, searchQuery).map(r => r.card);
 };

@@ -129,7 +129,7 @@ export class FilterQueryHandler {
   }
 
   private evaluateFlat(
-    tokens: ({ depth: number; type: string; value?: any })[],
+    tokens: ({ depth: number; type: string; value?: unknown })[],
     termResolver: (term: string) => boolean,
   ): boolean {
     // Build items with implicit AND between adjacent values

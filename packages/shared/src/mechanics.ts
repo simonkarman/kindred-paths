@@ -63,7 +63,7 @@ class Keyword {
       reminder = reminder.replace(/\[color]/g, args.color);
     }
     return reminder;
-  }
+  };
 
   applyStandalone(input: string): string | undefined {
     const result = this.standaloneRegex[Symbol.match](input);

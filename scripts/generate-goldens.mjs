@@ -55,8 +55,12 @@ if (!process.env.KP_RENDER_DATE) process.env.KP_RENDER_DATE = '2026-07-31';
 const args = process.argv.slice(2);
 function pickFlag(name) {
   const out = [];
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === name) { const v = args[i + 1]; if (v) out.push(...v.split(',').map((s) => s.trim()).filter(Boolean)); i++; }
+  for (let i = 0; i < args.length; i += 1) {
+    if (args[i] === name) {
+      const v = args[i + 1];
+      if (v) out.push(...v.split(',').map((s) => s.trim()).filter(Boolean));
+      i += 1;
+    }
   }
   return out;
 }
@@ -67,7 +71,7 @@ const scopedByCard = scopedCards.length > 0;
 // ---- renderer selection --------------------------------------------------------------------
 
 const rendererEntries = Object.entries(renderers).filter(([name]) =>
-  scopedRenderers.length === 0 ? true : scopedRenderers.includes(name)
+  scopedRenderers.length === 0 ? true : scopedRenderers.includes(name),
 );
 if (rendererEntries.length === 0) {
   console.error(`No renderers matched. Registered: ${Object.keys(renderers).join(', ')}`);
@@ -121,7 +125,7 @@ function renderableFaces(card) {
 
 console.log(
   `generate-goldens: ${rendererEntries.length} renderer(s) × ${targetCards.length} card(s)` +
-  (scopedByCard ? ' (surgical — no wipe)' : ' (full — wiping renderer dirs)')
+  (scopedByCard ? ' (surgical — no wipe)' : ' (full — wiping renderer dirs)'),
 );
 
 let totalCaptured = 0, totalFailed = 0;
@@ -165,10 +169,10 @@ for (const [rendererName, factory] of rendererEntries) {
         const s = ((Date.now() - rt0) / 1000).toFixed(1);
         const t = timings ? ` build=${timings.buildMs}ms composite=${timings.compositeMs}ms encode=${timings.encodeMs}ms` : '';
         console.log(`ok (${kb}KB, ${s}s)${t}`);
-        totalCaptured++;
+        totalCaptured += 1;
       } catch (e) {
         console.log(`FAIL ${e.message}`);
-        totalFailed++;
+        totalFailed += 1;
       }
     }
   }

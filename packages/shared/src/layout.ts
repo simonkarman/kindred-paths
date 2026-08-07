@@ -45,34 +45,34 @@ export class Layout {
     };
 
     switch (this.id) {
-    case 'normal':
-      return [defaultFace];
+      case 'normal':
+        return [defaultFace];
 
-    case 'modal':
-      return [defaultFace, {
-        name: 'Other Side',
-        manaCost: { generic: 2 },
-        types: ['creature'],
-        subtypes: [],
-        pt: { power: 2, toughness: 2 },
-      }];
+      case 'modal':
+        return [defaultFace, {
+          name: 'Other Side',
+          manaCost: { generic: 2 },
+          types: ['creature'],
+          subtypes: [],
+          pt: { power: 2, toughness: 2 },
+        }];
 
-    case 'adventure':
-      return [defaultFace, {
-        name: 'Other Side',
-        manaCost: { generic: 1 },
-        types: ['sorcery'],
-        subtypes: ['adventure'],
-      }];
+      case 'adventure':
+        return [defaultFace, {
+          name: 'Other Side',
+          manaCost: { generic: 1 },
+          types: ['sorcery'],
+          subtypes: ['adventure'],
+        }];
 
-    case 'transform':
-      return [defaultFace, {
-        name: 'Other Side',
-        types: ['creature'],
-        subtypes: [],
-        pt: { power: 2, toughness: 2 },
-        givenColors: [],
-      }];
+      case 'transform':
+        return [defaultFace, {
+          name: 'Other Side',
+          types: ['creature'],
+          subtypes: [],
+          pt: { power: 2, toughness: 2 },
+          givenColors: [],
+        }];
     }
   }
 

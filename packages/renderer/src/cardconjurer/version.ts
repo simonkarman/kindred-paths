@@ -47,7 +47,7 @@ export function computeCardconjurerVersion(): string {
   if (memoized) return memoized;
   const hash = createHash('sha1');
   for (const file of collectSourceFiles(CARDCONJURER_DIR)) {
-    hash.update(file);       // path included so a rename also changes the hash
+    hash.update(file); // path included so a rename also changes the hash
     hash.update(readFileSync(file));
   }
   memoized = hash.digest('hex').slice(0, 8);

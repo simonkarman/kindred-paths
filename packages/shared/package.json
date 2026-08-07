@@ -8,7 +8,8 @@
   "type": "commonjs",
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "lint": "eslint ."
   },
   "dependencies": {
     "zod": "^3.25.76"

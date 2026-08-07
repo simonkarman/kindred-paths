@@ -30,7 +30,7 @@ function makeMockRenderer({ name = 'mock', version = 'v1' }: { name?: string; ve
     async render(_input: RenderInput, _options?: RenderOptions): Promise<RenderResult> {
       void _input;
       void _options;
-      calls++;
+      calls += 1;
       const png = await makePng();
       return { png, width: 4, height: 4, timings: { totalMs: 1 } };
     },
