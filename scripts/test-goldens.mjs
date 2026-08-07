@@ -33,10 +33,14 @@ import { renderers } from '../packages/renderer/dist/index.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = dirname(HERE);
-const CARDS_DIR = join(REPO, 'collection/cards');
-const GOLDENS_ROOT = join(REPO, 'collection/goldens/renderers');
-const REPORT_DIR = join(REPO, 'collection/goldens/.report');
-const REPORT_HTML = join(REPO, 'collection/goldens/report.html');
+// KP_COLLECTION_PATH allows checkouts where the collection lives outside the repo
+// (e.g. CI, where kindred-paths and collection are sibling repos). Defaults to the
+// local <repo>/collection layout.
+const COLLECTION = process.env.KP_COLLECTION_PATH || join(REPO, 'collection');
+const CARDS_DIR = join(COLLECTION, 'cards');
+const GOLDENS_ROOT = join(COLLECTION, 'goldens/renderers');
+const REPORT_DIR = join(COLLECTION, 'goldens/.report');
+const REPORT_HTML = join(COLLECTION, 'goldens/report.html');
 
 // The v1-captured goldens were rendered on this date; freeze v2 to match so the collector
 // info date stamp doesn't drift daily. Overridable via KP_RENDER_DATE. See driver.js and

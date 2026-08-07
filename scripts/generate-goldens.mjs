@@ -39,8 +39,12 @@ import { renderers } from '../packages/renderer/dist/index.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = dirname(HERE);
-const CARDS_DIR = join(REPO, 'collection/cards');
-const GOLDENS_ROOT = join(REPO, 'collection/goldens/renderers');
+// KP_COLLECTION_PATH allows checkouts where the collection lives outside the repo
+// (e.g. CI, where kindred-paths and collection are sibling repos). Defaults to the
+// local <repo>/collection layout.
+const COLLECTION = process.env.KP_COLLECTION_PATH || join(REPO, 'collection');
+const CARDS_DIR = join(COLLECTION, 'cards');
+const GOLDENS_ROOT = join(COLLECTION, 'goldens/renderers');
 
 // The v1-captured goldens were rendered on this date. The collector info block includes
 // today's date via v1's `new Date().toISOString()`, so every renderer must render on the
