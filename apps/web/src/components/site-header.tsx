@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { Menu, X } from 'lucide-react';
 import { useSearchShortcut } from './use-search-shortcut';
 import { Logo } from './logo';
 import { SocialLinks } from './social-links';
@@ -17,6 +18,7 @@ export function SiteHeader() {
 
   const [value, setValue] = useState(searchParams.get('q') ?? '');
   const [pending, setPending] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Tracks the last committed (navigated-to) query, so we can tell whether a change is
   // "meaningful" (would actually alter the search) vs. incidental (e.g. the trailing space
@@ -27,6 +29,13 @@ export function SiteHeader() {
   useEffect(() => {
     setValue(searchParams.get('q') ?? '');
     lastQueryRef.current = searchParams.get('q')?.trim() ?? '';
+  }, [searchParams]);
+
+  // Close the mobile menu whenever navigation happens (e.g. a search commits, or the user
+  // taps a link inside the menu itself — Link's onClick below also closes it directly, but
+  // this covers back/forward nav too).
+  useEffect(() => {
+    setMenuOpen(false);
   }, [searchParams]);
 
   const navigate = (query: string) => {
@@ -59,7 +68,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-20 border-b border-navy-800/40 bg-gradient-to-r from-navy-800 via-navy-700 to-navy-800 shadow-md">
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-6 py-3">
+      <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-3 sm:gap-4 sm:px-6">
         <Link href="/" className="shrink-0 text-white" aria-label="Kindred Paths home">
           <Logo className="h-8 w-8" />
         </Link>
@@ -86,14 +95,42 @@ export function SiteHeader() {
           />
         </div>
 
+        {/* Desktop nav — collapses into the hamburger menu below `sm:`. */}
         <Link
           href="/"
-          className="shrink-0 rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white/90 transition-colors hover:bg-white/10"
+          className="hidden shrink-0 rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white/90 transition-colors hover:bg-white/10 sm:block"
         >
           Sets
         </Link>
-        <SocialLinks className="text-white/90" />
+        <div className="hidden sm:block">
+          <SocialLinks className="text-white/90" />
+        </div>
+
+        {/* Mobile-only hamburger toggle. */}
+        <button
+          type="button"
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/90 transition-colors hover:bg-white/10 sm:hidden"
+        >
+          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
+
+      {/* Mobile menu panel — pushes content down rather than overlaying it. */}
+      {menuOpen && (
+        <div className="flex flex-col items-start gap-3 border-t border-white/10 px-4 py-3 sm:hidden">
+          <Link
+            href="/"
+            onClick={() => setMenuOpen(false)}
+            className="rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white/90 transition-colors hover:bg-white/10"
+          >
+            Sets
+          </Link>
+          <SocialLinks className="text-white/90" />
+        </div>
+      )}
     </header>
   );
 }

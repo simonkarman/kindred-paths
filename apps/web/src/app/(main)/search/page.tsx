@@ -43,7 +43,7 @@ export default async function SearchPage({
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-8">
+    <main className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-8">
       <CardGrid initialQuery={q ?? ''} initialCards={initialCards} />
     </main>
   );

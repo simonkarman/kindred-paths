@@ -39,7 +39,8 @@ function CardTile({ card }: { card: SerializedCard }) {
       </div>
       {isDual && (
         <FlipButton
-          className="absolute -right-1.5 top-11.5 opacity-0 transition-opacity group-hover:opacity-100"
+          size="sm"
+          className="absolute right-2 top-2"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -117,7 +118,7 @@ export function CardGrid({
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {visibleCards.map((card) => (
           <CardTile key={card.cid} card={card} />
         ))}

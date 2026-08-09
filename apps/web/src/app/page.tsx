@@ -8,7 +8,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center gap-8 px-6 pt-[22vh]">
       <div className="flex flex-col items-center gap-4 text-center">
         <Logo className='max-w-40' />
-        <h1 className="text-7xl font-semibold tracking-tight text-navy-700">
+        <h1 className="text-4xl font-semibold tracking-tight text-navy-700 sm:text-6xl lg:text-7xl">
           Kindred Paths
         </h1>
         <p className="text-muted">A tool for managing a collection of custom Magic the Gathering cards</p>
