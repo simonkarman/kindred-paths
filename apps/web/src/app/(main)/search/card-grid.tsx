@@ -40,7 +40,7 @@ function CardTile({ card }: { card: SerializedCard }) {
       {isDual && (
         <FlipButton
           size="sm"
-          className="absolute right-2 top-2"
+          className="absolute right-2 top-8"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
