@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+# Pre-commit hook (husky v9): run lint-staged, which runs eslint (auto-fixing where
+# possible) + per-package tsc --noEmit on the staged files' packages.
+#
+# See root package.json > "lint-staged" for the file→command mapping.
+# Bypass with `git commit --no-verify` if genuinely needed.
+
+pnpm exec lint-staged

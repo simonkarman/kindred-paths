@@ -4,8 +4,6 @@
   "description": "A tool for managing the cards in Kindred Paths, the custom Magic the Gathering set by Simon Karman.",
   "private": true,
   "scripts": {
-    "postinstall": "npm --prefix shared install && npm --prefix server install && npm --prefix client install && npm --prefix mcp install",
-    "precommit": "npm run --prefix shared precommit && npm run --prefix server precommit && npm run --prefix client precommit && npm run --prefix mcp precommit",
     "start": "npm --prefix shared run clean && npm --prefix shared run build && npm-run-all --parallel start:*",
     "start:server": "npm --prefix server start",
     "start:client": "npm --prefix client run build && npm --prefix client start",
@@ -13,7 +11,20 @@
     "dev:shared": "npm run --prefix shared dev",
     "dev:server": "npm run --prefix server dev",
     "dev:client": "npm run --prefix client dev",
-    "dev:mcp": "npm run --prefix mcp dev"
+    "dev:mcp": "npm run --prefix mcp dev",
+    "dev:web": "pnpm --filter @kindred-paths/web dev",
+    "setup:cardconjurer": "node packages/renderer/scripts/setup.mjs",
+    "build:packages": "pnpm --filter @kindred-paths/shared build && pnpm --filter @kindred-paths/renderer build",
+    "typecheck:web": "pnpm --filter @kindred-paths/web exec tsc --noEmit",
+    "typecheck:renderer": "pnpm --filter @kindred-paths/renderer exec tsc --noEmit",
+    "typecheck:shared": "pnpm --filter @kindred-paths/shared exec tsc --noEmit",
+    "typecheck": "pnpm typecheck:shared && pnpm typecheck:renderer && pnpm typecheck:web",
+    "lint": "eslint .",
+    "lint:all": "pnpm -r --workspace-concurrency=1 lint",
+    "generate-goldens": "pnpm build:packages && node scripts/generate-goldens.mjs",
+    "test:golden": "pnpm build:packages && node scripts/test-goldens.mjs",
+    "cache:clear": "node scripts/clear-cache.mjs",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -29,15 +40,43 @@
   "homepage": "https://github.com/simonkarman/kindred-paths#readme",
   "dependencies": {
     "cors": "^2.8.5",
-    "husky": "^4.3.8",
     "npm-run-all": "^4.1.5"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19"
+    "@eslint/eslintrc": "^3.3.6",
+    "@eslint/js": "^10.0.1",
+    "@kindred-paths/renderer": "workspace:*",
+    "@types/cors": "^2.8.19",
+    "eslint": "^9",
+    "globals": "^17.9.0",
+    "husky": "^9",
+    "lint-staged": "^17.3.0",
+    "pixelmatch": "^5.3.0",
+    "pngjs": "^7.0.0",
+    "typescript-eslint": "^8"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm run precommit"
-    }
+  "lint-staged": {
+    "apps/web/**/*.{ts,tsx,js,jsx,mjs}": [
+      "pnpm --filter @kindred-paths/web exec eslint --max-warnings=0"
+    ],
+    "apps/web/**/*.{ts,tsx}": [
+      "node scripts/lint-staged-typecheck.mjs web"
+    ],
+    "packages/renderer/**/*.{ts,mts,js,mjs}": [
+      "eslint --max-warnings=0"
+    ],
+    "packages/renderer/**/*.ts": [
+      "node scripts/lint-staged-typecheck.mjs renderer"
+    ],
+    "packages/shared/**/*.ts": [
+      "eslint --max-warnings=0",
+      "node scripts/lint-staged-typecheck.mjs shared"
+    ],
+    "scripts/**/*.mjs": [
+      "eslint --max-warnings=0"
+    ],
+    "eslint.config.mjs": [
+      "eslint --max-warnings=0"
+    ]
   }
 }

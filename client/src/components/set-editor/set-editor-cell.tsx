@@ -304,8 +304,8 @@ export const SetEditorCell: React.FC<SetEditorCellProps> = ({
       <td
         className={`py-0.5 px-2 border border-gray-200 ${config.bgColor} transition-all duration-200 group min-w-[250px]`}
       >
-        <div className="relative">
-          <div className="flex items-center justify-between">
+        <div className="relative min-h-full">
+          <div className="min-h-10 flex items-center justify-between">
             {/* Status display */}
             <div className="flex items-center gap-2">
               <FontAwesomeIcon icon={config.icon} className={config.iconColor} />
@@ -321,9 +321,19 @@ export const SetEditorCell: React.FC<SetEditorCellProps> = ({
             </div>
 
             {/* Action buttons (visible on hover) */}
-            <div className="flex items-center opacity-0 group-hover:opacity-100">
+            <div className="flex items-center opacity-30 group-hover:opacity-100">
               {renderActionButtons()}
             </div>
+          </div>
+          <div className="p-3">
+            {cardPreviewUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={cardPreviewUrl}
+                alt="Card preview"
+                className="w-[250px] object-contain"
+              />
+            )}
           </div>
         </div>
 

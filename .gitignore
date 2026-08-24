@@ -1,3 +1,12 @@
-collection
+/collection
 node_modules
 .envrc
+
+# Build outputs from v2 workspace packages (packages/*/dist/)
+packages/*/dist/
+
+# External clones (CardConjurer, etc.) — see packages/renderer/scripts/setup.mjs.
+packages/renderer/external/
+
+# Render cache (KP_CACHE_DIR default) — content-hashed PNGs + thumbnails, not source.
+.cache/

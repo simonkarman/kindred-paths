@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>KP v2 renderer spike harness</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #222; color: #eee; }
+    #stage { display: flex; gap: 12px; padding: 12px; }
+    /* CardConjurer needs a real viewport to lay out its creator UI + canvases. */
+    #cc { width: 1000px; height: 1300px; border: 0; background: #fff; flex: 0 0 auto; }
+    #panel { display: flex; flex-direction: column; gap: 8px; width: 420px; }
+    #cardJson { width: 100%; height: 260px; box-sizing: border-box; font-family: monospace;
+                font-size: 13px; background: #111; color: #cfe; border: 1px solid #444; padding: 8px; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    button { padding: 8px 16px; font-size: 14px; cursor: pointer; background: #2563eb; color: #fff;
+             border: 0; border-radius: 4px; }
+    button:disabled { background: #555; cursor: default; }
+    #log { white-space: pre-wrap; font-size: 12px; margin: 0; color: #9cf; min-height: 18px; }
+    #preview { max-width: 100%; box-shadow: 0 0 20px #000; }
+    .hint { font-size: 11px; color: #888; margin: 0; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <iframe id="cc" src="/"></iframe>
+    <div id="panel">
+      <strong>Paste / edit a renderable card JSON</strong>
+      <textarea id="cardJson" spellcheck="false"></textarea>
+      <div class="row">
+        <button id="renderBtn">Render</button>
+        <span class="hint">or press Cmd/Ctrl + Enter</span>
+      </div>
+      <p class="hint">Each render reloads the iframe for a clean CardConjurer state
+        (autoFrame stacks frames and expects a fresh page).</p>
+      <pre id="log">idle</pre>
+      <img id="preview" />
+    </div>
+  </div>
+
+  <script>
+    const SAMPLE = {
+      name: "Spike Test Ranger",
+      manaCost: "{2}{G}",
+      typeLine: "Creature — Elf Ranger",
+      rules: "Vigilance\nWhen Spike Test Ranger enters the battlefield, draw a card.",
+      pt: "3/3",
+      art: "/local_art/0007-sammie-boterhammie-roll-over-d5e1926a-f450-490d-aa8a-deb1b7f99f1b.png",
+      artist: "Phase 0 Spike"
+    };
+
+    const log = (...a) => {
+      console.log('[harness]', ...a);
+      const el = document.getElementById('log');
+      if (el) el.textContent = a.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(' ');
+    };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    function iframeEl() { return document.getElementById('cc'); }
+    function iframeWin() { return iframeEl().contentWindow; }
+    function iframeDoc() { return iframeEl().contentDocument; }
+
+    // Find an element under `root` matching selector whose trimmed text includes `text`.
+    function byText(root, selector, text) {
+      const els = [...root.querySelectorAll(selector)];
+      return els.find(e => (e.textContent || '').trim().toLowerCase().includes(text.toLowerCase()));
+    }
+
+    function setField(cd, sectionTitle, value) {
+      const h4 = byText(cd, '#text-options h4', sectionTitle);
+      if (!h4) { log('WARN: no text section', sectionTitle); return false; }
+      h4.click();
+      const ed = cd.querySelector('#text-editor');
+      if (!ed) { log('WARN: no #text-editor'); return false; }
+      ed.value = value;
+      ed.dispatchEvent(new Event('input', { bubbles: true }));
+      ed.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
+    }
+
+    function clickTab(cd, tabTitle) {
+      const h3 = byText(cd, '#creator-menu-tabs h3', tabTitle);
+      if (h3) { h3.click(); return true; }
+      log('WARN: no tab', tabTitle);
+      return false;
+    }
+
+    // Reload the iframe to a guaranteed-clean CardConjurer. Clearing localStorage first
+    // drops persisted settings (set-symbol locks, collector defaults, autoFrame) so the
+    // boot is deterministic; the reload itself clears in-memory frame-stack residue.
+    function resetIframe() {
+      return new Promise((resolve, reject) => {
+        const iframe = iframeEl();
+        try { iframe.contentWindow.localStorage.clear(); }
+        catch (e) { log('localStorage clear skipped:', e.message); }
+        let done = false;
+        const onload = () => { if (done) return; done = true; iframe.removeEventListener('load', onload); resolve(); };
+        iframe.addEventListener('load', onload);
+        iframe.src = '/?n=' + Date.now();
+        setTimeout(() => {
+          if (!done) { done = true; iframe.removeEventListener('load', onload); reject(new Error('iframe reload timeout')); }
+        }, 30000);
+      });
+    }
+
+    // Wait until CardConjurer's creator is initialized inside the iframe.
+    async function waitForCreator(timeoutMs = 30000) {
+      const start = Date.now();
+      while (Date.now() - start < timeoutMs) {
+        const cw = iframeWin(), cd = iframeDoc();
+        const ready = cw && cd
+          && cw.cardCanvas && cw.cardCanvas.width > 0
+          && cd.querySelector('#autoFrame')
+          && cd.querySelector('#creator-menu-tabs')
+          && cd.querySelector('#text-editor');
+        if (ready) {
+          try { await cw.document.fonts.ready; } catch (e) {}
+          return Date.now() - start;
+        }
+        await sleep(150);
+      }
+      throw new Error('creator not ready within ' + timeoutMs + 'ms');
+    }
+
+    // Resolve once cardCanvas output is stable (unchanged) across several polls.
+    async function waitForSettle(maxMs = 20000, stableFor = 500) {
+      const cw = iframeWin();
+      let last = '', stableSince = 0, out = '';
+      const start = Date.now();
+      while (Date.now() - start < maxMs) {
+        try { out = cw.cardCanvas.toDataURL('image/png'); }
+        catch (e) { throw new Error('toDataURL failed (tainted canvas?): ' + e.message); }
+        const now = Date.now();
+        if (out === last) {
+          if (now - stableSince >= stableFor) return out;
+        } else {
+          last = out; stableSince = now;
+        }
+        await sleep(80);
+      }
+      log('WARN: settle timeout; returning last frame');
+      return out;
+    }
+
+    // Full render of one card: clean reload -> wait -> drive -> settle -> show.
+    // Minimal-but-real driver (autoFrame + title/type/rules/PT + optional art).
+    //
+    // CardConjurer wires image.onload = drawFrames on EVERY frame/mask image, and drawFrames()
+    // ends by calling drawCard() — one render triggers ~26-39 of these (a slow, and because it's
+    // timing-dependent, RACY path: a fixed sleep()+pixel-poll can capture the canvas before the
+    // last pass composites, silently producing a frame-less card). We suppress both functions
+    // during the build, wait for CardConjurer's OWN completion signal (ImageLoadTracker /
+    // FontLoadTracker — the same primitive its bulk-export uses, see creator-23.js:3251-3273),
+    // then do exactly ONE guaranteed-complete composite. Faster AND reliable.
+    window.renderCard = async function (r) {
+      const t0 = Date.now();
+      log('reloading iframe for clean state…');
+      await resetIframe();
+      const bootMs = await waitForCreator();
+      log('creator ready (' + bootMs + 'ms); driving "' + r.name + '"…');
+      const cw = iframeWin(), cd = iframeDoc();
+      const step = async (label, fn) => {
+        try { await fn(); } catch (e) { log('STEP FAIL [' + label + ']:', e.message); }
+      };
+
+      const realDrawFrames = cw.drawFrames, realDrawCard = cw.drawCard;
+      cw.drawFrames = () => {}; cw.drawCard = () => {};
+      cw.ImageLoadTracker.start(); cw.FontLoadTracker.start();
+
+      // 1) autoFrame chooses + places the correct frames automatically.
+      await step('autoFrame', async () => {
+        const af = cd.querySelector('#autoFrame');
+        af.value = r.borderless ? 'Borderless' : 'M15RegularNew';
+        af.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+
+      // 2) text
+      await step('textTab', async () => { clickTab(cd, 'Text'); });
+      await step('manaCost', async () => { if (r.manaCost) setField(cd, 'Mana Cost', r.manaCost); });
+      await step('title', async () => { if (r.name) setField(cd, 'Title', r.name); });
+      await step('type', async () => { if (r.typeLine) setField(cd, 'Type', r.typeLine); });
+      await step('rules', async () => { if (r.rules) setField(cd, 'Rules Text', r.rules); });
+      await step('pt', async () => { if (r.pt) setField(cd, 'Power/Toughness', r.pt); });
+
+      // 3) art (same-origin -> canvas stays untainted)
+      if (r.art) await step('art', async () => {
+        clickTab(cd, 'Art');
+        const url = cd.querySelector('#creator-menu-art input[placeholder="Via URL"]');
+        if (url) { url.value = r.art; url.dispatchEvent(new Event('change', { bubbles: true })); }
+        const artist = cd.querySelector('#creator-menu-art #art-artist');
+        if (artist) { artist.value = r.artist || 'Spike'; artist.dispatchEvent(new Event('change', { bubbles: true })); }
+      });
+
+      await step('drawText', async () => { await cw.drawText(); });
+      await Promise.all([cw.ImageLoadTracker.waitForAll(), cw.FontLoadTracker.waitForAll()]);
+      try { await cw.document.fonts.ready; } catch (e) {}
+      cw.ImageLoadTracker.stop(); cw.FontLoadTracker.stop();
+      // drawText() above may have rasterized some glyphs before their @font-face finished loading
+      // (a fresh reload means fonts aren't guaranteed ready yet). CardConjurer has no font-load-
+      // then-redraw of its own, so text drawn too early is permanent "tofu". Redraw once more
+      // now that fonts are confirmed ready, before the single composite.
+      await step('drawText (post-font)', async () => { await cw.drawText(); });
+      cw.drawFrames = realDrawFrames; cw.drawCard = realDrawCard;
+      cw.drawFrames(); // one guaranteed-complete composite (also calls drawCard() internally)
+
+      const dataUrl = cw.cardCanvas.toDataURL('image/png');
+      document.getElementById('preview').src = dataUrl;
+      log('done in ' + (Date.now() - t0) + 'ms; png bytes ~' + Math.round(dataUrl.length * 0.75));
+      return dataUrl;
+    };
+
+    // Parse the textarea and render it. Returns the PNG data URL (or null on bad JSON).
+    let busy = false;
+    window.renderFromInput = async function () {
+      if (busy) { log('busy — ignoring'); return null; }
+      let card;
+      try { card = JSON.parse(document.getElementById('cardJson').value); }
+      catch (e) { log('Invalid JSON: ' + e.message); return null; }
+      busy = true;
+      document.getElementById('renderBtn').disabled = true;
+      try { return await window.renderCard(card); }
+      catch (e) { log('Render error: ' + e.message); return null; }
+      finally { busy = false; document.getElementById('renderBtn').disabled = false; }
+    };
+
+    // Wire UI
+    document.getElementById('cardJson').value = JSON.stringify(SAMPLE, null, 2);
+    document.getElementById('renderBtn').addEventListener('click', () => window.renderFromInput());
+    document.getElementById('cardJson').addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); window.renderFromInput(); }
+    });
+
+    log('harness loaded; render the sample or edit the JSON');
+    // Auto-render the sample once on load (skipped with ?noauto for scripted validation).
+    window.addEventListener('load', () => {
+      if (!location.search.includes('noauto')) window.renderFromInput();
+    });
+  </script>
+</body>
+</html>

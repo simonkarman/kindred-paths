@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/* Kindred Paths palette — built around rgb(8 36 71) (#082447), a deep navy. Defined as
+   Tailwind v4 @theme tokens so utilities like `bg-navy-700`, `text-ink`, `border-line`,
+   `bg-gold-500` are available everywhere without a tailwind.config.js. */
+@theme {
+  --color-navy-50: #eef2f7;
+  --color-navy-100: #dce4ee;
+  --color-navy-200: #b9c9dd;
+  --color-navy-300: #8ba7c4;
+  --color-navy-400: #4d7099;
+  --color-navy-500: #1c4570;
+  --color-navy-600: #123458;
+  --color-navy-700: #082447; /* brand base — rgb(8 36 71) */
+  --color-navy-800: #061c38;
+  --color-navy-900: #041428;
+
+  --color-gold-400: #d4b568;
+  --color-gold-500: #c8a24a;
+  --color-gold-600: #a9843a;
+
+  --color-ink: #0f172a;
+  --color-muted: #5b6b82;
+  --color-surface: #ffffff;
+  --color-canvas: #f8fafc;
+  --color-line: #e2e8f1;
+}
+
+body {
+  background:
+    radial-gradient(ellipse 900px 500px at 12% 8%, color-mix(in srgb, var(--color-gold-400) 12%, transparent) 0%, transparent 60%),
+    radial-gradient(ellipse 1000px 600px at 88% 100%, color-mix(in srgb, var(--color-navy-400) 18%, transparent) 0%, transparent 65%),
+    linear-gradient(180deg, var(--color-navy-100) 0%, var(--color-canvas) 45%, var(--color-canvas) 100%);
+  background-attachment: fixed;
+  color: var(--color-ink);
+}

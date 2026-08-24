@@ -1,0 +1,20 @@
+{
+  "name": "@kindred-paths/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Isomorphic domain: card model, search DSL, hashing, colors, typography, layouts. Populated by porting from v1 shared/ in Phase 1b.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.2"
+  }
+}

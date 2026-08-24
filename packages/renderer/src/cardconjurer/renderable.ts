@@ -1,0 +1,190 @@
+// CardConjurer-specific `Renderable` type + Card → Renderable mapping.
+//
+// This is the render-ready view of a Card at a given face index, shaped for CardConjurer's
+// input contract (frame color letters, adventure/transform/MDFC layout metadata, mana as a
+// string, etc.). It is renderer-specific — a future non-CardConjurer renderer would define
+// its own equivalent — so it lives here under packages/renderer/src/cardconjurer/, not in
+// @kindred-paths/shared.
+//
+// Ported verbatim from v1 `server/src/card-conjurer.ts` (the Renderable type) and
+// `server/src/services/render-service.ts` (the Card → Renderable mapping in getRender()).
+//
+// Set metadata (author, shortName, symbol, collectorNumberOffset) is resolved via
+// getSetMetadataForCard(). Cards without a symbol render fine; the symbol decoding happens
+// in the Node host via sharp/librsvg (see hosts/node-handle.ts line 139+).
+//
+// See docs/v2-architecture.md §4 (renderer architecture) and the Renderable type in
+// server/src/card-conjurer.ts:78-126 for the source-of-truth shape.
+
+import { Card, capitalize, colorToShort, enumerate } from '@kindred-paths/shared';
+import type {
+  CardColor,
+  CardRarity,
+  CardSuperType,
+  CardType,
+  LoyaltyCost,
+  Pt,
+  SerializedCard,
+} from '@kindred-paths/shared';
+import { getSetMetadataForCard, type SetMetadata } from './set-metadata.js';
+
+export type RenderableMdfc = {
+  side: 'front' | 'back';
+  otherFrameColor: string;
+  otherCardType: string;
+  otherText: string;
+};
+
+export type RenderableAdventure = {
+  manaCost: string;
+  title: string;
+  type: string;
+  rules: string;
+  color: CardColor[];
+};
+
+export type RenderableTransform =
+  | { side: 'front'; flipText: string }
+  | { side: 'back' };
+
+export type Renderable = {
+  name: string;
+  isToken: boolean;
+  manaCost: string;
+  color: CardColor[];
+  producibleColors: (CardColor | 'colorless')[];
+  typeLine: string;
+  types: CardType[];
+  subtypes: string[];
+  supertype: CardSuperType;
+  hasRules: boolean;
+  rules: string;
+  pt?: Pt;
+  loyalty?: number;
+  loyaltyAbilities: { cost: LoyaltyCost; content: string }[];
+  art?: string;
+  tags: {
+    borderless: boolean;
+    'fs/rules'?: number;
+    'art/focus'?: string;
+    [key: string]: string | number | boolean | undefined;
+  };
+  rarity: CardRarity;
+  collectorNumber: number;
+  set: SetMetadata;
+  mdfc?: RenderableMdfc;
+  adventure?: RenderableAdventure;
+  transform?: RenderableTransform;
+};
+
+/**
+ * Build a Renderable from a v1 Card JSON object at a given face index. Accepts either the
+ * plain JSON shape from `collection/cards/*.json` or a Card instance.
+ */
+export function cardToRenderable(
+  cardJsonOrInstance: SerializedCard | Card,
+  faceIndex = 0,
+): Renderable {
+  const card = cardJsonOrInstance instanceof Card
+    ? cardJsonOrInstance
+    : new Card(cardJsonOrInstance);
+  const cardFace = card.faces[faceIndex];
+  if (!cardFace) throw new Error(`card has no face at index ${faceIndex}`);
+
+  // MDFC — the other face is either a land (special "otherText" shape) or a
+  // creature/spell (PT-prefixed subtype/type + mana cost).
+  let mdfc: RenderableMdfc | undefined;
+  if (card.layout.id === 'modal') {
+    const otherFace = card.faces[faceIndex === 0 ? 1 : 0];
+    const side: 'front' | 'back' = faceIndex === 0 ? 'front' : 'back';
+
+    if (otherFace.types.includes('land')) {
+      const producibleColors = otherFace.producibleColors();
+      mdfc = {
+        side,
+        otherFrameColor: 'l',
+        otherCardType: 'Land',
+        otherText: `{t}: Add ${enumerate(
+          producibleColors.map((c) => (c === 'colorless' ? '{c}' : `{${colorToShort(c as CardColor)}}`)),
+          { lastSeparator: 'or' },
+        )}`,
+      };
+    } else {
+      const ptPrefix = otherFace.pt ? `${otherFace.pt.power}/${otherFace.pt.toughness} ` : '';
+      const otherColors = otherFace.color();
+      const otherFrameColor = otherColors.length === 0
+        ? (otherFace.types.includes('artifact') ? 'a' : 'l')
+        : otherColors.length === 1
+          ? colorToShort(otherColors[0])
+          : 'm';
+      mdfc = {
+        side,
+        otherFrameColor,
+        otherCardType: ptPrefix + (otherFace.subtypes.length > 0
+          ? capitalize(otherFace.subtypes[0])
+          : capitalize(otherFace.types[otherFace.types.length - 1])),
+        otherText: otherFace.renderManaCost(),
+      };
+    }
+  }
+
+  // Adventure — face 1 is embedded in the primary render. v1 errors on rendering face 1
+  // directly; we replicate that.
+  let adventure: RenderableAdventure | undefined;
+  if (card.layout.id === 'adventure') {
+    if (faceIndex === 1) throw new Error('adventure back faces cannot be rendered alone');
+    const adventureFace = card.faces[1];
+    adventure = {
+      manaCost: adventureFace.renderManaCost(),
+      title: adventureFace.name,
+      type: adventureFace.renderTypeLine(),
+      rules: adventureFace.renderRules(),
+      color: adventureFace.color(),
+    };
+  }
+
+  // Transform — front has a "reverse PT" text drawn from the back face's PT.
+  let transform: RenderableTransform | undefined;
+  if (card.layout.id === 'transform') {
+    if (faceIndex === 0) {
+      const otherPt = card.faces[1].pt;
+      transform = { side: 'front', flipText: otherPt ? `${otherPt.power}/${otherPt.toughness}` : '' };
+    } else {
+      transform = { side: 'back' };
+    }
+  }
+
+  return {
+    name: cardFace.name,
+    isToken: card.isToken === true,
+    manaCost: cardFace.renderManaCost(),
+    color: cardFace.color(),
+    producibleColors: cardFace.producibleColors(),
+    typeLine: cardFace.renderTypeLine(),
+    types: cardFace.types,
+    subtypes: cardFace.subtypes,
+    supertype: cardFace.supertype,
+    hasRules: cardFace.renderRules().length > 0,
+    rules: cardFace.renderRules(),
+    pt: cardFace.pt,
+    loyalty: cardFace.loyalty,
+    loyaltyAbilities: cardFace.loyaltyAbilities(),
+    art: cardFace.art,
+    tags: {
+      borderless: card.getTagAsString('borderless') === 'true' || card.tags['borderless'] === true,
+      'fs/rules': card.getTagAsNumber('fs/rules'),
+      'art/focus': card.getTagAsString('art/focus'),
+    },
+    rarity: card.rarity,
+    collectorNumber: card.collectorNumber,
+    // Set metadata (author, shortName, symbol string, collectorNumberOffset). The symbol
+    // is rasterized via sharp/librsvg in the Node host (see hosts/node-handle.ts line 139+),
+    // which avoids a resvg fill bug that would corrupt some SVG stroke+fill combinations.
+    // Author + shortName + collectorNumberOffset are needed for the collector info block
+    // to match v1 pixel-for-pixel.
+    set: getSetMetadataForCard(cardJsonOrInstance as unknown as { tags?: Record<string, unknown>; rarity?: string }),
+    mdfc,
+    adventure,
+    transform,
+  };
+}

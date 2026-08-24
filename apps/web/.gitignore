@@ -1,0 +1,15 @@
+# Next.js
+.next/
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# dependencies
+node_modules
+
+# Static export output — regenerated on every `pnpm --filter web export:static` run.
+# See docs/v2-phase1d-static-export.md §5.3.
+/generated/
+/out/
+# Transient staging populated by scripts/export-static.mjs during a static build; the
+# script deletes it after the build, but list it here in case a build is interrupted.
+/public/renders/

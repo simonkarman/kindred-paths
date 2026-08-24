@@ -1,0 +1,185 @@
+name: CI
+
+on:
+  push:
+    branches: [v2]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Fast job: lint, typecheck, per-package builds, apps/web build.
+  # Runs on every push/PR. No CardConjurer needed; no renders.
+  quick:
+    name: Lint / typecheck / build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Build packages first — apps/web (typecheck + build) and the goldens harness
+      # both consume packages/{shared,renderer}/dist/.
+      - name: Build workspace packages
+        run: pnpm build:packages
+
+      - name: Lint (root + all packages)
+        run: |
+          pnpm lint
+          pnpm lint:all
+
+      - name: Typecheck (all packages)
+        run: pnpm typecheck
+
+      - name: Build apps/web (dynamic mode)
+        run: pnpm --filter @kindred-paths/web build
+
+  # ── Renderer unit tests (packages/renderer/src/__tests__/cache.test.ts).
+  # No CardConjurer, no renders — a pure unit-test job.
+  renderer-tests:
+    name: Renderer unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run renderer unit tests
+        run: pnpm --filter @kindred-paths/renderer test
+
+  # ── Full golden-image regression. Needs the CardConjurer clone; slow on cache miss.
+  # Runs on pushes to v2 and on every PR. Skip elsewhere so branch-push feedback stays
+  # fast (workflow_dispatch is always available for manual runs).
+  goldens:
+    name: Golden image regression
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    steps:
+      # CardConjurer's checked-out working tree is ~2 GB of frame/symbol PNGs. The
+      # default ubuntu-latest runner only has ~14 GB free at job start (most of the
+      # 75 GB disk is pre-installed toolchains we don't use here), which isn't
+      # reliably enough headroom once the collection + node_modules + render cache
+      # are also on disk. Strip the unused pre-installed toolchains first to free up
+      # ~30-40 GB before we clone anything.
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+          docker-images: true
+          tool-cache: true
+
+      - uses: actions/checkout@v4
+        with:
+          path: kindred-paths
+
+      # Collection is needed for cards/, art/, symbols/, goldens/. Checked out as a
+      # sibling directory so scripts/{generate,test}-goldens.mjs (which now honour
+      # KP_COLLECTION_PATH) can find it. If your collection repo has a different name,
+      # edit the `repository` field below.
+      #
+      # If the collection is private, add a repo-scoped PAT as a secret named
+      # KP_COLLECTION_TOKEN and uncomment the `token` line.
+      - name: Checkout collection
+        uses: actions/checkout@v4
+        with:
+          repository: simonkarman/kindred-paths-collection
+          path: collection
+          # token: ${{ secrets.KP_COLLECTION_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: kindred-paths/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: kindred-paths
+        run: pnpm install --frozen-lockfile
+
+      # setup:cardconjurer reads the pinned SHA from dist/cardconjurer/pin.js, and
+      # test:golden imports the renderers from dist/index.js — both need a build first.
+      - name: Build workspace packages
+        working-directory: kindred-paths
+        run: pnpm build:packages
+
+      - name: Read pinned CardConjurer SHA
+        id: cc_pin
+        working-directory: kindred-paths
+        # Grep the SHA out of the pin.ts literal — avoids booting node just to import a
+        # single constant, and works before any pnpm install has happened.
+        run: |
+          SHA=$(grep -oE "sha:\s*'[0-9a-f]{40}'" packages/renderer/src/cardconjurer/pin.ts | grep -oE "[0-9a-f]{40}")
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Pinned CardConjurer SHA: $SHA"
+
+      # Cache the CardConjurer partial clone, keyed on the pinned SHA. First run per pin
+      # takes ~4 min (blobless partial clone via `pnpm setup:cardconjurer`); cached runs
+      # skip the network entirely.
+      - name: Restore CardConjurer clone cache
+        uses: actions/cache@v4
+        with:
+          path: kindred-paths/packages/renderer/external/cardconjurer
+          key: cardconjurer-${{ steps.cc_pin.outputs.sha }}
+
+      # Cache the on-disk render cache (.cache/renders/), keyed on card JSON + art
+      # bytes + kindred-paths renderer source hash. Content-hash keyed inside; a partial
+      # match (via restore-keys) means only cards whose inputs actually changed re-render.
+      - name: Restore render cache
+        uses: actions/cache@v4
+        with:
+          path: kindred-paths/.cache/renders
+          key: renders-${{ hashFiles('collection/cards/**/*.json', 'collection/art/**') }}-${{ hashFiles('kindred-paths/packages/renderer/src/**') }}
+          restore-keys: |
+            renders-${{ hashFiles('collection/cards/**/*.json', 'collection/art/**') }}-
+            renders-
+
+      - name: Setup CardConjurer
+        working-directory: kindred-paths
+        run: pnpm setup:cardconjurer
+
+      - name: Run goldens
+        working-directory: kindred-paths
+        env:
+          KP_COLLECTION_PATH: ${{ github.workspace }}/collection
+        run: pnpm test:golden
+
+      # If goldens fail, upload the HTML report + diff PNGs as an artifact so we can
+      # download and inspect them locally.
+      - name: Upload golden diff report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-diff-report
+          path: |
+            collection/goldens/report.html
+            collection/goldens/.report/
+          retention-days: 14

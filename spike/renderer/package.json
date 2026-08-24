@@ -1,0 +1,9 @@
+{
+  "name": "kindred-paths-spike-renderer",
+  "private": true,
+  "type": "module",
+  "description": "Phase 0.x renderer spikes (not part of the app build).",
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.60"
+  }
+}
